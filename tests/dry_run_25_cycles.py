@@ -91,8 +91,11 @@ def get_route_dna(cycle: int, rank: int, route: Dict[str, Any]) -> dict[str, Any
 def print_route_dna(cycle: int, rank: int, dna: dict[str, Any]):
     """Print full transparent DNA of a route."""
     print(f"\n  [{cycle:02d}] Rank #{rank:02d} | Legs={route['legs']} | Type={route['spread_type']} | Spread BPS={route.get('spread_bps', 0)}")
+    """Prints the full transparent DNA of a route, using the processed DNA dictionary."""
+    print(f"\n  [{cycle:02d}] Rank #{rank:02d} | Legs={dna['legs']} | Type={dna['spread_type']} | Spread BPS={dna.get('spread_bps', 0)}")
     print(f"      {'Component':<28} | {'Normalized USD':>24}")
     print(f"      {'-'*22} | {'-'*28} | {'-'*24}")
+    print(f"      {'-'*28} | {'-'*24}")
     print(f"      {'Flash Principal':<28} | ${dna['flash_principal_usd']:>24,.8f}")
     print(f"      {'Gross Sell Out':<28} | ${dna['gross_sell_out_usd']:>24,.8f}")
     print(f"      {'Gross Surplus':<28} | ${dna['gross_surplus_usd']:>24,.8f}")
@@ -248,6 +251,8 @@ def main():
         print(f"\nTop 10 routes (after gate filter + ranking by net surplus):")
         for idx, route in enumerate(top10, 1):
             print_route_dna(cycle, idx, route)
+            dna = get_route_dna(cycle, idx, route)
+            print_route_dna(cycle, idx, dna)
 
         # Simulate staging
         staged = simulate_staging(ranked, max_staged=8)
