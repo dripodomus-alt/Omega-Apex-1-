@@ -227,6 +227,12 @@ def collect_and_score_opportunities(
     raw_positive_rows: list[dict[str, Any]] = []
 
     print(f"   Pre-math blueprints found: {len(staged_blueprints)}")
+    print(
+        f"   Pre-math stats: "
+        f"total_routes={pre_rank_stats.get('total_routes_considered', 0)} "
+        f"raw_positive={pre_rank_stats.get('rejection_counts', {}).get('raw_positive_candidates', 0)} "
+        f"rejections={pre_rank_stats.get('rejection_counts', {})}"
+    )
     for bp in staged_blueprints:
         sig = _route_sig(bp.path, bp.pool_sequence)
         rate = Decimal(str(bp.approximate_gross_rate or "0"))
@@ -294,6 +300,12 @@ def collect_and_score_opportunities(
         live_pools,
         principal_usd=principal_usd,
         slippage_bps=slippage_bps,
+    )
+    print(
+        f"   Post-math candidates: "
+        f"cycles={len(ranked_cycles)} "
+        f"two_leg={len(ranked_two_leg)} "
+        f"stable={len(ranked_stable)}"
     )
 
     all_opps = ranked_stable + ranked_two_leg + ranked_cycles

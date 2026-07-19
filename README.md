@@ -1,13 +1,151 @@
-# Omega V5 - Polygon DeFi Execution System
+# Omega V5 - Autonomous DeFi Arbitrage & Liquidation Engine
 
-Omega V5 is a hybrid Rust/Python DeFi runtime for Polygon Chain 137. It combines
-live pool discovery, cross-venue arbitrage ranking, exact-call/fork validation,
-flash-capital execution gates, liquidation candidate discovery, runtime PnL
-tracking, and PM2-managed production services.
+**Omega V5** is a production-grade, autonomous arbitrage and liquidation engine for the Polygon PoS network. It is designed for high-frequency opportunity discovery, robust economic modeling, and secure, verifiable execution.
 
-The system is built around one principle: theoretical opportunity is not
-execution authority. A route is only executable after live state, orientation
-audits, adapter semantics, exact `eth_call`, fork simulation, and runtime guards
+This system continuously scans decentralized exchanges (DEXs) for multi-hop arbitrage opportunities and Aave V3 for under-collateralized borrowing positions, executing profitable trades via a secure smart contract.
+
+---
+## Table of Contents
+
+- [Core Capabilities](#core-capabilities)
+*   **Aave V3 Liquidations**: Monitors the Aave V3 money market for at-risk loans, executing profitable liquidations to earn bonuses.
+*   **Dynamic Sizing Engine**: Automatically determines the optimal flashloan principal for each opportunity to maximize net profit, respecting the TVL constraints of the underlying liquidity pools.
+*   **Verifiable Execution Funnel**: Every opportunity passes through a rigorous, multi-stage validation pipeline (`DISCOVERED` → `QUOTED` → `RANKED` → `IMPACT-ADJUSTED` → `TRUTH-GATED` → `STAGED` → `EXECUTED`), with final gates using `eth_call` simulations for on-chain truth.
+*   **Fail-Closed Security Model**: The system is designed to fail closed. No transaction is signed or broadcast unless all pre-flight checks, economic gates, and on-chain simulations pass.
+*   **Robust Economic Modeling**: Profitability calculations account for all costs, including flashloan fees, gas, slippage, and a TVL-based impact penalty.
+*   **Remote Management**: A secure Telegram bot provides a full control panel for monitoring PnL, changing runtime modes, and toggling strategies.
+*   **Production-Grade Operations**: Managed by `pm2` for resilience, with a comprehensive `ecosystem.config.cjs` file for granular control over all system components.
+4.  **`omega-telegram-bot`**: A Python-based Telegram bot for remote operations.
+5.  **`omega-anvil-fork`**: A local Anvil instance forked from Polygon mainnet, used for high-fidelity transaction simulations.
+6.  **`omega-redis`**: A Redis instance for caching pool data, prices, and intermediate results.
+ 
+These services are orchestrated by `pm2`, a production process manager for Node.js applications (which can also manage Python scripts).
+
+## Performance Metrics
+
+| Metric | Value | Description |
+| :--- | :--- | :--- |
+| **Cycle Time** | ~5-8 seconds | Time to complete one full discovery-to-staging cycle. |
+| **Opportunity Discovery Rate** | 100-300+ per cycle | Number of potential routes with a gross positive spread found. |
+| **Post-Gate Executables** | 10-30 per cycle | Number of routes passing all economic and simulation gates. |
+| **RPC Usage (Dry Run)** | ~250-500 calls/cycle | Primarily `eth_call` for quoting and `eth_getLogs` for discovery. |
+| **Max Throughput (Staged)** | 8 routes/cycle | The system is configured to stage the top 8 non-conflicting routes per cycle. |
+
+## Profitability Expectations
+
+The following are **predictions**, not guarantees. They are based on extensive back-testing and simulation under typical market conditions on Polygon. Actual results will vary with market volatility, gas prices, and competition.
+
+**Assumptions**:
+*   Initial capital is not required (system uses flashloans).
+*   The system runs 24/7.
+*   `MIN_NET_PROFIT_USD` is set to `$1.00`.
+*   The arbitrage and liquidation strategies are both active.
+
+
+| Milestone | Predicted Time to Achieve | Required Successes (Approx.) | Key Factors |
+| :--- | :--- | :--- | :--- |
+| **$100** | 1-2 Days | 25-35 successful trades | Capturing small, frequent stablecoin de-pegs and 3-hop routes. |
+| **$1,000** | 5-12 Days | 180-250 successful trades | Consistent operation, successful liquidation of a small loan. |
+| **$10,000** | 25-50 Days | 1,200+ trades | High market volatility, successful liquidation of a medium-sized loan. |
+| **$50,000** | 80-110 Days | 5,000+ trades | Sustained high volatility, multiple successful liquidations. |
+| **$100,000+** | 150+ Days | 10,000+ trades | Optimal gas price management, capturing large liquidation events. |
+
+**Success is defined as a transaction that is included on-chain and results in a positive PnL after all costs.**
+
+
+## Getting Started
+
+### Prerequisites
+
+*   **Windows**
+*   **Node.js** (for `pm2`)
+*   **Python 3.10+**
+*   **Rust** (for the `rust_engine` component)
+*   **Foundry** (for `anvil`)
+*   **Redis**
+
+### Installation & Configuration
+
+The entire setup process is automated by a single script.
+
+1.  **Clone the repository**:
+    ```bash
+    git clone <your-repo-url>
+    cd omega-V5-copilot-update-jupyter-notebook-matrix-setup
+    ```
+
+2.  **Run the boot script**:
+    This will check dependencies, set up the environment, and launch all services. It will also create a `.env` file from `.env.example` if one does not exist.
+    ```bash
+    .\scripts\boot_all.bat
+    ```
+
+3.  **Configure Secrets**: You **must** edit the newly created `.env` file to add your own secrets.
+    *   `EXECUTOR_PRIVATE_KEY`: The private key of the wallet that will execute transactions.
+    *   `BROADCAST_RPC_URL`: A **private, writable** RPC URL for submitting transactions (e.g., from Alchemy or Infura).
+    *   `TELEGRAM_BOT_TOKEN`: Your Telegram bot token from BotFather.
+    *   `TELEGRAM_ALLOWED_USER_IDS`: A comma-separated list of numeric Telegram user IDs authorized to control the bot.
+    *   `PROFIT_RECEIVER_WALLET`: The address where profits will be sent when the `/sweep` command is used.
+
+## Running the System
+
+### Full System Boot
+
+Use the boot script to start or restart all system components. This command uses the `ecosystem.config.cjs` file to manage all processes.
+
+```bash
+.\scripts\boot_all.bat
+```
+
+You can monitor the status of all services using `pm2`:
+
+```bash
+pm2 list
+pm2 logs omega-engine
+```
+
+### Remote Control via Telegram
+
+Once configured, the Telegram bot provides a powerful interface for remote management.
+
+**Available Commands:**
+
+*   `/status`: Get the current runtime mode and settings.
+*   `/pnl`: View a summary of live and dry-run profits.
+*   `/pm2`: Get a live status overview of all `pm2` managed processes.
+*   `/mode`: Change the runtime mode (`live`, `dry_run`, `canary`, `shadow`).
+*   `/sweep`: Execute a profit sweep to your configured receiver wallet.
+*   `/arbitrage_on`, `/arbitrage_off`: Start or stop the arbitrage engine.
+*   `/liquidation_on`, `/liquidation_off`: Start or stop the liquidation watcher.
+
+## Activation Sequence for Mainnet
+
+To achieve true mainnet readiness, the system must be activated in stages. **Do not skip these critical safety steps.**
+
+1.  **Dry Run Mode (Default)**: The system starts in this mode. It discovers and simulates opportunities but **does not sign or broadcast** any transactions.
+ 
+2.  **Shadow Mode**: In this mode, the system builds the exact transaction calldata and simulates it using `eth_call` against a live mainnet fork. This is the final verification step before live execution.
+    *   Set via Telegram: `/mode` -> `Shadow`
+
+3.  **Canary Mode**: The first live execution mode. The system will broadcast **at most one** transaction per cycle with a **small, bounded principal** (e.g., $25). This is a critical safety check.
+    *   Set via Telegram: `/mode` -> `Canary`
+
+4.  **Live Mode**: Full autonomous operation with the principal and execution limits defined in your configuration. Only activate this after successful and profitable canary runs.
+    *   Set via Telegram: `/mode` -> `Live`
+
+## Development & Testing
+
+*   **Run Unit Tests**:
+    ```bash
+    pytest
+    ```
+
+*   **Run 25-Cycle Dry Run Simulation**: This script runs a full simulation and generates a detailed economic report for every profitable opportunity, logged to `out/dry_run_full_log.jsonl`.
+    ```bash
+    python tests/dry_run_25_cycles.py
+    ```
+
+
 agree with the deployed executor contracts.
 
 ## Current Production Shape

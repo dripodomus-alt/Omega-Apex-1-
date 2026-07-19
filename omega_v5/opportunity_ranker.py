@@ -325,7 +325,6 @@ def _score_closed_path(
         gross_rate=gross_rate, # This is now the optimistic rate
         gross_out_usd=gross_out_optimistic_usd,
         flash_source=flash_source,
-        quality={}, # Add default empty dict for quality
         metadata=metadata,
         block_detected=int(disc_block or current_block or 0),
     )
