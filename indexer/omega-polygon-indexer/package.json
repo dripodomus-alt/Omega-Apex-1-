@@ -1,0 +1,15 @@
+{
+  "name": "omega-polygon-indexer",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "producer": "node src/block-producer.js",
+    "transformer": "node src/pool-log-transformer.js"
+  },
+  "dependencies": {
+    "@maticnetwork/chain-indexer-framework": "*",
+    "dotenv": "^16.4.7",
+    "kafkajs": "^2.2.4"
+  }
+}

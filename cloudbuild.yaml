@@ -1,0 +1,55 @@
+substitutions:
+  _DEPLOY_REGION: 'us-east1'
+  _SERVICE_NAME: 'flashloan-execution-monitor'
+  _AR_REPOSITORY: 'cloud-run-source-deploy'
+  _IMAGE_PATH: 'local_omega_v5/flashloan-execution-monitor'
+  _TAG: 'manual'
+  _SERVICE_ACCOUNT: '323456506288-compute@developer.gserviceaccount.com'
+
+options:
+  logging: 'CLOUD_LOGGING_ONLY'
+  substitutionOption: 'ALLOW_LOOSE'
+
+steps:
+  - id: 'Build dashboard/API image from local source'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--pull'
+      - '-t'
+      - 'us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
+      - '.'
+      - '-f'
+      - 'Dockerfile'
+
+  - id: 'Push image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
+
+  - id: 'Deploy dashboard/API to Cloud Run'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME'
+      - '--project=$PROJECT_ID'
+      - '--region=$_DEPLOY_REGION'
+      - '--platform=managed'
+      - '--image=us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
+      - '--port=8080'
+      - '--command='
+      - '--args='
+      - '--max-instances=3'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--timeout=300'
+      - '--service-account=$_SERVICE_ACCOUNT'
+      - '--no-allow-unauthenticated'
+      - '--labels=managed-by=local-cloudbuild,source=local-dir,service-surface=dashboard-api'
+      - '--quiet'
+
+images:
+  - 'us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'

@@ -1,0 +1,34 @@
+name: omega-indexer
+
+services:
+  omega-redpanda:
+    image: redpandadata/redpanda:latest
+    container_name: omega-redpanda
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://127.0.0.1:9092
+    ports:
+      - "9092:9092"
+      - "9644:9644"
+    volumes:
+      - omega_redpanda:/var/lib/redpanda/data
+
+  omega-indexer-mongo:
+    image: mongo:7
+    container_name: omega-indexer-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - omega_indexer_mongo:/data/db
+
+volumes:
+  omega_redpanda:
+  omega_indexer_mongo:

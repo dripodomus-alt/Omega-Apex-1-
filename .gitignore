@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+*.dylib
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets
+.env
+.env.local
+*.key
+*.pem
+
+# Jupyter notebooks (keep .ipynb in repo; ignore checkpoints)
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime/generated state
+cache/
+out/
+
+# Node dependencies
+node_modules/
+indexer/**/node_modules/
+
+# Rust build outputs
+rust_engine/target/
+.ariana/
+.traces/
+.ariana_saved_traces/
+.vault_secret_key

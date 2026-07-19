@@ -1,0 +1,113 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Omega V5 Runtime Control" [level=1] [ref=e4]
+    - generic [ref=e5]: loading
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - heading "Mode" [level=2] [ref=e10]
+      - generic [ref=e11]:
+        - generic [ref=e12]: Runtime
+        - generic [ref=e13]: "-"
+      - generic [ref=e14]:
+        - generic [ref=e15]: Execution armed
+        - generic [ref=e16]: "-"
+      - generic [ref=e17]:
+        - generic [ref=e18]: Executor
+        - generic [ref=e19]: "-"
+      - generic [ref=e20]:
+        - button "Dry Run" [ref=e21] [cursor=pointer]
+        - button "Live Production" [ref=e22] [cursor=pointer]
+    - generic [ref=e23]:
+      - heading "Cycle Settings" [level=2] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]: Execute top
+        - combobox [ref=e27]:
+          - option "5" [selected]
+          - option "10"
+          - option "15"
+      - generic [ref=e28]:
+        - generic [ref=e29]: Canary cap
+        - checkbox [ref=e30]
+      - generic [ref=e31]:
+        - generic [ref=e32]: Print top
+        - spinbutton [ref=e33]
+      - generic [ref=e34]:
+        - generic [ref=e35]: Interval seconds
+        - spinbutton [ref=e36]
+      - button "Apply Settings" [ref=e37] [cursor=pointer]
+    - generic [ref=e38]:
+      - heading "Reset" [level=2] [ref=e39]
+      - generic [ref=e40]:
+        - generic [ref=e41]: Dry-run PnL
+        - button "Reset Dry" [ref=e42] [cursor=pointer]
+      - generic [ref=e43]:
+        - generic [ref=e44]: Live PnL
+        - textbox "RESET_LIVE_PNL" [ref=e45]
+      - button "Explicit Live Reset" [ref=e46] [cursor=pointer]
+    - generic [ref=e47]:
+      - heading "PnL" [level=2] [ref=e48]
+      - table [ref=e49]:
+        - rowgroup [ref=e50]:
+          - row [ref=e51]:
+            - columnheader "Book" [ref=e52]
+            - columnheader "C1 PnL" [ref=e53]
+            - columnheader "C2 PnL" [ref=e54]
+            - columnheader "Combined" [ref=e55]
+            - columnheader "C1 Events" [ref=e56]
+            - columnheader "C2 Events" [ref=e57]
+        - rowgroup
+    - generic [ref=e58]:
+      - heading "Pool Discovery Coverage" [level=2] [ref=e59]
+      - table [ref=e60]:
+        - rowgroup [ref=e61]:
+          - row [ref=e62]:
+            - columnheader "Source" [ref=e63]
+            - columnheader "Rows / Live" [ref=e64]
+            - columnheader "Promoted" [ref=e65]
+            - columnheader "Breakdown" [ref=e66]
+            - columnheader "Status" [ref=e67]
+        - rowgroup
+    - generic [ref=e68]:
+      - heading "Liquidation Tracker" [level=2] [ref=e69]
+      - generic [ref=e70]:
+        - generic [ref=e71]: Block
+        - generic [ref=e72]: "-"
+      - generic [ref=e73]:
+        - generic [ref=e74]: Alerts
+        - generic [ref=e75]: "-"
+      - table [ref=e76]:
+        - rowgroup [ref=e77]:
+          - row [ref=e78]:
+            - columnheader "Risk" [ref=e79]
+            - columnheader "Borrower" [ref=e80]
+            - columnheader "Health" [ref=e81]
+            - columnheader "Debt" [ref=e82]
+            - columnheader "Collateral" [ref=e83]
+            - columnheader "Debt USD" [ref=e84]
+            - columnheader "Collateral USD" [ref=e85]
+        - rowgroup
+    - generic [ref=e86]:
+      - heading "Runtime Status" [level=2] [ref=e87]
+      - generic [ref=e88]: "{}"
+    - generic [ref=e89]:
+      - heading "Production Design Import" [level=2] [ref=e90]
+      - table [ref=e91]:
+        - rowgroup [ref=e92]:
+          - row [ref=e93]:
+            - columnheader "Concept" [ref=e94]
+            - columnheader "Runtime Mapping" [ref=e95]
+            - columnheader "Status" [ref=e96]
+        - rowgroup
+      - generic [ref=e97]: "{}"
+    - generic [ref=e98]:
+      - heading "Execution Traces" [level=2] [ref=e99]
+      - table [ref=e100]:
+        - rowgroup [ref=e101]:
+          - row [ref=e102]:
+            - columnheader "Stage" [ref=e103]
+            - columnheader "Status" [ref=e104]
+            - columnheader "Trace Hash" [ref=e105]
+            - columnheader "C1 Tx" [ref=e106]
+            - columnheader "C2 Tx" [ref=e107]
+            - columnheader "Parent" [ref=e108]
+        - rowgroup

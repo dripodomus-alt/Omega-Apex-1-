@@ -1,0 +1,72 @@
+name: apex-omega
+
+services:
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--bind", "0.0.0.0", "--port", "6379", "--save", "", "--appendonly", "no"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - omega_redis:/data
+
+  omega:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: apex-omega:2.0
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      API_HOST: "0.0.0.0"
+      API_PORT: "8080"
+      PYTHON_BIN: "python3"
+      REDIS_URL: "redis://redis:6379/0"
+      OMEGA_DISABLE_EMBEDDED_REDIS: "true"
+      ANVIL_HOST: "0.0.0.0"
+      PUPPETEER_EXECUTABLE_PATH: "/usr/bin/chromium"
+      OMEGA_RUNTIME_MODE: "${COMPOSE_OMEGA_RUNTIME_MODE:-live}"
+      EXECUTION_MODE: "${COMPOSE_EXECUTION_MODE:-live}"
+      LIVE_TRADING: "${COMPOSE_LIVE_TRADING:-1}"
+      CONFIRM_MAINNET_EXECUTION: "${COMPOSE_CONFIRM_MAINNET_EXECUTION:-I_UNDERSTAND_POLYGON_MAINNET_RISK}"
+      ENABLE_LIQUIDATION_PIPELINE: "true"
+      OMEGA_LIQUIDATION_WATCH_INTERVAL_SECONDS: "300"
+      OMEGA_LIQUIDATION_MAX_PER_CYCLE: "2"
+      API_CORS_ORIGINS: "http://127.0.0.1:8080,http://localhost:8080,https://ai.studio"
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+      - "3000:3000"
+      - "8545:8545"
+    volumes:
+      - omega_out:/opt/apex-omega/out
+      - omega_cache:/opt/apex-omega/cache
+      - omega_logs:/opt/apex-omega/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    profiles: ["mobile-tunnel"]
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TOKEN:-}
+    depends_on:
+      omega:
+        condition: service_healthy
+
+volumes:
+  omega_redis:
+  omega_out:
+  omega_cache:
+  omega_logs:
+
