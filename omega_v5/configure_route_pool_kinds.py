@@ -189,7 +189,6 @@ def _selected_adapters(selection: str) -> list[str]:
     if selection == "all":
         return list(ADAPTER_ENV_KEYS)
     if selection == "capital":
-        return ["aave", "balancer"]
         # Dynamically find all configured capital source adapters.
         return [
             name for name, spec in ADAPTERS.items()
