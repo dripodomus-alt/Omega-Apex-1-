@@ -12,9 +12,11 @@
 
 import asyncio
 import time
+import json
 from decimal import Decimal
 from typing import Dict, List, Any
 
+from . import redis_cache
 from .config import ASSET_MATRIX
 from .amm_adapters import quote_pool
 from .rpc_layer import DEEP_POOL_REGISTRY, load_live_pool_state
@@ -39,7 +41,6 @@ class DynamicAQSMatrixScanner:
     def __init__(self, assets: List[str] = None, macro_interval: float = 15.0):
         self.assets         = assets or ASSET_MATRIX
         self.macro_interval = macro_interval
-        self.memory_cache: Dict[str, Dict[str, Any]] = {}
         self.pools:         Dict[str, Dict[str, Any]] = {}
         self.metrics        = {"ticks_evaluated": 0, "signals_caught": 0}
 
@@ -67,9 +68,11 @@ class DynamicAQSMatrixScanner:
                 if not fresh:
                     continue
                 self.pools[pool_id] = fresh
-                self.memory_cache[pool_id] = {
-                    "type": "LIVE_STATE_REFRESH", "pool": fresh, "timestamp": current_time,
-                }
+                redis_cache.xadd(
+                    "omega:signals:pool_updates",
+                    {"pool_id": pool_id, "pool_state": json.dumps(fresh, default=str)},
+                    maxlen=1000,
+                )
                 await asyncio.sleep(0.05)
             await asyncio.sleep(max(1.0, self.macro_interval / 2))
 
@@ -84,29 +87,53 @@ class DynamicAQSMatrixScanner:
         """
         print(f"🦅 [MACRO-SCANNER] Deep Matrix Black Scan Loop Online. Interval: {self.macro_interval}s.")
         await asyncio.sleep(1.0)
-
+        
+        stream_id = "0"
         while max_ticks == 0 or self.metrics["ticks_evaluated"] < max_ticks:
             start_time = time.time()
             self.metrics["ticks_evaluated"] += 1
             tick_n = self.metrics["ticks_evaluated"]
 
-            print(f"\n⏱️  [BLACK SCAN TICK #{tick_n}] Evaluating Core Trailing Window...")
+            print(f"\n⏱️  [BLACK SCAN TICK #{tick_n}] Waiting for pool state updates...")
 
-            cached_events = list(self.memory_cache.items())
-            if not cached_events:
-                print("  ↳ [INFO] No state entries in this interval cycle.")
+            try:
+                results = redis_cache.xread(
+                    {"omega:signals:pool_updates": stream_id}, count=200, block=int(self.macro_interval * 1000)
+                )
+            except Exception as e:
+                print(f"  ↳ [ERROR] Redis xread failed: {e}")
+                results = None
+
+            if not results:
+                print("  ↳ [INFO] No new state entries in this interval cycle.")
             else:
-                print(f"  ↳ [PROCESSING] {len(cached_events)} cross-protocol pipeline mutations...")
-                for pool_id, update in cached_events:
-                    pool = update["pool"]
-                    age  = start_time - update["timestamp"]
+                stream_name, entries = results[0]
+                print(f"  ↳ [PROCESSING] {len(entries)} pool state updates from {stream_name}...")
+                for entry_id, data in entries:
+                    pool_id = data.get("pool_id")
+                    pool_state_str = data.get("pool_state")
+                    if not pool_id or not pool_state_str:
+                        continue
 
-                    if age <= self.macro_interval:
-                        self._quote_pool(pool_id, pool, age)
-                        self.metrics["signals_caught"] += 1
+                    try:
+                        pool = json.loads(pool_state_str)
+                        # Re-hydrate Decimals from string representation
+                        for key in ["sqrtPriceX96", "liquidity", "fee", "fee_bps", "A", "swap_fee", "decimal_adjustment", "tvl_usd", "total_executable_liquidity_usd"]:
+                            if key in pool and pool[key] is not None:
+                                pool[key] = Decimal(str(pool[key]))
+                        if "reserves" in pool and pool["reserves"]:
+                            pool["reserves"] = [Decimal(str(r)) for r in pool["reserves"]]
+                        if "weights" in pool and pool["weights"]:
+                            pool["weights"] = [Decimal(str(w)) for w in pool["weights"]]
+                    except (json.JSONDecodeError, TypeError) as e:
+                        print(f"    ⚠️  Could not decode pool state for {pool_id}: {e}")
+                        continue
 
-                    if age > self.macro_interval:
-                        self.memory_cache.pop(pool_id, None)
+                    entry_ts_ms = int(entry_id.split('-')[0])
+                    age = start_time - (entry_ts_ms / 1000.0)
+                    self._quote_pool(pool_id, pool, age)
+                    self.metrics["signals_caught"] += 1
+                stream_id = entries[-1][0]
 
             elapsed       = time.time() - start_time
             sleep_duration = max(0.1, self.macro_interval - elapsed)
@@ -138,4 +165,3 @@ class DynamicAQSMatrixScanner:
             await listener_task
         except asyncio.CancelledError:
             pass
-

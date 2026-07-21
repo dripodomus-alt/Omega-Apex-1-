@@ -27,6 +27,7 @@
 import time
 from dataclasses import dataclass, field
 from decimal import Decimal
+from dataclasses import replace
 from enum import Enum, auto
 from typing import Dict, List, Optional
 
@@ -34,7 +35,7 @@ from .math_engine import DeFiEngineMath
 from .flash_loan import evaluate_profitability, FlashSource
 from .oracle_layer import PriceUnavailable, token_price_usd
 from . import rpc_layer
-from .opportunity_ranker import LiveOpportunity, _quote_route_amount
+from .opportunity_ranker import LiveOpportunity
 from .rpc_layer import DEEP_POOL_REGISTRY, load_live_pool_state
 
 BLOCKS_C2_WINDOW = 5    # maximum blocks C2 may act after C1 confirmation
@@ -181,8 +182,6 @@ def _recreate_opportunity(
     principal_usd: Decimal,
 ) -> LiveOpportunity | None:
     """Re-evaluates and creates a new LiveOpportunity from a new market state."""
-    from .opportunity_ranker import replace
-
     try:
         price = token_price_usd(path[0])
     except PriceUnavailable:

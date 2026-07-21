@@ -8,17 +8,17 @@
 # 3. A healthy, live-probed RPC from the transport layer's read lanes
 # ==============================================================================
 
-from __future__ import annotations
-
 import argparse
 import os
 import sys
 from typing import Any
 
-from web3 import Web3
+# Add project root to path to allow direct script execution
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from .config import CHAIN_ID, PRIMARY_READ_RPC_URL
-from .transport_lanes import transport_probe
+from web3 import Web3
+from omega_v5.config import CHAIN_ID
+from omega_v5.transport_lanes import transport_probe
 
 
 def _is_healthy(url: str) -> bool:
@@ -73,7 +73,7 @@ def resolve_fork_upstream(*, validate: bool = False) -> tuple[str | None, str]:
         return healthy_read_rpc, "transport_read_lane"
 
     # 4. Fallback to primary read RPC from config
-    primary_read = os.environ.get("PRIMARY_READ_RPC_URL") or PRIMARY_READ_RPC_URL
+    primary_read = os.environ.get("PRIMARY_READ_RPC_URL")
     if primary_read and (not validate or _is_healthy(primary_read)):
         return primary_read, "PRIMARY_READ_RPC_URL"
 
@@ -83,7 +83,11 @@ def resolve_fork_upstream(*, validate: bool = False) -> tuple[str | None, str]:
 def main() -> int:
     """CLI entry point."""
     parser = argparse.ArgumentParser(description="Resolve and print the best fork RPC URL.")
-    parser.add_argument("--print-url", action="store_true", help="Print only the resolved URL")
+    parser.add_argument(
+        "--print-url",
+        action="store_true",
+        help="Print the resolved URL to stdout.",
+    )
     args = parser.parse_args()
 
     url, reason = resolve_fork_upstream(validate=True)

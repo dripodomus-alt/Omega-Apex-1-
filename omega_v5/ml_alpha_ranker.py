@@ -49,8 +49,8 @@ def _featurize_single(op: LiveOpportunity) -> np.ndarray:
         float(op.profitability.net_profit_usd),
         1 if any(p in {"UniswapV3", "QuickSwapV3", "Algebra"} for p in op.protocol_seq) else 0,
         # NEW dynamic size features for bin prediction
-        float(op.sizing.selected_principal_usd) if op.sizing else 0.0,
-        float(op.sizing.min_pool_tvl_usd) if op.sizing else 0.0,
+        float(op.metadata.get("sizing", {}).get("selected_principal_usd", 0.0)),
+        float(op.metadata.get("sizing", {}).get("min_pool_tvl_usd", 0.0)),
     ])
     return vec.reshape(1, -1)
 
@@ -69,17 +69,30 @@ def predict_surplus_probability(op: LiveOpportunity) -> float:
     return counts.get("1", 0) / 256
 
 def predict_optimal_size_bin(op: LiveOpportunity) -> Decimal:
-    """Predict best size bin with the trained model when available, otherwise deterministic liquidity heuristic."""
-    if not _load_model():
-        # fallback to first configured bin
-        return DYNAMIC_SIZE_OPT_BINS_USD[0] if DYNAMIC_SIZE_OPT_BINS_USD else MIN_FLASH_PRINCIPAL_USD
+    """Predicts the best size bin using a heuristic based on liquidity and profit."""
+    if not DYNAMIC_SIZE_OPT_BINS_USD:
+        return MIN_FLASH_PRINCIPAL_USD
 
-    # Use features to bias toward a bin (simplified)
-    features = _featurize_single(op)[0]
-    # crude: larger liquidity -> larger bin index
-    liquidity = features[2] if len(features) > 2 else 0
-    idx = min(int(liquidity / 50000), len(DYNAMIC_SIZE_OPT_BINS_USD) - 1)
-    return DYNAMIC_SIZE_OPT_BINS_USD[idx]
+    # This heuristic is a step up from a static default, moving towards a real model.
+    # It uses liquidity and theoretical profit to select a more appropriate size bin.
+    liquidity = float(op.metadata.get("sizing", {}).get("min_pool_tvl_usd", 0.0))
+    if liquidity == 0.0:
+        # Fallback if TVL is not available in the preliminary opportunity
+        liquidity = float(op.metadata.get("min_pool_liquidity_usd", 0.0))
+        
+    net_profit = float(op.profitability.net_profit_usd)
+
+    # Bias index by liquidity and profit. These divisors are heuristic.
+    # A larger liquidity or higher theoretical profit suggests a larger optimal size.
+    # This logic is borrowed from a similar heuristic in the VQC ranker module.
+    idx = min(int((liquidity / 80000) + (net_profit / 50)), len(DYNAMIC_SIZE_OPT_BINS_USD) - 1)
+    idx = max(0, idx)
+
+    selected_bin = DYNAMIC_SIZE_OPT_BINS_USD[idx]
+    
+    print(f"   ML Alpha: Size bin heuristic selected bin ${selected_bin:,.0f} (index {idx}) based on liquidity ${liquidity:,.0f} and profit ${net_profit:,.2f}.")
+    
+    return selected_bin
 
 def rerank_with_vqc(opportunities: list[LiveOpportunity]) -> list[LiveOpportunity]:
     """Re-ranks opportunities based on a score of P(executable) * net_profit_usd."""

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from decimal import Decimal
 from typing import Any, Iterable, Optional
 
@@ -47,7 +47,7 @@ from .flash_loan import ( # type: ignore
 from .oracle_layer import PriceUnavailable, token_price_usd
 from .pool_quality import route_quality_metadata, route_quality_passed
 from .ranker import CrossPoolSpread
-from .sizing import RouteSizing, optimal_flash_for_route, apply_injection_to_route_dict
+from .sizing import RouteSizing, optimal_flash_for_route, apply_injection_to_route_dict, estimate_route_tvl_usd
 from .stable_strategies import PeggedStableSpread
 from .route_execution_stager import PreRankedRoute
 from .pricing.net_delta import raw_execution_gate_passes, route_within_lifespan
@@ -253,6 +253,35 @@ def _score_closed_path(
         logger.debug("Path %s failed: invalid base price or principal", path)
         return None
 
+    # --- ML Alpha Injection for Sizing ---
+    try:
+        from .ml_alpha_ranker import predict_optimal_size_bin
+
+        # 1. Get min TVL for the route
+        min_tvl = estimate_route_tvl_usd(pool_seq, pools)
+
+        # 2. Get a preliminary quote and profitability at the initial principal
+        prelim_amount_in = principal_usd / base_price
+        prelim_gross_out_units, _ = _quote_route_amount(path, pool_seq, pools, prelim_amount_in)
+        prelim_gross_out_usd = prelim_gross_out_units * base_price
+        prelim_profitability = evaluate_profitability(
+            prelim_gross_out_usd, principal_usd, len(path) - 1, flash_source, path[0]
+        )
+
+        # 3. Create a preliminary opportunity object to feed to the size predictor
+        prelim_opp = LiveOpportunity(
+            path=path,
+            pool_sequence=pool_seq,
+            protocol_seq=proto_seq,
+            profitability=prelim_profitability,
+            metadata={"sizing": {"min_pool_tvl_usd": str(min_tvl)}},
+        )
+        
+        # 4. Use the ML model to predict a better starting principal
+        principal_usd = predict_optimal_size_bin(prelim_opp)
+    except (ImportError, ModuleNotFoundError):
+        pass  # Fail closed if ML module not present
+
     # 1. Define the gross quote function for the sizer. It must return the slippage-adjusted USD value.
     def quote_function(p_usd: Decimal) -> Decimal:
         amt_in = p_usd / base_price
@@ -296,6 +325,12 @@ def _score_closed_path(
         minimum_profit_usd=min_net_override or live_min_net_profit_usd(),
     )
 
+    # The `economics` object is a `RouteEconomics` instance, but the `LiveOpportunity`
+    # expects a `Profitability` instance. We'll construct a compliant `Profitability`
+    # object using the final computed net profit, while preserving the detailed
+    # flashloan and gas info from the sizer's `base_prof`.
+    final_profitability = replace(base_prof, net_profit_usd=economics.economic_net_profit_usd, passes_gate=economics.passes_gate, expense_breakdown=asdict(economics))
+
     if not economics.passes_gate:
         logger.debug(f"Route failed gate at optimal size: {path}")
         return None
@@ -321,7 +356,7 @@ def _score_closed_path(
         path=path,
         pool_sequence=pool_seq,
         protocol_seq=proto_seq,
-        profitability=economics, # type: ignore
+        profitability=final_profitability,
         gross_rate=gross_rate, # This is now the optimistic rate
         gross_out_usd=gross_out_optimistic_usd,
         flash_source=flash_source,

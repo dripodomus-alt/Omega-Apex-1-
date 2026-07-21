@@ -9,13 +9,15 @@ import argparse
 import json
 import os
 import time
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from eth_account import Account
 
 from . import rpc_layer
-from .aave_liquidations import AaveLiquidationScanner, ApexLiquidationCandidatePacket
+from . import redis_cache
+from .aave_liquidations import ApexLiquidationCandidatePacket, ExitQuote
+from .liquidation_capital import CapitalSourceCheck
 from .config import PRIVATE_KEY
 from .execution import _broadcast_w3, _receipt_dict, execution_armed, execution_guard_status, wallet_address
 from .execution_trace import compute_trace_hash, record_execution_trace
@@ -41,6 +43,55 @@ def _json_safe(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_json_safe(v) for v in value]
     return value
+
+
+def _reconstruct_pools(pools_str: str) -> dict:
+    """Deserializes a JSON string of pools, converting numeric strings to Decimals."""
+    pools = json.loads(pools_str)
+    for pool in pools.values():
+        for key in [
+            "sqrtPriceX96", "liquidity", "fee", "fee_bps", "A", "swap_fee",
+            "decimal_adjustment", "tvl_usd", "total_executable_liquidity_usd"
+        ]:
+            if key in pool and pool[key] is not None:
+                pool[key] = Decimal(str(pool[key]))
+        if "reserves" in pool and pool["reserves"]:
+            pool["reserves"] = [Decimal(str(r)) for r in pool["reserves"]]
+        if "weights" in pool and pool["weights"]:
+            pool["weights"] = [Decimal(str(w)) for w in pool["weights"]]
+    return pools
+
+
+def _reconstruct_packets(packets_str: str) -> list[ApexLiquidationCandidatePacket]:
+    """Deserializes a JSON string of liquidation packets."""
+    packets_data = json.loads(packets_str)
+    packets = []
+    for data in packets_data:
+        try:
+            # Convert numeric strings back to Decimal
+            for key in ["health_factor", "debt_to_cover", "seized_collateral_estimate", "gross_profit_usd", "expected_net_profit_usd"]:
+                if key in data and data[key] is not None:
+                    data[key] = Decimal(str(data[key]))
+
+            # Reconstruct nested objects if they exist
+            if "exit_quote" in data and data["exit_quote"]:
+                eq_data = data["exit_quote"]
+                for key in ["collateral_amount", "debt_out"]:
+                     if key in eq_data and eq_data[key] is not None:
+                        eq_data[key] = Decimal(str(eq_data[key]))
+                data["exit_quote"] = ExitQuote(**eq_data)
+
+            if "capital_sources" in data and data["capital_sources"]:
+                data["capital_sources"] = [CapitalSourceCheck(**cs_data) for cs_data in data["capital_sources"]]
+
+            if "selected_capital_source" in data and data["selected_capital_source"]:
+                data["selected_capital_source"] = CapitalSourceCheck(**data["selected_capital_source"])
+
+            packets.append(ApexLiquidationCandidatePacket(**data))
+        except (TypeError, KeyError, InvalidOperation) as e:
+            print(f"  [CONSUMER] Skipping malformed liquidation packet: {e}")
+            continue
+    return packets
 
 
 def _payload_hash(tx: dict[str, Any]) -> str:
@@ -221,24 +272,6 @@ def _process_packet(packet: ApexLiquidationCandidatePacket, pools: dict[str, dic
     return {"ok": status == "CONFIRMED", "status": status, "opp_id": opp_id, "tx_hash": tx_hash, "payload_hash": payload_hash}
 
 
-def run_cycle(*, max_packets: int, no_submit: bool, rpc_url: str = "") -> dict[str, Any]:
-    if not connect(http_urls=[rpc_url] if rpc_url else None, wss_url="", prefer_wss=False):
-        raise RuntimeError("liquidation watcher RPC connection failed")
-    pools = load_all_live_pools(DEEP_POOL_REGISTRY)
-    packets = AaveLiquidationScanner(pools).scan()
-    promoted = [packet for packet in packets if packet.nextStage == "LIQUIDATION"]
-    results = []
-    for packet in promoted[:max(0, max_packets)]:
-        results.append(_process_packet(packet, pools, no_submit=no_submit))
-    return {
-        "mode": runtime_mode(),
-        "packets": len(packets),
-        "liquidation_ready": len(promoted),
-        "processed": len(results),
-        "results": results,
-    }
-
-
 def main() -> None:
     parser = argparse.ArgumentParser(description="Apex-Omega liquidation watcher")
     parser.add_argument("--once", action="store_true", help="Run one scan/process cycle and exit.")
@@ -253,10 +286,48 @@ def main() -> None:
         f"mode={runtime_mode()} interval={args.interval}s max_packets={args.max_packets} no_submit={args.no_submit}",
         flush=True,
     )
+
+    if not connect(http_urls=[args.rpc_url] if args.rpc_url else None, wss_url="", prefer_wss=False):
+        raise RuntimeError("liquidation watcher RPC connection failed")
+
+    stream_id = "0"
+    cycles_processed = 0
     consecutive_failures = 0
+
+    print("🎧 [LIQUIDATION CONSUMER] Listening for liquidation candidates...")
+
     while True:
         try:
-            result = run_cycle(max_packets=args.max_packets, no_submit=args.no_submit, rpc_url=args.rpc_url)
+            results = redis_cache.xread(
+                {"omega:liquidations:candidates": stream_id},
+                count=1,
+                block=args.interval * 1000
+            )
+            if not results:
+                continue
+
+            cycles_processed += 1
+            print(f"\n--- Processing Liquidation Cycle {cycles_processed} ---")
+
+            stream_name, entries = results[0]
+            entry_id, data = entries[0]
+            stream_id = entry_id
+
+            packets = _reconstruct_packets(data.get("packets", "[]"))
+            pools = _reconstruct_pools(data.get("pools", "{}"))
+
+            print(f"   [CONSUMER] Received {len(packets)} liquidation candidates for processing.")
+
+            processed_results = []
+            for packet in packets[:max(0, args.max_packets)]:
+                processed_results.append(_process_packet(packet, pools, no_submit=args.no_submit))
+
+            result = {
+                "mode": runtime_mode(),
+                "packets_received": len(packets),
+                "processed": len(processed_results),
+                "results": processed_results,
+            }
             consecutive_failures = 0
             print("liquidation_watcher_cycle=" + json.dumps(_json_safe(result), sort_keys=True), flush=True)
         except Exception as exc:
@@ -267,7 +338,6 @@ def main() -> None:
                 print("liquidation_watcher_circuit_breaker=DRY_RUN", flush=True)
         if args.once:
             break
-        time.sleep(max(10, int(args.interval)))
 
 
 if __name__ == "__main__":

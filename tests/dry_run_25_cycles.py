@@ -18,11 +18,22 @@ from pathlib import Path
 
 # Ensure the main project is in the path to import production logic
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from omega_v5.accounting import gas_cost_from_gwei, token_raw_to_units, token_units_to_raw_floor
-from omega_v5.pricing.net_delta import raw_execution_gate_passes
+from omega_v5.execution import build_tx_payload
+from omega_v5.opportunity_ranker import LiveOpportunity
 from omega_v5.flash_loan import ( # type: ignore
-    GAS_PRICE_GWEI, POL_USD_PRICE, live_relay_tip_usd, live_risk_buffer_usd, live_min_net_profit_usd
+    GAS_PRICE_GWEI,
+    FlashSource,
+    live_min_net_profit_usd,
 )
+from omega_v5.ranker import compute_all_pool_rates, detect_cross_pool_two_leg_spreads
+from omega_v5.route_execution_stager import pre_rank_routes
+from omega_v5.opportunity_ranker import (
+    score_cross_pool_spreads,
+    score_opportunities,
+)
+from omega_v5.arbitrage import merge_cycle_sets, ArbitrageGraphEngine
+from unittest.mock import patch
+
 
 LOG_FILE = Path(__file__).resolve().parents[1] / "out" / "dry_run_full_log.jsonl"
 
@@ -40,51 +51,44 @@ def _json_ready(value: Any) -> Any:
 
 # === Canonical Gate (self-contained) ===
 
-def get_route_dna(cycle: int, rank: int, route: Dict[str, Any]) -> dict[str, Any]:
+def get_dna_from_opp(cycle: int, rank: int, opp: LiveOpportunity) -> dict[str, Any]:
+def get_dna_from_opp(cycle: int, rank: int, opp: LiveOpportunity, pools: dict) -> dict[str, Any]:
     """Print full transparent DNA of a route."""
-    # Use the corrected economic calculation
-    from omega_v5.flash_loan import calculate_route_economics
+    # The LiveOpportunity object already contains the full profitability breakdown.
+    # We just need to extract it and build the payload for inspection.
+    profitability = opp.profitability
+    payload = build_tx_payload(opp, nonce=0, base_fee_gwei=GAS_PRICE_GWEI)
+    payload = build_tx_payload(opp, pools, nonce=0, base_fee_gwei=GAS_PRICE_GWEI)
 
-    # Convert raw units to USD for the economics function
-    principal_usd = token_raw_to_units(route['flash_principal_raw'], 18)
-    sell_out_usd = token_raw_to_units(route['sell_amount_out_raw'], 18)
-    flash_fee_usd = token_raw_to_units(route['flash_fee_raw'], 18)
-    gas_cost_usd = token_raw_to_units(route['gas_cost_raw'], 18)
-    relay_tip_usd = token_raw_to_units(route['relay_cost_raw'], 18)
-    risk_buffer_usd = token_raw_to_units(route['risk_buffer_raw'], 18)
-    minimum_profit_usd = token_raw_to_units(route['minimum_profit_raw'], 18)
-
-    economics = calculate_route_economics(
-        flash_principal_usd=principal_usd,
-        gross_sell_out_usd=sell_out_usd,
-        min_tvl_usd=Decimal(str(route.get("min_tvl_usd", "1000000"))),
-        flash_fee_usd=flash_fee_usd,
-        gas_cost_usd=gas_cost_usd,
-        relay_tip_usd=relay_tip_usd,
-        builder_fee_usd=Decimal("0"),
-        risk_buffer_usd=risk_buffer_usd,
-        minimum_profit_usd=minimum_profit_usd,
-    )
+    # The economics object is now part of the LiveOpportunity's profitability
+    # attribute, but it's a different structure. We adapt to the new structure.
+    # The `calculate_route_economics` object was more detailed than the new
+    # `Profitability` object. We'll extract what we can.
+    net_profit = profitability.net_profit_usd
+    min_profit = live_min_net_profit_usd()
 
     return {
         "cycle": cycle,
         "rank": rank,
-        "route_id": route["route_id"],
-        "legs": route["legs"],
-        "spread_type": route["spread_type"],
-        "spread_bps": route["spread_bps"],
-        "flash_principal_usd": economics.flash_principal_usd,
-        "gross_sell_out_usd": sell_out_usd,
-        "gross_surplus_usd": economics.gross_surplus_usd,
-        "flash_fee_usd": economics.flash_fee_usd,
-        "gas_cost_usd": economics.gas_cost_usd,
-        "relay_tip_usd": economics.relay_tip_usd,
-        "risk_buffer_usd": economics.risk_buffer_usd,
-        "impact_penalty_usd": economics.impact_penalty_usd,
-        "minimum_profit_usd": economics.minimum_profit_usd,
-        "economic_net_profit_usd": economics.economic_net_profit_usd,
-        "headroom_usd": economics.headroom_usd,
-        "passes_gate": economics.passes_gate,
+        "route_id": opp.metadata.get("opp_id", "N/A"),
+        "legs": len(opp.path) - 1,
+        "spread_type": opp.metadata.get("strategy", "N/A"),
+        "spread_bps": (opp.gross_rate - 1) * 10000 if opp.gross_rate else 0,
+        "flash_principal_usd": profitability.flashloan.principal_usd,
+        "gross_sell_out_usd": opp.gross_out_usd,
+        "gross_surplus_usd": profitability.raw_delta_usd,
+        "flash_fee_usd": profitability.flash_fee_usd,
+        "gas_cost_usd": profitability.gas_cost_usd,
+        "relay_tip_usd": profitability.relay_tip_usd,
+        "risk_buffer_usd": profitability.risk_buffer_usd,
+        "impact_penalty_usd": opp.metadata.get("sizing", {}).get("impact_penalty_usd", "0"),
+        "minimum_profit_usd": min_profit,
+        "economic_net_profit_usd": net_profit,
+        "headroom_usd": net_profit - min_profit,
+        "passes_gate": profitability.passes_gate,
+        "payload_target": payload.get("to"),
+        "calldata": payload.get("data", "0xERROR"),
+        "calldata_bytes": (len(payload.get("data", "0x")) - 2) // 2,
     }
 
 
@@ -109,107 +113,86 @@ def print_route_dna(cycle: int, rank: int, dna: dict[str, Any]):
     print(f"      {'Passes Economic Gate':<28} | {str(dna['passes_gate']):>24}")
 
 
-# === Route Generator (simulates discovery) ===
-def generate_mock_routes(cycle: int, num_routes: int = 40) -> List[Dict[str, Any]]:
-    routes = []
-    random.seed(42 + cycle)  # Reproducible per cycle
-
-    for i in range(num_routes):
-        legs = random.choice([2, 3])
-        spread_type = "2LEG_HIGH" if legs == 2 else random.choice(["3LEG_TRIANGLE", "3LEG_CROSS"])
-
-        # Base principal in raw units (assume 18 decimals, ~$1000-$50000)
-        principal = random.randint(1_000_000_000_000_000_000, 50_000_000_000_000_000_000)
-
-        # Simulate spread
-        if legs == 2:
-            spread_bps = random.randint(8, 45)   # 2-leg can have higher spreads sometimes
-        else:
-            spread_bps = random.randint(12, 60)  # 3-leg often wider but more costs
-
-        # Rough sell out before costs
-        gross_out = int(principal * (1 + spread_bps / 10000))
-
-        # Costs
-        gas_units = Decimal("350000") if legs == 2 else Decimal("500000")
-        gas_cost_usd = gas_cost_from_gwei(
-            gas_units,
-            GAS_PRICE_GWEI,
-            POL_USD_PRICE,
-            "dry_run_static",
-        ).gas_cost_usd
-
-        # Simulate flash fee from either Balancer (0) or Aave (0.05%)
-        flash_source = random.choice(["balancer", "aave"])
-        flash_fee_bps = Decimal("0") if flash_source == "balancer" else Decimal("5") # 5 bps for Aave
-        flash_fee = int(Decimal(principal) * flash_fee_bps / Decimal("10000"))
-        
-        gas = token_units_to_raw_floor(gas_cost_usd, 18) # Assume base token is 18 dec and price is $1
-        relay = token_units_to_raw_floor(live_relay_tip_usd(), 18) # Assume base token is 18 dec and price is $1
-        risk = token_units_to_raw_floor(live_risk_buffer_usd(), 18) # Assume base token is 18 dec and price is $1
-        min_profit = token_units_to_raw_floor(live_min_net_profit_usd(), 18) # Assume base token is 18 dec and price is $1
-
-        sell_out = gross_out - random.randint(0, int(principal * 0.002))  # small slippage
-
-        route = {
-            "route_id": f"C{cycle:02d}-R{i:03d}",
-            "legs": legs,
-            "spread_type": spread_type,
-            "flash_principal_raw": principal,
-            "sell_amount_out_raw": sell_out,
-            "flash_fee_raw": flash_fee,
-            "gas_cost_raw": gas,
-            "relay_cost_raw": relay,
-            "risk_buffer_raw": risk,
-            "minimum_profit_raw": min_profit,
-            "spread_bps": spread_bps,
-            "cycle": cycle,
-        }
-        routes.append(route)
-
-    return routes
+def _create_mock_pools() -> Dict[str, Any]:
+    """Creates a static set of mock pools with reserves designed to yield opportunities."""
+    return {
+        # 2-leg: USDC -> WETH -> USDC
+        "P_USDC_WETH_A": {
+            "protocol": "UniswapV2", "tokens": ["USDC", "WETH"],
+            "reserves": [Decimal("1000000"), Decimal("300")], # Price WETH = 3333 USDC
+            "fee_bps": 30, "address": "0xMockPool01",
+        },
+        "P_WETH_USDC_B": {
+            "protocol": "UniswapV2", "tokens": ["WETH", "USDC"],
+            "reserves": [Decimal("300"), Decimal("1005000")], # Price WETH = 3350 USDC
+            "fee_bps": 30, "address": "0xMockPool02",
+        },
+        # 3-leg: USDC -> WETH -> WBTC -> USDC
+        "P_USDC_WETH_C": {
+            "protocol": "UniswapV3", "tokens": ["USDC", "WETH"], "fee_bps": 500,
+            "sqrtPriceX96": Decimal("2731314143865541125333533838535"), # WETH price ~3340 USDC
+            "liquidity": Decimal("1e18"), "address": "0xMockPool03",
+        },
+        "P_WETH_WBTC_D": {
+            "protocol": "UniswapV3", "tokens": ["WETH", "WBTC"], "fee_bps": 500,
+            "sqrtPriceX96": Decimal("13151314143865541125333533838535"), # WBTC price ~20 WETH
+            "liquidity": Decimal("1e18"), "address": "0xMockPool04",
+        },
+        "P_WBTC_USDC_E": {
+            "protocol": "UniswapV3", "tokens": ["WBTC", "USDC"], "fee_bps": 500,
+            "sqrtPriceX96": Decimal("8131314143865541125333533838535"), # WBTC price ~67000 USDC
+            "liquidity": Decimal("1e18"), "address": "0xMockPool05",
+        },
+    }
 
 
-# === Ranking (applies gate + sorts by net surplus) ===
-def rank_routes(routes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    from omega_v5.flash_loan import calculate_route_economics
+def _perturb_pools(pools: Dict[str, Any]) -> Dict[str, Any]:
+    """Slightly and randomly adjusts reserves to simulate market changes."""
+    new_pools = json.loads(json.dumps(_json_ready(pools))) # Deep copy
+    for pool in new_pools.values():
+        if "reserves" in pool:
+            for i in range(len(pool["reserves"])):
+                change = 1 + (random.random() - 0.5) * 0.005 # +/- 0.25%
+                pool["reserves"][i] = str(Decimal(pool["reserves"][i]) * Decimal(change))
+        if "sqrtPriceX96" in pool:
+            change = 1 + (random.random() - 0.5) * 0.001 # +/- 0.05%
+            pool["sqrtPriceX96"] = str(Decimal(pool["sqrtPriceX96"]) * Decimal(change))
+    return new_pools
 
-    passed = []
-    for r in routes:
-        economics = calculate_route_economics(
-            flash_principal_usd=token_raw_to_units(r['flash_principal_raw'], 18),
-            gross_sell_out_usd=token_raw_to_units(r['sell_amount_out_raw'], 18),
-            min_tvl_usd=Decimal(str(r.get("min_tvl_usd", "1000000"))),
-            flash_fee_usd=token_raw_to_units(r['flash_fee_raw'], 18),
-            gas_cost_usd=token_raw_to_units(r['gas_cost_raw'], 18),
-            relay_tip_usd=token_raw_to_units(r['relay_cost_raw'], 18),
-            builder_fee_usd=Decimal("0"),
-            risk_buffer_usd=token_raw_to_units(r['risk_buffer_raw'], 18),
-            minimum_profit_usd=token_raw_to_units(r['minimum_profit_raw'], 18),
-        )
-        if economics.passes_gate:
-            passed.append((r, economics))
 
-    # Sort by net surplus descending (ranking logic)
-    passed.sort(key=lambda item: item[1].economic_net_profit_usd, reverse=True)
-    return [item[0] for item in passed]
+def discover_and_score_opportunities(
+    pools: Dict[str, Any], principal_usd: Decimal
+) -> List[LiveOpportunity]:
+    """Uses the real discovery and scoring pipeline on a set of mock pools."""
+    all_rates = compute_all_pool_rates(pools)
+
+    # --- Discovery ---
+    two_leg_spreads = detect_cross_pool_two_leg_spreads(all_rates)
+    engine = ArbitrageGraphEngine(all_rates)
+    cycles = merge_cycle_sets(engine.bellman_ford_all_sources())
+
+    # --- Scoring ---
+    ranked_two_leg = score_cross_pool_spreads(
+        two_leg_spreads, pools, principal_usd, flash_source=FlashSource.BALANCER
+    )
+    ranked_cycles = score_opportunities(
+        cycles, pools, principal_usd=principal_usd, flash_source=FlashSource.BALANCER
+    )
+
+    all_opps = ranked_two_leg + ranked_cycles
+    all_opps.sort(key=lambda o: o.profitability.net_profit_usd, reverse=True)
+    return all_opps
 
 
 # === Staging Simulator (based on payload_stager.py logic) ===
-def simulate_staging(ranked_routes: List[Dict[str, Any]], max_staged: int = 8) -> List[Dict[str, Any]]:
+def simulate_staging(ranked_opps: List[LiveOpportunity], max_staged: int = 8) -> List[LiveOpportunity]:
     """
     Simulates payload_stager behavior.
     - Applies raw gate (already done in ranking)
     - Takes top non-conflicting (we simplify: just take top N)
     - Does NOT explicitly prefer 2-leg or 3-leg
     """
-    staged = []
-    for r in ranked_routes[:max_staged]:
-        r = r.copy()
-        r["staged"] = True
-        r["stage"] = "STAGED"
-        staged.append(r)
-    return staged
+    return ranked_opps[:max_staged]
 
 
 def main():
@@ -222,6 +205,13 @@ def main():
     if LOG_FILE.exists():
         LOG_FILE.unlink()
 
+    # Create a static set of mock pools to discover opportunities from.
+    mock_pools = _create_mock_pools()
+
+    # Mock the oracle to provide prices for our mock tokens
+    def mock_token_price_usd(symbol: str) -> Decimal:
+        return {"USDC": Decimal("1"), "WETH": Decimal("3345"), "WBTC": Decimal("67500")}.get(symbol, Decimal("0"))
+
     total_2leg_staged = 0
     total_3leg_staged = 0
     cycles_with_more_2leg = 0
@@ -232,29 +222,34 @@ def main():
         print(f"CYCLE {cycle:02d}")
         print(f"{'='*70}")
 
-        routes = generate_mock_routes(cycle)
-        ranked = rank_routes(routes)
+        # In each cycle, slightly perturb the pool reserves to simulate market changes
+        perturbed_pools = _perturb_pools(mock_pools)
+
+        with patch("omega_v5.oracle_layer.token_price_usd", mock_token_price_usd):
+            ranked_opps = discover_and_score_opportunities(perturbed_pools, principal_usd=Decimal("10000"))
 
         # Log all profitable routes to the file
         with LOG_FILE.open("a", encoding="utf-8") as f:
-            for idx, route in enumerate(ranked, 1):
-                dna = get_route_dna(cycle, idx, route)
+            for idx, opp in enumerate(ranked_opps, 1):
+                dna = get_dna_from_opp(cycle, idx, opp)
+                dna = get_dna_from_opp(cycle, idx, opp, perturbed_pools)
                 f.write(json.dumps(_json_ready(dna)) + "\n")
 
-        print(f"\nFound {len(ranked)} profitable routes. Logged all to {LOG_FILE}")
+        print(f"\nFound {len(ranked_opps)} profitable routes. Logged all to {LOG_FILE}")
 
-        top10 = ranked[:10]
+        top10 = ranked_opps[:10]
 
         print(f"\nTop 10 routes (after gate filter + ranking by net surplus):")
-        for idx, route in enumerate(top10, 1):
-            dna = get_route_dna(cycle, idx, route)
+        for idx, opp in enumerate(top10, 1):
+            dna = get_dna_from_opp(cycle, idx, opp)
+            dna = get_dna_from_opp(cycle, idx, opp, perturbed_pools)
             print_route_dna(cycle, idx, dna)
 
         # Simulate staging
-        staged = simulate_staging(ranked, max_staged=8)
+        staged = simulate_staging(ranked_opps, max_staged=8)
 
-        two_leg = [r for r in staged if r["legs"] == 2]
-        three_leg = [r for r in staged if r["legs"] == 3]
+        two_leg = [opp for opp in staged if len(opp.path) - 1 == 2]
+        three_leg = [opp for opp in staged if len(opp.path) - 1 > 2]
 
         total_2leg_staged += len(two_leg)
         total_3leg_staged += len(three_leg)

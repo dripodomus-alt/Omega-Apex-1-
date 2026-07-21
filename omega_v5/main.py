@@ -8,12 +8,13 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+from decimal import InvalidOperation
 import os
 import sys
 import time
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 # Windows consoles often default to cp1252; force UTF-8 when possible.
 try:
@@ -23,11 +24,13 @@ except Exception:
     pass
 
 from .arbitrage import ArbitrageGraphEngine
-from .config import ENABLE_LIQUIDATION_PIPELINE
+from .config import ENABLE_LIQUIDATION_PIPELINE, _env
+from .aave_liquidations import AaveLiquidationScanner
 from .rpc_layer import connect, load_all_live_pools, DEEP_POOL_REGISTRY
 from .oracle_layer import refresh_token_prices, TOKEN_USD_PRICE
-from .flash_loan import FlashSource
+from .flash_loan import FlashLoanParams, FlashSource, Profitability
 from .liquidity_registry import build_verified_pool_registry, registry_summary
+from . import redis_cache
 from .opportunity_ranker import (
     LiveOpportunity,
     score_pegged_stable_spreads,
@@ -39,6 +42,7 @@ from .execution_truth import final_truth_rank, route_semantic_signature, truth_s
 from .execution import run_execution_loop, _await_next_block, execution_guard_status, execution_armed
 from .route_execution_stager import PreRankedRoute
 from . import route_execution_stager
+from .ml_alpha_ranker import rerank_with_vqc
 from .ranker import compute_all_pool_rates, detect_cross_pool_two_leg_spreads
 from .stable_strategies import detect_pegged_stable_spreads, spread_key
 from .paths import output_path
@@ -185,11 +189,63 @@ def _route_sig(path: Any, pools: Any) -> tuple[tuple[str, ...], tuple[str, ...]]
 def _json_ready(value: Any) -> Any:
     if isinstance(value, Decimal):
         return str(value)
+    if hasattr(value, "__dict__"):
+        return {k: _json_ready(v) for k, v in value.__dict__.items() if not k.startswith("_")}
     if isinstance(value, dict):
         return {str(k): _json_ready(v) for k, v in value.items()}
     if isinstance(value, (list, tuple, set)):
         return [_json_ready(v) for v in value]
+    if isinstance(value, FlashSource):
+        return value.value
     return value
+
+
+def _reconstruct_pools(pools_str: str) -> dict:
+    """Deserializes a JSON string of pools, converting numeric strings to Decimals."""
+    pools = json.loads(pools_str)
+    for pool in pools.values():
+        for key in [
+            "sqrtPriceX96", "liquidity", "fee", "fee_bps", "A", "swap_fee",
+            "decimal_adjustment", "tvl_usd", "total_executable_liquidity_usd"
+        ]:
+            if key in pool and pool[key] is not None:
+                pool[key] = Decimal(str(pool[key]))
+        if "reserves" in pool and pool["reserves"]:
+            pool["reserves"] = [Decimal(str(r)) for r in pool["reserves"]]
+        if "weights" in pool and pool["weights"]:
+            pool["weights"] = [Decimal(str(w)) for w in pool["weights"]]
+    return pools
+
+
+def _reconstruct_opportunities(opp_data_list: list[dict]) -> list[LiveOpportunity]:
+    """Deserializes a list of opportunity dicts back into LiveOpportunity objects."""
+    opps = []
+    for data in opp_data_list:
+        try:
+            prof_data = data.pop("profitability", {})
+            flash_data = prof_data.pop("flashloan", {})
+
+            flash_params = FlashLoanParams(**{k: Decimal(v) if k != 'asset' and k != 'source' else (FlashSource(v) if k == 'source' else v) for k, v in flash_data.items()})
+
+            # Convert all other profitability fields to Decimal where possible
+            for k, v in prof_data.items():
+                if isinstance(v, str):
+                    try:
+                        prof_data[k] = Decimal(v)
+                    except InvalidOperation:
+                        pass # Keep as string if not a valid decimal
+
+            profitability = Profitability(flashloan=flash_params, **prof_data)
+
+            data["path"] = tuple(data.get("path", []))
+            data["pool_sequence"] = tuple(data.get("pool_sequence", []))
+            data["protocol_seq"] = tuple(data.get("protocol_seq", []))
+            opp = LiveOpportunity(profitability=profitability, **data)
+            opps.append(opp)
+        except (InvalidOperation, TypeError, KeyError) as e:
+            print(f"  [CONSUMER] Skipping malformed opportunity data: {e}")
+            continue
+    return opps
 
 
 def collect_and_score_opportunities(
@@ -424,6 +480,69 @@ def _log_delta_accuracy(
     print(f"   delta_latest={latest_path}")
 
 
+async def run_discovery_producer(
+    principal_usd: Decimal,
+    slippage_bps: Decimal,
+    discovery_interval_seconds: float,
+    stop_event: asyncio.Event,
+):
+    """Continuously discovers and pushes batches of opportunities to a stream."""
+    print("🚀 [DISCOVERY] Opportunity discovery stream online.")
+    while not stop_event.is_set():
+        try:
+            live_pools = load_all_live_pools(DEEP_POOL_REGISTRY)
+            refresh_token_prices(force=True)
+
+            ranked_opps, _, raw_positive_rows = collect_and_score_opportunities(
+                live_pools,
+                principal_usd,
+                slippage_bps=slippage_bps,
+            )
+
+            if ranked_opps:
+                opp_list_json = json.dumps([_json_ready(op) for op in ranked_opps])
+                pools_json = json.dumps(_json_ready(live_pools))
+                raw_pos_json = json.dumps([_json_ready(r) for r in raw_positive_rows])
+
+                redis_cache.xadd(
+                    "omega:opportunities:ranked",
+                    {
+                        "opportunities": opp_list_json,
+                        "pools": pools_json,
+                        "raw_positive_rows": raw_pos_json,
+                        "principal_usd": str(principal_usd),
+                    },
+                    maxlen=10,
+                )
+                print(f"   [DISCOVERY] Pushed {len(ranked_opps)} opportunities to stream.")
+
+            if ENABLE_LIQUIDATION_PIPELINE:
+                try:
+                    liquidation_packets = AaveLiquidationScanner(live_pools).scan()
+                    promoted_packets = [p for p in liquidation_packets if p.nextStage == "LIQUIDATION"]
+                    if promoted_packets:
+                        packets_json = json.dumps([_json_ready(p.as_packet()) for p in promoted_packets])
+                        pools_json = json.dumps(_json_ready(live_pools))
+                        redis_cache.xadd(
+                            "omega:liquidations:candidates",
+                            {
+                                "packets": packets_json,
+                                "pools": pools_json,
+                            },
+                            maxlen=10,
+                        )
+                        print(f"   [DISCOVERY] Pushed {len(promoted_packets)} liquidation candidates to stream.")
+                except Exception as e:
+                    print(f"  [DISCOVERY] Error in liquidation scanning: {e}")
+
+            await asyncio.sleep(discovery_interval_seconds)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            print(f"  [DISCOVERY] Error in discovery loop: {e}")
+            await asyncio.sleep(discovery_interval_seconds)
+
+
 async def run(
     ticks: int = 25,
     principal_usd: Decimal = Decimal("10000"),
@@ -449,50 +568,59 @@ async def run(
     print(f"   run_ticks={ticks} principal_usd={principal_usd} slippage_bps={slippage_bps}")
     print("")
 
-    for i in range(ticks) if ticks > 0 else range(999_999_999):
-        cycle_no = i + 1
-        print(
-            f"STEP 1: RPC Connection & State Load (Cycle {cycle_no}/{ticks or 'inf'})"
-        )
-        if not connect(http_urls=[rpc_url] if rpc_url else None, wss_url=None, prefer_wss=False):
-            raise RuntimeError("RPC connection failed; production runtime refuses offline fallback")
-        _update_discovery_window_offset(i)
-        live_pools = load_all_live_pools(DEEP_POOL_REGISTRY)
-        print(f"LIVE_POOLS ready: {len(live_pools)} pools")
-        refresh_token_prices(force=True)
-        print("")
+    if not connect(http_urls=[rpc_url] if rpc_url else None, wss_url=None, prefer_wss=False):
+        raise RuntimeError("RPC connection failed; production runtime refuses offline fallback")
 
-        print(
-            "   LIVE_FLAGS: LIVE_EXECUTION=%s SHADOW_MODE=%s EXECUTION_DISABLED=%s"
-            % (
-                os.environ.get("LIVE_EXECUTION", "false"),
-                os.environ.get("SHADOW_MODE", "false"),
-                os.environ.get("EXECUTION_DISABLED", "false"),
-            )
-        )
-        print("   execution_armed=%s" % execution_armed())
-        print("   guard_status=%s" % execution_guard_status())
+    stop_event = asyncio.Event()
+    discovery_interval = float(_env("OMEGA_DISCOVERY_INTERVAL_SECONDS", "10.0"))
+    producer_task = asyncio.create_task(
+        run_discovery_producer(principal_usd, slippage_bps, discovery_interval, stop_event)
+    )
 
-        print("STEP 2: Opportunity Discovery & Ranking")
-        ranked_opps, pre_math_lookup, raw_positive_rows = collect_and_score_opportunities(
-            live_pools,
-            principal_usd,
-            slippage_bps=slippage_bps,
-        )
-        print(f"   Discovered {len(ranked_opps)} post-math/slippage opportunities.")
-        print(f"   Raw-positive pre-math deltas logged: {len(raw_positive_rows)}")
+    stream_id = "0"
+    cycles_processed = 0
+
+    print("🎧 [CONSUMER] Opportunity processing loop online. Waiting for opportunities...")
+
+    while (ticks == 0) or (cycles_processed < ticks):
+        try:
+            results = redis_cache.xread({"omega:opportunities:ranked": stream_id}, count=1, block=15000)
+        except Exception as e:
+            print(f"  ↳ [CONSUMER] Redis xread failed: {e}")
+            await asyncio.sleep(5)
+            continue
+
+        if not results:
+            continue
+
+        cycles_processed += 1
+        print(f"\n--- Processing Cycle {cycles_processed}/{ticks or 'inf'} ---")
+
+        stream_name, entries = results[0]
+        entry_id, data = entries[0]
+        stream_id = entry_id
+
+        try:
+            ranked_opps = _reconstruct_opportunities(json.loads(data.get("opportunities", "[]")))
+            live_pools = _reconstruct_pools(data.get("pools", "{}"))
+            raw_positive_rows = json.loads(data.get("raw_positive_rows", "[]"))
+        except Exception as e:
+            print(f"  [CONSUMER] Failed to deserialize opportunity batch: {e}")
+            continue
+
+        print(f"   [CONSUMER] Received {len(ranked_opps)} opportunities for processing.")
         print_live_opportunities(ranked_opps, max_count=print_top_routes)
-        print("")
 
-        print("STEP 3: Executor-Truth Final Ranking")
+        print("\nSTEP 2a: ML Alpha Re-ranking (VQC)")
+        ranked_opps = rerank_with_vqc(ranked_opps)
+        print_live_opportunities(ranked_opps, max_count=5)
+
+        print("\nSTEP 3: Executor-Truth Final Ranking")
         base_fee_gwei, base_fee_source = _base_fee_gwei()
         print(f"   gas_fee_source={base_fee_source} base_fee_gwei={base_fee_gwei}")
         truth_max_candidates = min(max(10, execute_top * 3), max(1, print_top_routes))
         truth_ranked, truth_results = final_truth_rank(
-            ranked_opps,
-            live_pools,
-            base_fee_gwei=base_fee_gwei,
-            max_candidates=truth_max_candidates,
+            ranked_opps, live_pools, base_fee_gwei=base_fee_gwei, max_candidates=truth_max_candidates
         )
         summary = truth_summary(truth_results)
         print(
@@ -506,30 +634,24 @@ async def run(
             print_live_opportunities(truth_ranked, max_count=print_top_routes)
         else:
             print("   No route passed executor exact-call truth at any tested size this cycle.")
-        print("")
 
-        _log_delta_accuracy(
-            cycle=cycle_no,
-            pre_math_lookup=pre_math_lookup,
-            ranked_opps=ranked_opps,
-            truth_ranked=truth_ranked,
-            raw_positive_rows=raw_positive_rows,
-            slippage_bps=slippage_bps,
-            principal_usd=principal_usd,
-        )
-        print("")
+        # Note: _log_delta_accuracy requires pre_math_lookup which is not available in stream.
+        # This logging can be re-implemented if needed by including more data in the stream.
+        print("\n   (Skipping delta accuracy logging in streaming mode)")
 
-        print("STEP 4: Execution Loop")
+        print("\nSTEP 4: Execution Loop")
         await run_execution_loop(
             opportunities=truth_ranked,
             live_pools=live_pools,
             max_per_cycle=execute_top,
             canary_mode=canary_mode,
+            base_fee_gwei=base_fee_gwei,
         )
         print("")
 
-        if ticks > 1 and cycle_no < (ticks if ticks > 0 else cycle_no + 1):
-            await _await_next_block()
+    print("Consumer loop finished. Stopping producer...")
+    stop_event.set()
+    await producer_task
 
     print("")
     print("=" * 90)

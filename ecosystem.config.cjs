@@ -46,20 +46,20 @@ loadLocalEnvIfPresent(path.join(cwd, ".env"));
 const pythonBin = process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3");
 const truthy = (value) => ["1", "true", "yes", "on"].includes(String(value || "").toLowerCase());
 const falsey = (value) => ["0", "false", "no", "off"].includes(String(value || "").toLowerCase());
-const drpcRpc = "https://polygon.drpc.org";
-const drpcWss = "wss://polygon.drpc.org";
-const drpcLbRpc = process.env.DRPC_LB_HTTP_URL || process.env.PRIMARY_READ_RPC_URL || "https://lb.drpc.live/polygon/<YOUR_DRPC_KEY_HERE>";
-const drpcLbWss = process.env.DRPC_LB_WSS_URL || process.env.PRIMARY_WSS_URL || "wss://lb.drpc.live/polygon/<YOUR_DRPC_KEY_HERE>";
+const drpcRpc = process.env.DRPC_POLYGON_RPC_HTTP || "https://polygon.drpc.org";
+const drpcWss = process.env.DRPC_POLYGON_RPC_WSS || "wss://polygon.drpc.org";
+const drpcLbRpc = process.env.DRPC_LB_HTTP_URL || process.env.PRIMARY_READ_RPC_URL || `https://lb.drpc.live/polygon/${process.env.DRPC_API_KEY || "YOUR_DRPC_KEY_HERE"}`;
+const drpcLbWss = process.env.DRPC_LB_WSS_URL || process.env.PRIMARY_WSS_URL || `wss://lb.drpc.live/polygon/${process.env.DRPC_API_KEY || "YOUR_DRPC_KEY_HERE"}`;
 const telemetryRpc = process.env.TELEMETRY_RPC_URL || "https://polygon-bor-rpc.publicnode.com";
 const telemetryWss = process.env.TELEMETRY_WSS_URL || "wss://polygon-bor-rpc.publicnode.com";
 const primaryReadRpc = process.env.PRIMARY_READ_RPC_URL || process.env.POLYGON_RPC_URL || drpcLbRpc;
 const primaryReadWss = process.env.PRIMARY_WSS_URL || process.env.POLYGON_WSS_URL || drpcLbWss;
 const broadcastRpc = process.env.BROADCAST_RPC_URL || "https://polygon-mainnet.infura.io/v3/<YOUR_INFURA_KEY_HERE>";
 const broadcastWss = process.env.BROADCAST_WSS_URL || "wss://polygon-mainnet.infura.io/ws/v3/<YOUR_INFURA_KEY_HERE>";
-const getBlockRpc = process.env.GETBLOCK_POLYGON_RPC_HTTP || "https://shared.us-east-1.getblock.io/<YOUR_GETBLOCK_KEY_HERE>";
-const getBlockWss = process.env.GETBLOCK_POLYGON_RPC_WSS || "wss://shared.us-east-1.getblock.io/<YOUR_GETBLOCK_KEY_HERE>";
-const infuraRpc = process.env.INFURA_HTTP || "https://polygon-mainnet.infura.io/v3/<YOUR_INFURA_KEY_HERE>";
-const infuraWss = process.env.INFURA_WSS || process.env.INFURA_POLYGON_RPC_WS || "wss://polygon-mainnet.infura.io/ws/v3/<YOUR_INFURA_KEY_HERE>";
+const getBlockRpc = process.env.GETBLOCK_POLYGON_RPC_HTTP || `https://go.getblock.io/${process.env.GETBLOCK_API_KEY || "YOUR_GETBLOCK_KEY_HERE"}`;
+const getBlockWss = process.env.GETBLOCK_POLYGON_RPC_WSS || `wss://go.getblock.io/${process.env.GETBLOCK_API_KEY || "YOUR_GETBLOCK_KEY_HERE"}`;
+const infuraRpc = process.env.INFURA_HTTP || `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY || "YOUR_INFURA_KEY_HERE"}`;
+const infuraWss = process.env.INFURA_WSS || process.env.INFURA_POLYGON_RPC_WS || `wss://polygon-mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY || "YOUR_INFURA_KEY_HERE"}`;
 const broadcastFallbackRpcUrls = [
   getBlockRpc,
   infuraRpc,
@@ -624,6 +624,24 @@ module.exports = {
     }
     if (process.env.ARBITRAGE_ENABLED === "false" && app.name === "omega-engine") {
         return false;
+    }
+    if (process.env.OMEGA_ML_ALPHA_ENABLED !== "true" && app.name === "omega-ml-data-collector") {
+      return false;
+    }
+    if (process.env.OMEGA_DISABLE_LIQUIDATION_WATCHER === "true" && app.name === "omega-liquidation-watcher") {
+      return false;
+    }
+    if (process.env.OMEGA_DISABLE_PROTOCOL_UPDATE_WATCHER === "true" && app.name === "omega-protocol-update-watcher") {
+      return false;
+    }
+    if (process.env.OMEGA_DISABLE_BACKGROUND_DISCOVERY === "true" && app.name === "omega-background-discovery") {
+      return false;
+    }
+    if (process.env.OMEGA_DISABLE_ROUTE_EXECUTION_STAGER === "true" && app.name === "omega-route-execution-stager") {
+      return false;
+    }
+    if (process.env.OMEGA_DISABLE_MISSING_METADATA_BACKGROUND === "true" && app.name === "omega-missing-metadata-background") {
+      return false;
     }
     return true;
   })

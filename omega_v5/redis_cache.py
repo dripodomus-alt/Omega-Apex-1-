@@ -139,6 +139,23 @@ def xadd(stream: str, fields: dict[str, Any], maxlen: int = 10000) -> str:
         return ""
 
 
+def xread(streams: dict[str, str], count: int | None = None, block: int | None = None) -> list[tuple[str, list[tuple[str, dict[str, str]]]]] | None:
+    c = client()
+    if c is None:
+        return None
+    try:
+        # redis-py xread returns a list of streams, where each stream is a tuple of (stream_name, list_of_messages)
+        # e.g., [('mystream', [('1625078891832-0', {'field1': 'value1'})])]
+        response = c.xread(streams, count=count, block=block)
+        if not response:
+            return None
+
+        # The redis client with decode_responses=True should handle decoding keys and values.
+        # The result from redis-py is already in the desired format.
+        return response
+    except Exception:
+        return None
+
 def status() -> tuple[bool, str]:
     if not enabled():
         return False, "disabled"

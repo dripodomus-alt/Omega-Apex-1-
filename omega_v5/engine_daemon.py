@@ -18,10 +18,8 @@ import time
 from decimal import Decimal
 
 from .main import run
-from .runtime_control import runtime_settings
-from .execution import run_dry_run_cycles
-from .opportunity_ranker import LiveOpportunity
-from .pnl_tracker import current_snapshot, record_stage_event
+from .runtime_control import runtime_settings, get_runtime_state
+from .pnl_tracker import current_snapshot, record_stage_event, pnl_summary
 
 logger = logging.getLogger("omega.daemon")
 logger.setLevel(logging.INFO)
@@ -45,18 +43,6 @@ async def _run_forever() -> None:
         execute_top = int(settings.get("execute_top", 5))
         print_top = int(settings.get("print_top_routes", 50))
         canary = bool(settings.get("canary_mode", False))
-
-        # Perform dry-run cycles for validation on each tick
-        # In real: opportunities would come from scanner/ranker
-        dummy_opps: list[LiveOpportunity] = []  # populated by upstream in full run
-        if _bool_env("OMEGA_ENABLE_DRYRUN_CYCLES", True):
-            # In a full run, this would use real opportunities from the previous cycle
-            # For the daemon, this serves as a periodic health check of the execution path
-            cycle_summary = run_dry_run_cycles(
-                dummy_opps, num_cycles=min(5, max(1, execute_top))
-            )
-            logger.info(f"Dry run cycles summary: {cycle_summary}")
-            record_stage_event(stage="DAEMON_TICK", status="DRYRUN_COMPLETE", metadata=cycle_summary)
 
         try:
             await run(

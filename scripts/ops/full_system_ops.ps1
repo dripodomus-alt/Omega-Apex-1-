@@ -147,6 +147,7 @@ if (!$SkipSessionProof) {
     python -m omega_v5.session_proof --samples 3 |
         Tee-Object -FilePath (Join-Path $proofDir "session_proof.txt")
     Assert-Ok ($LASTEXITCODE -eq 0) "Session signer proof failed."
+    Assert-File-Freshness "out\session_signer_proof_latest.json" 15
 }
 Assert-File-Freshness "out\session_signer_proof_latest.json" 15
 

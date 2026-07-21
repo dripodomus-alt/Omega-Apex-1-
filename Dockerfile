@@ -80,7 +80,6 @@ ENV PATH="/root/.foundry/bin:${PATH}"
 
 WORKDIR /app
 
-# Copy installed dependencies and built artifacts from the builder stage
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /app .
 

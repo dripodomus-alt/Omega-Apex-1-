@@ -1,25 +1,55 @@
 # Omega V5 - Autonomous DeFi Arbitrage & Liquidation Engine
 
 **Omega V5** is a production-grade, autonomous arbitrage and liquidation engine for the Polygon PoS network. It is designed for high-frequency opportunity discovery, robust economic modeling, and secure, verifiable execution.
-
 This system continuously scans decentralized exchanges (DEXs) for multi-hop arbitrage opportunities and Aave V3 for under-collateralized borrowing positions, executing profitable trades via a secure smart contract.
 
 ---
+
 ## Table of Contents
 
 - [Core Capabilities](#core-capabilities)
-*   **Aave V3 Liquidations**: Monitors the Aave V3 money market for at-risk loans, executing profitable liquidations to earn bonuses.
-*   **Dynamic Sizing Engine**: Automatically determines the optimal flashloan principal for each opportunity to maximize net profit, respecting the TVL constraints of the underlying liquidity pools.
-*   **Verifiable Execution Funnel**: Every opportunity passes through a rigorous, multi-stage validation pipeline (`DISCOVERED` → `QUOTED` → `RANKED` → `IMPACT-ADJUSTED` → `TRUTH-GATED` → `STAGED` → `EXECUTED`), with final gates using `eth_call` simulations for on-chain truth.
-*   **Fail-Closed Security Model**: The system is designed to fail closed. No transaction is signed or broadcast unless all pre-flight checks, economic gates, and on-chain simulations pass.
-*   **Robust Economic Modeling**: Profitability calculations account for all costs, including flashloan fees, gas, slippage, and a TVL-based impact penalty.
-*   **Remote Management**: A secure Telegram bot provides a full control panel for monitoring PnL, changing runtime modes, and toggling strategies.
-*   **Production-Grade Operations**: Managed by `pm2` for resilience, with a comprehensive `ecosystem.config.cjs` file for granular control over all system components.
-4.  **`omega-telegram-bot`**: A Python-based Telegram bot for remote operations.
-5.  **`omega-anvil-fork`**: A local Anvil instance forked from Polygon mainnet, used for high-fidelity transaction simulations.
-6.  **`omega-redis`**: A Redis instance for caching pool data, prices, and intermediate results.
- 
-These services are orchestrated by `pm2`, a production process manager for Node.js applications (which can also manage Python scripts).
+- [System Architecture](#system-architecture)
+- [Performance Metrics](#performance-metrics)
+- [Execution Coverage & Metadata](#execution-coverage--metadata)
+- [Discovery Coverage](#discovery-coverage)
+- [Profitability Expectations](#profitability-expectations)
+- [Getting Started](#getting-started)
+- [Running the System](#running-the-system)
+- [Activation Sequence for Mainnet](#activation-sequence-for-mainnet)
+- [Final Pre-Broadcast Verification](#final-pre-broadcast-verification)
+- [Security Model: The Execution Guard Wall](#security-model-the-execution-guard-wall)
+- [Development & Testing](#development--testing)
+- [Repository Map](#repository-map)
+- [Top-To-Bottom Pipeline Walkthrough](#top-to-bottom-pipeline-walkthrough)
+- [Profitability Model](#profitability-model)
+- [Delta Accuracy & ML Calibration](#delta-accuracy--ml-calibration)
+
+## Core Capabilities
+
+* **Aave V3 Liquidations**: Monitors the Aave V3 money market for at-risk loans, executing profitable liquidations to earn bonuses.
+- **Dynamic Sizing Engine**: Automatically determines the optimal flashloan principal for each opportunity to maximize net profit, respecting the TVL constraints of the underlying liquidity pools.
+- **Verifiable Execution Funnel**: Every opportunity passes through a rigorous, multi-stage validation pipeline (`DISCOVERED` → `QUOTED` → `RANKED` → `IMPACT-ADJUSTED` → `TRUTH-GATED` → `STAGED` → `EXECUTED`), with final gates using `eth_call` simulations for on-chain truth.
+- **Fail-Closed Security Model**: The system is designed to fail closed. No transaction is signed or broadcast unless all pre-flight checks, economic gates, and on-chain simulations pass.
+- **Intelligent Ranking Engine (ML Alpha)**: An optional machine learning model can be enabled to re-rank opportunities based on their predicted probability of success, optimizing the use of the `eth_call` truth-gating budget.
+- **Robust Economic Modeling**: Profitability calculations account for all costs, including flashloan fees, gas, slippage, and a TVL-based impact penalty.
+- **Remote Management**: A secure Telegram bot provides a full control panel for monitoring PnL, changing runtime modes, and toggling strategies.
+- **Production-Grade Operations**: Managed by `pm2` for resilience, with a comprehensive `ecosystem.config.cjs` file for granular control over all system components.
+
+## System Architecture
+
+The system is built on a modern, stream-based architecture that decouples data production from consumption, ensuring high throughput and low latency. It runs as a collection of coordinated services orchestrated by `pm2`.
+
+1.  **`omega-engine` (Producer/Consumer)**: The core application, which acts as both a producer and a consumer.
+    -   **Producer**: It continuously scans for arbitrage and liquidation opportunities, pushing validated candidates into dedicated Redis streams.
+    -   **Consumer**: It listens to the arbitrage opportunity stream, processing candidates through a rigorous pipeline: ML-based re-ranking, on-chain truth-gating, and finally, batch staging for execution.
+
+2.  **`omega-liquidation-watcher` (Consumer)**: A dedicated process that consumes liquidation candidates from its Redis stream. It performs final validation and executes profitable liquidations.
+
+3.  **`omega-redis` (Data Bus)**: Acts as the central data bus for the entire system. It uses Redis Streams to manage queues of pool updates, arbitrage opportunities, and liquidation candidates, enabling a resilient and scalable push-based data flow.
+
+4.  **`omega-api` & `omega-telegram-bot` (Control Plane)**: These services provide a secure control plane for monitoring PnL, changing runtime modes (`dry_run`, `live`, `canary`), and managing the engine remotely.
+
+5.  **`omega-anvil-fork` (Simulation Environment)**: A local Anvil instance forked from Polygon mainnet, used for high-fidelity `eth_call` simulations. This is a critical part of the "execution truth" gate, ensuring that a transaction is valid and profitable before it is ever signed.
 
 ## Performance Metrics
 
@@ -31,16 +61,89 @@ These services are orchestrated by `pm2`, a production process manager for Node.
 | **RPC Usage (Dry Run)** | ~250-500 calls/cycle | Primarily `eth_call` for quoting and `eth_getLogs` for discovery. |
 | **Max Throughput (Staged)** | 8 routes/cycle | The system is configured to stage the top 8 non-conflicting routes per cycle. |
 
-## Profitability Expectations
+## Execution Coverage & Metadata
+
+To be considered "executable," a discovered opportunity must not only be theoretically profitable but also have a verified, secure execution path. The system intentionally separates broad discovery from narrow, fail-closed execution.
+
+### Protocol Execution Status
+
+This table breaks down the execution readiness for each major protocol family on Polygon.
+
+| Protocol | Status | Details |
+| :--- | :--- | :--- |
+| **Uniswap V2 & V3** | ✅ **Fully Executable** | The system has production-ready adapters for `V2_CPMM` and `V3_CLMM` pools. Routes are fully simulated via `eth_call`. |
+| **QuickSwap V2 & V3** | ✅ **Fully Executable** | Includes support for Algebra-based V3 pools. These are treated as first-class citizens in the execution pipeline. |
+| **Balancer V2** | ✅ **Partially Executable** | The system can execute trades through **Weighted Pools** using a dedicated `OmegaBalancerCapitalSourceAdapter`. Other complex pool types (e.g., stable, composable) are discovery-only to ensure safety. |
+| **Curve Finance** | ⚠️ **Discovery Only** | The system is "Curve-aware" and can price trades on some stable pools. However, execution is intentionally disabled pending a full, safety-audited registry importer and adapter to handle Curve's vast and complex ecosystem of metapools and custom routers. |
+
+### Opportunity Metadata Wiring
+
+Every opportunity is enriched with detailed metadata as it moves through the pipeline, aligning with the canonical `unified_invariant_route_schema.md`. This ensures that every decision is based on a complete and verifiable data picture.
+
+Key metadata fields that are "wired" to every ranked opportunity include:
+
+- **Route Identity**: `path`, `pool_sequence`, `protocol_seq`, and a unique `opp_id`.
+- **Economic Model**: A detailed `profitability` object containing the breakdown of `gross_out_usd`, `flashloan` costs, `gas_cost_usd`, `relay_tip_usd`, and the final `net_profit_usd`.
+- **Pricing Steps**: For 2-hop routes, this includes explicit `BUY_LEG1_PRICE` and `SELL_LEG2_PRICE` steps, ensuring the core economic invariant is met.
+- **Sizing & Impact**: The `sizing` model determines the optimal `selected_principal_usd` based on route liquidity, and the system calculates the expected price impact.
+- **Execution Truth**: The final `execution_truth` block contains the results of the `eth_call` simulation, including the `decoded_profit_usd_after_gas` and the specific `rejection_class` if it failed.
+
+This structured metadata ensures that every stage, from ranking to final execution, operates on a foundation of verifiable on-chain and economic truth.
+
+## Discovery Coverage
+
+The engine's effectiveness is a direct function of its ability to see the market. Here is an explicit breakdown of what the system discovers.
+
+### Protocols Scanned
+
+The system is configured to scan for liquidity across the following protocols on Polygon PoS:
+
+- **Uniswap V2 & V3**
+- **QuickSwap V2 & V3 (including Algebra V3 pools)**
+- **Balancer V2**
+- **Curve Finance** (Note: Discovery is currently limited to a base set of pools pending a full, live registry importer to ensure safety).
+
+### Pool Discovery Mechanisms
+
+Omega V5 uses a multi-layered approach to build its view of the market each cycle:
+
+1.  **Static Registry**: A hardcoded list of ~60 high-liquidity, verified pools (`DEEP_POOL_REGISTRY` in `rpc_layer.py`) serves as the foundation.
+2.  **Factory Discovery**: The engine dynamically probes DEX factories (`UniswapV2`, `UniswapV3`, `QuickSwapV3/Algebra`) for new liquidity pools. It prioritizes searching for pairs between well-known tokens (e.g., `WETH`, `USDC`, `WBTC`) and newly discovered tokens from the Polygon Token List.
+3.  **Subgraph Intelligence**: It queries The Graph subgraphs for Uniswap V3 and QuickSwap to identify potentially liquid pools that may not be found through factory probing alone.
+4.  **External Registries**: The system can import pools from a local JSON file (`dynamic_pool_registry`) and the official Curve Finance API, allowing for easy expansion and curation.
+
+### Arbitrage Route Structures
+
+To demonstrate the full extent of the discovery engine, you can run a maximum coverage scan. This script uses unbounded settings to find every possible pool and route.
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\run_max_coverage_discovery.ps1
+```
+
+The results are saved to `out/live_pool_scan_report.json`.
+
+The system searches for the following closed-cycle arbitrage routes, which are executed within a single atomic transaction using a flash loan:
+
+-   **2-Hop Spreads**: `A → B → A`. This involves buying a token on one DEX and selling it on another (e.g., buy WETH with USDC on QuickSwap, sell WETH for USDC on Uniswap). This includes specialized logic for tiny price differences between pegged stablecoins.
+-   **3-Hop Cycles**: Triangular arbitrage, such as `USDC → WETH → WBTC → USDC`.
+-   **4-Hop Cycles**: More complex routes, such as `USDC → WETH → AAVE → WPOL → USDC`.
+
+### The Discovery Funnel
+
+Not every pool found is used. Each cycle, the following funnel is applied:
+
+1.  A broad list of token pairs is generated.
+2.  Pools for these pairs are discovered using the mechanisms above.
+3.  Each discovered pool is audited for on-chain consistency (correct token order, decimals, etc.). V3/CLMM pools undergo a specific `orientation_decimals_audit`.
+4.  Only audited, "rankable" pools are used to generate directional quotes.
+5.  These quotes are fed to the graph engine (`rust_engine`) to find negative cycles, which represent arbitrage opportunities.
 
 The following are **predictions**, not guarantees. They are based on extensive back-testing and simulation under typical market conditions on Polygon. Actual results will vary with market volatility, gas prices, and competition.
-
 **Assumptions**:
-*   Initial capital is not required (system uses flashloans).
-*   The system runs 24/7.
-*   `MIN_NET_PROFIT_USD` is set to `$1.00`.
-*   The arbitrage and liquidation strategies are both active.
-
+- Initial capital is not required (system uses flashloans).
+- The system runs 24/7.
+- `MIN_NET_PROFIT_USD` is set to `$1.00`.
+- The arbitrage and liquidation strategies are both active.
 
 | Milestone | Predicted Time to Achieve | Required Successes (Approx.) | Key Factors |
 | :--- | :--- | :--- | :--- |
@@ -50,44 +153,61 @@ The following are **predictions**, not guarantees. They are based on extensive b
 | **$50,000** | 80-110 Days | 5,000+ trades | Sustained high volatility, multiple successful liquidations. |
 | **$100,000+** | 150+ Days | 10,000+ trades | Optimal gas price management, capturing large liquidation events. |
 
-**Success is defined as a transaction that is included on-chain and results in a positive PnL after all costs.**
-
-
 ## Getting Started
 
 ### Prerequisites
 
-*   **Windows**
-*   **Node.js** (for `pm2`)
-*   **Python 3.10+**
-*   **Rust** (for the `rust_engine` component)
-*   **Foundry** (for `anvil`)
-*   **Redis**
+- **Windows**
+- **Node.js** (for `pm2`)
+- **Python 3.10+**
+- **Rust** (for the `rust_engine` component)
+- **Foundry** (for `anvil`)
+- **Redis**
 
-### Installation & Configuration
+### Installation & Configuration (Windows)
 
 The entire setup process is automated by a single script.
 
-1.  **Clone the repository**:
-    ```bash
+1. **Clone the repository**:
+
+    ```powershell
     git clone <your-repo-url>
     cd omega-V5-copilot-update-jupyter-notebook-matrix-setup
     ```
 
-2.  **Run the boot script**:
+2. **Run the boot script**:
     This will check dependencies, set up the environment, and launch all services. It will also create a `.env` file from `.env.example` if one does not exist.
-    ```bash
+
+    ```powershell
     .\scripts\boot_all.bat
     ```
 
-3.  **Configure Secrets**: You **must** edit the newly created `.env` file to add your own secrets.
-    *   `EXECUTOR_PRIVATE_KEY`: The private key of the wallet that will execute transactions.
-    *   `BROADCAST_RPC_URL`: A **private, writable** RPC URL for submitting transactions (e.g., from Alchemy or Infura).
-    *   `TELEGRAM_BOT_TOKEN`: Your Telegram bot token from BotFather.
-    *   `TELEGRAM_ALLOWED_USER_IDS`: A comma-separated list of numeric Telegram user IDs authorized to control the bot.
-    *   `PROFIT_RECEIVER_WALLET`: The address where profits will be sent when the `/sweep` command is used.
+3. **Configure Secrets**: You **must** edit the newly created `.env` file to add your own secrets.
+    - `EXECUTOR_PRIVATE_KEY`: The private key of the wallet that will execute transactions.
+    - `BROADCAST_RPC_URL`: A **private, writable** RPC URL for submitting transactions (e.g., from Alchemy or Infura).
+    - `TELEGRAM_BOT_TOKEN`: Your Telegram bot token from BotFather.
+    - `TELEGRAM_ALLOWED_USER_IDS`: A comma-separated list of numeric Telegram user IDs authorized to control the bot.
+    - `PROFIT_RECEIVER_WALLET`: The address where profits will be sent when the `/sweep` command is used.
 
 ## Running the System
+
+### Recursive ML Orchestrator (Advanced)
+
+For a fully autonomous, self-improving system, you can use the master recursive orchestrator. This script runs the main pipeline, collects performance data, and periodically retrains the ML model, creating a powerful feedback loop.
+
+**How it works:**
+1.  **RUN**: Executes the main arbitrage pipeline for a set number of cycles.
+2.  **COLLECT**: Gathers performance data from the execution traces.
+3.  **TRAIN**: Retrains the ML Alpha model on the newly collected data.
+4.  **DEPLOY**: The next pipeline run uses the improved model.
+5.  **REPEAT**.
+
+To start the orchestrator:
+
+```powershell
+# Example: Run 5 loops, with 10 pipeline ticks per loop
+python -m omega_v5.recursive_ml_orchestrator --loops 5 --ticks 10
+```
 
 ### Full System Boot
 
@@ -110,41 +230,93 @@ Once configured, the Telegram bot provides a powerful interface for remote manag
 
 **Available Commands:**
 
-*   `/status`: Get the current runtime mode and settings.
-*   `/pnl`: View a summary of live and dry-run profits.
-*   `/pm2`: Get a live status overview of all `pm2` managed processes.
-*   `/mode`: Change the runtime mode (`live`, `dry_run`, `canary`, `shadow`).
-*   `/sweep`: Execute a profit sweep to your configured receiver wallet.
-*   `/arbitrage_on`, `/arbitrage_off`: Start or stop the arbitrage engine.
-*   `/liquidation_on`, `/liquidation_off`: Start or stop the liquidation watcher.
+- `/status`: Get the current runtime mode and settings.
+- `/pnl`: View a summary of live and dry-run profits.
+- `/pm2`: Get a live status overview of all `pm2` managed processes.
+- `/mode`: Change the runtime mode (`live`, `dry_run`, `canary`, `shadow`).
+- `/sweep`: Execute a profit sweep to your configured receiver wallet.
+- `/arbitrage_on`, `/arbitrage_off`: Start or stop the arbitrage engine.
+- `/liquidation_on`, `/liquidation_off`: Start or stop the liquidation watcher.
 
 ## Activation Sequence for Mainnet
 
 To achieve true mainnet readiness, the system must be activated in stages. **Do not skip these critical safety steps.**
 
-1.  **Dry Run Mode (Default)**: The system starts in this mode. It discovers and simulates opportunities but **does not sign or broadcast** any transactions.
- 
-2.  **Shadow Mode**: In this mode, the system builds the exact transaction calldata and simulates it using `eth_call` against a live mainnet fork. This is the final verification step before live execution.
-    *   Set via Telegram: `/mode` -> `Shadow`
+### 1. Dry Run Mode (Default)
+The system starts in this mode. It discovers and simulates opportunities but **does not sign or broadcast** any transactions. It is used to verify that the discovery and ranking pipelines are healthy.
 
-3.  **Canary Mode**: The first live execution mode. The system will broadcast **at most one** transaction per cycle with a **small, bounded principal** (e.g., $25). This is a critical safety check.
-    *   Set via Telegram: `/mode` -> `Canary`
+### 2. Shadow Mode
+In this mode, the system builds the exact transaction calldata and simulates it using `eth_call` against a live mainnet fork. This is the final verification step before live execution and proves that the generated payloads are valid.
+- **Set via API/UI:** `/api/runtime/mode` -> `shadow`
 
-4.  **Live Mode**: Full autonomous operation with the principal and execution limits defined in your configuration. Only activate this after successful and profitable canary runs.
-    *   Set via Telegram: `/mode` -> `Live`
+### 3. Canary Mode
+The first live execution mode. The system will broadcast **at most one** transaction per cycle with a **small, bounded principal**. This is a critical safety check to validate the entire execution path with minimal risk.
+- **Set via API/UI:** `/api/runtime/mode` -> `canary`
+
+### 4. Live Mode
+Full autonomous operation with the principal and execution limits defined in your configuration. Only activate this after successful and profitable canary runs.
+- **Set via API/UI:** `/api/runtime/mode` -> `live`
+
+---
+
+## Final Pre-Broadcast Verification
+
+Before activating `canary` or `live` mode, you must run the `mainnet_finalizer` proof. This script aggregates all system proofs and provides a definitive verdict.
+
+```powershell
+# From your local machine or inside the VM
+python -m omega_v5.mainnet_finalizer --probe
+```
+
+Review the output artifact at `out/mainnet_finalizer_latest.json`.
+
+| Verdict | Meaning | Action |
+| :--- | :--- | :--- |
+| **`SHADOW_READY`** | The system is configured correctly for simulation, but a live-executable opportunity has **not** been found. | Continue running in `dry_run` or `shadow` mode. **Do not proceed to live.** |
+| **`CANARY_READY`** | All systems are go. A profitable, `eth_call`-verified opportunity has been found and a valid payload was constructed. | **Safe to activate `canary` mode.** |
+| **`BLOCKED`** | A critical misconfiguration or failure was detected (e.g., RPC failure, invalid private key). | Review the `failures` and `detail` sections of the report. **Do not proceed.** |
+
+**You must see a `CANARY_READY` verdict before any live activation.**
+
+---
+
+## Security Model: The Execution Guard Wall
+
+The system is built on a "fail-closed" principle. The following guards form a wall that a transaction payload must pass before it can be signed and broadcast. If any check fails, execution is blocked.
+
+- **No `eth_call` Pass, No Broadcast**: The transaction must succeed in a final `eth_call` simulation against the live chain state.
+- **No Verified Adapter, No Payload**: The selected flash loan source (e.g., Balancer) must have a deployed and verified adapter contract configured in the executor.
+- **No Route Kind Coverage, No Route**: Every pool in the route must belong to a supported protocol family (e.g., `V3_CLMM`) for which a swap implementation exists.
+- **No Executor Bytecode, No Execution**: The target executor contract address must have valid bytecode on-chain.
+- **No Valid Private Key, No Signing**: The `EXECUTOR_PRIVATE_KEY` must be valid and correspond to the `EXECUTOR_WALLET`.
+- **No Writable Lane, No Broadcast**: A healthy, explicitly configured `BROADCAST_RPC_URL` must be available. Read-only RPCs are never used for submission.
+- **No Fork/`eth_call` Agreement, No Broadcast**: If fork simulation is enabled, its result must match the `eth_call` simulation.
+- **WaaS/Session Signer Isolation**: Delegated signing paths (like Web3-as-a-Service) are kept outside the primary arbitrage hot path for maximum security.
+
+These rules are enforced programmatically by `omega_v5/execution_truth.py` and `omega_v5/mainnet_finalizer.py`.
+
+---
 
 ## Development & Testing
 
-*   **Run Unit Tests**:
+- **Run Unit Tests**:
+
     ```bash
     pytest
     ```
 
-*   **Run 25-Cycle Dry Run Simulation**: This script runs a full simulation and generates a detailed economic report for every profitable opportunity, logged to `out/dry_run_full_log.jsonl`.
+- **Run 25-Cycle Dry Run Simulation**: This script runs a full simulation and generates a detailed economic report for every profitable opportunity, logged to `out/dry_run_full_log.jsonl`.
+
     ```bash
     python tests/dry_run_25_cycles.py
     ```
 
+- **Run Payload Structure Proof**: This script generates a proof artifact demonstrating the correct calldata structure for C1, C2, and Liquidation transactions. It is the definitive reference for the on-chain executor's expected input.
+
+    ```bash
+    python -m omega_v5.payload_structure_proof
+    ```
+    The output is saved to `out/payload_structure_proof_latest.json`.
 
 agree with the deployed executor contracts.
 
@@ -361,47 +533,83 @@ forced to one route.
 
 ## Profitability Model
 
-Omega ranks broad candidate routes, but only route truth can make a payload
-eligible.
+The base APEX arbitrage route is:
 
-The hard arbitrage rule is:
+**FLASHLOAN → BUY TOKEN → SELL TOKEN → REPAY FLASHLOAN → PROFIT**
+
+This is a complete atomic two-leg execution cycle.
+
+C1 continuously searches for these executable buy/sell cycles across all supported venues.
+
+C2 only reacts after a confirmed C1 and may NO_OP, MIRROR, or REVERSE using fresh post-C1 market state.
+
+### Correct Official Model
 
 ```text
-net_profit = gross_out - principal - flash_fee - gas - relay_tip - risk_buffer
-net_profit > 0
-buy_leg1_price < sell_leg2_price
+FLASHLOAN_ASSET = A
+TARGET_TOKEN = B
+
+1. Borrow A
+2. Buy B using A
+3. Sell B back into A
+4. Repay A + flash fee
+5. Keep surplus A
 ```
 
-Everything else is dynamic:
+### Execution Route
 
-- Venue.
-- Protocol.
-- Pool invariant.
-- Route length.
-- Flash principal size.
-- Gas estimate.
-- Capital source.
+```text
+FLASHLOAN A
+    ↓
+LEG1 BUY
+A → B
+    ↓
+VERIFY BUY FILL
+    ↓
+LEG2 SELL
+B → A
+    ↓
+VERIFY SELL FILL
+    ↓
+REPAY FLASHLOAN A
+    ↓
+VERIFY PROFIT A
+```
 
-Route families:
+### Required Equation
 
-- 2-hop: `FLASH asset -> mid asset -> asset SETTLE`
-- 3-hop triangle: `FLASH asset -> token B -> token C -> asset SETTLE`
-- 4-leg cycle: `FLASH asset -> B -> C -> D -> asset SETTLE`
-- Stable/pegged swaps: same-peg specialization with the same exact-call gates.
-- Liquidation: independent payload envelope, not called "Liquidation C1".
+```text
+BUY_LEG1_PRICE = LEG1_AMOUNT_IN_A / LEG1_AMOUNT_OUT_B
 
-Mandatory schema fields:
+SELL_LEG2_PRICE = LEG2_AMOUNT_OUT_A / LEG2_AMOUNT_IN_B
+```
 
-- `BUY_LEG1_PRICE`
-- `SELL_LEG2_PRICE`
-- `buy_leg1_price_step`
-- `sell_leg2_price_step`
-- route path
-- pool sequence
-- protocol sequence
-- flash source
-- flash principal
-- fee/gas/risk metadata
+Mandatory invariant:
+
+```text
+BUY_LEG1_PRICE < SELL_LEG2_PRICE
+```
+
+### Final Profit Calculation
+
+```text
+NET_PROFIT_A =
+    LEG2_AMOUNT_OUT_A
+    - FLASHLOAN_AMOUNT_A
+    - FLASH_FEE_A
+    - GAS_COST_A
+    - PRIORITY_FEE_A
+    - RELAY_OR_BRIBE_A
+    - SLIPPAGE_BUFFER_A
+    - STATE_DRIFT_BUFFER_A
+    - FAILURE_RISK_BUFFER_A
+```
+
+Execute only if:
+
+```text
+NET_PROFIT_A >= MIN_REQUIRED_PROFIT_A
+```
 
 Dynamic flash sizing:
 
@@ -435,18 +643,6 @@ settlement accounting are recorded in the profitability and payload metadata.
 
 ## Intelligence Model
 
-Omega uses multiple intelligence layers, each with different authority.
-
-Execution truth:
-
-- Direct Polygon RPC reads.
-- On-chain pool state.
-- CLMM quoter/sizing pass.
-- Exact `eth_call`.
-- Anvil/Foundry fork simulation.
-- Verified executor and adapter bytecode.
-- Receipt/event trace reconstruction.
-
 Discovery and enrichment:
 
 - Polygon token list.
@@ -469,17 +665,6 @@ themselves. Every route promoted from indexed data must still pass execution
 truth gates.
 
 ## Security Model
-
-Fail-closed rules:
-
-- No exact-call pass means no broadcast.
-- No verified adapter means no payload execution.
-- No route-pool-kind coverage means no live route.
-- No executor bytecode means no execution.
-- No valid private key means no live execution.
-- No writable broadcast lane means no live execution.
-- No fork/exact-call agreement means no live execution.
-- WaaS/session signer paths stay outside the arbitrage hot path.
 
 Smart Sessions are configured only as an optional delegated UX proof lane:
 
@@ -793,31 +978,21 @@ python -m omega_v5.pipeline_validation --benchmark-full
 
 ## Current Proof Expectations
 
-## Latest Local Verification Snapshot
+## Example Verification Snapshot
 
-Snapshot taken from local artifacts on 2026-07-18. Treat this as a point-in-time
+The following is an example of the output from the various proof and validation scripts. Treat this as a point-in-time
 operator note; rerun the commands above for current market state.
 
-Verified route proof matrix:
+### Route Proof Matrix
 
 ```text
 profile=balanced_coverage
 artifact=out/route_proof_matrix_latest.json
 chain_id=137
-block=90,474,508
+block=...
 mode=read_only_no_sign_no_broadcast
 selected_pools=40
-live_pools_loaded=40
-rankable_pools=40
-pool_load_failures=0
-v2_canonical_audits=14/14 passed
-v3_algebra_orientation_audits=26/26 passed
-directional_quote_edges=80
-rate_pairs=36
-closed_token_paths_considered=120
-exact_route_probes_attempted=100
-exact_route_proofs_passed=62
-exact_route_proofs_failed=38
+...
 net_positive_exact_probes=0
 staged_for_executor_truth=0
 ```
@@ -994,6 +1169,7 @@ guarded public-broadcast fallback when all live guards and exact-call gates pass
 ## License
 
 MIT
+
 ## Final Runtime Conclusion
 
 The current runtime is production-structured but remains fail-closed for live
@@ -1014,6 +1190,19 @@ POST /api/pipeline/validate?no_eth_call=false
 
 The frontend may toggle `dry_run` and `live`, but it never signs or broadcasts.
 Live submission still requires:
+
+## Intelligent Ranking Engine (ML Alpha)
+
+The system includes a fail-closed "intelligent math skill" in the form of an optional ML Alpha pipeline. When enabled, this component re-ranks the list of theoretically profitable opportunities before they are sent to the expensive `eth_call` truth gate.
+
+**How it's wired into the pipeline:**
+
+1.  **Initial Scoring**: The engine discovers all routes and scores them based on deterministic profitability math.
+2.  **ML Re-ranking**: If `OMEGA_ML_ALPHA_ENABLED=true`, the `rerank_by_ml_alpha` function is called. It uses a trained model to predict the *realized surplus* of each opportunity.
+3.  **Prioritization**: The opportunities are then sorted by this new ML-driven score.
+4.  **Truth Gate**: The re-ranked list is passed to the `final_truth_rank` function, which uses its `eth_call` budget on the candidates the model believes are most likely to succeed.
+
+This process optimizes the use of RPC resources and increases the probability of finding an executable trade in any given cycle. For more details on the specific models and activation, see the ML Alpha Roadmap.
 
 ```text
 runtime_mode=live

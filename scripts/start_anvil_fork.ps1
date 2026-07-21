@@ -7,6 +7,14 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+
+$pythonExecutable = "python"
+$venvPython = Join-Path $repoRoot ".venv\Scripts\python.exe"
+if (Test-Path $venvPython) {
+    $pythonExecutable = $venvPython
+    Write-Host "[i] Using Python from virtual environment: $pythonExecutable"
+}
 
 function Test-AnvilAlive {
     param([string]$Url, [int]$ExpectedChainId)
@@ -27,7 +35,7 @@ if (Test-AnvilAlive -Url $localUrl -ExpectedChainId $ChainId) {
     }
 }
 
-$forkOutput = python -m omega_v5.fork_rpc --print-url 2>$null
+$forkOutput = & $pythonExecutable -m omega_v5.fork_rpc --print-url 2>$null
 $forkUrl = $forkOutput | Where-Object { $_ -match "^https?://" } | Select-Object -First 1
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($forkUrl)) {
     throw "Could not resolve a Polygon fork RPC URL."

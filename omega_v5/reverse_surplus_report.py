@@ -386,8 +386,29 @@ def _diagnostic_two_leg_candidates(
                 invariant=str(sell.get("invariant", "")),
             ),
         ]
+        metadata = {
+            "opp_id": f"DIAG-{len(rows) + 1:04d}",
+            "strategy": "DIAGNOSTIC_TWO_LEG",
+            "schema_version": "omega_v5.diagnostic_opportunity.v1",
+            "pricing_step_schema": "mandatory",
+            "price_rule": "diagnostic quote-aligned two-leg round trip",
+            "hop_count": 2,
+            "pricing_steps": [step.__dict__ for step in pricing_steps],
+            "liquidity_keys": [str(buy["liquidity_key"]), str(sell["liquidity_key"])],
+            "pool_addresses": [str(pools[pool_sequence[0]].get("address", "")), str(pools[pool_sequence[1]].get("address", ""))],
+            "sizing": {
+                "requested_principal_usd": str(sizing.requested_principal_usd),
+                "selected_principal_usd": str(sizing.selected_principal_usd),
+                "min_pool_tvl_usd": str(sizing.min_pool_tvl_usd),
+                "route_cap_usd": str(sizing.route_cap_usd),
+                "minimum_principal_usd": str(sizing.minimum_principal_usd),
+                "max_route_tvl_fraction": str(sizing.max_route_fraction),
+                "sizing_method": sizing.method,
+                "sizing_reason": sizing.reason,
+                "flash_size_ladder_usd": [str(step) for step in sizing.ladder_steps_usd],
+            },
+        }
         op = LiveOpportunity(
-            opp_id=f"DIAG-{len(rows) + 1:04d}",
             path=[token_a, token_b, token_a],
             pool_sequence=pool_sequence,
             protocol_seq=[str(buy["protocol"]), str(sell["protocol"])],
@@ -396,27 +417,7 @@ def _diagnostic_two_leg_candidates(
             profitability=profitability,
             block_detected=rpc_layer.BLOCK,
             flash_source=FlashSource.BALANCER,
-            pricing_steps=pricing_steps,
-            metadata={
-                "schema_version": "omega_v5.diagnostic_opportunity.v1",
-                "pricing_step_schema": "mandatory",
-                "price_rule": "diagnostic quote-aligned two-leg round trip",
-                "hop_count": 2,
-                "sizing": {
-                    "requested_principal_usd": str(sizing.requested_principal_usd),
-                    "selected_principal_usd": str(sizing.selected_principal_usd),
-                    "min_pool_tvl_usd": str(sizing.min_pool_tvl_usd),
-                    "route_cap_usd": str(sizing.route_cap_usd),
-                    "minimum_principal_usd": str(sizing.minimum_principal_usd),
-                    "max_route_tvl_fraction": str(sizing.max_route_fraction),
-                    "sizing_method": sizing.method,
-                    "sizing_reason": sizing.reason,
-                    "flash_size_ladder_usd": [str(step) for step in sizing.ladder_steps_usd],
-                },
-            },
-            strategy="DIAGNOSTIC_TWO_LEG",
-            liquidity_keys=[str(buy["liquidity_key"]), str(sell["liquidity_key"])],
-            pool_addresses=[str(pools[pool_sequence[0]].get("address", "")), str(pools[pool_sequence[1]].get("address", ""))],
+            metadata=metadata,
         )
         displayed_surplus = _route_surplus(pools, op)
         if displayed_surplus is not None:
