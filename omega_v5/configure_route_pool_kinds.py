@@ -27,6 +27,7 @@ from .config import (
 )
 from .execution import wallet_address
 from .rpc_layer import DEEP_POOL_REGISTRY
+from .deploy_adapters import ADAPTERS
 from .adapter_registry import resolve_capital_source_adapter
 from .transport_lanes import (
     LANE_LIVE_BROADCAST_PRIMARY,
@@ -189,6 +190,11 @@ def _selected_adapters(selection: str) -> list[str]:
         return list(ADAPTER_ENV_KEYS)
     if selection == "capital":
         return ["aave", "balancer"]
+        # Dynamically find all configured capital source adapters.
+        return [
+            name for name, spec in ADAPTERS.items()
+            if spec.get("kind") == "capital_source" and name in ADAPTER_ENV_KEYS
+        ]
     return [selection]
 
 
