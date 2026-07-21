@@ -173,18 +173,24 @@ def _constructor_args(
 
 
 def _selected_adapters(selection: str) -> list[str]:
+    # The 'curve' adapter is a prototype and should not be included in 'all' or 'capital' groups.
+    # It must be deployed explicitly via '--adapter curve'.
+    PROTOTYPE_ADAPTERS = {"curve"}
+
     def is_selectable(name: str) -> bool:
         return name != "balancer-v3" or (_env("BALANCER_V3_ENABLED_POLYGON", "false").lower() in {"1", "true", "yes", "on"} and bool(_env("BALANCER_V3_VAULT")))
 
     if selection == "all":
-        return [name for name in ADAPTERS.keys() if is_selectable(name)]
+        return [name for name in ADAPTERS.keys() if is_selectable(name) and name not in PROTOTYPE_ADAPTERS]
     if selection == "capital":
         return [
             name for name, spec in ADAPTERS.items()
-            if spec["kind"] == "capital_source" and is_selectable(name)
+            if spec["kind"] == "capital_source" and is_selectable(name) and name not in PROTOTYPE_ADAPTERS
         ]
     if selection == "liquidation":
         return [name for name, spec in ADAPTERS.items() if spec["kind"] == "liquidation"]
+
+    # Allow explicit selection of any adapter, including prototypes.
     return [selection]
 
 
