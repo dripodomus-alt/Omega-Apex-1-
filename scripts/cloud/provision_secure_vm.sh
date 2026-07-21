@@ -10,6 +10,12 @@ set -euo pipefail
 # --- 1. CONFIGURATION & STATE INITIALIZATION ---
 echo "====== [1/6] RESOLVING GCP ENVIRONMENT ======"
 # Your GitHub username and repository name
+VM_NAME="omega-executor-vm-1"
+VM_ZONE="us-east1-b"
+VM_MACHINE_TYPE="e2-standard-2"
+VM_IMAGE_FAMILY="debian-12"
+VM_IMAGE_PROJECT="debian-cloud"
+
 REPO_OWNER="your-username"
 REPO_NAME="omega-V5-copilot-update-jupyter-notebook-matrix-setup"
 
@@ -90,15 +96,13 @@ echo "----------------------------------------------------"
 
 # --- 5. COMPUTE INSTANCE EMISSION ---
 echo "====== [5/6] PROVISIONING COMPUTE ENGINE VM ======"
-VM_NAME="omega-executor-vm-1"
-VM_ZONE="us-east1-b"
 if ! gcloud compute instances describe "${VM_NAME}" --project="${PROJECT_ID}" --zone="${VM_ZONE}" &>/dev/null; then
     gcloud compute instances create "${VM_NAME}" \
       --project="${PROJECT_ID}" \
       --zone="${VM_ZONE}" \
-      --machine-type=e2-standard-2 \
-      --image-family=debian-12 \
-      --image-project=debian-cloud \
+      --machine-type="${VM_MACHINE_TYPE}" \
+      --image-family="${VM_IMAGE_FAMILY}" \
+      --image-project="${VM_IMAGE_PROJECT}" \
       --service-account="${SA_EMAIL}" \
       --scopes=https://www.googleapis.com/auth/cloud-platform \
       --metadata=enable-oslogin=TRUE \

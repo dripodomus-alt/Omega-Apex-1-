@@ -39,7 +39,8 @@ ENV PATH="/root/.foundry/bin:${PATH}"
 # Install Node.js (LTS) and pnpm
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
-    npm install -g pnpm
+    npm install -g pnpm && \
+    npm install -g pm2
 
 # Set up the application directory
 WORKDIR /app
@@ -83,4 +84,7 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY --from=builder /app .
 
-CMD ["bash"]
+# The ecosystem.config.cjs file defines all the services to be run by pm2.
+# pm2-runtime is the correct command for running pm2 in a container,
+# as it handles signals properly for graceful shutdown.
+CMD ["pm2-runtime", "start", "ecosystem.config.cjs"]

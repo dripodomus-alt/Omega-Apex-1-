@@ -50,6 +50,7 @@ ADAPTER_ENV_KEYS = {
     "aave": "AAVE_V3_CAPITAL_ADAPTER",
     "balancer": "BALANCER_VAULT_CAPITAL_ADAPTER",
     "liquidation": "AAVE_V3_LIQUIDATION_ADAPTER",
+    "curve": "CURVE_CAPITAL_ADAPTER",
 }
 
 ABI_ROUTE_POOL_KIND = [
@@ -490,5 +491,3 @@ def configure(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(configure())
-
-

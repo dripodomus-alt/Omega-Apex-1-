@@ -82,6 +82,13 @@ ADAPTERS = {
         "source_id": None,
         "kind": "liquidation",
     },
+    "curve": {
+        "contract": "OmegaCurveCapitalSourceAdapter",
+        "artifact": output_path("OmegaCurveCapitalSourceAdapter.sol", "OmegaCurveCapitalSourceAdapter.json"),
+        "env": "CURVE_CAPITAL_ADAPTER",
+        "source_id": 4,  # Corresponds to the RoutePoolKind enum for CURVE_STABLE
+        "kind": "capital_source",
+    },
 }
 
 
@@ -149,6 +156,12 @@ def _constructor_args(
                 balancer_v3_vault_override or _env("BALANCER_V3_VAULT"),
                 "BALANCER_V3_VAULT",
             ),
+        ]
+    if name == "curve":
+        # A Curve adapter's constructor would likely just need the executor,
+        # as Curve pools are discovered and interacted with dynamically.
+        return [
+            executor,
         ]
     if name in {"aave", "aave-liquidation"}:
         return [
@@ -366,6 +379,3 @@ def deploy(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(deploy())
-
-
-
