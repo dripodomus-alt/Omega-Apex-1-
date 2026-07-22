@@ -45,6 +45,16 @@ from .opportunity_ranker import (
     score_opportunities,
     score_pegged_stable_spreads,
 )
+from .payload_envelope import (
+    UNIFIED_ROUTE_SCHEMA_VERSION,
+    UnifiedRouteEnvelope,
+    add_payload_to_unified_envelope,
+    add_staging_to_unified_envelope,
+    build_unified_route_envelope,
+    unified_envelope_from_live_opportunity,
+    unified_envelope_from_pre_ranked,
+)
 from .ranker import compute_all_pool_rates, detect_cross_pool_two_leg_spreads
+from .route_execution_stager import build_route_identity, freeze_staged_opportunity_id
 from .rpc_layer import DEEP_POOL_REGISTRY
 from .stable_strategies import detect_pegged_stable_spreads

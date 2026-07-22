@@ -1,0 +1,9 @@
+{
+  "name": "omega-v5-runtime-boundary",
+  "private": true,
+  "scripts": {
+    "build": "npm --prefix vendor/web3-rpc-provider run build",
+    "lint": "npm --prefix vendor/web3-rpc-provider exec tsc -- --noEmit -p vendor/web3-rpc-provider/tsconfig.json",
+    "test": "npm --prefix vendor/web3-rpc-provider test -- --runInBand"
+  }
+}

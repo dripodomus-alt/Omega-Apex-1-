@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import os
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from decimal import Decimal
 from enum import Enum
 from decimal import InvalidOperation
@@ -357,7 +357,13 @@ def compute_flash_params(
     """Returns flash loan cost structure for a given principal and source."""
     from . import rpc_layer
     block = as_of_block or getattr(rpc_layer, "BLOCK", 0)
-    fee_bps, fee_source, fee_block, fee_verified = _read_live_flash_fee_bps(source, block)
+    try:
+        fee_bps, fee_source, fee_block, fee_verified = _read_live_flash_fee_bps(source, block)
+    except TypeError as exc:
+        try:
+            fee_bps, fee_source, fee_block, fee_verified = _read_live_flash_fee_bps(source)
+        except TypeError:
+            raise exc
     fee_usd = principal_usd * fee_bps / Decimal("10000")
     return FlashLoanParams(
         source=source,
@@ -576,8 +582,11 @@ def evaluate_profitability(
         min_net_profit_usd=min_net,
         as_of_block=block,
     )
-    breakdown.gas_source = f"{gas_price_source}|{pol_price_source}"
-    breakdown.fee_source = flash.fee_source
+    breakdown = replace(
+        breakdown,
+        gas_source=f"{gas_price_source}|{pol_price_source}",
+        fee_source=flash.fee_source,
+    )
     net = breakdown.net_after_expenses_usd
     profit_to_gas = net / gas_usd if gas_usd > 0 else Decimal("0")
     passes = (net >= min_net) and (profit_to_gas >= min_p2g)

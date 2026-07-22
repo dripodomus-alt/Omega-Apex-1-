@@ -36,8 +36,14 @@ def mock_dependencies(monkeypatch):
         "evaluate_profitability",
         lambda *args, **kwargs: SimpleNamespace(
             passes_gate=True,
-            flashloan=SimpleNamespace(principal_usd=Decimal("10000")),
+            flashloan=SimpleNamespace(
+                principal_usd=Decimal("10000"),
+                fee_usd=Decimal("0"),
+            ),
             net_profit_usd=Decimal("5"),
+            gas_cost_usd=Decimal("0"),
+            relay_tip_usd=Decimal("0"),
+            risk_buffer_usd=Decimal("0"),
         ),
     )
 
@@ -53,7 +59,10 @@ def default_kwargs():
         "path": ("USDC", "WETH", "USDC"),
         "pool_seq": ("P1", "P2"),
         "proto_seq": ("UniswapV3", "UniswapV2"),
-        "pools": {},
+        "pools": {
+            "P1": {"total_executable_liquidity_usd": Decimal("1000000")},
+            "P2": {"total_executable_liquidity_usd": Decimal("1000000")},
+        },
         "principal_usd": Decimal("10000"),
         "slippage_bps": Decimal("10"),
         "flash_source": FlashSource.BALANCER,

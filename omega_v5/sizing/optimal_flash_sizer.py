@@ -48,6 +48,15 @@ from ..flash_loan import (
 QuoteFn = Callable[[Decimal], Decimal]
 
 
+def _token_price_usd(symbol: str) -> Decimal:
+    import sys
+
+    pkg = sys.modules.get("omega_v5.sizing")
+    fn = getattr(pkg, "token_price_usd", None) if pkg is not None else None
+    if fn is None:
+        from ..oracle_layer import token_price_usd as fn
+    return Decimal(str(fn(symbol)))
+
 @dataclass(frozen=True)
 class RouteTvlSnapshot:
     """Per-route liquidity view used for flash caps."""
@@ -123,13 +132,25 @@ class OptimalFlashSize:
 
 
 def estimate_pool_tvl_usd(pool: dict) -> Decimal:
-    """Delegate to liquidity_registry canonical TVL order."""
+    """Delegate to canonical TVL, then fall back to reserve x calibrated price."""
     from ..liquidity_registry import _local_tvl_usd
 
     try:
-        return Decimal(str(_local_tvl_usd(pool)))
+        tvl = Decimal(str(_local_tvl_usd(pool)))
+        if tvl > 0:
+            return tvl
     except Exception:
-        return Decimal("0")
+        pass
+
+    tokens = list(pool.get("tokens") or [])
+    reserves = list(pool.get("reserves") or [])
+    total = Decimal("0")
+    for token, reserve in zip(tokens, reserves):
+        try:
+            total += Decimal(str(reserve)) * _token_price_usd(str(token))
+        except Exception:
+            continue
+    return total
 
 
 def snapshot_route_tvl(
@@ -325,7 +346,7 @@ def find_peak_delta_injection(
     """
     samples: list[SizeSample] = []
     best_x = Decimal("0")
-    best_pi = Decimal("-10") ** 12
+    best_pi = -(Decimal("10") ** 12)
     best_i = -1
     prev_net: Decimal | None = None
     decline_streak = 0

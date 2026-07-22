@@ -46,6 +46,11 @@ def token_raw_to_units(raw: int | Decimal, decimals: int) -> Decimal:
     return decimal_value(raw) / (Decimal(10) ** int(decimals))
 
 
+def to_raw_units(symbol: str, amount_decimal: Decimal) -> int:
+    from .units import to_raw_units as _to_raw_units
+
+    return _to_raw_units(symbol, amount_decimal)
+
 def usd_to_token_raw_floor(usd_amount: Decimal, price_usd: Decimal, decimals: int) -> int:
     price = decimal_value(price_usd)
     usd_amount_dec = decimal_value(usd_amount)

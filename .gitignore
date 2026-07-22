@@ -50,6 +50,7 @@ node_modules/
 indexer/**/node_modules/
 
 # Rust build outputs
+target/
 rust_engine/target/
 .ariana/
 .traces/

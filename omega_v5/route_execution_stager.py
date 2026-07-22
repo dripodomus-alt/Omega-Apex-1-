@@ -18,10 +18,19 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any, Iterable
 
+from eth_abi import encode
+from web3 import Web3
+
 from . import rpc_layer
+from .config import CHAIN_ID
 from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, MIN_NET_PROFIT_USD, evaluate_profitability
 from .oracle_layer import token_price_usd
+from .payload_envelope import (
+    UNIFIED_ROUTE_SCHEMA_VERSION,
+    add_staging_to_unified_envelope,
+    unified_envelope_from_pre_ranked,
+)
 from .paths import output_path
 from .sizing import optimize_route_principal
 from .pricing.net_delta import route_within_lifespan
@@ -130,6 +139,23 @@ class PreRankedRoute:
     approximate_raw_delta_bps: Decimal
     edge_entries: tuple[dict[str, Any], ...]
     discovery_block: int = 0
+    discovery_block_hash: str = ""
+
+    @property
+    def identity(self) -> dict[str, Any]:
+        return build_route_identity(self)
+
+    @property
+    def route_pair_id(self) -> str:
+        return self.identity["route_pair_id"]
+
+    @property
+    def quote_snapshot_id(self) -> str:
+        return self.identity["quote_snapshot_id"]
+
+    @property
+    def opp_id(self) -> str:
+        return freeze_staged_opportunity_id(self)
 
 
 def _json_ready(value: Any) -> Any:
@@ -140,6 +166,207 @@ def _json_ready(value: Any) -> Any:
     if isinstance(value, (list, tuple, set)):
         return [_json_ready(item) for item in value]
     return value
+
+
+def _keccak_text(value: Any) -> bytes:
+    return Web3.keccak(text=str(value or ""))
+
+
+def _bytes32(value: Any) -> bytes:
+    if isinstance(value, bytes):
+        raw = value
+        if len(raw) == 32:
+            return raw
+        return Web3.keccak(raw)
+    text = str(value or "")
+    if text.startswith("0x") and len(text) == 66:
+        try:
+            return bytes.fromhex(text[2:])
+        except ValueError:
+            pass
+    return _keccak_text(text.lower())
+
+
+def _hex32(value: bytes) -> str:
+    return "0x" + value.hex()
+
+
+def _uint(value: Any, default: int = 0) -> int:
+    try:
+        parsed = int(str(value or default), 0)
+    except Exception:
+        parsed = default
+    return max(0, parsed)
+
+
+def _raw_units_for_identity(symbol: str, amount_units: Decimal) -> tuple[int, str]:
+    if amount_units <= 0:
+        return 0, "missing_positive_base_amount"
+    decimals = getattr(rpc_layer, "TOKEN_DECIMALS", {}).get(symbol)
+    if decimals is None:
+        return 0, "missing_registry_decimals"
+    raw = int((amount_units * (Decimal(10) ** int(decimals))).to_integral_value(rounding="ROUND_FLOOR"))
+    if raw <= 0:
+        return 0, "raw_units_floor_to_zero"
+    return raw, "resolved_from_selected_principal_price_and_registry_decimals"
+
+
+def _fee_tier_from_entry(entry: dict[str, Any]) -> int:
+    for key in ("fee_tier", "fee_bps", "fee", "swap_fee"):
+        if key not in entry:
+            continue
+        raw = entry.get(key)
+        try:
+            dec = Decimal(str(raw))
+        except Exception:
+            continue
+        if dec <= 1:
+            return int(dec * Decimal("1000000"))
+        return int(dec)
+    return 0
+
+
+def _destination_identity(entry: dict[str, Any], fallback_pool_id: Any = "") -> dict[str, Any]:
+    protocol_family = str(entry.get("protocol") or entry.get("invariant") or "unknown")
+    factory_or_vault = str(
+        entry.get("factory")
+        or entry.get("factory_address")
+        or entry.get("vault")
+        or entry.get("registry")
+        or ""
+    )
+    pool_id = str(
+        entry.get("pool_id")
+        or entry.get("pool_address_or_id")
+        or entry.get("pool_address")
+        or entry.get("address")
+        or entry.get("liquidity_key")
+        or fallback_pool_id
+        or ""
+    )
+    fee_tier = _fee_tier_from_entry(entry)
+    digest = Web3.keccak(encode(
+        ["uint256", "bytes32", "bytes32", "bytes32", "uint256"],
+        [CHAIN_ID, _bytes32(protocol_family), _bytes32(factory_or_vault), _bytes32(pool_id), fee_tier],
+    ))
+    return {
+        "destination_id": _hex32(digest),
+        "chain_id": CHAIN_ID,
+        "protocol_family": protocol_family,
+        "factory_or_vault": factory_or_vault,
+        "pool_id": pool_id,
+        "fee_tier": fee_tier,
+    }
+
+
+def _offline_block_hash(block_number: int) -> str:
+    return _hex32(Web3.keccak(encode(
+        ["bytes32", "uint256", "uint256"],
+        [_bytes32(UNIFIED_ROUTE_SCHEMA_VERSION), CHAIN_ID, int(block_number or 0)],
+    )))
+
+
+def _route_block_hash(route: PreRankedRoute) -> tuple[str, str]:
+    explicit = str(getattr(route, "discovery_block_hash", "") or "")
+    if explicit:
+        return explicit, "route.discovery_block_hash"
+    block_number = int(getattr(route, "discovery_block", 0) or 0)
+    w3 = getattr(rpc_layer, "w3", None)
+    if w3 is not None and block_number > 0:
+        try:
+            block = w3.eth.get_block(block_number)
+            block_hash = block.get("hash") if isinstance(block, dict) else getattr(block, "hash", "")
+            if isinstance(block_hash, bytes):
+                return _hex32(block_hash), "rpc_block_hash"
+            if block_hash:
+                return str(block_hash), "rpc_block_hash"
+        except Exception:
+            pass
+    return _offline_block_hash(block_number), "offline_synthetic_block_hash"
+
+
+def build_route_identity(
+    route: PreRankedRoute,
+    *,
+    initial_amount_raw: int = 0,
+    initial_amount_raw_source: str = "",
+) -> dict[str, Any]:
+    if len(route.path) < 3:
+        raise ValueError("route identity requires settlement -> base -> settlement path")
+    if len(route.pool_sequence) < 2:
+        raise ValueError("route identity requires at least two ordered leg destinations")
+    if len(route.edge_entries) >= 2:
+        leg1_entry = route.edge_entries[0]
+        leg2_entry = route.edge_entries[1]
+    else:
+        leg1_entry = {"pool_id": route.pool_sequence[0], "protocol": route.protocol_seq[0] if route.protocol_seq else ""}
+        leg2_entry = {"pool_id": route.pool_sequence[1], "protocol": route.protocol_seq[1] if len(route.protocol_seq) > 1 else ""}
+    leg1 = _destination_identity(leg1_entry, route.pool_sequence[0])
+    leg2 = _destination_identity(leg2_entry, route.pool_sequence[1])
+    if leg1["destination_id"] == leg2["destination_id"]:
+        raise ValueError("route identity rejects same destination round trip")
+    settlement_asset = str(route.path[0])
+    base_asset = str(route.path[1])
+    block_hash, block_hash_source = _route_block_hash(route)
+    route_pair_digest = Web3.keccak(encode(
+        ["bytes32", "uint256", "bytes32", "bytes32", "bytes32", "bytes32", "bytes32"],
+        [
+            _bytes32(f"{UNIFIED_ROUTE_SCHEMA_VERSION}:route_pair.v1"),
+            CHAIN_ID,
+            _bytes32(block_hash),
+            _bytes32(settlement_asset),
+            _bytes32(base_asset),
+            _bytes32(leg1["destination_id"]),
+            _bytes32(leg2["destination_id"]),
+        ],
+    ))
+    quote_snapshot_digest = Web3.keccak(encode(
+        ["bytes32", "bytes32", "uint256"],
+        [_bytes32(f"{UNIFIED_ROUTE_SCHEMA_VERSION}:quote_snapshot.v1"), route_pair_digest, _uint(initial_amount_raw)],
+    ))
+    return {
+        "schema_version": f"{UNIFIED_ROUTE_SCHEMA_VERSION}.identity.v1",
+        "hash_encoding": "keccak256(abi.encode(...))",
+        "chain_id": CHAIN_ID,
+        "block_hash": block_hash,
+        "block_hash_source": block_hash_source,
+        "settlement_asset": settlement_asset,
+        "base_asset": base_asset,
+        "initial_amount_raw": str(_uint(initial_amount_raw)),
+        "initial_amount_raw_status": "resolved" if _uint(initial_amount_raw) > 0 else "unresolved_at_current_stager_boundary",
+        "initial_amount_raw_source": (
+            initial_amount_raw_source
+            or ("provided_raw_uint256" if _uint(initial_amount_raw) > 0 else "missing_raw_uint256")
+        ),
+        "leg1_destination": leg1,
+        "leg2_destination": leg2,
+        "route_pair_id": _hex32(route_pair_digest),
+        "quote_snapshot_id": _hex32(quote_snapshot_digest),
+        "simulation_id": "",
+        "execution_attempt_id": "",
+        "transaction_hash": "",
+        "invariants": {
+            "leg1_asset_in_equals_settlement_asset": str(leg1_entry.get("token_in") or settlement_asset) == settlement_asset,
+            "leg1_asset_out_equals_base_asset": str(leg1_entry.get("token_out") or base_asset) == base_asset,
+            "leg2_asset_in_equals_base_asset": str(leg2_entry.get("token_in") or base_asset) == base_asset,
+            "leg2_asset_out_equals_settlement_asset": str(leg2_entry.get("token_out") or settlement_asset) == settlement_asset,
+            "leg1_destination_differs_from_leg2_destination": leg1["destination_id"] != leg2["destination_id"],
+        },
+    }
+
+
+def freeze_staged_opportunity_id(
+    route: PreRankedRoute,
+    *,
+    initial_amount_raw: int = 0,
+    initial_amount_raw_source: str = "",
+) -> str:
+    identity = build_route_identity(
+        route,
+        initial_amount_raw=initial_amount_raw,
+        initial_amount_raw_source=initial_amount_raw_source,
+    )
+    return f"OPP-{identity['quote_snapshot_id'][2:18]}"
 
 
 def _int_env(key: str, default: int) -> int:
@@ -375,6 +602,53 @@ def stage_pre_ranked_route(
     hop_fees_total = Decimal("0")
     base_amount_in = Decimal("0")
 
+    def _attach_unified_schema(row: dict[str, Any]) -> dict[str, Any]:
+        staged_row = dict(row)
+        staged_row.setdefault("path", route.path)
+        staged_row.setdefault("pool_sequence", route.pool_sequence)
+        staged_row.setdefault("protocol_seq", route.protocol_seq)
+        derived_raw, derived_raw_source = _raw_units_for_identity(base_token, base_amount_in)
+        initial_amount_raw = _uint(
+            staged_row.get("initial_amount_raw")
+            or staged_row.get("amount_in_raw")
+            or staged_row.get("principal_raw")
+            or derived_raw
+        )
+        initial_amount_raw_source = str(
+            staged_row.get("initial_amount_raw_source")
+            or (derived_raw_source if initial_amount_raw == derived_raw else "provided_raw_uint256")
+        )
+        staged_row.setdefault("initial_amount_raw", str(initial_amount_raw) if initial_amount_raw else "")
+        staged_row.setdefault("initial_amount_raw_source", initial_amount_raw_source)
+        identity = build_route_identity(
+            route,
+            initial_amount_raw=initial_amount_raw,
+            initial_amount_raw_source=initial_amount_raw_source,
+        )
+        opp_id = f"OPP-{identity['quote_snapshot_id'][2:18]}"
+        staged_row.setdefault("identity", identity)
+        staged_row.setdefault("route_pair_id", identity["route_pair_id"])
+        staged_row.setdefault("quote_snapshot_id", identity["quote_snapshot_id"])
+        staged_row.setdefault("simulation_id", "")
+        staged_row.setdefault("execution_attempt_id", "")
+        staged_row.setdefault("transaction_hash", "")
+        staged_row.setdefault("opp_id", opp_id)
+        staged_row.setdefault("opportunity_id", opp_id)
+        staged_row.setdefault("opportunity_id_frozen", True)
+        staged_row.setdefault("discovery_block", route.discovery_block)
+        staged_row.setdefault("current_block", current_block)
+        staged_row.setdefault("principal_usd", str(principal_usd))
+        staged_row.setdefault("flash_source", flash_source.value)
+        try:
+            envelope = add_staging_to_unified_envelope(
+                unified_envelope_from_pre_ranked(route),
+                staged_row,
+            )
+            staged_row["unified_route_envelope"] = envelope.as_dict()
+        except Exception as exc:
+            staged_row["unified_route_envelope_error"] = f"{type(exc).__name__}: {exc}"
+        return staged_row
+
     if not route_within_lifespan(route.discovery_block, current_block, N_PLUS_4_LIFESPAN):
         record_lifespan_event(
             event_type="EXPIRED",
@@ -389,12 +663,12 @@ def stage_pre_ranked_route(
             route=list(route.path),
             block=current_block,
         )
-        return {
+        return _attach_unified_schema({
             "status": "rejected",
             "stage": "lifespan_expired",
             "reason": "n+4 block lifespan exceeded",
             "hop_fees_usd": str(hop_fees_total),
-        }
+        })
 
     sizing = optimize_route_principal(principal_usd, route.pool_sequence, pools)
     if sizing.selected_principal_usd <= 0:
@@ -404,12 +678,12 @@ def stage_pre_ranked_route(
             route=list(route.path),
             block=current_block,
         )
-        return {
+        return _attach_unified_schema({
             "status": "rejected",
             "stage": "sizing_failed",
             "reason": "selected_principal_usd <= 0",
             "hop_fees_usd": str(hop_fees_total),
-        }
+        })
 
     try:
         px = Decimal(str(token_price_usd(base_token)))
@@ -441,13 +715,13 @@ def stage_pre_ranked_route(
             route=list(route.path),
             block=current_block,
         )
-        return {
+        return _attach_unified_schema({
             "status": "rejected",
             "stage": "exact_quote_exception",
             "reason": type(exc).__name__,
             "detail": str(exc),
             "hop_fees_usd": str(hop_fees_total),
-        }
+        })
 
     clmm_proven = bool(
         getattr(quote, "clmm_proven", getattr(quote, "clmm_unquoted", 0) == 0)
@@ -459,12 +733,12 @@ def stage_pre_ranked_route(
             route=list(route.path),
             block=current_block,
         )
-        return {
+        return _attach_unified_schema({
             "status": "rejected",
             "stage": "clmm_quote_unproven",
             "reason": str(getattr(quote, "hop_proofs", [])),
             "hop_fees_usd": str(hop_fees_total),
-        }
+        })
 
     amount_out = _decimal(getattr(quote, "amount_out", 0))
     try:
@@ -513,10 +787,11 @@ def stage_pre_ranked_route(
             status="OK",
         )
 
-    return {
+    return _attach_unified_schema({
         "path": route.path,
         "pool_sequence": route.pool_sequence,
         "protocol_seq": route.protocol_seq,
+        "opportunity_id_frozen": True,
         "principal_usd": str(sizing.selected_principal_usd),
         "approximate_gross_rate": str(route.approximate_gross_rate),
         "approximate_raw_delta_usd": str(route.approximate_raw_delta_usd),
@@ -551,7 +826,7 @@ def stage_pre_ranked_route(
             "gas_accounting": prof.gas_accounting,
             "gas_payer": prof.gas_payer,
         },
-    }
+    })
 
 
 def build_stage_report(routes: list[PreRankedRoute], stats: dict) -> dict:

@@ -24,6 +24,7 @@ from ..config import (
     MIN_FLASH_PRINCIPAL_USD,
 )
 from ..flash_loan import FlashSource, evaluate_profitability
+from ..oracle_layer import token_price_usd
 
 from .dynamic_optimizer import (
     DynamicSizeResult,
@@ -92,11 +93,12 @@ def optimize_route_principal(
                     "reason": opt.reason,
                     "version": "2.0",
                 },
-                method=f"optimize_route_principal:{opt.method}",
+                method=("proof_only_below_min_flash_principal" if opt.proof_only_below_minimum else f"optimize_route_principal:{opt.method}"),
                 metadata={
                     "flash_principal_raw": int(opt.injection_raw_hint or 0),
                     "live_principal_eligible": opt.live_principal_eligible,
                     "proof_only_below_minimum": opt.proof_only_below_minimum,
+                    "minimum_principal_usd": str(MIN_FLASH_PRINCIPAL_USD),
                 },
             )
     except Exception:
@@ -142,6 +144,7 @@ __all__ = [
     "snapshot_route_tvl",
     # patch targets
     "evaluate_profitability",
+    "token_price_usd",
     "MAX_FLASH_PRINCIPAL_USD",
     "MIN_FLASH_PRINCIPAL_USD",
     "MAX_ROUTE_TVL_FRACTION",

@@ -1,17 +1,3 @@
-# c:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\omega_v5\mainnet_finalizer.py
-
-if int(truth.get("executable") or 0) <= 0:
-    blockers.append({
-        "severity": "critical",
-        "component": "executor_truth",
-        "detail": "no exact-call executable route in latest validation",
-    })
-if not pipeline_validation.get("payload_execution_eligible"):
-    blockers.append({
-        "severity": "critical",
-        "component": "payload_execution",
-        "detail": str(pipeline_validation.get("exact_call_gate") or "not eligible"),
-    })
 #!/usr/bin/env python3
 # ==============================================================================
 # truth_scan.py -- fast exact-call-backed route eligibility scan.

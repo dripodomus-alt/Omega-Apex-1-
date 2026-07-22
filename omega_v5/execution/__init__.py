@@ -28,10 +28,30 @@ def _load_from_sibling_execution():
 # failure if execution.py has a syntax error or is otherwise unloadable.
 try:
     _exec_mod = _load_from_sibling_execution()
-    build_tx_payload = _exec_mod.build_tx_payload
+    _PATCHABLE_EXECUTION_SYMBOLS = (
+        "TOKEN_ADDRESSES",
+        "TOKEN_DECIMALS",
+        "C1_PAYLOAD_TARGET",
+        "CHAIN_ID",
+        "to_raw_units",
+        "eip1559_fee_params",
+        "route_tx_gas_limit",
+    )
+    for _name in _PATCHABLE_EXECUTION_SYMBOLS:
+        if hasattr(_exec_mod, _name):
+            globals()[_name] = getattr(_exec_mod, _name)
+
+    def _sync_patchable_execution_symbols():
+        for _name in _PATCHABLE_EXECUTION_SYMBOLS:
+            if _name in globals():
+                setattr(_exec_mod, _name, globals()[_name])
+
+    def build_tx_payload(*args, **kwargs):
+        _sync_patchable_execution_symbols()
+        return _exec_mod.build_tx_payload(*args, **kwargs)
     simulate_tx_payload = _exec_mod.simulate_tx_payload
     simulation_from_address = _exec_mod.simulation_from_address
-    run_dry_run_cycles = _exec_mod.run_dry_run_cycles
+    run_dry_run_cycles = getattr(_exec_mod, "run_dry_run_cycles", lambda *a, **k: {})
     run_execution_loop = _exec_mod.run_execution_loop
     _await_next_block = _exec_mod._await_next_block
     execution_armed = _exec_mod.execution_armed
@@ -47,6 +67,13 @@ except Exception:
     # Last resort placeholders to avoid total import failure
     import asyncio
 
+    TOKEN_ADDRESSES = {}
+    TOKEN_DECIMALS = {}
+    C1_PAYLOAD_TARGET = ""
+    CHAIN_ID = 137
+    to_raw_units = lambda symbol, amount: 0
+    eip1559_fee_params = lambda *a, **k: (0, 0, "execution_import_failed")
+    route_tx_gas_limit = lambda hops: 0
     build_tx_payload = lambda *a, **k: {}
     simulate_tx_payload = lambda *a, **k: (True, "")
     simulation_from_address = lambda: "0x0"
@@ -71,6 +98,13 @@ __all__ = [
     "choose_submission_channel",
     "reconcile_receipt",
     "build_tx_payload",
+    "TOKEN_ADDRESSES",
+    "TOKEN_DECIMALS",
+    "C1_PAYLOAD_TARGET",
+    "CHAIN_ID",
+    "to_raw_units",
+    "eip1559_fee_params",
+    "route_tx_gas_limit",
     "simulate_tx_payload",
     "simulation_from_address",
     "run_dry_run_cycles",

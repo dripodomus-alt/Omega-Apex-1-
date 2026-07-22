@@ -113,7 +113,7 @@ def build_tx_payload(op: LiveOpportunity, pools: dict, nonce: int = 0, base_fee_
             protocol_id
         ))
 
-    selector = Web3.keccak(text="executeFlashArb(address,uint256,(address,address,address,uint8)[])")[:4].hex()
+    selector = "0x" + Web3.keccak(text="executeFlashArb(address,uint256,(address,address,address,uint8)[])")[:4].hex()
     encoded_args = encode(['address', 'uint256', '(address,address,address,uint8)[]'], [Web3.to_checksum_address(flash_asset_address), principal_raw, route_steps])
     calldata = selector + encoded_args.hex()
 

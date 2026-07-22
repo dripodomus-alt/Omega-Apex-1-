@@ -113,7 +113,17 @@ class RouteSizing:
     
     @property
     def live_principal_eligible(self) -> bool:
+        if self.metadata and "live_principal_eligible" in self.metadata:
+            return bool(self.metadata.get("live_principal_eligible"))
         return self.profitability_at_selection is not None and self.profitability_at_selection.passes_gate
+
+    @property
+    def proof_only_below_minimum(self) -> bool:
+        return bool((self.metadata or {}).get("proof_only_below_minimum"))
+
+    @property
+    def minimum_principal_usd(self) -> Decimal:
+        return Decimal(str((self.metadata or {}).get("minimum_principal_usd", _cfg("MIN_FLASH_PRINCIPAL_USD", _CFG_MIN_FLASH))))
 
 
 @dataclass(frozen=True)

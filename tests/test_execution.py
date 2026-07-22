@@ -57,8 +57,8 @@ class TestBuildTxPayload(unittest.TestCase):
             )
         )
         pools = {
-            "pool_usdc_weth_v2": {"address": "0xPool1Address", "protocol": "UniswapV2"},
-            "pool_weth_usdc_v2": {"address": "0xPool2Address", "protocol": "UniswapV2"},
+            "pool_usdc_weth_v2": {"address": "0x1111111111111111111111111111111111111111", "protocol": "UniswapV2"},
+            "pool_weth_usdc_v2": {"address": "0x2222222222222222222222222222222222222222", "protocol": "UniswapV2"},
         }
         nonce = 5
         base_fee_gwei = Decimal("40")
@@ -73,14 +73,14 @@ class TestBuildTxPayload(unittest.TestCase):
         self.assertEqual(tx["maxFeePerGas"], 100_000_000_000)
         self.assertEqual(tx["maxPriorityFeePerGas"], 30_000_000_000)
         self.assertEqual(tx["type"], 2)
-        self.assertTrue(tx["data"].startswith("0x" + "0x8979067b"[2:])) # Selector for executeFlashArb
+        self.assertTrue(tx["data"].startswith("0x" + "0xafa5f482"[2:])) # Selector for executeFlashArb
         
         # Verify calldata structure (simplified check)
         # The actual encoding is complex, but we can check for expected components
         self.assertIn("0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"[2:].lower(), tx["data"].lower()) # USDC address
         self.assertIn("0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"[2:].lower(), tx["data"].lower()) # WETH address
-        self.assertIn("0xpool1address"[2:].lower(), tx["data"].lower())
-        self.assertIn("0xpool2address"[2:].lower(), tx["data"].lower())
+        self.assertIn("0x1111111111111111111111111111111111111111"[2:].lower(), tx["data"].lower())
+        self.assertIn("0x2222222222222222222222222222222222222222"[2:].lower(), tx["data"].lower())
         self.assertIn("01", tx["data"]) # Protocol ID for UniswapV2
 
     @patch('omega_v5.execution.TOKEN_ADDRESSES', {
@@ -110,9 +110,9 @@ class TestBuildTxPayload(unittest.TestCase):
             )
         )
         pools = {
-            "pool_usdc_weth_v3": {"address": "0xPoolV3Address", "protocol": "UniswapV3"},
-            "pool_weth_dai_v2": {"address": "0xPoolV2Address", "protocol": "UniswapV2"},
-            "pool_dai_usdc_algebra": {"address": "0xPoolAlgebraAddress", "protocol": "Algebra"},
+            "pool_usdc_weth_v3": {"address": "0x3333333333333333333333333333333333333333", "protocol": "UniswapV3"},
+            "pool_weth_dai_v2": {"address": "0x4444444444444444444444444444444444444444", "protocol": "UniswapV2"},
+            "pool_dai_usdc_algebra": {"address": "0x5555555555555555555555555555555555555555", "protocol": "Algebra"},
         }
         nonce = 10
 
@@ -121,7 +121,7 @@ class TestBuildTxPayload(unittest.TestCase):
         self.assertEqual(tx["to"], "0xExecutorContractAddress")
         self.assertEqual(tx["nonce"], nonce)
         self.assertEqual(tx["gas"], 700_000) # 3 hops
-        self.assertTrue(tx["data"].startswith("0x" + "0x8979067b"[2:])) # Selector
+        self.assertTrue(tx["data"].startswith("0x" + "0xafa5f482"[2:])) # Selector
         
         # Check protocol IDs
         self.assertIn("02", tx["data"]) # UniswapV3
@@ -153,8 +153,8 @@ class TestBuildTxPayload(unittest.TestCase):
             )
         )
         pools = {
-            "pool_unknown_weth": {"address": "0xPool1Address", "protocol": "UniswapV2"},
-            "pool_weth_unknown": {"address": "0xPool2Address", "protocol": "UniswapV2"},
+            "pool_unknown_weth": {"address": "0x1111111111111111111111111111111111111111", "protocol": "UniswapV2"},
+            "pool_weth_unknown": {"address": "0x2222222222222222222222222222222222222222", "protocol": "UniswapV2"},
         }
 
         with self.assertRaisesRegex(ValueError, "Missing address for flash asset UNKNOWN_TOKEN"):
@@ -185,7 +185,7 @@ class TestBuildTxPayload(unittest.TestCase):
             )
         )
         pools = {
-            "pool_usdc_weth_v2": {"address": "0xPool1Address", "protocol": "UniswapV2"},
+            "pool_usdc_weth_v2": {"address": "0x1111111111111111111111111111111111111111", "protocol": "UniswapV2"},
             # "pool_weth_usdc_v2" is missing
         }
 
@@ -217,11 +217,11 @@ class TestBuildTxPayload(unittest.TestCase):
             )
         )
         pools = {
-            "pool_usdc_unknown": {"address": "0xPool1Address", "protocol": "UniswapV2"},
-            "pool_unknown_usdc": {"address": "0xPool2Address", "protocol": "UniswapV2"},
+            "pool_usdc_unknown": {"address": "0x1111111111111111111111111111111111111111", "protocol": "UniswapV2"},
+            "pool_unknown_usdc": {"address": "0x2222222222222222222222222222222222222222", "protocol": "UniswapV2"},
         }
 
-        with self.assertRaisesRegex(ValueError, "Missing address in route step 1: from=None"):
+        with self.assertRaisesRegex(ValueError, "Missing address in route step 0: from=0x3c499c542cef5e3811e1192ce70d8cc03d5c3359 to=None"):
             build_tx_payload(op, pools)
 
     @patch('omega_v5.execution.TOKEN_ADDRESSES', {
@@ -249,8 +249,8 @@ class TestBuildTxPayload(unittest.TestCase):
             )
         )
         pools = {
-            "pool_usdc_weth_v2": {"address": "0xPool1Address", "protocol": "UniswapV2"},
-            "pool_weth_usdc_v2": {"address": "0xPool2Address", "protocol": "UniswapV2"},
+            "pool_usdc_weth_v2": {"address": "0x1111111111111111111111111111111111111111", "protocol": "UniswapV2"},
+            "pool_weth_usdc_v2": {"address": "0x2222222222222222222222222222222222222222", "protocol": "UniswapV2"},
         }
         base_fee_gwei = Decimal("30")
 

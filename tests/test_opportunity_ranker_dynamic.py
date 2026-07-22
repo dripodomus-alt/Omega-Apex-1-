@@ -5,6 +5,7 @@ from omega_v5.flash_loan import FlashLoanParams, FlashSource, Profitability
 from omega_v5.stable_strategies import PeggedStableSpread
 from omega_v5 import opportunity_ranker
 from omega_v5.opportunity_ranker import LiveOpportunity
+from omega_v5.ranker import CrossPoolSpread
 
 def _profitability(gross, principal, *, passes=True, risk=Decimal("1")):
     flash = FlashLoanParams(
