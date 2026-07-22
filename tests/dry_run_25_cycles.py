@@ -51,13 +51,11 @@ def _json_ready(value: Any) -> Any:
 
 # === Canonical Gate (self-contained) ===
 
-def get_dna_from_opp(cycle: int, rank: int, opp: LiveOpportunity) -> dict[str, Any]:
 def get_dna_from_opp(cycle: int, rank: int, opp: LiveOpportunity, pools: dict) -> dict[str, Any]:
     """Print full transparent DNA of a route."""
     # The LiveOpportunity object already contains the full profitability breakdown.
     # We just need to extract it and build the payload for inspection.
     profitability = opp.profitability
-    payload = build_tx_payload(opp, nonce=0, base_fee_gwei=GAS_PRICE_GWEI)
     payload = build_tx_payload(opp, pools, nonce=0, base_fee_gwei=GAS_PRICE_GWEI)
 
     # The economics object is now part of the LiveOpportunity's profitability
@@ -120,28 +118,28 @@ def _create_mock_pools() -> Dict[str, Any]:
         "P_USDC_WETH_A": {
             "protocol": "UniswapV2", "tokens": ["USDC", "WETH"],
             "reserves": [Decimal("1000000"), Decimal("300")], # Price WETH = 3333 USDC
-            "fee_bps": 30, "address": "0xMockPool01",
+            "fee": Decimal("0.003"), "fee_bps": 30, "address": "0x0000000000000000000000000000000000000001",
         },
         "P_WETH_USDC_B": {
             "protocol": "UniswapV2", "tokens": ["WETH", "USDC"],
             "reserves": [Decimal("300"), Decimal("1005000")], # Price WETH = 3350 USDC
-            "fee_bps": 30, "address": "0xMockPool02",
+            "fee": Decimal("0.003"), "fee_bps": 30, "address": "0x0000000000000000000000000000000000000002",
         },
         # 3-leg: USDC -> WETH -> WBTC -> USDC
         "P_USDC_WETH_C": {
-            "protocol": "UniswapV3", "tokens": ["USDC", "WETH"], "fee_bps": 500,
+            "protocol": "UniswapV3", "tokens": ["USDC", "WETH"], "fee": Decimal("0.0005"), "fee_bps": 500,
             "sqrtPriceX96": Decimal("2731314143865541125333533838535"), # WETH price ~3340 USDC
-            "liquidity": Decimal("1e18"), "address": "0xMockPool03",
+            "liquidity": Decimal("1e18"), "address": "0x0000000000000000000000000000000000000003",
         },
         "P_WETH_WBTC_D": {
-            "protocol": "UniswapV3", "tokens": ["WETH", "WBTC"], "fee_bps": 500,
+            "protocol": "UniswapV3", "tokens": ["WETH", "WBTC"], "fee": Decimal("0.0005"), "fee_bps": 500,
             "sqrtPriceX96": Decimal("13151314143865541125333533838535"), # WBTC price ~20 WETH
-            "liquidity": Decimal("1e18"), "address": "0xMockPool04",
+            "liquidity": Decimal("1e18"), "address": "0x0000000000000000000000000000000000000004",
         },
         "P_WBTC_USDC_E": {
-            "protocol": "UniswapV3", "tokens": ["WBTC", "USDC"], "fee_bps": 500,
+            "protocol": "UniswapV3", "tokens": ["WBTC", "USDC"], "fee": Decimal("0.0005"), "fee_bps": 500,
             "sqrtPriceX96": Decimal("8131314143865541125333533838535"), # WBTC price ~67000 USDC
-            "liquidity": Decimal("1e18"), "address": "0xMockPool05",
+            "liquidity": Decimal("1e18"), "address": "0x0000000000000000000000000000000000000005",
         },
     }
 
@@ -231,7 +229,6 @@ def main():
         # Log all profitable routes to the file
         with LOG_FILE.open("a", encoding="utf-8") as f:
             for idx, opp in enumerate(ranked_opps, 1):
-                dna = get_dna_from_opp(cycle, idx, opp)
                 dna = get_dna_from_opp(cycle, idx, opp, perturbed_pools)
                 f.write(json.dumps(_json_ready(dna)) + "\n")
 
@@ -241,7 +238,6 @@ def main():
 
         print(f"\nTop 10 routes (after gate filter + ranking by net surplus):")
         for idx, opp in enumerate(top10, 1):
-            dna = get_dna_from_opp(cycle, idx, opp)
             dna = get_dna_from_opp(cycle, idx, opp, perturbed_pools)
             print_route_dna(cycle, idx, dna)
 
@@ -288,3 +284,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
