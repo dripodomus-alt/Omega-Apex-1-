@@ -19,19 +19,13 @@ from pathlib import Path
 # Ensure the main project is in the path to import production logic
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from omega_v5.execution import build_tx_payload
+from omega_v5.main import collect_and_score_opportunities
 from omega_v5.opportunity_ranker import LiveOpportunity
 from omega_v5.flash_loan import ( # type: ignore
     GAS_PRICE_GWEI,
     FlashSource,
     live_min_net_profit_usd,
 )
-from omega_v5.ranker import compute_all_pool_rates, detect_cross_pool_two_leg_spreads
-from omega_v5.route_execution_stager import pre_rank_routes
-from omega_v5.opportunity_ranker import (
-    score_cross_pool_spreads,
-    score_opportunities,
-)
-from omega_v5.arbitrage import merge_cycle_sets, ArbitrageGraphEngine
 from unittest.mock import patch
 
 
@@ -161,36 +155,48 @@ def _perturb_pools(pools: Dict[str, Any]) -> Dict[str, Any]:
 def discover_and_score_opportunities(
     pools: Dict[str, Any], principal_usd: Decimal
 ) -> List[LiveOpportunity]:
-    """Uses the real discovery and scoring pipeline on a set of mock pools."""
-    all_rates = compute_all_pool_rates(pools)
-
-    # --- Discovery ---
-    two_leg_spreads = detect_cross_pool_two_leg_spreads(all_rates)
-    engine = ArbitrageGraphEngine(all_rates)
-    cycles = merge_cycle_sets(engine.bellman_ford_all_sources())
-
-    # --- Scoring ---
-    ranked_two_leg = score_cross_pool_spreads(
-        two_leg_spreads, pools, principal_usd, flash_source=FlashSource.BALANCER
+    """
+    Uses the canonical discovery and scoring pipeline from the main application
+    to ensure this test stays in sync with the production logic.
+    """
+    ranked_opps, _, _ = collect_and_score_opportunities(
+        live_pools=pools,
+        principal_usd=principal_usd,
+        slippage_bps=Decimal("15"),  # Use a typical default slippage
     )
-    ranked_cycles = score_opportunities(
-        cycles, pools, principal_usd=principal_usd, flash_source=FlashSource.BALANCER
-    )
-
-    all_opps = ranked_two_leg + ranked_cycles
-    all_opps.sort(key=lambda o: o.profitability.net_profit_usd, reverse=True)
-    return all_opps
+    return ranked_opps
 
 
 # === Staging Simulator (based on payload_stager.py logic) ===
 def simulate_staging(ranked_opps: List[LiveOpportunity], max_staged: int = 8) -> List[LiveOpportunity]:
     """
-    Simulates payload_stager behavior.
-    - Applies raw gate (already done in ranking)
-    - Takes top non-conflicting (we simplify: just take top N)
-    - Does NOT explicitly prefer 2-leg or 3-leg
+    Simulates payload_stager behavior by selecting the top non-conflicting routes.
+
+    A "conflict" occurs when two routes use the same liquidity pool. Since the
+    first trade alters the pool's state, the second trade's economics are no
+    longer valid. This function mimics the production stager by picking the most
+    profitable route and excluding any subsequent routes that share its pools.
+
+    - Applies raw gate (already done in ranking).
+    - Selects top-ranked routes that do not share liquidity pools.
+    - Does NOT explicitly prefer 2-leg or 3-leg; profitability is the only factor.
     """
-    return ranked_opps[:max_staged]
+    staged_opps: List[LiveOpportunity] = []
+    used_pools: set[str] = set()
+
+    for opp in ranked_opps:
+        if len(staged_opps) >= max_staged:
+            break
+
+        # A conflict exists if any pool in the current opportunity's sequence
+        # has already been used by a previously staged opportunity.
+        has_conflict = any(pool_id in used_pools for pool_id in opp.pool_sequence)
+
+        if not has_conflict:
+            staged_opps.append(opp)
+            used_pools.update(opp.pool_sequence)
+
+    return staged_opps
 
 
 def main():
@@ -224,7 +230,9 @@ def main():
         perturbed_pools = _perturb_pools(mock_pools)
 
         with patch("omega_v5.oracle_layer.token_price_usd", mock_token_price_usd):
-            ranked_opps = discover_and_score_opportunities(perturbed_pools, principal_usd=Decimal("10000"))
+            ranked_opps = discover_and_score_opportunities(
+                perturbed_pools, principal_usd=Decimal("10000")
+            )
 
         # Log all profitable routes to the file
         with LOG_FILE.open("a", encoding="utf-8") as f:
@@ -284,7 +292,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-

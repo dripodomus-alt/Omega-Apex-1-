@@ -116,9 +116,6 @@ def run_cycle(cycle: int) -> dict:
     if selected > upper + Decimal("0.01"):
         ok = False
         reasons.append("above_cap")
-    if calls["n"] >= 40:
-        # early exit should usually cut before full 40 on peaked curves
-        pass
 
     return {
         "cycle": cycle,
@@ -160,6 +157,7 @@ def main() -> int:
     avg_calls = sum(r["ladder_calls"] for r in rows) / len(rows)
     profitable = sum(1 for r in rows if Decimal(r["max_profit"]) > 0)
     selected_pos = sum(1 for r in rows if Decimal(r["selected"]) > 0)
+    ladder_full_runs = sum(1 for r in rows if r["ladder_calls"] >= 40)
 
     print("-" * 72)
     print(f"Cycles:            25")
@@ -168,6 +166,7 @@ def main() -> int:
     print(f"Positive peak net: {profitable}/25")
     print(f"Avg size latency:  {avg_ms:.3f} ms")
     print(f"Avg ladder calls:  {avg_calls:.1f} (early-exit speed)")
+    print(f"Ladder full runs:  {ladder_full_runs}/25 (no early exit)")
     print(f"Sizing version:    2.0 (optimize_principal_with_dynamic)")
     print("=" * 72)
 
