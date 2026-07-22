@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import time
 from pathlib import Path
@@ -18,9 +19,94 @@ from .paths import output_path, repo_path, resolve_repo_relative
 
 PIPELINE_INTEGRITY_PROOF_PATH = output_path("pipeline_integrity_proof_latest.json")
 
+STRICT_PIPELINE_ORDER = (
+    "environment",
+    "discovery",
+    "math",
+    "simulation",
+    "transactions",
+    "observability",
+    "storage",
+)
+
+FORBIDDEN_PIPELINE_IMPORTS: dict[str, tuple[str, ...]] = {
+    "discovery": ("simulation", "transactions"),
+    "math": ("environment.rpc", "discovery.protocols", "simulation", "transactions"),
+    "simulation": ("transactions.broadcast", "transactions.coordinator"),
+    "transactions": ("discovery", "math.ranking", "math.sizing"),
+}
+
 
 def _exists(rel: str) -> bool:
     return repo_path(rel).exists()
+
+
+def _import_name_roots(node: ast.AST) -> list[str]:
+    if isinstance(node, ast.Import):
+        return [alias.name for alias in node.names]
+    if isinstance(node, ast.ImportFrom):
+        if not node.module:
+            return []
+        return [node.module]
+    return []
+
+
+def _matches_forbidden_import(import_name: str, forbidden: str) -> bool:
+    candidates = {import_name}
+    if import_name.startswith("apex_omega."):
+        candidates.add(import_name.removeprefix("apex_omega."))
+    return any(candidate == forbidden or candidate.startswith(f"{forbidden}.") for candidate in candidates)
+
+
+def _ownership_boundary_report() -> dict[str, Any]:
+    violations: list[dict[str, str]] = []
+    scanned_files = 0
+    present_owners: dict[str, bool] = {}
+
+    for owner in STRICT_PIPELINE_ORDER:
+        owner_root = repo_path(owner)
+        present_owners[owner] = owner_root.exists()
+        if not owner_root.exists():
+            continue
+        for path in owner_root.rglob("*.py"):
+            scanned_files += 1
+            try:
+                tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            except SyntaxError as exc:
+                violations.append(
+                    {
+                        "owner": owner,
+                        "file": str(path.relative_to(repo_path())),
+                        "forbidden_import": "parse_error",
+                        "detail": str(exc),
+                    }
+                )
+                continue
+            forbidden_imports = FORBIDDEN_PIPELINE_IMPORTS.get(owner, ())
+            for node in ast.walk(tree):
+                for import_name in _import_name_roots(node):
+                    for forbidden in forbidden_imports:
+                        if _matches_forbidden_import(import_name, forbidden):
+                            violations.append(
+                                {
+                                    "owner": owner,
+                                    "file": str(path.relative_to(repo_path())),
+                                    "forbidden_import": forbidden,
+                                    "actual_import": import_name,
+                                }
+                            )
+
+    return {
+        "strict_order": list(STRICT_PIPELINE_ORDER),
+        "present_owners": present_owners,
+        "scanned_files": scanned_files,
+        "forbidden_imports": {
+            key: list(value) for key, value in FORBIDDEN_PIPELINE_IMPORTS.items()
+        },
+        "violations": violations,
+        "ok": not violations,
+        "compatibility_runtime": "omega_v5",
+    }
 
 
 def build_integrity_proof(
@@ -30,6 +116,7 @@ def build_integrity_proof(
 ) -> dict[str, Any]:
     audit = audit_report or logic_data_audit.audit_paths(roots or ["omega_v5", "scripts"])
     design = live_design_status()
+    ownership = _ownership_boundary_report()
     required_runtime_modules = [
         "omega_v5/accounting.py",
         "omega_v5/token_calibration.py",
@@ -52,6 +139,17 @@ def build_integrity_proof(
     for rel, present in module_status.items():
         if not present:
             blockers.append({"severity": "critical", "component": "required_module", "detail": rel})
+    for violation in ownership["violations"]:
+        blockers.append(
+            {
+                "severity": "critical",
+                "component": "strict_pipeline_ownership",
+                "detail": (
+                    f"{violation['file']} imports {violation.get('actual_import', '')}; "
+                    f"forbidden for {violation['owner']}: {violation['forbidden_import']}"
+                ),
+            }
+        )
 
     report = {
         "ok": not blockers,
@@ -61,6 +159,7 @@ def build_integrity_proof(
         "logic_data_audit_summary": audit["summary"],
         "logic_data_audit_report": str(logic_data_audit.LOGIC_DATA_AUDIT_REPORT_PATH),
         "required_runtime_modules": module_status,
+        "strict_pipeline_ownership": ownership,
         "critical_debugging_areas": logic_data_audit.CRITICAL_DEBUGGING_AREAS,
         "canonical_route_math": logic_data_audit.CANONICAL_ROUTE_MATH,
         "design_policy": {

@@ -39,3 +39,15 @@ def test_pipeline_integrity_proof_includes_canonical_math_and_runtime_modules():
     assert "canonical_route_math" in report
     assert any(row["name"] == "net_gain" for row in report["canonical_route_math"])
     assert report["required_runtime_modules"]["omega_v5/accounting.py"] is True
+    assert report["strict_pipeline_ownership"]["ok"] is True
+    assert report["strict_pipeline_ownership"]["strict_order"] == [
+        "environment",
+        "discovery",
+        "math",
+        "simulation",
+        "transactions",
+        "observability",
+        "storage",
+    ]
+    assert report["strict_pipeline_ownership"]["compatibility_runtime"] == "omega_v5"
+

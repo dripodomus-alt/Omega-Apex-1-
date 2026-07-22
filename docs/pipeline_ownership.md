@@ -1,56 +1,78 @@
 # Strict Pipeline Ownership
 
-Omega migration work must preserve a one-way ownership model:
+This document is the logistics checkpoint for the Apex Omega modular refactor.
+Do not add parallel replacement modules or duplicate "v2" files until the
+existing owner has been mapped and the retirement path is explicit.
+
+## Canonical Pipeline
 
 ```text
-Environment -> Discovery -> Math -> Simulation -> Transactions
+Environment -> Discovery -> Math -> Simulation -> Transactions -> Observability -> Storage
 ```
 
-`Observability` and `Storage` are side-effect ports owned by applications. They
-must not decide profitability, execution eligibility, or transaction policy.
+The hot-path doctrine remains:
+
+```text
+Scanner discovers.
+Math sizes and ranks.
+Simulation proves.
+Transactions construct and execute.
+Observability records.
+Storage persists.
+```
+
+## Replacement Logistics Rule
+
+Before replacing a file, function, or module:
+
+1. Identify the current owner and all imports.
+2. Decide whether the change is an in-place edit, a move, or a true new
+   boundary.
+3. If a new boundary is required, keep a compatibility wrapper at the old import
+   path.
+4. Delete or retire the old implementation in the same change once callers have
+   moved.
+5. Add or update tests proving the old and new paths do not diverge.
+
+Do not leave deprecated copies with overlapping authority.
 
 ## Ownership Rules
 
 ### Environment
 
-Owns infrastructure truth: settings, network definitions, RPC/WSS clients,
-chain guards, block anchors, runtime feature flags, secret loading, and
-redaction.
+Owns settings, RPC/WSS clients, chain validation, block anchors, runtime feature
+flags, secret loading, and redaction.
 
-Environment must not discover pools, rank opportunities, simulate execution, or
-broadcast transactions.
+Must not discover pools, rank opportunities, simulate execution, or broadcast.
 
 ### Discovery
 
-Owns Chain 137 intake and normalization: pool state loading, token and
-destination normalization, freshness checks, TVL/depth checks, executable quote
-source validation, and normalized candidate emission.
+Owns Chain 137 intake and normalization: pool state loading, token/destination
+normalization, freshness checks, TVL/depth checks, executable quote-source
+validation, and normalized candidate emission.
 
-Discovery emits `DiscoveryBatch`. It must not optimize size, choose best
-buy/sell, compute net profit, build calldata, simulate, or broadcast.
+Discovery emits `DiscoveryBatch`. It must not optimize size, rank net profit,
+build calldata, simulate, or broadcast.
 
 ### Math
 
-Owns deterministic economic truth: invariant-specific quotes, adaptive sizing,
-buy/sell price determination, gross profit, full cost accounting, expected net
-profit, and deterministic ranking.
+Owns deterministic economic truth: quotes, sizing, executable buy/sell prices,
+gross profit, flash fees, gas, relay tips, risk buffer, net profit, and ranking.
 
-Math consumes normalized discovery data and emits immutable
-`RankedOpportunity` records. It must not import RPC providers, query live chain
-state, build transactions, or write concrete storage.
+Math consumes normalized discovery data and emits immutable ranked
+opportunities. It must not query live chain state or build transactions.
 
 ### Simulation
 
 Owns execution proof: fork setup, C1 simulation, post-C1 reload, C2
-recomputation input, C2 decision, parity checks, revert decoding, and
-simulation evidence.
+recomputation input, C2 decision, parity checks, revert decoding, and evidence.
 
-Simulation emits `SimulationResult`. It must not broadcast.
+Simulation must not broadcast.
 
 ### Transactions
 
-Owns transaction construction and submission only: calldata, nonces, gas policy,
-bundles, broadcast guard, broadcast, confirmation, receipts, and emergency stop.
+Owns calldata, nonces, gas policy, bundles, broadcast guard, broadcast,
+confirmation, receipts, and emergency stop.
 
 Transactions must not rescan, rerank, or recompute opportunity economics.
 
@@ -64,13 +86,14 @@ Liquidation  = separate third contract
 
 ### Observability
 
-Owns structured append-only operational events, metrics, latency, health, and
-audits. It must not influence domain decisions.
+Owns structured append-only events, metrics, latency, health, and audits.
+
+Observability must not influence domain decisions.
 
 ### Storage
 
-Owns persistence interfaces and implementations for cycles, pools, ranked
-opportunities, simulations, executions, receipts, and audit manifests.
+Owns persistence interfaces and implementations for cycles, pools,
+opportunities, simulations, executions, receipts, and manifests.
 
 Domain logic depends on storage interfaces, not concrete PostgreSQL, Redis, CSV,
 JSONL, or filesystem writers.
@@ -79,14 +102,14 @@ JSONL, or filesystem writers.
 
 ```text
 discovery    -> simulation, transactions, concrete storage implementations
-math         -> environment.rpc, discovery.protocols loaders, simulation, transactions
+math         -> environment.rpc, discovery.protocol loaders, simulation, transactions
 simulation   -> transactions.broadcast, transactions.coordinator
 transactions -> discovery, math.ranking, math.sizing
-observability-> discovery, math, simulation, transactions domain decisions
+observability-> domain decision logic
 storage      -> math formulas, simulation engines, transaction builders
 ```
 
-## Migration Sequence
+## Migration Order
 
 1. Inventory and freeze existing behavior.
 2. Extract shared immutable models.
