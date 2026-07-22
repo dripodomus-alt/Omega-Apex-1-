@@ -42,6 +42,11 @@ from .gas_oracle import eip1559_fee_params
 from .flash_loan import route_tx_gas_limit
 from .transport_lanes import web3_for_lane, LANE_EXACT_C1_ETH_CALL
 from .revert_decoder import format_revert
+from .adapter_registry import AdapterSemanticError
+
+EXECUTE_FLASH_ARB_SELECTOR = Web3.keccak(
+    text="executeFlashArb(address,uint256,(address,address,address,uint8)[])"
+)[:4].hex()
 
 logger = logging.getLogger("omega.execution")
 logger.setLevel(logging.INFO)
@@ -151,6 +156,80 @@ def simulate_tx_payload(tx: dict, from_addr: str | None = None) -> tuple[bool, s
 
 def simulation_from_address() -> str:
     return OWNER_ADDRESS or "0x0000000000000000000000000000000000000000"
+
+
+def wallet_address() -> str:
+    """Return the configured signer address, or the explicit owner fallback."""
+    if PRIVATE_KEY:
+        try:
+            return Web3().eth.account.from_key(PRIVATE_KEY).address
+        except Exception:
+            return ""
+    return OWNER_ADDRESS or ""
+
+
+def _broadcast_w3() -> Web3:
+    """Build a Web3 client for the configured broadcast URL."""
+    return Web3(Web3.HTTPProvider(BROADCAST_RPC_URL))
+
+
+def _receipt_dict(receipt: Any) -> dict[str, Any]:
+    """Convert a Web3 receipt-like object to JSON-safe primitives."""
+    if receipt is None:
+        return {}
+    if hasattr(receipt, "items"):
+        source = dict(receipt)
+    else:
+        source = {
+            key: getattr(receipt, key)
+            for key in ("transactionHash", "blockNumber", "status", "gasUsed")
+            if hasattr(receipt, key)
+        }
+    out: dict[str, Any] = {}
+    for key, value in source.items():
+        if isinstance(value, bytes):
+            out[str(key)] = "0x" + value.hex()
+        elif hasattr(value, "hex"):
+            try:
+                out[str(key)] = value.hex()
+            except Exception:
+                out[str(key)] = str(value)
+        else:
+            out[str(key)] = value
+    return out
+
+
+def executor_code_status() -> tuple[bool, str]:
+    """Check whether the configured executor address has bytecode."""
+    if not EXECUTOR_CONTRACT or not Web3.is_address(EXECUTOR_CONTRACT):
+        return False, "executor_contract_missing_or_invalid"
+    try:
+        code = w3.eth.get_code(Web3.to_checksum_address(EXECUTOR_CONTRACT)).hex()
+        return (code not in {"", "0x"}, "bytecode_present" if code not in {"", "0x"} else "no_bytecode")
+    except Exception as exc:
+        return False, f"executor_code_check_failed:{type(exc).__name__}"
+
+
+def executor_owner() -> str:
+    """Best-effort owner() read for operator status surfaces."""
+    if not EXECUTOR_CONTRACT or not Web3.is_address(EXECUTOR_CONTRACT):
+        return ""
+    try:
+        contract = w3.eth.contract(
+            address=Web3.to_checksum_address(EXECUTOR_CONTRACT),
+            abi=[
+                {
+                    "name": "owner",
+                    "type": "function",
+                    "stateMutability": "view",
+                    "inputs": [],
+                    "outputs": [{"name": "", "type": "address"}],
+                }
+            ],
+        )
+        return str(contract.functions.owner().call())
+    except Exception:
+        return ""
 
 
 def _payload_hash(tx: dict[str, Any]) -> str:
@@ -376,3 +455,4 @@ async def run_execution_loop(
         },
     )
     logger.info(f"run_execution_loop finished: executed={executed_count}")
+

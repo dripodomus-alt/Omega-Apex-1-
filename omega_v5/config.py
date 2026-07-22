@@ -476,3 +476,10 @@ APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE: int = int(
 
 if __name__ == "__main__":
     print(f"✅ Asset Matrix verified. Initialized {len(ASSET_MATRIX)} core tokens for Chain {CHAIN_ID} evaluation.")
+
+
+def get_config_value(name: str, default=None):
+    """Return a loaded config constant or environment value."""
+    if name in globals():
+        return globals()[name]
+    return os.environ.get(name, default)

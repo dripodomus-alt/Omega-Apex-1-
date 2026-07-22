@@ -36,6 +36,13 @@ try:
     _await_next_block = _exec_mod._await_next_block
     execution_armed = _exec_mod.execution_armed
     execution_guard_status = _exec_mod.execution_guard_status
+    AdapterSemanticError = _exec_mod.AdapterSemanticError
+    EXECUTE_FLASH_ARB_SELECTOR = _exec_mod.EXECUTE_FLASH_ARB_SELECTOR
+    executor_owner = _exec_mod.executor_owner
+    executor_code_status = _exec_mod.executor_code_status
+    _receipt_dict = _exec_mod._receipt_dict
+    _broadcast_w3 = _exec_mod._broadcast_w3
+    wallet_address = _exec_mod.wallet_address
 except Exception:
     # Last resort placeholders to avoid total import failure
     import asyncio
@@ -48,6 +55,13 @@ except Exception:
     _await_next_block = lambda: asyncio.sleep(0)
     execution_armed = lambda: False
     execution_guard_status = lambda: {}
+    executor_owner = lambda: ""
+    _receipt_dict = lambda receipt: {}
+    wallet_address = lambda: ""
+    executor_code_status = lambda: (False, "execution_import_failed")
+    _broadcast_w3 = lambda: None
+    AdapterSemanticError = RuntimeError
+    EXECUTE_FLASH_ARB_SELECTOR = "0x626482a3"
 
 __all__ = [
     "select_best_flash_source",
@@ -64,4 +78,12 @@ __all__ = [
     "_await_next_block",
     "execution_armed",
     "execution_guard_status",
+    "AdapterSemanticError",
+    "EXECUTE_FLASH_ARB_SELECTOR",
+    "executor_owner",
+    "executor_code_status",
+    "_receipt_dict",
+    "_broadcast_w3",
+    "wallet_address",
 ]
+
