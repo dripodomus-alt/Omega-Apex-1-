@@ -1,17 +1,8 @@
 {
   "version": 1,
-  "setup": "integrated",
-  "languages": [
-    "Python"
-  ],
-  "stacks": [
-    "pip"
-  ],
-  "markers": [
-    "requirements.txt"
-  ],
-  "suggestedRun": "python -m src.main",
-  "suggestedTest": "pytest",
-  "createdAt": "2026-07-19T13:29:44.549Z",
+  "setup": "template",
+  "templateId": "rust",
+  "language": "Rust",
+  "createdAt": "2026-07-22T05:00:10.293Z",
   "tool": "xgrok"
 }

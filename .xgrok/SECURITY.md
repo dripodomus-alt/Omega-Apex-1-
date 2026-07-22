@@ -1,10 +1,11 @@
-# Security checklist
+# Security checklist (Grok-aware)
 
-- [ ] Secrets only via env / Secret Storage
-- [ ] No credentials in repo history
-- [ ] Dependency hygiene (lockfiles, audits)
-- [ ] Input validation at boundaries
-- [ ] Least privilege for tools
-- [ ] Review AI-generated code for injection / XSS / path traversal
+- [ ] No secrets in git (use env vars / Secret Storage).
+- [ ] Dependencies from trusted registries only.
+- [ ] Input validation on all external data.
+- [ ] Least privilege for file/shell tools.
+- [ ] HTTPS / TLS for network clients.
+- [ ] Avoid logging PII or tokens.
+- [ ] Review generated code for injection (SQL, XSS, command).
 
-Grok must not invent API keys or weaken security controls.
+Grok must refuse to hardcode credentials or disable security checks for convenience.
