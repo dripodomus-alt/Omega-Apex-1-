@@ -50,4 +50,14 @@ def test_pipeline_integrity_proof_includes_canonical_math_and_runtime_modules():
         "storage",
     ]
     assert report["strict_pipeline_ownership"]["compatibility_runtime"] == "omega_v5"
+    assert report["single_architecture_policy"]["ok"] is True
+    assert report["single_architecture_policy"]["canonical_runtime_package"] == "omega_v5"
+    assert report["single_architecture_policy"]["single_runtime_architecture"] is True
+    assert report["single_architecture_policy"]["archive_design_only"] is True
+    assert report["required_runtime_modules"]["omega_v5/webhook_dispatcher.py"] is True
+    assert report["webhook_adapter_policy"]["ok"] is True
+    assert report["webhook_adapter_policy"]["module"] == "omega_v5/webhook_dispatcher.py"
+    assert report["webhook_adapter_policy"]["role"] == "observability_adapter"
+    assert "aiohttp" in report["webhook_adapter_policy"]["forbidden_imports"]
+
 

@@ -36,6 +36,28 @@ Before replacing a file, function, or module:
 
 Do not leave deprecated copies with overlapping authority.
 
+
+## Single Architecture Rule
+
+There is one runtime architecture. Today, `omega_v5` is the compatibility runtime
+and this document defines the migration target. New directories, vendor packages,
+frontend clients, cloud scripts, indexers, contracts, Rust engines, and ML
+extensions are integration surfaces around that architecture; they are not
+independent systems of record.
+
+Allowed integration surfaces must obey these rules:
+
+1. They depend inward on the canonical runtime contracts or explicit interfaces.
+2. They do not create a second scanner/ranker/simulator/executor map.
+3. They do not duplicate ownership of profitability, sizing, simulation, or
+   broadcast decisions.
+4. They expose adapters, CLIs, proofs, or UI/API clients only.
+5. If an integration replaces old logic, the old owner is edited, wrapped, or
+   retired in the same migration slice.
+
+`omega_v6` and future extension packages must remain extensions of the canonical
+runtime until their logic is migrated into the strict ownership pipeline with
+parity tests. They must not become a parallel runtime architecture.
 ## Ownership Rules
 
 ### Environment
@@ -109,6 +131,36 @@ observability-> domain decision logic
 storage      -> math formulas, simulation engines, transaction builders
 ```
 
+
+## Webhook Adapter Policy
+
+Webhooks are event adapters, not a second control plane. Repository, CI/CD,
+billing, Slack/Discord/PagerDuty, monitoring, and blockchain webhook providers
+may trigger external workflows or receive Omega events, but Omega runtime
+eligibility still flows through the canonical pipeline.
+
+Allowed webhook use:
+
+- emit route rejection, staging, simulation, transaction, health, and incident
+  events after the owning stage has made its decision;
+- ingest external alerts only through an application/orchestration boundary;
+- create tickets, notifications, dashboards, or remediation requests outside the
+  hot path;
+- monitor contract or liquidity events as Discovery inputs only after
+  normalization.
+
+Forbidden webhook use:
+
+- decide route profitability;
+- bypass Math ranking or Simulation proof;
+- authorize live broadcast;
+- mutate Storage as a substitute for repository interfaces;
+- run foreign CI/CD, billing, monitoring, or blockchain provider logic inside
+  the arbitrage hot path.
+
+The runtime webhook implementation is `omega_v5/webhook_dispatcher.py`. It is an
+outbound Observability adapter and must remain dependency-light, non-blocking to
+callers, and fail-open for delivery errors.
 ## Migration Order
 
 1. Inventory and freeze existing behavior.
@@ -123,3 +175,5 @@ storage      -> math formulas, simulation engines, transaction builders
 
 The existing `omega_v5` package remains the compatibility runtime until parity
 tests prove each moved boundary.
+
+

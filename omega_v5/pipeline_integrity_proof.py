@@ -18,6 +18,10 @@ from .paths import output_path, repo_path, resolve_repo_relative
 
 
 PIPELINE_INTEGRITY_PROOF_PATH = output_path("pipeline_integrity_proof_latest.json")
+CANONICAL_RUNTIME_PACKAGE = "omega_v5"
+TARGET_OWNERSHIP_DOC = "docs/pipeline_ownership.md"
+WEBHOOK_ADAPTER_MODULE = "omega_v5/webhook_dispatcher.py"
+FORBIDDEN_WEBHOOK_RUNTIME_IMPORTS = ("aiohttp", "httpx")
 
 STRICT_PIPELINE_ORDER = (
     "environment",
@@ -35,6 +39,17 @@ FORBIDDEN_PIPELINE_IMPORTS: dict[str, tuple[str, ...]] = {
     "simulation": ("transactions.broadcast", "transactions.coordinator"),
     "transactions": ("discovery", "math.ranking", "math.sizing"),
 }
+
+INTEGRATION_SURFACES = (
+    "contracts",
+    "rust_engine",
+    "vendor",
+    "frontend_integration",
+    "indexer",
+    "infra",
+    "scripts",
+    "docs",
+)
 
 
 def _exists(rel: str) -> bool:
@@ -105,10 +120,95 @@ def _ownership_boundary_report() -> dict[str, Any]:
         },
         "violations": violations,
         "ok": not violations,
-        "compatibility_runtime": "omega_v5",
+        "compatibility_runtime": CANONICAL_RUNTIME_PACKAGE,
     }
 
 
+def _package_imports(package_name: str, import_prefix: str) -> bool:
+    package_root = repo_path(package_name)
+    if not package_root.exists():
+        return False
+    for path in package_root.rglob("*.py"):
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        except SyntaxError:
+            continue
+        for node in ast.walk(tree):
+            for import_name in _import_name_roots(node):
+                if import_name == import_prefix or import_name.startswith(f"{import_prefix}."):
+                    return True
+    return False
+
+
+def _single_architecture_report(design: dict[str, Any]) -> dict[str, Any]:
+    repo_root = repo_path()
+    extension_packages = sorted(
+        path.name
+        for path in repo_root.iterdir()
+        if path.is_dir() and path.name.startswith("omega_v") and path.name != CANONICAL_RUNTIME_PACKAGE
+    )
+    extension_status = [
+        {
+            "package": package,
+            "imports_canonical_runtime": _package_imports(package, CANONICAL_RUNTIME_PACKAGE),
+            "allowed_role": "extension_only",
+        }
+        for package in extension_packages
+    ]
+    design_policy = design.get("integration_policy", {})
+    purge_status = design.get("purge_status", {})
+    archive_safe = (
+        design_policy.get("archive_code_executed") is False
+        and design_policy.get("mock_data_imported") is False
+        and purge_status.get("runtime_imports_archive_code") is False
+    )
+    extension_safe = all(row["imports_canonical_runtime"] for row in extension_status)
+
+    return {
+        "canonical_runtime_package": CANONICAL_RUNTIME_PACKAGE,
+        "target_ownership_doc": TARGET_OWNERSHIP_DOC,
+        "single_runtime_architecture": True,
+        "runtime_source_of_truth": design_policy.get("runtime_source_of_truth"),
+        "integration_surfaces": {name: repo_path(name).exists() for name in INTEGRATION_SURFACES},
+        "extension_packages": extension_status,
+        "archive_design_only": archive_safe,
+        "extension_packages_depend_inward": extension_safe,
+        "ok": archive_safe and extension_safe and _exists(TARGET_OWNERSHIP_DOC),
+    }
+
+
+
+def _webhook_adapter_report() -> dict[str, Any]:
+    path = repo_path(WEBHOOK_ADAPTER_MODULE)
+    imports: list[str] = []
+    if path.exists():
+        try:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for node in ast.walk(tree):
+                imports.extend(_import_name_roots(node))
+        except SyntaxError as exc:
+            return {
+                "module": WEBHOOK_ADAPTER_MODULE,
+                "present": True,
+                "ok": False,
+                "role": "observability_adapter",
+                "forbidden_imports": list(FORBIDDEN_WEBHOOK_RUNTIME_IMPORTS),
+                "violations": [f"parse_error:{exc}"],
+            }
+    violations = [
+        name
+        for name in imports
+        if any(name == forbidden or name.startswith(f"{forbidden}.") for forbidden in FORBIDDEN_WEBHOOK_RUNTIME_IMPORTS)
+    ]
+    return {
+        "module": WEBHOOK_ADAPTER_MODULE,
+        "present": path.exists(),
+        "ok": path.exists() and not violations,
+        "role": "observability_adapter",
+        "authority": "emit_events_only_no_profit_simulation_or_broadcast_decisions",
+        "forbidden_imports": list(FORBIDDEN_WEBHOOK_RUNTIME_IMPORTS),
+        "violations": violations,
+    }
 def build_integrity_proof(
     roots: list[str] | None = None,
     *,
@@ -117,6 +217,8 @@ def build_integrity_proof(
     audit = audit_report or logic_data_audit.audit_paths(roots or ["omega_v5", "scripts"])
     design = live_design_status()
     ownership = _ownership_boundary_report()
+    single_architecture = _single_architecture_report(design)
+    webhook = _webhook_adapter_report()
     required_runtime_modules = [
         "omega_v5/accounting.py",
         "omega_v5/token_calibration.py",
@@ -125,6 +227,7 @@ def build_integrity_proof(
         "omega_v5/execution_truth.py",
         "omega_v5/wallet_config_verification.py",
         "omega_v5/pipeline_validation.py",
+        WEBHOOK_ADAPTER_MODULE,
     ]
     module_status = {rel: _exists(rel) for rel in required_runtime_modules}
     blockers: list[dict[str, str]] = []
@@ -150,6 +253,22 @@ def build_integrity_proof(
                 ),
             }
         )
+    if not single_architecture["ok"]:
+        blockers.append(
+            {
+                "severity": "critical",
+                "component": "single_architecture",
+                "detail": "Canonical runtime architecture policy failed",
+            }
+        )
+    if not webhook["ok"]:
+        blockers.append(
+            {
+                "severity": "critical",
+                "component": "webhook_adapter",
+                "detail": "Webhook adapter must stay dependency-light and observability-only",
+            }
+        )
 
     report = {
         "ok": not blockers,
@@ -159,6 +278,8 @@ def build_integrity_proof(
         "logic_data_audit_summary": audit["summary"],
         "logic_data_audit_report": str(logic_data_audit.LOGIC_DATA_AUDIT_REPORT_PATH),
         "required_runtime_modules": module_status,
+        "single_architecture_policy": single_architecture,
+        "webhook_adapter_policy": webhook,
         "strict_pipeline_ownership": ownership,
         "critical_debugging_areas": logic_data_audit.CRITICAL_DEBUGGING_AREAS,
         "canonical_route_math": logic_data_audit.CANONICAL_ROUTE_MATH,
@@ -209,3 +330,4 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

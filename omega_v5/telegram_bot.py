@@ -130,8 +130,28 @@ if bot:
         try:
             result = subprocess.run(["pm2", "jlist"], check=True, capture_output=True, text=True)
             bot.reply_to(message, f"```\n{result.stdout}\n```", parse_mode="MarkdownV2")
+            result = subprocess.run(["pm2", "jlist"], check=True, capture_output=True, text=True, encoding="utf-8")
+            processes = json.loads(result.stdout)
+            if not processes:
+                bot.reply_to(message, "No PM2 processes found.")
+                return
+
+            lines = ["*PM2 Process Status*"]
+            for proc in sorted(processes, key=lambda p: p.get("name", "")):
+                name = proc.get("name", "N/A")
+                status = proc.get("pm2_env", {}).get("status", "unknown")
+                cpu = proc.get("monit", {}).get("cpu", 0)
+                mem_bytes = proc.get("monit", {}).get("memory", 0)
+                mem_mb = mem_bytes / (1024 * 1024)
+
+                status_icon = "✅" if status == "online" else "❌" if status in ["stopped", "errored"] else "⚠️"
+                lines.append(f"`{status_icon} {name:<28}`")
+                lines.append(f"  `Status: {status}, CPU: {cpu}%, Mem: {mem_mb:.1f} MB`")
+
+            bot.reply_to(message, "\n".join(lines), parse_mode="Markdown")
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             bot.reply_to(message, f"❌ Failed to get PM2 status. Is it installed and in PATH?\n`{e}`")
+            bot.reply_to(message, f"❌ Failed to get PM2 status. Is it installed and in PATH?\n`{e}`", parse_mode="Markdown")
 
     def _toggle_strategy(strategy_name: str, action: str):
         """Helper to start/stop pm2 processes."""
