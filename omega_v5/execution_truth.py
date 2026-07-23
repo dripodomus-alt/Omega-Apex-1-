@@ -267,7 +267,20 @@ def _route_semantics_preflight(op: LiveOpportunity, pools: dict) -> tuple[bool, 
 
 
 def _decode_profit_usd(op: LiveOpportunity, result_hex: str, gas_cost_usd: Decimal) -> Decimal:
-    raw = Web3.to_int(hexstr=result_hex) if result_hex and result_hex != "0x" else 0
+    """
+    Decodes the raw gross profit from an eth_call and calculates the final
+    economic net profit in USD by subtracting all known execution costs.
+
+    The `result_hex` is the return value of the executor contract's simulation,
+    which represents the gross surplus in the base asset's raw units. This
+    function converts that to USD and then subtracts all non-embedded costs
+    to arrive at the true economic net profit.
+    """
+    raw_gross_profit = Web3.to_int(hexstr=result_hex) if result_hex and result_hex != "0x" else 0
+    # The executor contract returns gross profit (surplus). If it's not positive, we can stop.
+    if raw_gross_profit <= 0:
+        return Decimal("0")
+
     try:
         price = token_price_usd(op.path[0])
     except PriceUnavailable:
@@ -276,8 +289,22 @@ def _decode_profit_usd(op: LiveOpportunity, result_hex: str, gas_cost_usd: Decim
         return Decimal("0")
 
     decimals = int(TOKEN_DECIMALS.get(op.path[0], 18))
-    profit_asset = Decimal(raw) / (Decimal(10) ** decimals)
-    return (profit_asset * price) - gas_cost_usd
+    gross_profit_asset = Decimal(raw_gross_profit) / (Decimal(10) ** decimals)
+    gross_profit_usd = gross_profit_asset * price
+
+    # The gross profit from the eth_call is the most accurate figure.
+    # Now, subtract all non-embedded costs from it to get the economic net profit.
+    prof = op.profitability
+    if not prof or not prof.expense_breakdown:
+        return gross_profit_usd - gas_cost_usd
+
+    flash_fee_usd = prof.flashloan.fee_usd if prof.flashloan else Decimal("0")
+    relay_tip_usd = prof.relay_tip_usd
+    builder_fee_usd = Decimal(str(prof.expense_breakdown.get("builder_fee_usd", "0")))
+    impact_penalty_usd = Decimal(str(prof.expense_breakdown.get("impact_penalty_usd", "0")))
+
+    total_costs_usd = gas_cost_usd + flash_fee_usd + relay_tip_usd + builder_fee_usd + impact_penalty_usd
+    return gross_profit_usd - total_costs_usd
 
 
 def _failure_class(detail: str) -> str:
