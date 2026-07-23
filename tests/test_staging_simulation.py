@@ -44,6 +44,25 @@ def test_simple_conflict_is_skipped():
     assert staged == [opp1, opp3_no_conflict]
 
 
+def test_identical_pool_sequence_is_a_conflict():
+    """
+    If two opportunities have the exact same pool sequence, the second one
+    should be considered a conflict and be skipped.
+    """
+    opp1 = create_mock_opp(("P1", "P2", "P3"))
+    opp2_identical = create_mock_opp(("P1", "P2", "P3"))
+    opp3_no_conflict = create_mock_opp(("P4", "P5"))
+
+    ranked_opps = [opp1, opp2_identical, opp3_no_conflict]
+    staged = simulate_staging(ranked_opps, max_staged=3)
+
+    assert len(staged) == 2
+    assert opp1 in staged
+    assert opp2_identical not in staged
+    assert opp3_no_conflict in staged
+    assert staged == [opp1, opp3_no_conflict]
+
+
 def test_max_staged_limit_is_respected():
     """Staging should stop once max_staged is reached, even if more non-conflicting opps exist."""
     ranked_opps = [

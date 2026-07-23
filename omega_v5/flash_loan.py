@@ -169,7 +169,7 @@ class RouteEconomics:
     risk_buffer_usd: Decimal
     impact_penalty_usd: Decimal
     economic_net_profit_usd: Decimal
-    minimum_profit_usd: Decimal
+    required_profit_usd: Decimal
     headroom_usd: Decimal
     passes_gate: bool
     impact_ratio: Decimal
@@ -411,15 +411,16 @@ def deduct_expenses_from_raw_delta(
     min_net = live_min_net_profit_usd() if min_net_profit_usd is None else min_net_profit_usd
 
     raw_delta = gross_amount_out_usd - principal_usd
-    total = (
+    # Per canonical formula, risk buffer is an uncertainty margin, not a realized cost.
+    # It is used to calculate the required profit floor, not to reduce economic profit.
+    total_expenses_usd = (
         flash_fee_usd
         + gas_cost_usd
         + relay
-        + risk
         + impact_penalty_usd
         + builder_fee_usd
     )
-    net = raw_delta - total
+    net_after_expenses_usd = raw_delta - total_expenses_usd
     default_notes = (
         "swap_fees_embedded_in_gross",
         "slippage_enforced_via_amountOutMin_not_usd_buffer",
@@ -435,10 +436,10 @@ def deduct_expenses_from_raw_delta(
         risk_buffer_usd=risk,
         impact_penalty_usd=impact_penalty_usd,
         builder_fee_usd=builder_fee_usd,
-        total_expenses_usd=total,
-        net_after_expenses_usd=net,
+        total_expenses_usd=total_expenses_usd,
+        net_after_expenses_usd=net_after_expenses_usd,
         min_net_profit_usd=min_net,
-        passes_min_net=net >= min_net,
+        passes_min_net=net_after_expenses_usd >= min_net,
         notes=notes or default_notes,
         as_of_block=as_of_block,
     )
@@ -483,18 +484,23 @@ def calculate_route_economics(
         gross=max(Decimal("0"), gross_surplus),
     )
 
+    # Per canonical formula: economic_net_profit = gross_profit - realized_execution_costs
+    # Risk buffer is an uncertainty margin, not a realized cost.
     operating_expenses = (
         normalized["flash_fee_usd"]
         + normalized["gas_cost_usd"]
         + normalized["relay_tip_usd"]
         + normalized["builder_fee_usd"]
-        + normalized["risk_buffer_usd"]
         + impact_penalty
     )
 
     economic_net = gross_surplus - operating_expenses
-    minimum_profit = normalized["minimum_profit_usd"]
-    headroom = economic_net - minimum_profit
+
+    # Per canonical formula: authorize if economic_net_profit >= required_profit_floor
+    # required_profit_floor = base_floor + uncertainty_buffers
+    required_profit_floor = normalized["minimum_profit_usd"] + normalized["risk_buffer_usd"]
+
+    headroom = economic_net - required_profit_floor
 
     impact_ratio = principal / min_tvl if min_tvl > 0 else Decimal("Infinity")
 
@@ -507,9 +513,9 @@ def calculate_route_economics(
         risk_buffer_usd=normalized["risk_buffer_usd"],
         impact_penalty_usd=impact_penalty,
         economic_net_profit_usd=economic_net,
-        minimum_profit_usd=minimum_profit,
+        required_profit_usd=required_profit_floor,
         headroom_usd=headroom,
-        passes_gate=headroom >= 0,
+        passes_gate=headroom >= Decimal("0"),
         impact_ratio=impact_ratio,
     )
 
@@ -587,9 +593,14 @@ def evaluate_profitability(
         gas_source=f"{gas_price_source}|{pol_price_source}",
         fee_source=flash.fee_source,
     )
-    net = breakdown.net_after_expenses_usd
-    profit_to_gas = net / gas_usd if gas_usd > 0 else Decimal("0")
-    passes = (net >= min_net) and (profit_to_gas >= min_p2g)
+    # `net_profit_usd` is now the economic net profit, with risk buffer not yet subtracted.
+    net_profit_usd = breakdown.net_after_expenses_usd
+    profit_to_gas = net_profit_usd / gas_usd if gas_usd > 0 else Decimal("0")
+
+    # The authorization gate compares economic profit against a required floor,
+    # which includes the base minimum and the risk buffer.
+    required_profit_floor = breakdown.min_net_profit_usd + breakdown.risk_buffer_usd
+    passes = (net_profit_usd >= required_profit_floor) and (profit_to_gas >= min_p2g)
 
     return Profitability(
         gross_amount_out=gross_amount_out_usd,
@@ -597,7 +608,7 @@ def evaluate_profitability(
         gas_cost_usd=gas_usd,
         relay_tip_usd=relay_tip,
         risk_buffer_usd=risk_buf,
-        net_profit_usd=net,
+        net_profit_usd=net_profit_usd,
         profit_to_gas=profit_to_gas,
         passes_gate=passes,
         gas_units=gas_units,

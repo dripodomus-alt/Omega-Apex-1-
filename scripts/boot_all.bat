@@ -37,23 +37,25 @@ if %errorlevel% neq 0 (
 
 REM --- 2. Environment Setup ---
 echo [2/5] Setting up Python environment...
-if not exist .venv (
+if exist .venv\ (
+    echo   - Python virtual environment found.
+) else (
     echo   - Creating virtual environment...
     python -m venv .venv
 )
 
 echo   - Activating virtual environment and installing dependencies...
 call .venv\Scripts\activate.bat
-pip install -r requirements.txt
+pip install -r requirements.txt >nul
 
 REM --- 3. .env File Setup ---
 echo [3/5] Checking for .env file...
-if not exist .env (
+if exist .env (
+    echo   - .env file found.
+) else (
     echo   - .env file not found. Creating from .env.example...
     copy .env.example .env
     echo   - IMPORTANT: Please edit the .env file with your private keys and API tokens.
-) else (
-    echo   - .env file found.
 )
 
 REM --- 4. Build Rust Engine ---
