@@ -86,7 +86,7 @@ ADAPTERS = {
         "contract": "OmegaCurveCapitalSourceAdapter",
         "artifact": output_path("OmegaCurveCapitalSourceAdapter.sol", "OmegaCurveCapitalSourceAdapter.json"),
         "env": "CURVE_CAPITAL_ADAPTER",
-        "source_id": 4,  # Corresponds to the RoutePoolKind enum for CURVE_STABLE
+        "source_id": None,  # Not a primary flash-loan capital source, so no adapter-for-source slot.
         "kind": "capital_source",
     },
 }

@@ -76,7 +76,7 @@ def _quote_v3(pool: dict, amount_in: Decimal) -> list[Quote]:
             amount_in,
         )
         if executable_quote.clmm_proven and executable_quote.amount_out > 0:
-            quotes.append(Quote(tokens[i], tokens[j], executable_quote.amount_out, "concentrated_liquidity_exact_quote"))
+            quotes.append(Quote(tokens[i], tokens[j], executable_quote.amount_out, "concentrated_liquidity"))
     return quotes
 
 

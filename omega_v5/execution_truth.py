@@ -300,10 +300,11 @@ def _decode_profit_usd(op: LiveOpportunity, result_hex: str, gas_cost_usd: Decim
 
     flash_fee_usd = prof.flashloan.fee_usd if prof.flashloan else Decimal("0")
     relay_tip_usd = prof.relay_tip_usd
+    protocol_overhead_usd = getattr(prof, "protocol_overhead_usd", Decimal("0"))
     builder_fee_usd = Decimal(str(prof.expense_breakdown.get("builder_fee_usd", "0")))
     impact_penalty_usd = Decimal(str(prof.expense_breakdown.get("impact_penalty_usd", "0")))
 
-    total_costs_usd = gas_cost_usd + flash_fee_usd + relay_tip_usd + builder_fee_usd + impact_penalty_usd
+    total_costs_usd = gas_cost_usd + flash_fee_usd + relay_tip_usd + protocol_overhead_usd + builder_fee_usd + impact_penalty_usd
     return gross_profit_usd - total_costs_usd
 
 

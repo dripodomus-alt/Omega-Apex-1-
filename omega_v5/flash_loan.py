@@ -32,6 +32,7 @@ from .config import (
     ENABLE_DYNAMIC_SIZE_OPTIMIZER,
     STABLE_MIN_NET_PROFIT_USD,
     DYNAMIC_SIZE_IMPACT_PENALTY_BPS,
+    PROTOCOL_OVERHEAD_USD,
     STABLE_RISK_BUFFER_USD,
 )
 
@@ -50,7 +51,7 @@ GAS_PRICE_GWEI = Decimal("10")
 GAS_UNITS_SIMPLE_ARB = Decimal("350000")  # 2-hop flash arb
 GAS_UNITS_THREE_HOP_ARB = Decimal("500000")  # 3-hop flash arb
 GAS_UNITS_FOUR_HOP_ARB = Decimal("650000")  # 4-hop flash arb
-POL_USD_PRICE = Decimal("0.30")  # fallback; overridden by oracle layer when live
+POL_USD_PRICE = Decimal("0.076")  # fallback; overridden by oracle layer when live
 
 # ── Profitability gate constants (defaults; runtime env overrides below) ──────
 # Floors are intentionally micro so min→max surplus scans are not gas-starved.
@@ -89,6 +90,10 @@ def live_relay_tip_usd() -> Decimal:
     return _env_decimal("RELAY_TIP_USD", RELAY_TIP_USD)
 
 
+def live_protocol_overhead_usd() -> Decimal:
+    return _env_decimal("PROTOCOL_OVERHEAD_USD", PROTOCOL_OVERHEAD_USD)
+
+
 class FlashSource(str, Enum):
     AAVE = "Aave_V3"
     BALANCER = "Balancer_Vault"
@@ -125,6 +130,7 @@ class ExpenseBreakdown:
     flash_fee_usd: Decimal
     gas_cost_usd: Decimal
     relay_tip_usd: Decimal
+    protocol_overhead_usd: Decimal = Decimal("0")
     risk_buffer_usd: Decimal
     impact_penalty_usd: Decimal = Decimal("0")
     builder_fee_usd: Decimal = Decimal("0")
@@ -145,6 +151,7 @@ class ExpenseBreakdown:
             "flash_fee_usd": str(self.flash_fee_usd),
             "gas_cost_usd": str(self.gas_cost_usd),
             "relay_tip_usd": str(self.relay_tip_usd),
+            "protocol_overhead_usd": str(self.protocol_overhead_usd),
             "risk_buffer_usd": str(self.risk_buffer_usd),
             "impact_penalty_usd": str(self.impact_penalty_usd),
             "builder_fee_usd": str(self.builder_fee_usd),
@@ -166,6 +173,7 @@ class RouteEconomics:
     gas_cost_usd: Decimal
     relay_tip_usd: Decimal
     builder_fee_usd: Decimal
+    protocol_overhead_usd: Decimal
     risk_buffer_usd: Decimal
     impact_penalty_usd: Decimal
     economic_net_profit_usd: Decimal
@@ -188,6 +196,7 @@ class Profitability:
     flashloan: FlashLoanParams | None
     gas_cost_usd: Decimal
     relay_tip_usd: Decimal
+    protocol_overhead_usd: Decimal = Decimal("0")
     risk_buffer_usd: Decimal
     net_profit_usd: Decimal
     profit_to_gas: Decimal
@@ -388,6 +397,7 @@ def deduct_expenses_from_raw_delta(
     risk_buffer_usd: Decimal | None = None,
     impact_penalty_usd: Decimal = Decimal("0"),
     builder_fee_usd: Decimal = Decimal("0"),
+    protocol_overhead_usd: Decimal | None = None,
     min_net_profit_usd: Decimal | None = None,
     as_of_block: int = 0,
     notes: tuple[str, ...] = (),
@@ -408,6 +418,7 @@ def deduct_expenses_from_raw_delta(
     """
     relay = live_relay_tip_usd() if relay_tip_usd is None else relay_tip_usd
     risk = live_risk_buffer_usd() if risk_buffer_usd is None else risk_buffer_usd
+    protocol_cost = live_protocol_overhead_usd() if protocol_overhead_usd is None else protocol_overhead_usd
     min_net = live_min_net_profit_usd() if min_net_profit_usd is None else min_net_profit_usd
 
     raw_delta = gross_amount_out_usd - principal_usd
@@ -417,6 +428,7 @@ def deduct_expenses_from_raw_delta(
         flash_fee_usd
         + gas_cost_usd
         + relay
+        + protocol_cost
         + impact_penalty_usd
         + builder_fee_usd
     )
@@ -433,6 +445,7 @@ def deduct_expenses_from_raw_delta(
         flash_fee_usd=flash_fee_usd,
         gas_cost_usd=gas_cost_usd,
         relay_tip_usd=relay,
+        protocol_overhead_usd=protocol_cost,
         risk_buffer_usd=risk,
         impact_penalty_usd=impact_penalty_usd,
         builder_fee_usd=builder_fee_usd,
@@ -455,6 +468,7 @@ def calculate_route_economics(
     gas_cost_usd: Decimal,
     relay_tip_usd: Decimal,
     builder_fee_usd: Decimal,
+    protocol_overhead_usd: Decimal,
     risk_buffer_usd: Decimal,
     minimum_profit_usd: Decimal,
 ) -> RouteEconomics:
@@ -466,6 +480,7 @@ def calculate_route_economics(
         "gas_cost_usd": gas_cost_usd,
         "relay_tip_usd": relay_tip_usd,
         "builder_fee_usd": builder_fee_usd,
+        "protocol_overhead_usd": protocol_overhead_usd,
         "risk_buffer_usd": risk_buffer_usd,
         "minimum_profit_usd": minimum_profit_usd,
     }
@@ -491,6 +506,7 @@ def calculate_route_economics(
         + normalized["gas_cost_usd"]
         + normalized["relay_tip_usd"]
         + normalized["builder_fee_usd"]
+        + normalized["protocol_overhead_usd"]
         + impact_penalty
     )
 
@@ -510,6 +526,7 @@ def calculate_route_economics(
         gas_cost_usd=normalized["gas_cost_usd"],
         relay_tip_usd=normalized["relay_tip_usd"],
         builder_fee_usd=normalized["builder_fee_usd"],
+        protocol_overhead_usd=normalized["protocol_overhead_usd"],
         risk_buffer_usd=normalized["risk_buffer_usd"],
         impact_penalty_usd=impact_penalty,
         economic_net_profit_usd=economic_net,
@@ -530,6 +547,7 @@ def evaluate_profitability(
     risk_buffer_usd_override: Decimal | None = None,
     impact_penalty_usd: Decimal = Decimal("0"),
     builder_fee_usd: Decimal = Decimal("0"),
+    protocol_overhead_usd_override: Decimal | None = None,
     relay_tip_usd_override: Decimal | None = None,
     as_of_block: int | None = None,
 ) -> Profitability:
@@ -574,6 +592,7 @@ def evaluate_profitability(
         else live_risk_buffer_usd()
     )
     relay_tip = live_relay_tip_usd() if relay_tip_usd_override is None else relay_tip_usd_override
+    protocol_cost = live_protocol_overhead_usd() if protocol_overhead_usd_override is None else protocol_overhead_usd_override
     min_p2g = live_min_profit_to_gas_ratio()
 
     breakdown = deduct_expenses_from_raw_delta(
@@ -582,6 +601,7 @@ def evaluate_profitability(
         flash_fee_usd=flash.fee_usd,
         gas_cost_usd=gas_usd,
         relay_tip_usd=relay_tip,
+        protocol_overhead_usd=protocol_cost,
         risk_buffer_usd=risk_buf,
         impact_penalty_usd=impact_penalty_usd,
         builder_fee_usd=builder_fee_usd,
@@ -607,6 +627,7 @@ def evaluate_profitability(
         flashloan=flash,
         gas_cost_usd=gas_usd,
         relay_tip_usd=relay_tip,
+        protocol_overhead_usd=protocol_cost,
         risk_buffer_usd=risk_buf,
         net_profit_usd=net_profit_usd,
         profit_to_gas=profit_to_gas,
