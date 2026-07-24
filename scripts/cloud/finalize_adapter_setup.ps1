@@ -26,6 +26,12 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
 Set-Location $repoRoot
 
+Write-Host "================================== ARCHITECTURE NOTICE ==================================" -ForegroundColor Cyan
+Write-Host "This script orchestrates contract deployment for the legacy omega_v5 (Python) stack." -ForegroundColor Cyan
+Write-Host "In the OMEGA-FINALLY-RICH architecture, this functionality should be migrated to a" -ForegroundColor Cyan
+Write-Host "TypeScript-based deployment script within the 'packages/execution' workspace." -ForegroundColor Cyan
+Write-Host "========================================================================================="
+
 function Write-Step { param([string]$Message) Write-Host "`n✅ $($Message)" -ForegroundColor Green }
 
 if ($Broadcast -and $LiveAck -ne "I_UNDERSTAND_POLYGON_MAINNET_RISK") {
@@ -44,11 +50,8 @@ python -m omega_v5.deploy_adapters @deployArgs # Deploys the standard, audited s
 Assert-Ok ($LASTEXITCODE -eq 0) "Adapter deployment script failed."
 
 if ($DeployCurveAdapter) {
-    Write-Step "Step 1.5: Deploying and Configuring Curve Capital Source Adapter (Prototype)"
-    Write-Host "Running python -m omega_v5.deploy_adapters for Curve..." -ForegroundColor Yellow
-    $curveDeployArgs = $commonArgs + @("--adapter", "curve", "--configure", "--write-env")
-    python -m omega_v5.deploy_adapters @curveDeployArgs
-    Assert-Ok ($LASTEXITCODE -eq 0) "Curve adapter deployment failed. NOTE: This requires a new 'OmegaCurveCapitalSourceAdapter.sol' and updates to the python deployment script."
+    # The Curve adapter is noted as a prototype. This check prevents accidental deployment attempts.
+    throw "The -DeployCurveAdapter flag is for a non-functional prototype and has been disabled. This feature requires a new 'OmegaCurveCapitalSourceAdapter.sol' contract and updates to the Python deployment script before it can be used."
 }
 Write-Host ".env file has been updated with the new contract addresses."
 

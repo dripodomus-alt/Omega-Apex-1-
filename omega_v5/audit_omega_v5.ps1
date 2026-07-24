@@ -1,12 +1,11 @@
 <#
 .SYNOPSIS
-  Audits source code updates, repository status, security secrets,
-  and GCP Cloud Run deployment readiness for omega_v5 / Apex-Omega.
+  Audits the OMEGA-FINALLY-RICH monorepo for structural integrity, security,
+  toolchain dependencies, and deployment readiness.
 .DESCRIPTION
-  This script is a PowerShell conversion of the original audit_omega_v5.sh.
-  It performs a comprehensive audit of the project's state, including Git status,
-  file architecture, security vulnerabilities (hardcoded secrets), toolchain
-  dependencies, and GCP readiness.
+  This script performs a comprehensive audit of the project's state, including
+  Git status, monorepo file architecture, security vulnerabilities (hardcoded secrets),
+  toolchain dependencies (pnpm, Docker, kubectl), and cloud deployment readiness.
 .EXAMPLE
   .\scripts\ops\audit_omega_v5.ps1
 .EXAMPLE
@@ -33,20 +32,26 @@ function log_header {
 
 # --- Environment & Variables Configuration ---
 $TIMESTAMP = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
-$LOG_FILE = Join-Path $ProjectDir "omega_v5_audit_${TIMESTAMP}.log"
+$LOG_FILE = Join-Path $ProjectDir "monorepo_audit_${TIMESTAMP}.log"
 
 # Define critical expected project paths
 $CRITICAL_FILES = @(
-    "deploy_omega_v5.sh", # Kept for consistency with original script
-    "Dockerfile",
-    "package.json"
+    "pnpm-workspace.yaml",
+    "apps/web/package.json",
+    "apps/api/package.json",
+    "apps/worker/package.json",
+    "packages/adapters/package.json",
+    "packages/execution/package.json",
+    "packages/simulation/package.json",
+    "infrastructure/docker/docker-compose.yml",
+    "infrastructure/kubernetes/deployment.yml" # Example, adjust as needed
 )
 
 # High Entropy / Secret Patterns for Security Audit
 $SECRET_PATTERNS = @(
     "PRIVATE_KEY",
     "SECRET_KEY",
-    "AKIA[0-9A-Z]{16}", # AWS Key Pattern
+    "AKIA[0-9A-Z]{16}",   # AWS Key Pattern
     "ghp_[a-zA-Z0-9]{36}", # GitHub Personal Access Token Pattern
     "AIza[0-9A-Za-z-_]{35}", # GCP API Key Pattern
     "0x[a-fA-F0-9]{64}" # Raw Ethereum Private Key Pattern
@@ -54,19 +59,19 @@ $SECRET_PATTERNS = @(
 
 # --- Banner Output ---
 Write-Host @"
-  ██████╗ ███╗   ███╗███████╗██████╗  █████╗     ██╗   ██╗███████╗
- ██╔═══██╗████╗ ████║██╔════╝██╔══██╗██╔══██╗    ██║   ██║██╔════╝
- ██║   ██║██╔████╔██║█████╗  ██████╔╝███████║    ██║   ██║███████╗
- ██║   ██║██║╚██╔╝██║██╔══╝  ██╔═══╝ ██╔══██║    ╚██╗ ██╔╝╚════██║
- ╚██████╔╝██║ ╚═╝ ██║███████╗██║     ██║  ██║     ╚████╔╝ ███████║
-  ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝     ╚═╝  ╚═╝      ╚═══╝  ╚══════╝
-                     SOURCE UPDATE AUDITOR v5.0
+  ██████╗ ███╗   ███╗███████╗██████╗   █████╗ ██╗  ██╗██╗██╗   ██╗██╗ ██████╗██╗  ██╗
+ ██╔═══██╗████╗ ████║██╔════╝██╔══██╗ ██╔══██╗██║  ██║██║██║   ██║██║██╔════╝██║  ██║
+ ██║   ██║██╔████╔██║█████╗  ██████╔╝ ███████║███████║██║██║   ██║██║██║     ███████║
+ ██║   ██║██║╚██╔╝██║██╔══╝  ██╔═══╝  ██╔══██║██╔══██║██║╚██╗ ██╔╝██║██║     ██╔══██║
+ ╚██████╔╝██║ ╚═╝ ██║███████╗██║      ██║  ██║██║  ██║██║ ╚████╔╝ ██║╚██████╗██║  ██║
+  ╚═════╝ ╚═╝     ╚═╝╚══════╝╚═╝      ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
+                     MONOREPO INTEGRITY AUDITOR
 "@ -ForegroundColor Cyan
 
 # Start logging
 Start-Transcript -Path $LOG_FILE -Append
 
-log_info "Starting omega_v5 Source Code Audit..."
+log_info "Starting OMEGA-FINALLY-RICH Monorepo Audit..."
 log_info "Target Directory: $ProjectDir"
 log_info "Audit Log File  : $LOG_FILE"
 
@@ -139,8 +144,8 @@ log_header "3. SECURITY AUDIT - HIGH-ENTROPY SECRET SCAN"
 
 log_info "Scanning source tree for unencrypted API keys, private keys, and secrets..."
 $LEAK_FOUND = 0
-
-$excludeDirs = @(".git", "node_modules", "target", "dist", ".venv", "cache", "out")
+$# Exclude common build and dependency directories for Node.js/monorepo projects
+$excludeDirs = @(".git", "node_modules", "target", "dist", ".venv", "cache", "out", ".next", "build")
 $excludeFiles = @("*.log", ".env.example", "Cargo.lock")
 
 foreach ($pattern in $SECRET_PATTERNS) {
@@ -181,23 +186,26 @@ function check_tool {
 check_tool "git"
 check_tool "docker"
 check_tool "gcloud"
+check_tool "kubectl"
 check_tool "node"
-check_tool "cargo"
+check_tool "pnpm"
 
-# Check Node.js dependencies if package.json exists
-if (Test-Path (Join-Path $ProjectDir "package.json")) {
+# Check monorepo dependency health if pnpm is available
+if (Get-Command pnpm -ErrorAction SilentlyContinue) {
     Write-Host ""
-    log_info "Auditing package.json dependencies for ethers.js conflicts..."
-    $ethersLine = Get-Content (Join-Path $ProjectDir "package.json") | Select-String -Pattern '"ethers":' -ErrorAction SilentlyContinue
-    if ($ethersLine) {
-        log_info "Ethers dependency version: $ethersLine"
+    log_info "Auditing monorepo dependencies with 'pnpm doctor'..."
+    pnpm doctor
+    if ($LASTEXITCODE -eq 0) {
+        log_success "pnpm doctor reports no issues with the dependency tree."
+    } else {
+        log_error "pnpm doctor found issues. Run 'pnpm doctor' manually to diagnose."
     }
 }
 
 # ==============================================================================
-# SECTION 5: GCP CLOUD RUN DEPLOYMENT READINESS
+# SECTION 5: CLOUD DEPLOYMENT READINESS
 # ==============================================================================
-log_header "5. GCP DEPLOYMENT READINESS EVALUATION"
+log_header "5. CLOUD DEPLOYMENT READINESS EVALUATION"
 
 if (Get-Command gcloud -ErrorAction SilentlyContinue) {
     $GCP_ACCOUNT = (gcloud config get-value account 2>$null)
@@ -209,13 +217,25 @@ if (Get-Command gcloud -ErrorAction SilentlyContinue) {
     log_info "Active GCP Account : $GCP_ACCOUNT"
     log_info "Active GCP Project : $GCP_PROJECT"
 
-    if (($GCP_PROJECT -ne "No active project") -and ($GCP_ACCOUNT -ne "Not authenticated")) {
+    if ($GCP_PROJECT -ne "No active project" -and $GCP_ACCOUNT -ne "Not authenticated") {
         log_success "gcloud CLI is configured and authenticated."
     } else {
         log_warning "gcloud CLI requires authentication or project setup."
     }
 } else {
-    log_warning "gcloud CLI is not installed. Cloud Run deployments cannot be verified locally."
+    log_warning "gcloud CLI is not installed. GCP deployments cannot be verified locally."
+}
+
+if (Get-Command kubectl -ErrorAction SilentlyContinue) {
+    $KUBE_CONTEXT = (kubectl config current-context 2>$null)
+    if (!$KUBE_CONTEXT) { $KUBE_CONTEXT = "No context set" }
+
+    log_info "Active kubectl context: $KUBE_CONTEXT"
+    if ($KUBE_CONTEXT -ne "No context set") {
+        log_success "kubectl CLI is configured."
+    } else {
+        log_warning "kubectl CLI is not configured with a context."
+    }
 }
 
 # ==============================================================================
@@ -223,7 +243,7 @@ if (Get-Command gcloud -ErrorAction SilentlyContinue) {
 # ==============================================================================
 log_header "AUDIT SUMMARY & RECOMMENDATIONS"
 
-log_info "Audit complete for omega_v5."
+log_info "Audit complete for OMEGA-FINALLY-RICH."
 log_info "Full execution transcript written to: $LOG_FILE"
 
 if ($LEAK_FOUND -ne 0) {

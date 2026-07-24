@@ -26,6 +26,11 @@ $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 
+Write-Host "================================== DEPRECATION WARNING ==================================" -ForegroundColor Yellow
+Write-Host "This script ('full_system_ops.ps1') is part of the legacy omega_v5 (Python/PM2) architecture." -ForegroundColor Yellow
+Write-Host "It is deprecated for local development in favor of 'scripts/ops/start_local_dev.ps1' for the new monorepo." -ForegroundColor Yellow
+Write-Host "For production, use the Docker/Kubernetes infrastructure defined in the OMEGA-FINALLY-RICH monorepo." -ForegroundColor Yellow
+Write-Host "========================================================================================="
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $repoRoot
 

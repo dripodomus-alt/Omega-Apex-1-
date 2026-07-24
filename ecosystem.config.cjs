@@ -45,36 +45,19 @@ loadLocalEnvIfPresent(path.join(cwd, ".env"));
 
 const pythonBin = process.env.PYTHON_BIN || (process.platform === "win32" ? "python" : "python3");
 const truthy = (value) => ["1", "true", "yes", "on"].includes(String(value || "").toLowerCase());
-const falsey = (value) => ["0", "false", "no", "off"].includes(String(value || "").toLowerCase());
-const drpcRpc = process.env.DRPC_POLYGON_RPC_HTTP || "https://polygon.drpc.org";
-const drpcWss = process.env.DRPC_POLYGON_RPC_WSS || "wss://polygon.drpc.org";
-const drpcLbRpc = process.env.DRPC_LB_HTTP_URL || process.env.PRIMARY_READ_RPC_URL || `https://lb.drpc.live/polygon/${process.env.DRPC_API_KEY || "YOUR_DRPC_KEY_HERE"}`;
-const drpcLbWss = process.env.DRPC_LB_WSS_URL || process.env.PRIMARY_WSS_URL || `wss://lb.drpc.live/polygon/${process.env.DRPC_API_KEY || "YOUR_DRPC_KEY_HERE"}`;
-const telemetryRpc = process.env.TELEMETRY_RPC_URL || "https://polygon-bor-rpc.publicnode.com";
-const telemetryWss = process.env.TELEMETRY_WSS_URL || "wss://polygon-bor-rpc.publicnode.com";
-const primaryReadRpc = process.env.PRIMARY_READ_RPC_URL || process.env.POLYGON_RPC_URL || drpcLbRpc;
-const primaryReadWss = process.env.PRIMARY_WSS_URL || process.env.POLYGON_WSS_URL || drpcLbWss;
-const broadcastRpc = process.env.BROADCAST_RPC_URL || "https://polygon-mainnet.infura.io/v3/<YOUR_INFURA_KEY_HERE>";
-const broadcastWss = process.env.BROADCAST_WSS_URL || "wss://polygon-mainnet.infura.io/ws/v3/<YOUR_INFURA_KEY_HERE>";
-const getBlockRpc = process.env.GETBLOCK_POLYGON_RPC_HTTP || `https://go.getblock.io/${process.env.GETBLOCK_API_KEY || "YOUR_GETBLOCK_KEY_HERE"}`;
-const getBlockWss = process.env.GETBLOCK_POLYGON_RPC_WSS || `wss://go.getblock.io/${process.env.GETBLOCK_API_KEY || "YOUR_GETBLOCK_KEY_HERE"}`;
-const infuraRpc = process.env.INFURA_HTTP || `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY || "YOUR_INFURA_KEY_HERE"}`;
-const infuraWss = process.env.INFURA_WSS || process.env.INFURA_POLYGON_RPC_WS || `wss://polygon-mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY || "YOUR_INFURA_KEY_HERE"}`;
-const broadcastFallbackRpcUrls = [
-  getBlockRpc,
-  infuraRpc,
-  drpcRpc,
-  telemetryRpc,
-  "https://polygon.publicnode.com",
-  "https://1rpc.io/matic",
-  "https://polygon.api.onfinality.io/public"
-].join(",");
-const broadcastFallbackWssUrls = [
-  getBlockWss,
-  infuraWss,
-  drpcWss,
-  telemetryWss
-].join(",");
+
+// Simplify RPC configuration. All URLs should be defined in the .env file.
+// This removes hardcoded keys and complex logic from the process manager config.
+const primaryReadRpc = process.env.PRIMARY_READ_RPC_URL || process.env.POLYGON_RPC_URL || "https://polygon.drpc.org";
+const primaryReadWss = process.env.PRIMARY_WSS_URL || process.env.POLYGON_WSS_URL || "wss://polygon.drpc.org";
+const broadcastRpc = process.env.BROADCAST_RPC_URL; // Should be defined in .env for live mode
+const broadcastWss = process.env.BROADCAST_WSS_URL;
+const broadcastFallbackRpcUrls = process.env.BROADCAST_RPC_FALLBACK_URLS || "";
+const broadcastFallbackWssUrls = process.env.BROADCAST_WSS_FALLBACK_URLS || "";
+const rpcRotationHttpUrls = process.env.RPC_ROTATION_HTTP_URLS || primaryReadRpc;
+const rpcRotationWssUrls = process.env.RPC_ROTATION_WSS_URLS || primaryReadWss;
+const dodoExtraHttpUrls = process.env.DODO_RPC_EXTRA_HTTP_URLS || rpcRotationHttpUrls;
+
 const apiHost = process.env.API_HOST || "127.0.0.1";
 const apiPort = process.env.API_PORT || "8080";
 const dodoProviderPort = process.env.DODO_RPC_PROVIDER_PORT || "3001";
@@ -82,53 +65,12 @@ const configuredDodoProviderUrl = process.env.DODO_RPC_PROVIDER_URL || "";
 const dodoProviderUrl = configuredDodoProviderUrl && !configuredDodoProviderUrl.includes(":3000")
   ? configuredDodoProviderUrl
   : `http://127.0.0.1:${dodoProviderPort}`;
-const liveExecutionRequested = truthy(process.env.LIVE_EXECUTION);
-const shadowModeOff = process.env.SHADOW_MODE === undefined || falsey(process.env.SHADOW_MODE);
-const executionEnabled = process.env.EXECUTION_DISABLED === undefined || falsey(process.env.EXECUTION_DISABLED);
-const runtimeMode = (liveExecutionRequested && shadowModeOff && executionEnabled)
-  ? "live"
-  : (process.env.OMEGA_RUNTIME_MODE || process.env.EXECUTION_MODE || "dry_run");
+
+// The runtime mode should be controlled exclusively by the .env file or the API.
+const runtimeMode = process.env.OMEGA_RUNTIME_MODE || "dry_run";
 const executionMode = runtimeMode;
 const liveTrading = process.env.LIVE_TRADING || (runtimeMode === "live" ? "1" : "0");
-const mainnetConfirm = process.env.CONFIRM_MAINNET_EXECUTION || "";
-const canaryMode = process.env.OMEGA_ENGINE_CANARY_MODE || "true";
-const engineNoScan = process.env.OMEGA_ENGINE_NO_SCAN || "true";
-const rpcRotationHttpUrls = [
-  drpcLbRpc,
-  drpcRpc,
-  "https://tenderly.rpc.polygon.community",
-  telemetryRpc,
-  "https://polygon.publicnode.com",
-  "https://polygon-mainnet.gateway.tatum.io",
-  "https://polygon-public.nodies.app",
-  "https://1rpc.io/matic",
-  "https://rpc-mainnet.matic.quiknode.pro",
-  "https://polygon.api.onfinality.io/public",
-  getBlockRpc,
-  infuraRpc,
-  broadcastRpc
-].join(",");
-const rpcRotationWssUrls = [
-  drpcLbWss,
-  drpcWss,
-  telemetryWss,
-  getBlockWss,
-  infuraWss,
-  broadcastWss
-].join(",");
-const dodoExtraHttpUrls = [
-  drpcLbRpc,
-  drpcRpc,
-  "https://tenderly.rpc.polygon.community",
-  telemetryRpc,
-  "https://polygon.publicnode.com",
-  "https://polygon-mainnet.gateway.tatum.io",
-  "https://polygon-public.nodies.app",
-  "https://1rpc.io/matic",
-  "https://polygon.api.onfinality.io/public",
-  getBlockRpc,
-  infuraRpc
-].join(",");
+
 const rustEngineBin = process.env.OMEGA_RUST_ENGINE_BIN || path.join(cwd, "rust_engine", "target", "release", process.platform === "win32" ? "omega_rust_engine.exe" : "omega_rust_engine");
 const redisUrl = process.env.REDIS_URL || "redis://127.0.0.1:6379/0";
 const pythonRuntimeEnv = {
@@ -215,18 +157,10 @@ module.exports = {
       env: {
         ...pythonRuntimeEnv,
         POLYGON_RPC_URL: primaryReadRpc,
-        RPC_URL: primaryReadRpc,
         POLYGON_WSS_URL: primaryReadWss,
-        DRPC_LB_HTTP_URL: drpcLbRpc,
-        DRPC_LB_WSS_URL: drpcLbWss,
-        GETBLOCK_POLYGON_RPC_HTTP: getBlockRpc,
-        GETBLOCK_POLYGON_RPC_WSS: getBlockWss,
-        INFURA_HTTP: infuraRpc,
-        INFURA_POLYGON_RPC_WS: infuraWss,
-        INFURA_WSS: infuraWss,
-        INFURA_WSS_URL: infuraWss,
         RPC_ROTATION_HTTP_URLS: rpcRotationHttpUrls,
         RPC_ROTATION_WSS_URLS: rpcRotationWssUrls,
+        // Inherits all other RPC URLs directly from the loaded .env
         PRIMARY_READ_RPC_URL: primaryReadRpc,
         EXACT_CALL_RPC_URL: primaryReadRpc,
         PRIMARY_WSS_URL: primaryReadWss,
@@ -267,18 +201,10 @@ module.exports = {
         API_CORS_ORIGINS: process.env.API_CORS_ORIGINS || "http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:5173,http://localhost:5173,https://ai.studio",
         API_FRONTEND_TOKEN_REQUIRED: "false",
         GETBLOCK_POLYGON_RPC_HTTP: getBlockRpc,
-        GETBLOCK_POLYGON_RPC_WSS: getBlockWss,
-        INFURA_HTTP: infuraRpc,
-        INFURA_POLYGON_RPC_WS: infuraWss,
-        INFURA_WSS: infuraWss,
-        INFURA_WSS_URL: infuraWss,
         POLYGON_RPC_URL: primaryReadRpc,
         RPC_URL: primaryReadRpc,
         POLYGON_WSS_URL: primaryReadWss,
-        DRPC_LB_HTTP_URL: drpcLbRpc,
-        DRPC_LB_WSS_URL: drpcLbWss,
         PRIMARY_READ_RPC_URL: primaryReadRpc,
-        EXACT_CALL_RPC_URL: primaryReadRpc,
         PRIMARY_WSS_URL: primaryReadWss,
         TELEMETRY_RPC_URL: telemetryRpc,
         RPC_ROTATION_HTTP_URLS: rpcRotationHttpUrls,
@@ -313,7 +239,7 @@ module.exports = {
         OMEGA_RUNTIME_MODE: runtimeMode,
         EXECUTION_MODE: executionMode,
         LIVE_TRADING: liveTrading,
-        CONFIRM_MAINNET_EXECUTION: mainnetConfirm,
+        // CONFIRM_MAINNET_EXECUTION is a script-level concern, not a daemon env var.
         ENABLE_SMART_SESSIONS: "true",
         SESSION_SIGNER_ENABLED: "true",
         SESSION_SIGNER_MODE: "dry_run",
@@ -336,20 +262,11 @@ module.exports = {
       env: {
         ...pythonRuntimeEnv,
         POLYGON_RPC_URL: primaryReadRpc,
-        DRPC_LB_HTTP_URL: drpcLbRpc,
-        DRPC_LB_WSS_URL: drpcLbWss,
-        GETBLOCK_POLYGON_RPC_HTTP: getBlockRpc,
-        GETBLOCK_POLYGON_RPC_WSS: getBlockWss,
-        INFURA_HTTP: infuraRpc,
-        INFURA_POLYGON_RPC_WS: infuraWss,
-        INFURA_WSS: infuraWss,
-        INFURA_WSS_URL: infuraWss,
         RPC_URL: primaryReadRpc,
         POLYGON_WSS_URL: primaryReadWss,
         PRIMARY_READ_RPC_URL: primaryReadRpc,
         EXACT_CALL_RPC_URL: primaryReadRpc,
         PRIMARY_WSS_URL: primaryReadWss,
-        TELEMETRY_RPC_URL: telemetryRpc,
         RPC_ROTATION_HTTP_URLS: rpcRotationHttpUrls,
         RPC_ROTATION_WSS_URLS: rpcRotationWssUrls,
         BROADCAST_RPC_URL: broadcastRpc,
@@ -382,14 +299,13 @@ module.exports = {
         OMEGA_RUNTIME_MODE: runtimeMode,
         EXECUTION_MODE: executionMode,
         LIVE_TRADING: liveTrading,
-        CONFIRM_MAINNET_EXECUTION: mainnetConfirm,
         OMEGA_ENGINE_RPC_URL: primaryReadRpc,
         OMEGA_ENGINE_TICKS: "1",
-        OMEGA_ENGINE_NO_SCAN: engineNoScan,
+        OMEGA_ENGINE_NO_SCAN: process.env.OMEGA_ENGINE_NO_SCAN || "true",
         OMEGA_ENGINE_PRINCIPAL_USD: "50000",
         OMEGA_ENGINE_PRINT_TOP_ROUTES: "50",
         OMEGA_ENGINE_EXECUTE_TOP: "5",
-        OMEGA_ENGINE_CANARY_MODE: canaryMode,
+        OMEGA_ENGINE_CANARY_MODE: process.env.OMEGA_ENGINE_CANARY_MODE || "true",
         OMEGA_ENGINE_INTERVAL_SECONDS: "60",
         ENABLE_SMART_SESSIONS: "true",
         SESSION_SIGNER_ENABLED: "true",
@@ -433,8 +349,6 @@ module.exports = {
         POLYGON_WSS_URL: primaryReadWss,
         PRIMARY_READ_RPC_URL: primaryReadRpc,
         EXACT_CALL_RPC_URL: primaryReadRpc,
-        PRIMARY_WSS_URL: primaryReadWss,
-        TELEMETRY_RPC_URL: telemetryRpc,
         RPC_ROTATION_HTTP_URLS: rpcRotationHttpUrls,
         RPC_ROTATION_WSS_URLS: rpcRotationWssUrls,
         BROADCAST_RPC_URL: broadcastRpc,
@@ -461,7 +375,6 @@ module.exports = {
         OMEGA_RUNTIME_MODE: runtimeMode,
         EXECUTION_MODE: executionMode,
         LIVE_TRADING: liveTrading,
-        CONFIRM_MAINNET_EXECUTION: mainnetConfirm,
         ENABLE_LIQUIDATION_PIPELINE: "true",
         OMEGA_LIQUIDATION_WATCH_INTERVAL_SECONDS: process.env.OMEGA_LIQUIDATION_WATCH_INTERVAL_SECONDS || "300",
         OMEGA_LIQUIDATION_MAX_PER_CYCLE: process.env.OMEGA_LIQUIDATION_MAX_PER_CYCLE || "2"
@@ -516,7 +429,6 @@ module.exports = {
         OMEGA_RUNTIME_MODE: runtimeMode,
         EXECUTION_MODE: executionMode,
         LIVE_TRADING: liveTrading,
-        CONFIRM_MAINNET_EXECUTION: mainnetConfirm,
         ...backgroundDiscoveryEnv
       }
     },
@@ -547,7 +459,6 @@ module.exports = {
         OMEGA_RUNTIME_MODE: runtimeMode,
         EXECUTION_MODE: executionMode,
         LIVE_TRADING: liveTrading,
-        CONFIRM_MAINNET_EXECUTION: mainnetConfirm,
         ...routeStagingEnv
       }
     },
@@ -578,7 +489,6 @@ module.exports = {
         OMEGA_RUNTIME_MODE: runtimeMode,
         EXECUTION_MODE: executionMode,
         LIVE_TRADING: liveTrading,
-        CONFIRM_MAINNET_EXECUTION: mainnetConfirm,
         ...missingMetadataBackgroundEnv
       }
     },

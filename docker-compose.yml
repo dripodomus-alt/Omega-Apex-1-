@@ -45,7 +45,7 @@ services:
     build: .
     container_name: omega-anvil-fork
     command: >
-      anvil --host 0.0.0.0 --fork-url $$HTTP_URL
+      anvil --host 0.0.0.0 --fork-url ${FORK_UPSTREAM_RPC_URL}
     ports:
       - "8545:8545"
     env_file: .env
