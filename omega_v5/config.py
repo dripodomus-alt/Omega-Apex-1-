@@ -474,6 +474,11 @@ APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE: int = int(
     _env("APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE", "25") or "25"
 )
 
+# Default protocol overhead fee, can be overridden by environment variables.
+# This represents a small, fixed USD cost for any on-chain activity (e.g., contract deployment, one-time approvals).
+PROTOCOL_OVERHEAD_USD: Decimal = Decimal(_env("PROTOCOL_OVERHEAD_USD", "0.001"))
+
+
 if __name__ == "__main__":
     print(f"✅ Asset Matrix verified. Initialized {len(ASSET_MATRIX)} core tokens for Chain {CHAIN_ID} evaluation.")
 

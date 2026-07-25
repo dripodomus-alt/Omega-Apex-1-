@@ -7,8 +7,9 @@ This document outlines prerequisites and known issues for running the system.
 - `python` (3.10+)
 - `node` + `npm` (for optional PM2)
 - `pm2` (optional, `npm install -g pm2`)
-- `anvil` (Foundry) — recommended for simulation
+- `anvil` (Foundry) — recommended for simulation and benchmarks
 - `redis-server` (optional for local)
+- `cast` (from Foundry) for benchmark scripts
 
 ## 2. Important: Windows PM2 Issues
 
@@ -42,6 +43,7 @@ Copy `.env.example` to `.env` and fill in required values:
 - `EXECUTOR_WALLET`
 - `EXECUTOR_PRIVATE_KEY`
 - `BROADCAST_RPC_URL`
+- `FORK_SIM_RPC_URL` (critical for benchmarks)
 - `FORK_UPSTREAM_RPC_URL`
 
 ## 4. Running the System
@@ -62,11 +64,42 @@ Copy `.env.example` to `.env` and fill in required values:
 python -m omega_v5.main
 ```
 
-## 5. Verification
+## 5. Full Benchmark + Readiness Assessment (New)
+
+Use the master script to run safe scripts, benchmarks, and get a 0-100 readiness score:
+
+```powershell
+# Basic run (2 cycles)
+.\scripts\run_full_benchmark_and_readiness.ps1
+
+# More cycles, skip heavy Anvil part
+.\scripts\run_full_benchmark_and_readiness.ps1 -Cycles 5 -SkipAnvil
+
+# Readiness-only (no benchmarks)
+.\scripts\run_full_benchmark_and_readiness.ps1 -ReadinessOnly
+```
+
+This script:
+- Validates prerequisites
+- Runs unit tests + preflight + pipeline validation
+- Runs the safe Anvil fork benchmark (never runs live-fire)
+- Aggregates results
+- Computes and prints a readiness percentage
+
+Results are saved to `out/readiness_report.json`.
+
+## 6. Verification
 
 After starting, check:
 - API available at http://127.0.0.1:8080
 - Logs in the terminal windows
 - Use `pm2 status` only if using PM2
+- Run the readiness script above for a quantitative score
 
 By following the direct path on Windows you avoid most permission and daemon problems.
+
+## 7. Safety
+
+- The master benchmark script explicitly avoids `run_live_fire_benchmark.ps1`.
+- Always start with fork / dry-run modes.
+- Never use real private keys with real funds until readiness score is high and you understand the risks.
