@@ -37,7 +37,7 @@ from .pricing.net_delta import route_within_lifespan
 from .pnl_tracker import (
     record_lifespan_event, record_stage_event, record_successful_submission, record_pnl_event
 )
-from .payload_envelope import PayloadEnvelope, build_payload_envelope # type: ignore
+from .payload_envelope import PayloadEnvelope, build_payload_envelope
 from .execution_trace import compute_trace_hash
 from .accounting import to_raw_units
 from .gas_oracle import eip1559_fee_params
@@ -46,6 +46,7 @@ from .transport_lanes import web3_for_lane, LANE_EXACT_C1_ETH_CALL
 from .revert_decoder import format_revert
 from .adapter_registry import AdapterSemanticError
 from .execution_trace import record_execution_trace
+from .oracle_layer import token_price_usd
 from .webhook_dispatcher import dispatch_webhook
 
 EXECUTE_FLASH_ARB_SELECTOR = Web3.keccak(
@@ -390,34 +391,55 @@ def submit_staged_batch(
             results.append(ExecutionResult(success=True, detail="dry_run_pass", net_pnl_usd=op.profitability.net_profit_usd, block=current_block))
         else:
             # --- LIVE PATH: Sign, Broadcast, and Wait for Receipt ---
-            # This section handles the actual signing, broadcasting, and waiting for confirmation.
-            tx_hash = "0xSIMULATED_" + str(current_block) + "_" + str(id(op))
-            record_successful_submission(
-                tx_hash=tx_hash,
-                route=list(op.path),
-                opp_id=str(op.metadata.get("opp_id", id(op))),
-                block=current_block,
-                net_pnl_usd=op.profitability.net_profit_usd,
-            )
-            record_lifespan_event(event_type="EXECUTED", discovery_block=op.block_detected, current_block=current_block, route=list(op.path))
-            record_pnl_event(
-                mode="live",
-                stage="C1",
-                status="CONFIRMED", # This is optimistic, a real impl would wait for receipt
-                route=list(op.path),
-                expected_net_usd=op.profitability.net_profit_usd,
-                realized_net_usd=op.profitability.net_profit_usd, # Assume success for simulation
-                block=current_block,
-            )
-            logger.info(f"LIVE SUBMISSION simulated for {op.path}")
-            asyncio.create_task(dispatch_webhook(
-                "tx_live_submission_simulated", # In a real system, this would be "tx_live_submission_success"
-                {
-                    "opp_id": str(id(op)), "path": list(op.path), "tx_hash": tx_hash,
-                    "expected_net_usd": str(op.profitability.net_profit_usd), "block": current_block
-                }
-            ))
-            results.append(ExecutionResult(success=True, tx_hash=tx_hash, net_pnl_usd=op.profitability.net_profit_usd, block=current_block)) # This is the simulated live path result
+            tx_hash = ""
+            try:
+                broadcast_w3 = _broadcast_w3()
+                if not broadcast_w3 or not broadcast_w3.is_connected():
+                    raise ConnectionError("Broadcast RPC is not available or not connected.")
+
+                wallet = Account.from_key(PRIVATE_KEY)
+                nonce = broadcast_w3.eth.get_transaction_count(wallet.address)
+                tx_to_sign = {**staged.tx, "nonce": nonce, "from": wallet.address}
+
+                signed_tx = broadcast_w3.eth.account.sign_transaction(tx_to_sign, PRIVATE_KEY)
+                tx_hash_bytes = broadcast_w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+                tx_hash = tx_hash_bytes.hex()
+
+                logger.info(f"LIVE SUBMISSION broadcast for {op.path}, tx_hash: {tx_hash}")
+                record_successful_submission(tx_hash=tx_hash, route=list(op.path), opp_id=str(id(op)), block=current_block, net_pnl_usd=op.profitability.net_profit_usd)
+
+                # Wait for receipt
+                receipt = broadcast_w3.eth.wait_for_transaction_receipt(tx_hash_bytes, timeout=120)
+
+                if receipt and receipt.status == 1:
+                    gas_used = Decimal(receipt.get("gasUsed", 0))
+                    gas_price_wei = Decimal(receipt.get("effectiveGasPrice", 0))
+                    gas_cost_matic = (gas_used * gas_price_wei) / Decimal("1e18")
+                    gas_cost_usd = gas_cost_matic * token_price_usd("WPOL")
+
+                    # A more accurate PnL would decode logs, but for now we use the pre-simulated profit
+                    realized_pnl = op.profitability.net_profit_usd
+
+                    record_pnl_event(mode="live", stage="C1", status="CONFIRMED", route=list(op.path), expected_net_usd=op.profitability.net_profit_usd, realized_net_usd=realized_pnl, gas_cost_usd=gas_cost_usd, tx_hash=tx_hash, block=receipt.blockNumber, metadata={"receipt": _receipt_dict(receipt)})
+                    results.append(ExecutionResult(success=True, tx_hash=tx_hash, net_pnl_usd=realized_pnl, block=receipt.blockNumber))
+                else:
+                    logger.warning(f"Transaction reverted on-chain for {op.path}, tx_hash: {tx_hash}")
+                    record_pnl_event(mode="live", stage="C1", status="REVERTED", route=list(op.path), expected_net_usd=op.profitability.net_profit_usd, tx_hash=tx_hash, block=receipt.blockNumber if receipt else current_block, metadata={"receipt": _receipt_dict(receipt)})
+                    results.append(ExecutionResult(success=False, tx_hash=tx_hash, detail="Transaction reverted on-chain", block=receipt.blockNumber if receipt else current_block))
+
+            except Exception as e:
+                logger.error(f"LIVE SUBMISSION FAILED for {op.path}: {e}")
+                record_pnl_event(
+                    mode="live",
+                    stage="C1",
+                    status="FAILED",
+                    route=list(op.path),
+                    expected_net_usd=op.profitability.net_profit_usd,
+                    tx_hash=tx_hash,
+                    block=current_block,
+                    metadata={"error": str(e)},
+                )
+                results.append(ExecutionResult(success=False, tx_hash=tx_hash, detail=str(e), block=current_block))
 
     return results
 

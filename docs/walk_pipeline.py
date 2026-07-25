@@ -120,14 +120,14 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
             reverse=True,
         )
         print(f"✅ Scored and ranked {len(ranked_opps)} theoretical opportunities.")
-        print("Top 5 theoretical opportunities (before on-chain verification):")
-        print_live_opportunities(ranked_opps, max_count=5)
+        print("Top 50 theoretical opportunities (before on-chain verification):")
+        print_live_opportunities(ranked_opps, max_count=50)
         report["steps"]["ranking"] = {
             "duration_seconds": time.monotonic() - step_start,
             "total_ranked": len(ranked_opps),
-            "top_5_theoretical": [
-                opp.as_dict() for opp in ranked_opps[:5]
-            ]
+            "top_50_theoretical": [
+                opp.as_dict() for opp in ranked_opps[:50]
+            ],
         }
 
         print(f"\n--- [Step 4: Execution Truth Gate (Top {max_to_test} Candidates)] ---")
