@@ -147,6 +147,9 @@ for ($i = 1; $i -le $Cycles; $i++) {
     $cycleResult = [PSCustomObject]@{
         Cycle = $i
         DiscoveryTimeMs = -1
+        # Performance metrics from the discovery pipeline
+        PythonQuoteCalls = 0
+        TotalCandidates = 0
         SimulationTimeMs = -1
         BroadcastTimeMs = -1
         ConfirmationTimeMs = -1
@@ -173,6 +176,12 @@ for ($i = 1; $i -le $Cycles; $i++) {
         }
         $cycleResult.DiscoveryTimeMs = $discoveryTime.TotalMilliseconds
         $opportunities = Get-Content "out\pipeline_validation_latest.json" -Raw | ConvertFrom-Json
+
+        # Capture new performance metrics to track pipeline efficiency
+        if ($opportunities.performance_metrics) {
+            $cycleResult.PythonQuoteCalls = $opportunities.performance_metrics.python_quote_calls
+            $cycleResult.TotalCandidates = $opportunities.performance_metrics.total_candidates
+        }
 
         # DATA CONTRACT CHANGE: With external signers, the Python script must now output an *unsigned* transaction object.
         # Old format: { "opportunities": [ { "estimated_profit_usd": 10, "raw_tx": "0x..." } ] }
@@ -328,15 +337,20 @@ $allResults | Format-Table -AutoSize
 $avgDiscovery = ($allResults | Where-Object { $_.DiscoveryTimeMs -gt 0 } | Measure-Object -Property DiscoveryTimeMs -Average).Average
 $avgBroadcast = ($allResults | Where-Object { $_.BroadcastTimeMs -gt 0 } | Measure-Object -Property BroadcastTimeMs -Average).Average
 $avgConfirm = ($allResults | Where-Object { $_.ConfirmationTimeMs -gt 0 } | Measure-Object -Property ConfirmationTimeMs -Average).Average
+$avgPythonQuotes = ($allResults | Where-Object { $_.PythonQuoteCalls -gt 0 } | Measure-Object -Property PythonQuoteCalls -Average).Average
+$avgCandidates = ($allResults | Where-Object { $_.TotalCandidates -gt 0 } | Measure-Object -Property TotalCandidates -Average).Average
 $totalConfirmed = ($allResults | Measure-Object -Property TransactionsConfirmed -Sum).Sum
 $totalSent = ($allResults | Measure-Object -Property TransactionsSent -Sum).Sum
 $totalProfit = ($allResults | Measure-Object -Property TotalNetProfitUSD -Sum).Sum
 $successRate = if ($totalSent -gt 0) { ($totalConfirmed / $totalSent) * 100 } else { 0 }
 
 Write-Host "`n--- Averages & Totals ---"
-Write-Host "Average Discovery Latency : $(if ($avgDiscovery) { [math]::Round($avgDiscovery, 2) } else { 'N/A' }) ms"
-Write-Host "Average Broadcast Latency : $(if ($avgBroadcast) { [math]::Round($avgBroadcast, 2) } else { 'N/A' }) ms"
-Write-Host "Average Confirmation Time : $(if ($avgConfirm) { [math]::Round($avgConfirm / 1000, 2) } else { 'N/A' }) s"
+Write-Host "Average Discovery Latency   : $(if ($avgDiscovery) { [math]::Round($avgDiscovery, 2) } else { 'N/A' }) ms"
+Write-Host "Average Python Quote Calls  : $(if ($avgPythonQuotes) { [math]::Round($avgPythonQuotes, 0) } else { 'N/A' })"
+Write-Host "Average Total Candidates    : $(if ($avgCandidates) { [math]::Round($avgCandidates, 0) } else { 'N/A' })"
+Write-Host ""
+Write-Host "Average Broadcast Latency   : $(if ($avgBroadcast) { [math]::Round($avgBroadcast, 2) } else { 'N/A' }) ms"
+Write-Host "Average Confirmation Time   : $(if ($avgConfirm) { [math]::Round($avgConfirm / 1000, 2) } else { 'N/A' }) s"
 Write-Host "Overall Success Rate      : $([math]::Round($successRate, 2)) % ($totalConfirmed / $totalSent)"
 Write-Host "Total Net Profit (USD)    : $([math]::Round($totalProfit, 2))"
 Write-Host "---------------------------"

@@ -38,19 +38,6 @@ Assert-Command "node" "Install Node.js and ensure it is on PATH."
 Assert-Command "anvil" "Install Foundry, then restart this shell."
 Assert-Command "redis-server" "Install Redis or point PM2 at an existing Redis instance."
 Assert-Command "gcloud" "Install Google Cloud SDK and authenticate with `gcloud auth login`."
-Write-Host "Running live-mode prerequisite checks for potential autonomous activation..."
-# Try to get project ID from env var, then from gcloud config
-$effectiveProject = $env:GCP_PROJECT_ID
-if ([string]::IsNullOrEmpty($effectiveProject)) {
-    try {
-        $effectiveProject = gcloud config get-value project 2>$null
-    } catch {
-        # gcloud might not be configured; we'll catch this in the Assert-Ok below.
-    }
-}
-# Assert that we have a project ID, and provide a helpful error if not.
-Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for a potential live run to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
-Write-Host "Live-mode prerequisite checks passed." -ForegroundColor Green
 
 Write-Host "Verifying wallet configuration..."
 Assert-Ok ($env:EXECUTOR_WALLET -ne $null -and $env:EXECUTOR_WALLET -ne "") "EXECUTOR_WALLET environment variable is not set. This is required."
@@ -114,8 +101,24 @@ Write-Host "Finalizer Verdict: $verdict" -ForegroundColor Cyan
 Write-Step "Step 5: Go/No-Go Decision and Autonomous Activation"
 if ($verdict -eq "CANARY_READY") {
     Write-Host "Finalizer verdict is CANARY_READY. The system is ready for live trading." -ForegroundColor Green
-    Write-Host "Proceeding with AUTONOMOUS LIVE ACTIVATION." -ForegroundColor Yellow
 
+    # --- Live-Run Prerequisite Check ---
+    Write-Host "Verifying GCP prerequisites for live activation..."
+    # Try to get project ID from env var, then from gcloud config
+    $effectiveProject = $env:GCP_PROJECT_ID
+    if ([string]::IsNullOrEmpty($effectiveProject)) {
+        try {
+            $effectiveProject = gcloud config get-value project 2>$null
+        }
+        catch {
+            # gcloud might not be configured; we'll catch this in the Assert-Ok below.
+        }
+    }
+    # Assert that we have a project ID, and provide a helpful error if not.
+    Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for a live run to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
+    Write-Host "GCP prerequisites passed." -ForegroundColor Green
+
+    Write-Host "Proceeding with AUTONOMOUS LIVE ACTIVATION." -ForegroundColor Yellow
     # Set Canary Mode for initial safety
     Write-Host "Activating Canary Mode (execution capped at 1 per cycle)..."
     Invoke-JsonPost "$api/api/runtime/settings" @{ canary_mode = $true }

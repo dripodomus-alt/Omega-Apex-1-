@@ -807,6 +807,15 @@ unless you are intentionally debugging outside PM2.
 
 Start/restart:
 
+> **Windows Users Note**: If you encounter `EPERM` permission errors when running `pm2` commands manually, it's because `pm2` is trying to write to a protected directory (like `C:\`). The provided scripts (`boot_all.ps1`, `cloud_run_finalizer.ps1`) handle this automatically. For manual `pm2` commands in your own shell, first set the `PM2_HOME` environment variable to a local path:
+> ```powershell
+> $env:PM2_HOME = ".\.pm2"
+> # Now you can run pm2 commands
+> pm2 status
+> ```
+
+To perform a clean boot of all services:
+
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pm2\boot_all.ps1 -Reset
 pm2 restart omega-engine --update-env

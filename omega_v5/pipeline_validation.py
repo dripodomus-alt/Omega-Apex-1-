@@ -98,12 +98,18 @@ def run_pipeline(*, use_fork: bool = False, no_eth_call: bool = False, max_opps:
         print(f"   -> Found {len(executable_opps)} fully executable opportunities.")
 
     # --- Phase 4: Build Transaction Payloads ---
-    print("4. Building transaction payloads for benchmark...")
+    print("4. Generating performance metrics and building payloads...")
     final_payloads = []
+    performance_metrics = {
+        "python_quote_calls": len(truth_results),
+        "total_candidates": len(ranked_opps),
+    }
+    print(f"   -> Performance: {performance_metrics['total_candidates']} total candidates, {performance_metrics['python_quote_calls']} truth-gated.")
+
     for opp in executable_opps:
         try:
             # Nonce is a placeholder; the benchmark script will manage it.
-            tx_payload = build_tx_payload(opp, pools, nonce=0, base_fee_gwei=base_fee)
+            tx_payload = build_tx_payload(opp, pools, nonce=0, base_fee_gwei=base_fee) # type: ignore
             final_payloads.append({
                 "estimated_profit_usd": float(opp.profitability.net_profit_usd),
                 "path": list(opp.path),
@@ -124,6 +130,7 @@ def run_pipeline(*, use_fork: bool = False, no_eth_call: bool = False, max_opps:
         "timestamp": int(time.time()),
         "elapsed_seconds": round(time.time() - started, 2),
         "discovery_report": discovery_report,
+        "performance_metrics": performance_metrics,
         "executor_truth": truth_summary(truth_results),
         "payload_execution_eligible": bool(final_payloads),
         "opportunities": final_payloads,

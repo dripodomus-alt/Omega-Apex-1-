@@ -29,56 +29,13 @@ from omega_v5.ml_alpha import MODEL_DIR, MODEL_SPECS
 MODEL_ID = "route_surplus_ranker"
 DATASET_PATH = MODEL_DIR.parent / "out" / "ml" / "receipt_training_dataset.csv"
 
-
-def _generate_dummy_dataset_if_not_exists(path: Path, num_rows: int = 5000):
-    """Generates a plausible training dataset if one doesn't exist."""
-    if path.exists():
-        print(f"Dataset found at {path}, skipping generation.")
-        return
-
-    print(f"Generating dummy dataset for training demo at {path}...")
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    data = {
-        'principal_usd': np.random.uniform(10000, 100000, num_rows),
-        'predicted_gross_rate': np.random.normal(1.0002, 0.00015, num_rows),
-        'hops': np.random.choice([2, 3, 4], num_rows, p=[0.6, 0.3, 0.1]),
-        'tvl_bottleneck_usd': np.random.uniform(50000, 2000000, num_rows),
-        'gas_price_gwei': np.random.uniform(30, 150, num_rows),
-        'reverted': np.random.choice([True, False], num_rows, p=[0.1, 0.9])
-    }
-    df = pd.DataFrame(data)
-
-    # Create a plausible target variable: realized_net_profit_usd
-    # Profit = Principal * (GrossRate - 1) - GasCost - OtherFees
-    gas_cost_proxy = df['gas_price_gwei'] * 0.00005 * (df['hops'] / 2)
-    other_fees_proxy = df['principal_usd'] * 0.00002  # 0.2 bps flash fee proxy
-    
-    # Realized profit is usually less than predicted due to slippage, etc.
-    slippage_effect = np.random.normal(0.9, 0.1, num_rows)
-    raw_profit = df['principal_usd'] * (df['predicted_gross_rate'] - 1)
-    
-    # Add noise
-    noise = np.random.normal(0, 0.5, num_rows)
-    
-    realized_profit = (raw_profit * slippage_effect) - gas_cost_proxy - other_fees_proxy + noise
-    
-    # If reverted, profit is negative (gas cost)
-    realized_profit[df['reverted']] = -gas_cost_proxy[df['reverted']]
-    
-    df['realized_net_profit_usd'] = realized_profit
-    
-    df.to_csv(path, index=False)
-    print(f"Dummy dataset with {num_rows} rows generated successfully.")
-
-
 def load_and_prepare_data(path: Path) -> pd.DataFrame:
     """Loads and prepares the training data from CSV."""
     if not path.exists():
         raise FileNotFoundError(
             f"Training dataset not found at {path}. "
-            "Run a discovery/execution cycle to generate `out/dry_run_full_log.jsonl` "
-            "or use the dummy data generator."
+            "You must generate this file by running the system to collect execution data. "
+            "See the ML Alpha Roadmap documentation for more details."
         )
     print(f"Loading data from {path}...")
     df = pd.read_csv(path)
@@ -174,19 +131,16 @@ def main() -> int:
         return 1
 
     try:
-        # Step 1: Ensure data exists
-        _generate_dummy_dataset_if_not_exists(DATASET_PATH)
-
-        # Step 2: Load and prepare data
+        # Step 1: Load and prepare data
         df = load_and_prepare_data(DATASET_PATH)
 
-        # Step 3: Train the model
+        # Step 2: Train the model
         model, test_df, features = train_model(df)
 
-        # Step 4: Evaluate the model
+        # Step 3: Evaluate the model
         metrics = evaluate_model(model, test_df, features)
 
-        # Step 5: Create and save the model card with real metrics
+        # Step 4: Create and save the model card with real metrics
         model_card = {
             "model_id": MODEL_ID,
             "chain_id": 137,

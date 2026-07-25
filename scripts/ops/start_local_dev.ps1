@@ -1,11 +1,12 @@
 <#
 .DEPRECATION_NOTICE
-  This script is part of a legacy architecture (TypeScript monorepo) and is now obsolete.
-  The current system is a Python/Rust application.
+  This script is obsolete.
   
-  - To run a local benchmark, use `run_anvil_fork_benchmark.ps1`.
-  - To run a live benchmark, use `run_live_fire_benchmark.ps1`.
-  
-  This file is preserved as a historical artifact and should not be used.
+  Use the direct (PM2-free) starter instead:
+    .\scripts\ops\start_direct.ps1
+
+  Or the improved PM2 boot script:
+    .\scripts\pm2\boot_all.ps1 -Reset
 #>
-Write-Host "[DEPRECATED] This script is obsolete." -ForegroundColor Yellow
+Write-Host "[DEPRECATED] Use scripts\ops\start_direct.ps1 instead." -ForegroundColor Yellow
+Write-Host "Example: .\scripts\ops\start_direct.ps1" -ForegroundColor Cyan
