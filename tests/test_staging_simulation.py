@@ -117,3 +117,25 @@ def test_empty_input_returns_empty_list():
     """An empty list of opportunities should result in an empty staged list."""
     staged = simulate_staging([], max_staged=8)
     assert staged == []
+
+def test_sequence_proof_prioritizes_lowest_executable_buy():
+    expensive_buy = create_mock_opp(("P1", "P2"))
+    expensive_buy.metadata = {
+        "execution_sequence": {
+            "passes": True,
+            "buy_leg": {"executable_buy_price_base_per_mid": "101"},
+            "sell_leg": {"executable_sell_price_min_base_per_mid": "103"},
+        }
+    }
+    lowest_buy = create_mock_opp(("P3", "P4"))
+    lowest_buy.metadata = {
+        "execution_sequence": {
+            "passes": True,
+            "buy_leg": {"executable_buy_price_base_per_mid": "99"},
+            "sell_leg": {"executable_sell_price_min_base_per_mid": "102"},
+        }
+    }
+
+    staged = simulate_staging([expensive_buy, lowest_buy], max_staged=2)
+
+    assert staged == [lowest_buy, expensive_buy]

@@ -138,6 +138,7 @@ PROTOCOL_REGISTRY: Dict[str, Dict[str, Any]] = {
 # This map provides a bridge from common (and sometimes inconsistent) names
 # found in external data sources to our canonical internal protocol keys.
 PROTOCOL_ALIAS_MAP: Dict[str, str] = {
+    "UniswapV2": "V2_CPMM",
     "UniswapV3": "V3_CLMM",
     "QuickSwapV2": "QS_V2_CPMM",
     "QuickSwapV3": "QS_V3_ALGEBRA",
@@ -146,6 +147,27 @@ PROTOCOL_ALIAS_MAP: Dict[str, str] = {
     "Balancer": "BAL_WEIGHTED",
 }
 
+FULLY_EXECUTABLE_PROTOCOLS = {
+    key for key, meta in PROTOCOL_REGISTRY.items()
+    if str(meta.get("status", "")).lower() == "fully_executable"
+}
+
+
+def normalize_protocol(protocol: str) -> str:
+    """Return the canonical internal protocol key used by execution code."""
+    raw = str(protocol or "").strip()
+    if raw in PROTOCOL_REGISTRY:
+        return raw
+    if raw in PROTOCOL_ALIAS_MAP:
+        return PROTOCOL_ALIAS_MAP[raw]
+    lowered = raw.lower()
+    for alias, canonical in PROTOCOL_ALIAS_MAP.items():
+        if alias.lower() == lowered:
+            return canonical
+    for canonical in PROTOCOL_REGISTRY:
+        if canonical.lower() == lowered:
+            return canonical
+    raise ValueError(f"unsupported protocol: {protocol}")
 
 # ==============================================================================
 # ENVIRONMENT HELPERS
@@ -339,6 +361,45 @@ BOT_ADDRESS: str = _env("BOT_ADDRESS")
 EXECUTOR_WALLET: str = _env("EXECUTOR_WALLET")
 OWNER_ADDRESS: str = _first_env("OWNER_ADDRESS", "EXECUTOR_WALLET", "BOT_ADDRESS")
 SOLC_VERSION: str = _env("SOLC_VERSION", "0.8.24")
+CANONICAL_HFT_EXECUTOR_ADDRESS: str = "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+HFT_EXECUTOR_ADDRESS: str = _first_env(
+    "HFT_EXECUTOR_ADDRESS",
+    "HFT_DEFAULT_TARGET",
+    "CANONICAL_ON_CHAIN_MUSCLE",
+    "C1_PAYLOAD_TARGET",
+    "EXECUTOR_CONTRACT_ADDR",
+    default=CANONICAL_HFT_EXECUTOR_ADDRESS,
+)
+EXECUTOR_CONTRACT: str = _first_env(
+    "EXECUTOR_CONTRACT",
+    "EXECUTOR_CONTRACT_ADDR",
+    "C1_PAYLOAD_TARGET",
+    "CANONICAL_ON_CHAIN_MUSCLE",
+    "HFT_DEFAULT_TARGET",
+    default=HFT_EXECUTOR_ADDRESS,
+)
+C1_PAYLOAD_TARGET: str = _first_env(
+    "C1_PAYLOAD_TARGET",
+    "C1_TARGET",
+    "C1_ARB_EXECUTOR_ADDRESS",
+    "EXECUTOR_CONTRACT_ADDR",
+    default=EXECUTOR_CONTRACT,
+)
+C2_PAYLOAD_TARGET: str = _first_env(
+    "C2_PAYLOAD_TARGET",
+    "C2_TARGET",
+    "C2_ARB_EXECUTOR_ADDRESS",
+    default=C1_PAYLOAD_TARGET,
+)
+ADAPTER_CONFIGURATION_TARGET: str = _env("ADAPTER_CONFIGURATION_TARGET", C1_PAYLOAD_TARGET)
+LIQUIDATION_EXECUTOR_ADDRESS: str = _env("LIQUIDATION_EXECUTOR_ADDRESS")
+PRIVATE_KEY: str = _first_env("PRIVATE_KEY", "EXECUTOR_PRIVATE_KEY")
+EXEC_MODE: str = _first_env("EXECUTION_MODE", "EXEC_MODE", default="dry_run").lower()
+LIVE_FLAG: str = _first_env("LIVE_TRADING", "LIVE_FLAG", default="0")
+REQUIRED_CONFIRM: str = "YES_I_UNDERSTAND_THIS_USES_REAL_FUNDS"
+CONFIRM_FLAG: str = _env("CONFIRM_MAINNET_EXECUTION")
+MEV_ENABLED: bool = _bool_env("MEV_ENABLED", "false")
+MEV_PUBLIC_FALLBACK_ENABLED: bool = _bool_env("MEV_PUBLIC_FALLBACK_ENABLED", "false")
 
 # ==============================================================================
 # CACHING

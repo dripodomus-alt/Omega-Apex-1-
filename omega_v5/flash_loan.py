@@ -15,7 +15,6 @@ from decimal import InvalidOperation
 from typing import Any, Optional, Callable
 
 from .accounting import GasCost, gas_cost_from_gwei
-from .capital_injector import compute_optimal_injection
 from .config import (
     DYNAMIC_SIZE_OPT_BINS_USD,
     ENABLE_DYNAMIC_SIZE_OPTIMIZER,
@@ -49,6 +48,18 @@ RELAY_TIP_USD = Decimal("0.001")
 RISK_BUFFER_USD = Decimal("0.005")
 FEE_CACHE_TTL_SECONDS = 30
 
+
+def current_gas_price_gwei() -> tuple[Decimal, str]:
+    return GAS_PRICE_GWEI, "static_config"
+
+
+def current_pol_price_usd() -> tuple[Decimal, str]:
+    return POL_USD_PRICE, "static_config"
+
+
+def _read_live_flash_fee_bps(source: FlashSource) -> tuple[Decimal, str, int, bool]:
+    fee = BALANCER_FLASH_FEE_BPS if source == FlashSource.BALANCER else AAVE_FLASH_FEE_BPS
+    return fee, "static_config", 0, True
 class FlashSource(str, Enum):
     AAVE_V3 = "AAVE_V3"
     BALANCER = "BALANCER"
@@ -63,6 +74,19 @@ class FlashLoanParams:
     repayment_usd: Decimal
 
 @dataclass(frozen=True)
+class ExpenseBreakdown:
+    raw_delta_usd: Decimal
+    flash_fee_usd: Decimal
+    gas_cost_usd: Decimal
+    relay_tip_usd: Decimal
+    risk_buffer_usd: Decimal
+    total_expenses_usd: Decimal
+    net_after_expenses_usd: Decimal
+    min_net_profit_usd: Decimal
+    passes_min_net: bool
+
+
+@dataclass(frozen=True)
 class Profitability:
     gross_amount_out: Decimal
     flashloan: FlashLoanParams
@@ -72,7 +96,40 @@ class Profitability:
     net_profit_usd: Decimal
     profit_to_gas: Decimal
     passes_gate: bool
+    raw_delta_usd: Decimal = Decimal("0")
     expense_breakdown: dict[str, Any] = field(default_factory=dict)
+
+
+def estimate_static_gas_usd(*, hops: int = 2) -> Decimal:
+    units = GAS_UNITS_SIMPLE_ARB if hops <= 2 else (GAS_UNITS_THREE_HOP_ARB if hops == 3 else GAS_UNITS_FOUR_HOP_ARB)
+    return units * GAS_PRICE_GWEI / Decimal("1000000000") * POL_USD_PRICE
+
+
+def deduct_expenses_from_raw_delta(
+    *,
+    gross_amount_out_usd: Decimal,
+    principal_usd: Decimal,
+    flash_fee_usd: Decimal,
+    gas_cost_usd: Decimal,
+    relay_tip_usd: Decimal,
+    risk_buffer_usd: Decimal,
+    min_net_profit_usd: Decimal = MIN_NET_PROFIT_USD,
+) -> ExpenseBreakdown:
+    raw_delta = Decimal(str(gross_amount_out_usd)) - Decimal(str(principal_usd))
+    total = Decimal(str(flash_fee_usd)) + Decimal(str(gas_cost_usd)) + Decimal(str(relay_tip_usd)) + Decimal(str(risk_buffer_usd))
+    net = raw_delta - total
+    return ExpenseBreakdown(
+        raw_delta_usd=raw_delta,
+        flash_fee_usd=Decimal(str(flash_fee_usd)),
+        gas_cost_usd=Decimal(str(gas_cost_usd)),
+        relay_tip_usd=Decimal(str(relay_tip_usd)),
+        risk_buffer_usd=Decimal(str(risk_buffer_usd)),
+        total_expenses_usd=total,
+        net_after_expenses_usd=net,
+        min_net_profit_usd=Decimal(str(min_net_profit_usd)),
+        passes_min_net=net >= Decimal(str(min_net_profit_usd)),
+    )
+
 
 def evaluate_profitability(
     gross_amount_out_usd: Decimal,
@@ -90,9 +147,21 @@ def evaluate_profitability(
     gas = Decimal("0.001") * Decimal(str(hops))
     relay = RELAY_TIP_USD
     risk = RISK_BUFFER_USD
-    net = gross - principal - fee_usd - gas - relay - risk
+    raw_delta = gross - principal
+    net = raw_delta - fee_usd - gas - relay - risk
     passes = net >= MIN_NET_PROFIT_USD
     flash = FlashLoanParams(flash_source, asset, principal, fee_bps, fee_usd, principal + fee_usd)
+    expenses = {
+        "raw_delta_usd": str(raw_delta),
+        "flash_fee_usd": str(fee_usd),
+        "gas_cost_usd": str(gas),
+        "relay_tip_usd": str(relay),
+        "risk_buffer_usd": str(risk),
+        "total_expenses_usd": str(fee_usd + gas + relay + risk),
+        "net_after_expenses_usd": str(net),
+        "min_net_profit_usd": str(MIN_NET_PROFIT_USD),
+        "passes_min_net": passes,
+    }
     return Profitability(
         gross_amount_out=gross,
         flashloan=flash,
@@ -102,6 +171,8 @@ def evaluate_profitability(
         net_profit_usd=net,
         profit_to_gas=(net / gas) if gas > 0 else Decimal("999"),
         passes_gate=passes,
+        raw_delta_usd=raw_delta,
+        expense_breakdown=expenses,
     )
 
 def calculate_route_economics(

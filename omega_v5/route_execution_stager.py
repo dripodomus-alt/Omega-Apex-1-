@@ -167,6 +167,10 @@ def _json_ready(value: Any) -> Any:
         return {str(key): _json_ready(item) for key, item in value.items()}
     if isinstance(value, (list, tuple, set)):
         return [_json_ready(item) for item in value]
+    if hasattr(value, "as_dict"):
+        return _json_ready(value.as_dict())
+    if hasattr(value, "__dict__") and not isinstance(value, type):
+        return _json_ready(vars(value))
     return value
 
 
@@ -466,6 +470,125 @@ def _pricing_steps_from_entries(entries: tuple[dict[str, Any], ...]) -> list[Any
     return steps
 
 
+
+def _entry_rate(entry: dict[str, Any] | None) -> Decimal:
+    if not entry:
+        return Decimal("0")
+    return _decimal(entry.get("rate"))
+
+
+def _two_leg_price_terms_from_entries(route: PreRankedRoute) -> dict[str, Any]:
+    if len(route.path) != 3 or len(route.edge_entries) < 2:
+        return {"applies": False, "reason": "not_two_leg_base_mid_base_route"}
+    buy_rate = _entry_rate(route.edge_entries[0])
+    sell_rate = _entry_rate(route.edge_entries[1])
+    buy_price = (Decimal("1") / buy_rate) if buy_rate > 0 else Decimal("0")
+    sell_price = sell_rate
+    spread = sell_price - buy_price
+    return {
+        "applies": True,
+        "base_asset": str(route.path[0]),
+        "mid_asset": str(route.path[1]),
+        "buy_rate_mid_per_base": buy_rate,
+        "buy_price_base_per_mid": buy_price,
+        "sell_rate_base_per_mid": sell_rate,
+        "sell_price_base_per_mid": sell_price,
+        "spread_base_per_mid": spread,
+        "passes": buy_price > 0 and sell_price > buy_price,
+    }
+
+
+def _quote_hop_amounts(route: PreRankedRoute, quote: Any, base_amount_in: Decimal) -> list[dict[str, Any]]:
+    proofs = list(getattr(quote, "hop_proofs", []) or [])
+    rows: list[dict[str, Any]] = []
+    amount_in = _decimal(base_amount_in)
+    for idx, pool_id in enumerate(route.pool_sequence):
+        token_in = str(route.path[idx]) if idx < len(route.path) else ""
+        token_out = str(route.path[idx + 1]) if idx + 1 < len(route.path) else ""
+        proof = proofs[idx] if idx < len(proofs) and isinstance(proofs[idx], dict) else {}
+        amount_out = _decimal(proof.get("amount_out"))
+        if amount_out <= 0 and proof.get("amount_out_raw") is not None:
+            try:
+                decimals = int(getattr(rpc_layer, "TOKEN_DECIMALS", {}).get(token_out, 18))
+                amount_out = Decimal(int(proof["amount_out_raw"])) / (Decimal(10) ** decimals)
+            except Exception:
+                amount_out = Decimal("0")
+        if amount_out <= 0 and idx < len(route.edge_entries):
+            rate = _entry_rate(route.edge_entries[idx])
+            amount_out = amount_in * rate if rate > 0 else Decimal("0")
+        rows.append({
+            "hop": idx + 1,
+            "pool_id": str(pool_id),
+            "token_in": token_in,
+            "token_out": token_out,
+            "amount_in": amount_in,
+            "amount_out": amount_out,
+        })
+        amount_in = amount_out
+    return rows
+
+
+def _execution_sequence_proof(
+    route: PreRankedRoute,
+    quote: Any,
+    *,
+    base_amount_in: Decimal,
+    final_amount_out: Decimal,
+    final_amount_out_min: Decimal,
+) -> dict[str, Any]:
+    """
+    Two-leg arbitrage proof: buy the mid token at the lowest executable
+    base/mid cost, then sell that mid token back to base at a higher price.
+    """
+    terms = _two_leg_price_terms_from_entries(route)
+    if not terms.get("applies"):
+        return {
+            "schema_version": "omega_v5.execution_sequence.v1",
+            "applies": False,
+            "passes": True,
+            "reason": terms.get("reason"),
+            "policy": "multi_hop_routes_use_exact_round_trip_profit_gate",
+        }
+
+    hops = _quote_hop_amounts(route, quote, _decimal(base_amount_in))
+    buy_mid_out = _decimal(hops[0].get("amount_out")) if hops else Decimal("0")
+    sell_mid_in = _decimal(hops[1].get("amount_in")) if len(hops) > 1 else buy_mid_out
+    executable_buy_price = _decimal(base_amount_in) / buy_mid_out if buy_mid_out > 0 else Decimal("0")
+    executable_sell_price = _decimal(final_amount_out) / sell_mid_in if sell_mid_in > 0 else Decimal("0")
+    executable_sell_price_min = _decimal(final_amount_out_min) / sell_mid_in if sell_mid_in > 0 else Decimal("0")
+    passes = executable_buy_price > 0 and executable_sell_price_min > executable_buy_price
+    return {
+        "schema_version": "omega_v5.execution_sequence.v1",
+        "applies": True,
+        "passes": passes,
+        "policy": "BUY_LOWEST_EXECUTABLE_BASE_PER_MID_THEN_SELL_HIGHER_BACK_TO_BASE",
+        "base_asset": terms["base_asset"],
+        "mid_asset": terms["mid_asset"],
+        "buy_leg": {
+            "position": 1,
+            "pool_id": route.pool_sequence[0],
+            "token_in": route.path[0],
+            "token_out": route.path[1],
+            "amount_in_base": _decimal(base_amount_in),
+            "amount_out_mid": buy_mid_out,
+            "executable_buy_price_base_per_mid": executable_buy_price,
+            "approx_buy_price_base_per_mid": terms["buy_price_base_per_mid"],
+        },
+        "sell_leg": {
+            "position": 2,
+            "pool_id": route.pool_sequence[1],
+            "token_in": route.path[1],
+            "token_out": route.path[2],
+            "amount_in_mid": sell_mid_in,
+            "amount_out_base": _decimal(final_amount_out),
+            "amount_out_min_base": _decimal(final_amount_out_min),
+            "executable_sell_price_base_per_mid": executable_sell_price,
+            "executable_sell_price_min_base_per_mid": executable_sell_price_min,
+            "approx_sell_price_base_per_mid": terms["sell_price_base_per_mid"],
+        },
+        "spread_base_per_mid_min": executable_sell_price_min - executable_buy_price,
+        "reason": "sell_min_price_above_buy_price" if passes else "sell_min_price_not_above_buy_price",
+    }
 def pre_rank_routes(
     rates: dict,
     pools: dict[str, dict],
@@ -506,7 +629,26 @@ def pre_rank_routes(
             counters["missing_directional_edge"] += 1
             continue
 
+        if len(path) == 3 and option_sets:
+            buy_rates = [_entry_rate(entry) for entry in option_sets[0]]
+            best_buy_rate = max(buy_rates) if buy_rates else Decimal("0")
+            if best_buy_rate > 0:
+                before = len(option_sets[0])
+                option_sets[0] = [
+                    entry for entry in option_sets[0]
+                    if _entry_rate(entry) == best_buy_rate
+                ]
+                counters["two_leg_non_lowest_buy_options_removed"] += before - len(option_sets[0])
+
         for combo in itertools.product(*option_sets):
+            if len(path) == 3 and len(combo) == 2:
+                buy_rate = _entry_rate(combo[0])
+                sell_rate = _entry_rate(combo[1])
+                buy_price = (Decimal("1") / buy_rate) if buy_rate > 0 else Decimal("0")
+                if buy_price <= 0 or sell_rate <= buy_price:
+                    counters["rejected_two_leg_buy_sell_price_misaligned"] += 1
+                    continue
+
             pool_sequence = tuple(str(entry.get("pool_id") or "") for entry in combo)
             liquidity_keys = tuple(
                 str(entry.get("liquidity_key") or entry.get("pool_id") or "") for entry in combo
@@ -730,6 +872,10 @@ def stage_pre_ranked_route(
         path=route.path,
         flash_source=flash_source,
     )
+    if requested_principal_usd is not None and sizing.selected_principal_usd > requested_principal_usd:
+        sizing.selected_principal_usd = _decimal(requested_principal_usd)
+        principal_usd = sizing.selected_principal_usd
+
     if sizing.selected_principal_usd <= 0:
         record_stage_event(
             stage="SIZING",
@@ -780,6 +926,10 @@ def stage_pre_ranked_route(
             "reason": type(exc).__name__,
             "detail": str(exc),
             "hop_fees_usd": str(hop_fees_total),
+            "initial_amount_raw": "0",
+            "initial_amount_raw_source": "quote_exception_no_executable_amount",
+            "opp_id": route.opp_id,
+            "opportunity_id": route.opp_id,
         })
 
     clmm_proven = bool(
@@ -821,6 +971,15 @@ def stage_pre_ranked_route(
     amount_out_min = amount_out * min_out_factor
     out_usd_min = out_usd * min_out_factor
     extra_slippage_buffer_usd = out_usd - out_usd_min
+    raw_delta_usd = out_usd - sizing.selected_principal_usd
+    execution_sequence = _execution_sequence_proof(
+        route,
+        quote,
+        base_amount_in=base_amount_in,
+        final_amount_out=amount_out,
+        final_amount_out_min=amount_out_min,
+    )
+    sequence_passes = bool(execution_sequence.get("passes", True))
 
     prof = evaluate_profitability(
         out_usd_min,
@@ -830,7 +989,7 @@ def stage_pre_ranked_route(
         asset=base_token,
     )
 
-    status = "staged_for_executor_truth" if prof.passes_gate else "rejected"
+    status = "staged_for_executor_truth" if prof.passes_gate and sequence_passes else "rejected"
     record_stage_event(
         stage="PRE_RANKED",
         status=status.upper(),
@@ -861,8 +1020,12 @@ def stage_pre_ranked_route(
         "stage": status,
         "reason": (
             "profitability_gate_passed"
-            if prof.passes_gate
-            else f"net_gain_usd={prof.net_profit_usd} < min_profit={MIN_NET_PROFIT_USD}"
+            if prof.passes_gate and sequence_passes
+            else (
+                execution_sequence.get("reason")
+                if not sequence_passes
+                else f"net_gain_usd={prof.net_profit_usd} < min_profit={MIN_NET_PROFIT_USD}"
+            )
         ),
         "discovery_block": route.discovery_block,
         "current_block": current_block,
@@ -872,9 +1035,101 @@ def stage_pre_ranked_route(
         "amount_out_min": str(amount_out_min),
         "out_usd": str(out_usd),
         "out_usd_min": str(out_usd_min),
+        "raw_delta_usd": raw_delta_usd,
+        "net_gain_usd": prof.net_profit_usd,
         "extra_slippage_buffer_usd": str(extra_slippage_buffer_usd),
+        "slippage_bps": str(slip),
+        "min_amount_out_bps": str(extra_min_bps),
+        "execution_sequence": execution_sequence,
+        "profitable_execution_staging": execution_sequence,
+        "net_formula": {
+            "raw_delta_usd": raw_delta_usd,
+            "flashloan_fee_usd": prof.flashloan.fee_usd,
+            "gas_cost_usd": prof.gas_cost_usd,
+            "relay_or_private_submit_cost_usd": prof.relay_tip_usd,
+            "risk_buffer_usd": prof.risk_buffer_usd,
+            "extra_slippage_buffer_usd": extra_slippage_buffer_usd,
+            "hop_fees_usd": hop_fees_total,
+            "net_gain_usd": prof.net_profit_usd,
+            "gas_payer": "user_wallet",
+            "gas_accounting": {
+                "native_symbol": "POL",
+                "gas_cost_source": "evaluate_profitability",
+            },
+            "formula": (
+                "net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd "
+                "- relay_or_private_submit_cost_usd - risk_buffer_usd - extra_slippage_buffer_usd; "
+                "hop_fees_usd are embedded in executable AMM quotes and surfaced for audit"
+            ),
+        },
         "profitability": {
             "net_profit_usd": str(prof.net_profit_usd),
             "passes_gate": prof.passes_gate,
         },
+    })
+
+
+def build_stage_report(
+    *,
+    pools: dict[str, dict],
+    rates: dict | None = None,
+    principal_usd: Decimal | str | int | float = Decimal("10000"),
+    stage_limit: int = 500,
+    hops: Iterable[int] = SUPPORTED_HOPS,
+    max_quote_options_per_pair: int = 0,
+    max_token_paths: int = 0,
+    max_pre_ranked: int = 0,
+    base_tokens: Iterable[str] | None = None,
+    flash_source: FlashSource = FlashSource.BALANCER,
+    slippage_bps: Decimal = Decimal("0"),
+) -> dict[str, Any]:
+    """Build a benchmark/staging report using the profitable execution sequence."""
+    if rates is None:
+        from .ranker import compute_all_pool_rates
+
+        rates = compute_all_pool_rates(pools)
+    principal = _decimal(principal_usd)
+    pre_ranked, pre_stats = pre_rank_routes(
+        rates,
+        pools,
+        principal_usd=principal,
+        hops=hops,
+        max_quote_options_per_pair=max_quote_options_per_pair,
+        max_token_paths=max_token_paths,
+        max_pre_ranked=max_pre_ranked,
+        base_tokens=base_tokens,
+    )
+    rows: list[dict[str, Any]] = []
+    attempted = 0
+    for route in pre_ranked:
+        if attempted >= stage_limit:
+            break
+        attempted += 1
+        rows.append(stage_pre_ranked_route(
+            route,
+            pools,
+            requested_principal_usd=principal,
+            flash_source=flash_source,
+            slippage_bps=slippage_bps,
+        ))
+
+    counts = Counter(str(row.get("status") or "unknown") for row in rows)
+    stage = {
+        "attempted": attempted,
+        "staged_for_executor_truth": counts.get("staged_for_executor_truth", 0),
+        "rejected": counts.get("rejected", 0),
+        "status_counts": dict(counts),
+    }
+    return _json_ready({
+        "schema_version": "omega_v5.route_execution_stage_report.v1",
+        "mode": "profitable_execution_staging",
+        "execution_policy": "buy_lowest_executable_base_per_mid_then_sell_higher_back_to_base",
+        "stage": stage,
+        "pre_rank": pre_stats,
+        "quote_edges": {
+            "rate_pairs": len(rates or {}),
+            "directional_quote_edges": sum(len(items) for items in (rates or {}).values()),
+        },
+        "routes": rows,
+        "path": str(LATEST_STAGE_REPORT),
     })

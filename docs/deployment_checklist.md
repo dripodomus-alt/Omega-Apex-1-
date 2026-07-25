@@ -103,3 +103,13 @@ By following the direct path on Windows you avoid most permission and daemon pro
 - The master benchmark script explicitly avoids `run_live_fire_benchmark.ps1`.
 - Always start with fork / dry-run modes.
 - Never use real private keys with real funds until readiness score is high and you understand the risks.
+
+## Deployed Contract Bytecode Gate
+
+Before authorizing Capital Injector simulations against production executor targets, run:
+
+```powershell
+python scripts/ops/verify_deployed_contracts.py
+```
+
+A passing infrastructure gate must print `VERDICT: INFRASTRUCTURE COMPATIBLE`. This check uses `eth_getCode` only; it verifies deployed bytecode presence for the configured HFT/C1 executor and liquidation executor, not source-code verification.

@@ -397,10 +397,33 @@ TOKEN_ADDRESSES: dict = {
     "USDC.e": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     "USDT":   "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
     "DAI":    "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+    "WETH":   "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
     "WBTC":   "0x1BFD67037B42Cf73",
     # (truncated in source for brevity; full list remains in original file)
 }
 
+TOKEN_DECIMALS: dict = {
+    "WPOL": 18,
+    "WMATIC": 18,
+    "USDC": 6,
+    "USDC.e": 6,
+    "USDT": 6,
+    "DAI": 18,
+    "WETH": 18,
+    "WBTC": 8,
+    "A": 18,
+    "B": 18,
+}
+
+
+def canonical_liquidity_key(pool_id: str, pool: dict | None = None) -> str:
+    """Stable pool conflict key used by ranker/stager code."""
+    pool = pool or {}
+    explicit = pool.get("liquidity_key") or pool.get("address") or pool.get("pool_address")
+    if explicit:
+        return str(explicit)
+    tokens = ":".join(str(token) for token in pool.get("tokens", []) if token)
+    return f"{pool.get('protocol', 'unknown')}:{tokens}:{pool_id}"
 # Additional runtime globals for apprentice (safe defaults)
 ENABLE_APPRENTICE_METADATA_PROMOTIONS: bool = False
 APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE: int = 5

@@ -19,7 +19,11 @@ from pathlib import Path
 # Ensure the main project is in the path to import production logic
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from omega_v5.execution import build_tx_payload
-from omega_v5.main import collect_and_score_opportunities
+try:
+    from omega_v5.main import collect_and_score_opportunities
+except Exception:
+    def collect_and_score_opportunities(*args, **kwargs):
+        raise RuntimeError("collect_and_score_opportunities is unavailable in this checkout")
 from omega_v5.opportunity_ranker import LiveOpportunity
 from omega_v5.flash_loan import ( # type: ignore
     GAS_PRICE_GWEI,
@@ -168,23 +172,72 @@ def discover_and_score_opportunities(
 
 
 # === Staging Simulator (based on payload_stager.py logic) ===
+def _decimal_or_none(value: Any) -> Decimal | None:
+    try:
+        parsed = Decimal(str(value))
+    except Exception:
+        return None
+    return parsed if parsed.is_finite() else None
+
+
+def _nested(mapping: Any, *keys: str) -> Any:
+    current = mapping
+    for key in keys:
+        if isinstance(current, dict):
+            current = current.get(key)
+        else:
+            return None
+    return current
+
+
+def _execution_sequence_from_opp(opp: LiveOpportunity) -> dict[str, Any]:
+    metadata = getattr(opp, "metadata", None)
+    if isinstance(metadata, dict):
+        sequence = metadata.get("profitable_execution_staging") or metadata.get("execution_sequence")
+        if isinstance(sequence, dict):
+            return sequence
+    sequence = getattr(opp, "profitable_execution_staging", None) or getattr(opp, "execution_sequence", None)
+    return sequence if isinstance(sequence, dict) else {}
+
+
+def _staging_priority(index: int, opp: LiveOpportunity) -> tuple[Any, ...]:
+    sequence = _execution_sequence_from_opp(opp)
+    if not sequence:
+        return (1, index)
+    passes = bool(sequence.get("passes"))
+    buy_price = _decimal_or_none(_nested(sequence, "buy_leg", "executable_buy_price_base_per_mid"))
+    sell_price = _decimal_or_none(_nested(sequence, "sell_leg", "executable_sell_price_min_base_per_mid"))
+    spread = (sell_price - buy_price) if buy_price is not None and sell_price is not None else Decimal("0")
+    net_profit = _decimal_or_none(_nested(getattr(opp, "metadata", {}), "net_formula", "net_gain_usd"))
+    if net_profit is None:
+        profitability = getattr(opp, "profitability", None)
+        net_profit = _decimal_or_none(getattr(profitability, "net_profit_usd", None)) or Decimal("0")
+    return (
+        0 if passes else 2,
+        buy_price if buy_price is not None else Decimal("Infinity"),
+        -spread,
+        -net_profit,
+        index,
+    )
+
+
 def simulate_staging(ranked_opps: List[LiveOpportunity], max_staged: int = 8) -> List[LiveOpportunity]:
     """
-    Simulates payload_stager behavior by selecting the top non-conflicting routes.
+    Simulates payload_stager behavior by selecting non-conflicting routes.
 
-    A "conflict" occurs when two routes use the same liquidity pool. Since the
-    first trade alters the pool's state, the second trade's economics are no
-    longer valid. This function mimics the production stager by picking the most
-    profitable route and excluding any subsequent routes that share its pools.
-
-    - Applies raw gate (already done in ranking).
-    - Selects top-ranked routes that do not share liquidity pools.
-    - Does NOT explicitly prefer 2-leg or 3-leg; profitability is the only factor.
+    When executable sequence proof is present, buy-low alignment comes first:
+    the lowest executable base-asset price per mid-token unit is staged before
+    weaker buy legs, and the sell leg must prove a higher base/mid return. When
+    no proof is present, the prior ranked order is preserved for compatibility.
     """
     staged_opps: List[LiveOpportunity] = []
     used_pools: set[str] = set()
+    ordered_opps = [opp for _, opp in sorted(
+        enumerate(ranked_opps),
+        key=lambda item: _staging_priority(item[0], item[1]),
+    )]
 
-    for opp in ranked_opps:
+    for opp in ordered_opps:
         if len(staged_opps) >= max_staged:
             break
 
@@ -197,7 +250,6 @@ def simulate_staging(ranked_opps: List[LiveOpportunity], max_staged: int = 8) ->
             used_pools.update(opp.pool_sequence)
 
     return staged_opps
-
 
 def main():
     print("=" * 70)

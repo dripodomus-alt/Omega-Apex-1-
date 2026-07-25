@@ -23,6 +23,8 @@ import pennylane as qml
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sqlalchemy import create_engine, text
+import pandas as pd
 import joblib
 
 # Add project root to path
@@ -30,8 +32,31 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from omega_v5.paths import output_path, models_path
+from omega_v5.config import DATABASE_URL
+from omega_v5.paths import models_path
 from omega_v5.quantum_models import create_vqc_circuit
+
+
+def load_and_prepare_data_from_db(limit: int = 200000) -> tuple[np.ndarray, np.ndarray, list[str]]:
+    """Loads and prepares data by querying the vqc_training_view."""
+    print("Loading training data from PostgreSQL view 'vqc_training_view'...")
+    if not DATABASE_URL:
+        raise ConnectionError("DATABASE_URL is not configured in .env or config.py")
+
+    engine = create_engine(DATABASE_URL)
+    feature_names = ["pre_math_gross_rate", "principal_usd", "slippage_bps", "num_legs"]
+    query = text(f"SELECT {', '.join(feature_names)}, is_profitable_truth FROM vqc_training_view LIMIT {limit};")
+
+    with engine.connect() as connection:
+        df = pd.read_sql(query, connection)
+
+    if df.empty:
+        return np.array([]), np.array([]), feature_names
+
+    features = df[feature_names].values
+    labels = df['is_profitable_truth'].astype(int).values
+    print(f"Loaded {len(features)} valid training records from the database.")
+    return features, labels, feature_names
 
 
 def load_and_prepare_data(data_path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:
@@ -90,8 +115,16 @@ def main(args):
     model_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. Load and prepare data
-    features, labels, feature_names = load_and_prepare_data(args.data_file)
-    if len(features) == 0:
+    if not args.use_file_datasource:
+        try:
+            features, labels, feature_names = load_and_prepare_data_from_db()
+        except Exception as e:
+            print(f"Could not load data from database: {e}")
+            print("Falling back to file-based data source.")
+            features, labels, feature_names = load_and_prepare_data(args.data_file)
+    else:
+        features, labels, feature_names = load_and_prepare_data(args.data_file)
+    if len(features) == 0 or len(labels) == 0:
         print("No training data found. Exiting.")
         return
 
@@ -159,7 +192,7 @@ def main(args):
         "model_id": model_id,
         "schema_version": "omega_v5.model_card.v1",
         "trained_at": int(time.time()),
-        "training_data_source": str(args.data_file),
+        "training_data_source": "PostgreSQL:vqc_training_view" if not args.use_file_datasource else str(args.data_file),
         "model_type": "Variational Quantum Classifier",
         "purpose": "route_surplus_ranker",
         "features": feature_names,
@@ -192,7 +225,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--data-file",
         type=Path,
-        default=output_path("delta_accuracy_25_cycles.jsonl"),
+        default=ROOT / "out" / "delta_accuracy_25_cycles.jsonl",
         help="Path to the input training data (delta_accuracy log).",
     )
     parser.add_argument(
@@ -206,6 +239,11 @@ if __name__ == "__main__":
         type=int,
         default=25,
         help="Number of training epochs.",
+    )
+    parser.add_argument(
+        "--use-file-datasource",
+        action="store_true",
+        help="Force the use of the file-based datasource instead of the database.",
     )
     parsed_args = parser.parse_args()
     main(parsed_args)

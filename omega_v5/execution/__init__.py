@@ -1,12 +1,24 @@
 """Execution, flash selection, staging, submission modules."""
 
-from .flash_source_selector import select_best_flash_source
-from .calldata_validator import validate_calldata
-from .payload_stager import stage_payload
-from .nonce_lane_manager import NonceLaneManager
-from .submission_router import choose_submission_channel
-from .receipt_reconciler import reconcile_receipt
+from importlib import import_module
 
+_LAZY_EXPORTS = {
+    "select_best_flash_source": ("flash_source_selector", "select_best_flash_source"),
+    "validate_calldata": ("calldata_validator", "validate_calldata"),
+    "stage_payload": ("payload_stager", "stage_payload"),
+    "NonceLaneManager": ("nonce_lane_manager", "NonceLaneManager"),
+    "choose_submission_channel": ("submission_router", "choose_submission_channel"),
+    "reconcile_receipt": ("receipt_reconciler", "reconcile_receipt"),
+}
+
+
+def __getattr__(name):
+    if name in _LAZY_EXPORTS:
+        module_name, attr_name = _LAZY_EXPORTS[name]
+        value = getattr(import_module(f".{module_name}", __name__), attr_name)
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 # Re-export core functions from the top-level execution.py module.
 # This resolves the package vs module name collision (execution/ dir vs execution.py).
 # Always use explicit file load to reliably bypass package shadowing.

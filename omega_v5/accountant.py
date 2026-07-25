@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import hashlib
 import logging
 import time
 from decimal import Decimal
@@ -202,20 +203,54 @@ class OmegaAccountant:
         if not batch or self.sql_engine is None:
             return
 
+        def _generate_route_hash(path: List[str]) -> str:
+            """Generates a deterministic hash for a given route path."""
+            path_str = ",".join(sorted(path))
+            return hashlib.sha256(path_str.encode('utf-8')).hexdigest()
+
         try:
             async with self.sql_engine.begin() as conn:
-                # Use text() for raw SQL safety
-                stmt = text(
-                    "INSERT INTO simulation_audit (data, recorded_at) "
-                    "VALUES (:data, NOW())"
-                )
-                params = [
-                    {"data": json_lib.dumps(rec) if hasattr(json_lib, "dumps") else json.dumps(rec)}
-                    for rec in batch
-                ]
-                await conn.execute(stmt, params)
+                # 1. Prepare route registry data and UPSERT
+                route_params = []
+                for rec in batch:
+                    # The 'path' is the list of pool addresses/IDs
+                    path = rec.get("path") or rec.get("metadata", {}).get("path")
+                    if isinstance(path, list) and path:
+                        route_hash = _generate_route_hash(path)
+                        rec['route_hash'] = route_hash  # Add hash to record for simulation insert
+                        route_params.append({
+                            "route_hash": route_hash,
+                            "path_json": json_lib.dumps(path)
+                        })
 
-            self.logger.info(f"Accountant flushed {len(batch)} simulation records to Cloud SQL")
+                if route_params:
+                    # Use ON CONFLICT to perform a safe, low-latency UPSERT (INSERT or DO NOTHING)
+                    route_stmt = text("""
+                        INSERT INTO route_registry (route_hash, path_json)
+                        VALUES (:route_hash, :path_json::jsonb)
+                        ON CONFLICT (route_hash) DO NOTHING
+                    """)
+                    await conn.execute(route_stmt, route_params)
+
+                # 2. Prepare simulation audit data and INSERT
+                sim_params = []
+                for rec in batch:
+                    if 'route_hash' in rec:
+                        sim_params.append({
+                            "route_hash": rec['route_hash'],
+                            # The rest of the data goes into the metadata column
+                            "metadata_jsonb": json_lib.dumps(rec)
+                        })
+
+                if sim_params:
+                    sim_stmt = text("""
+                        INSERT INTO simulation_audit (route_hash, metadata_jsonb)
+                        VALUES (:route_hash, :metadata_jsonb::jsonb)
+                    """)
+                    await conn.execute(sim_stmt, sim_params)
+
+
+            self.logger.info(f"Accountant flushed {len(batch)} simulation records to Cloud SQL using structured schema.")
         except Exception as e:
             self.logger.error(f"SQL flush failed (records dropped this batch): {e}")
 

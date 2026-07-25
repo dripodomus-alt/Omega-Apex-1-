@@ -131,3 +131,14 @@ def build_executable_route_economics(
     principal_raw = route.get("principal_raw", 0)
     # ... (rest of original logic can stay; we only demonstrate the import path)
     return evaluate_profitability(flash_params, expenses)
+
+def route_within_lifespan(discovery_block: int, current_block: int, max_lifespan_blocks: int = 4) -> bool:
+    try:
+        discovered = int(discovery_block or 0)
+        current = int(current_block or 0)
+        lifespan = int(max_lifespan_blocks or 0)
+    except Exception:
+        return False
+    if discovered <= 0 or current <= 0:
+        return True
+    return current - discovered <= lifespan

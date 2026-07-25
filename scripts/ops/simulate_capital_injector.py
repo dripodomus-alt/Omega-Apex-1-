@@ -15,6 +15,8 @@ Run:
 
 from __future__ import annotations
 
+import argparse
+import asyncio
 import os
 import sys
 from decimal import Decimal
@@ -30,6 +32,7 @@ from omega_v5.capital_injector import (
     register_execution_venue,
 )
 from omega_v5.flash_loan import FlashSource
+from scripts.ops.verify_deployed_contracts import verify_deployed_contracts
 
 
 def banner(title: str) -> None:
@@ -38,7 +41,27 @@ def banner(title: str) -> None:
     print("=" * 72)
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Simulate and validate the Omega V5 capital injector.")
+    parser.add_argument(
+        "--verify-contracts",
+        action="store_true",
+        help="Run the deployed-contract bytecode gate before injector simulation.",
+    )
+    args = parser.parse_args(argv)
+
+    if args.verify_contracts:
+        banner("0. Deployed Contract Bytecode Gate")
+        ok, checks, detail = asyncio.run(verify_deployed_contracts())
+        print(detail)
+        for check in checks:
+            status = "PASS" if check.ok else "FAIL"
+            print(f"{check.label}: {status} address={check.address} bytecode_bytes={check.bytecode_bytes} reason={check.reason}")
+        if not ok:
+            print("VERDICT: INFRASTRUCTURE INCOMPATIBLE")
+            return 1
+        print("VERDICT: INFRASTRUCTURE COMPATIBLE")
+
     banner("1. Isolated Registries")
     print("CAPITAL_SOURCE_REGISTRY keys:", list(CAPITAL_SOURCE_REGISTRY.keys()))
     register_execution_venue("SIM_UNI_V3_USDC_WETH", {"protocol": "UniswapV3", "type": "execution_venue"})
