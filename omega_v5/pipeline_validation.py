@@ -29,6 +29,10 @@ from .config import (
     ENABLE_LIQUIDATION_PIPELINE,
     EXEC_MODE,
     FORK_SIM_RPC_URL,
+    MIN_FLASH_PRINCIPAL_USD,
+    MAX_FLASH_PRINCIPAL_USD,
+    FLASH_ROUTE_TVL_FRACTIONS,
+    MAX_ROUTE_IMPACT,
     LIVE_FLAG,
     REQUIRED_CONFIRM,
 )
@@ -357,10 +361,21 @@ def validate(
     print("Invoking RustMath engine for unified discovery and ranking...")
     arb_engine = ArbitrageGraphEngine(pools, prices)  # Engine now initialized with all necessary context
 
+    # --- Optimal Sizing Configuration ---
+    # Instead of a fixed principal, we pass sizing parameters to the Rust engine,
+    # allowing it to find the optimal trade size for each route up to the
+    # configured maximums. This is critical for maximizing profitability.
+    sizing_params = {
+        "min_principal_usd": str(MIN_FLASH_PRINCIPAL_USD),
+        "max_principal_usd": str(MAX_FLASH_PRINCIPAL_USD),
+        "tvl_fractions": [str(f) for f in FLASH_ROUTE_TVL_FRACTIONS],
+        "max_impact_bps": int(MAX_ROUTE_IMPACT * 10000),
+    }
+
     # This single, high-performance call replaces the previous Python-based:
     # compute_all_pool_rates, detect_*_spreads, bellman_ford, pre_rank_routes, and score_* functions.
     ranked, discovery_report = arb_engine.find_and_rank_opportunities(
-        principal_usd=Decimal("10000"),
+        sizing_params=sizing_params,
         flash_source=FlashSource.BALANCER,
         stager_max_token_paths=stager_max_token_paths,
         stager_max_pre_ranked=stager_max_pre_ranked,

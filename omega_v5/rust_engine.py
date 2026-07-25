@@ -133,7 +133,7 @@ def rust_find_and_rank_opportunities(
     pools: dict[str, dict],
     prices: dict[str, str],
     *,
-    principal_usd: Decimal,
+    sizing_params: dict[str, Any],
     flash_source: str,
     stager_max_token_paths: int,
     stager_max_pre_ranked: int,
@@ -148,7 +148,7 @@ def rust_find_and_rank_opportunities(
     input_data = {
         "pools": pools,
         "prices": prices,
-        "principal_usd": str(principal_usd),
+        "sizing_params": sizing_params,
         "flash_source": flash_source,
         "stager_max_token_paths": stager_max_token_paths,
         "stager_max_pre_ranked": stager_max_pre_ranked,

@@ -314,12 +314,12 @@ ENABLE_DYNAMIC_FLASH_SIZING: bool = (
     _env("ENABLE_DYNAMIC_FLASH_SIZING", "true").lower() in {"1", "true", "yes", "on"}
 )
 MIN_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MIN_FLASH_PRINCIPAL_USD", "5000") or "5000")
-MAX_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MAX_FLASH_PRINCIPAL_USD", "100000") or "100000")
-MAX_ROUTE_TVL_FRACTION: Decimal = Decimal(_env("MAX_ROUTE_TVL_FRACTION", "0.15") or "0.15")
+MAX_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MAX_FLASH_PRINCIPAL_USD", "250000") or "250000")
+MAX_ROUTE_TVL_FRACTION: Decimal = Decimal(_env("MAX_ROUTE_TVL_FRACTION", "0.50") or "0.50")
 MAX_ROUTE_IMPACT: Decimal = Decimal(_env("MAX_ROUTE_IMPACT", "0.01") or "0.01")
 FLASH_ROUTE_TVL_FRACTIONS: List[Decimal] = [
     Decimal(item.strip())
-    for item in _env("FLASH_ROUTE_TVL_FRACTIONS", "0.10,0.15").split(",")
+    for item in _env("FLASH_ROUTE_TVL_FRACTIONS", "0.15,0.25,0.50").split(",")
     if item.strip()
 ]
 FLASH_SIZE_LADDER_BPS: List[Decimal] = [

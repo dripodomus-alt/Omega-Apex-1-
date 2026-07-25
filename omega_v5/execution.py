@@ -142,15 +142,18 @@ def build_tx_payload(op: LiveOpportunity, pools: dict, nonce: int = 0, base_fee_
 def simulate_tx_payload(tx: dict, from_addr: str | None = None) -> tuple[bool, str]:
     """Performs a dry-run simulation of the transaction using eth_call on a dedicated exact-call RPC lane.
     This verifies the transaction's on-chain behavior without broadcasting."""
+    call_tx = {
+        "to": tx.get("to"),
+        "data": tx.get("data"),
+        "value": tx.get("value", 0),
+    }
     if from_addr:
         call_tx["from"] = from_addr
 
     provider = web3_for_lane(LANE_EXACT_C1_ETH_CALL)
     if not provider:
-        # Fallback to the default w3 instance if the lane-specific one isn't available
-        if not w3:
-            return False, "RPC unavailable for simulation"
-        provider = w3
+        # Enforce strict pipeline mirroring. The exact-call lane MUST be available.
+        raise RuntimeError("Exact-call RPC provider lane is not available. Cannot guarantee simulation integrity.")
 
     try:
         result = provider.eth.call(call_tx, block_identifier="latest")

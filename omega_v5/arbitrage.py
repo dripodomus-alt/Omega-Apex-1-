@@ -84,7 +84,7 @@ class ArbitrageGraphEngine:
     def find_and_rank_opportunities(
         self,
         *,
-        principal_usd: Decimal,
+        sizing_params: dict[str, Any],
         flash_source: FlashSource,
         stager_max_token_paths: int,
         stager_max_pre_ranked: int,
@@ -100,7 +100,7 @@ class ArbitrageGraphEngine:
         ranked_dicts, report = rust_engine.rust_find_and_rank_opportunities(
             pools=self.pools,
             prices=self.prices,
-            principal_usd=principal_usd,
+            sizing_params=sizing_params,
             flash_source=flash_source.value,
             stager_max_token_paths=stager_max_token_paths,
             stager_max_pre_ranked=stager_max_pre_ranked,
