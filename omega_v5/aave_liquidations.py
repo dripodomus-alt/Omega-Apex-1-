@@ -19,6 +19,8 @@ from .config import (
     AAVE_V3_PROTOCOL_DATA_PROVIDER,
     LIQUIDATION_MAX_BORROWERS,
     LIQUIDATION_MIN_NET_PROFIT_USD,
+    LIQUIDATION_GAS_UNITS_1HOP,
+    LIQUIDATION_GAS_UNITS_2HOP,
     LIQUIDATION_SCAN_BLOCKS,
 )
 from .flash_loan import evaluate_profitability
@@ -358,32 +360,40 @@ class AaveLiquidationScanner:
                         pool_id=pool_id, protocol=pool.get("protocol", ""), route=[collateral_symbol, debt_symbol],
                     )
 
-        # --- Pass 2: Two-hop routes ---
+        # --- Pass 2: Two-hop routes (Exhaustive Search) ---
+        # This pass performs a more thorough but computationally intensive search for the
+        # optimal 2-hop route. It avoids the greedy assumption of the previous implementation
+        # by checking all valid combinations of pools for leg 1 and leg 2.
+        #
+        # ARCHITECTURAL NOTE: For even more complex routes (3+ hops), a dedicated graph-based
+        # routing engine (e.g., using Dijkstra's or Bellman-Ford on a pre-built liquidity graph)
+        # would be the ideal, most performant solution. This would centralize routing logic
+        # currently fragmented between arbitrage and liquidation modules.
         all_tokens = {t for p in self.pools.values() for t in p.get("tokens", [])}
         for mid_symbol in all_tokens:
             if mid_symbol in {collateral_symbol, debt_symbol}:
                 continue
 
-            best_leg1_quote = max(
-                (q for p in self.pools.values() for q in quote_pool(p, collateral_amount, collateral_symbol, mid_symbol)),
-                key=lambda q: q.amount_out, default=None,
-            )
-            if not best_leg1_quote or best_leg1_quote.amount_out <= 0:
-                continue
+            # Find all possible outcomes for the first leg (collateral -> mid)
+            for leg1_pool_id, leg1_pool in self.pools.items():
+                for leg1_quote in quote_pool(leg1_pool, collateral_amount, collateral_symbol, mid_symbol):
+                    if leg1_quote.amount_out <= 0:
+                        continue
 
-            best_leg2_quote = max(
-                (q for p in self.pools.values() for q in quote_pool(p, best_leg1_quote.amount_out, mid_symbol, debt_symbol)),
-                key=lambda q: q.amount_out, default=None,
-            )
-            if not best_leg2_quote or best_leg2_quote.amount_out <= 0:
-                continue
+                    # For each successful first leg, find all possible outcomes for the second leg (mid -> debt)
+                    for leg2_pool_id, leg2_pool in self.pools.items():
+                        for leg2_quote in quote_pool(leg2_pool, leg1_quote.amount_out, mid_symbol, debt_symbol):
+                            if leg2_quote.amount_out <= 0:
+                                continue
 
-            if best is None or best_leg2_quote.amount_out > best.debt_out:
-                best = ExitQuote(
-                    ok=True, debt_symbol=debt_symbol, collateral_symbol=collateral_symbol,
-                    collateral_amount=collateral_amount, debt_out=best_leg2_quote.amount_out,
-                    protocol="2-hop", route=[collateral_symbol, mid_symbol, debt_symbol],
-                )
+                            # If this 2-hop route is the best so far, record it.
+                            if best is None or leg2_quote.amount_out > best.debt_out:
+                                best = ExitQuote(
+                                    ok=True, debt_symbol=debt_symbol, collateral_symbol=collateral_symbol,
+                                    collateral_amount=collateral_amount, debt_out=leg2_quote.amount_out,
+                                    protocol="2-hop", pool_id=f"{leg1_pool_id}->{leg2_pool_id}",
+                                    route=[collateral_symbol, mid_symbol, debt_symbol],
+                                )
 
         return best or ExitQuote(
             ok=False,
@@ -410,6 +420,7 @@ class AaveLiquidationScanner:
                 p for p in positions
                 if p.raw_collateral > 0 and p.usage_as_collateral and p.risk.collateral_enabled
             ]
+            # Step 1: Determine the correct percentage of debt that can be repaid.
             close_factor = MAX_CLOSE_FACTOR if health <= MAX_CLOSE_FACTOR_HF_THRESHOLD else DEFAULT_CLOSE_FACTOR
 
             for debt in debt_positions:
@@ -417,6 +428,7 @@ class AaveLiquidationScanner:
                     debt_price = token_price_usd(debt.symbol)
                 except PriceUnavailable:
                     continue
+                # Step 2: Apply the factor to the borrower's total debt for that asset.
                 debt_to_cover_raw = int(Decimal(debt.raw_debt) * close_factor)
                 if debt_to_cover_raw <= 0:
                     continue
@@ -443,13 +455,20 @@ class AaveLiquidationScanner:
 
                     exit_quote = self._exit_quote(collateral.symbol, debt.symbol, seized_amount)
                     gross_out_usd = exit_quote.debt_out * debt_price if exit_quote.ok else Decimal("0")
+
+                    # DYNAMIC GAS ESTIMATE: Use a more accurate gas override based on the
+                    # complexity of the exit swap route (1-hop vs 2-hop). This prevents
+                    # over-penalizing simpler, cheaper liquidations.
+                    num_hops = len(exit_quote.route) - 1 if exit_quote.ok and exit_quote.route else 2
+                    gas_override = LIQUIDATION_GAS_UNITS_2HOP if num_hops >= 2 else LIQUIDATION_GAS_UNITS_1HOP
+
                     prof = evaluate_profitability(
                         gross_out_usd,
                         debt_to_cover_usd,
-                        hops=2,
+                        hops=num_hops,  # Use the actual number of hops for fee calculation
                         flash_source=FlashSource.AAVE,
                         asset=debt.symbol,
-                        gas_units_override=Decimal("900000"),
+                        gas_units_override=Decimal(gas_override),
                     )
                     reject_reasons: list[str] = []
                     if selected_source is None:

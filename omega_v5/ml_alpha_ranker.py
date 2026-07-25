@@ -69,33 +69,47 @@ def predict_surplus_probability(op: LiveOpportunity) -> float:
     return counts.get("1", 0) / 256
 
 def predict_optimal_size_bin(op: LiveOpportunity) -> Decimal:
-    """Predicts the best size bin using a heuristic based on liquidity and profit."""
+    """
+    Predicts the best size bin. This version uses a more robust heuristic
+    based on a target fraction of the route's minimum TVL.
+    """
     if not DYNAMIC_SIZE_OPT_BINS_USD:
         return MIN_FLASH_PRINCIPAL_USD
 
-    # This heuristic is a step up from a static default, moving towards a real model.
-    # It uses liquidity and theoretical profit to select a more appropriate size bin.
+    # Use the minimum TVL from the sizing metadata if available, as it's the
+    # most direct measure of the route's capacity.
     liquidity = float(op.metadata.get("sizing", {}).get("min_pool_tvl_usd", 0.0))
     if liquidity == 0.0:
-        # Fallback if TVL is not available in the preliminary opportunity
+        # Fallback for preliminary opportunities before full sizing.
         liquidity = float(op.metadata.get("min_pool_liquidity_usd", 0.0))
-        
-    net_profit = float(op.profitability.net_profit_usd)
 
-    # Bias index by liquidity and profit. These divisors are heuristic.
-    # A larger liquidity or higher theoretical profit suggests a larger optimal size.
-    # This logic is borrowed from a similar heuristic in the VQC ranker module.
-    idx = min(int((liquidity / 80000) + (net_profit / 50)), len(DYNAMIC_SIZE_OPT_BINS_USD) - 1)
-    idx = max(0, idx)
+    if liquidity <= 0:
+        return MIN_FLASH_PRINCIPAL_USD
 
-    selected_bin = DYNAMIC_SIZE_OPT_BINS_USD[idx]
-    
-    print(f"   ML Alpha: Size bin heuristic selected bin ${selected_bin:,.0f} (index {idx}) based on liquidity ${liquidity:,.0f} and profit ${net_profit:,.2f}.")
-    
-    return selected_bin
+    # Heuristic: The optimal trade size is often a small fraction of the
+    # bottleneck liquidity. We target a fraction (e.g., 5%) and find the
+    # closest available size bin from our configured ladder. This is more
+    # robust than a simple linear formula with magic numbers.
+    target_principal = Decimal(liquidity) * Decimal("0.05")
+
+    # Find the bin that is closest to our target principal.
+    closest_bin = min(DYNAMIC_SIZE_OPT_BINS_USD, key=lambda b: abs(b - target_principal))
+
+    print(
+        f"   ML Alpha: Size bin heuristic selected bin ${closest_bin:,.0f} "
+        f"(target: ${target_principal:,.0f}) based on liquidity ${liquidity:,.0f}."
+    )
+
+    return closest_bin
 
 def rerank_with_vqc(opportunities: list[LiveOpportunity]) -> list[LiveOpportunity]:
-    """Re-ranks opportunities based on a score of P(executable) * net_profit_usd."""
+    """
+    Re-ranks opportunities based on their expected value, calculated as:
+    Expected Value = P(success) * net_profit_usd
+
+    This prioritizes trades that have the best combination of profitability and
+    likelihood of successful on-chain execution, as predicted by the VQC model.
+    """
     if not _load_model():
         print("   ML Alpha: VQC model not found or failed to load. Skipping re-ranking.")
         return opportunities
@@ -103,12 +117,16 @@ def rerank_with_vqc(opportunities: list[LiveOpportunity]) -> list[LiveOpportunit
     print(f"   ML Alpha: Re-ranking {len(opportunities)} candidates with VQC model...")
     scored_ops = []
     for op in opportunities:
+        # Get the model's prediction for the probability of successful execution.
         prob = predict_surplus_probability(op)
         if prob < 0:
+            # If the model is not ready or fails, fall back to ranking by raw profit.
             score = float(op.profitability.net_profit_usd)
         else:
+            # The score is the expected value: probability of success times the net profit.
             score = prob * float(op.profitability.net_profit_usd)
         scored_ops.append((score, op))
 
+    # Sort opportunities by the calculated score in descending order.
     scored_ops.sort(key=lambda x: x[0], reverse=True)
     return [op for _, op in scored_ops]

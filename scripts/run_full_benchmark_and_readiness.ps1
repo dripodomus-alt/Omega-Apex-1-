@@ -47,6 +47,12 @@ function Record-Step { param([string]$Name, [bool]$Success, [string]$Detail = ""
     $results.Steps += [PSCustomObject]@{ Name = $Name; Success = $Success; Detail = $Detail }
     if ($Detail) { $results.Details[$Name] = $Detail }
 }
+function Update-OverallProgress {
+    param([string]$Status)
+    $phaseNum++
+    $overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
+    Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status $Status -PercentComplete $overallPercent
+}
 function Parse-EnvFile {
     param([string]$FilePath)
     $config = @{}
@@ -71,9 +77,7 @@ function Parse-EnvFile {
 # 1. PREREQUISITE VALIDATION + AUTO FIXES FOR LOCAL
 # ==============================================================================
 Write-Phase "1. Prerequisite Validation + Local Fixes"
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 1: Prerequisites" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 1: Prerequisites"
 
 $prereqSteps = 8
 $prereqCounter = 0
@@ -143,12 +147,14 @@ if (Test-Path ".env") {
         Record-Step ".env configuration" $true "Local fork defaults applied"
     }
 
-    if ($envConfig.ContainsKey("OMEGA_CONTRACT_ADDRESS") -and -not [string]::IsNullOrEmpty($envConfig.OMEGA_CONTRACT_ADDRESS)) {
-        Write-Substep "OMEGA_CONTRACT_ADDRESS found in .env"
-        Record-Step ".env Contract Address" $true "Present"
+    $executorTarget = $envConfig['C1_PAYLOAD_TARGET'] -or $envConfig['C1_TARGET'] -or $envConfig['C1_ARB_EXECUTOR_ADDRESS'] -or $envConfig['EXECUTOR_CONTRACT_ADDR'] -or $envConfig['OMEGA_CONTRACT_ADDRESS']
+    if ($executorTarget) {
+        Write-Substep "Found Pinned Executor Target: $executorTarget"
+        Record-Step ".env Contract Address" $true "Pinned target found"
     } else {
-        Write-Substep "WARNING: OMEGA_CONTRACT_ADDRESS not set in .env. Live runs will fail." -ForegroundColor Yellow
-        Record-Step ".env Contract Address" $true "Not set (OK for local tests, required for live)"
+        Write-Substep "WARNING: No Executor Target (e.g., C1_TARGET) found in .env. Applying safe dummy address for local tests." -ForegroundColor Yellow
+        $env:OMEGA_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"
+        Record-Step ".env Contract Address" $true "Dummy address applied for local tests"
     }
 } else {
     Write-Substep "No .env - using safe local fork defaults for this run"
@@ -158,7 +164,9 @@ if (Test-Path ".env") {
     $env:EXECUTION_MODE = "dry_run"
     Record-Step ".env configuration" $true "Created session defaults for local anvil"
     $prereqScore += 1
-    Record-Step ".env Contract Address" $true "Not set (OK for local tests, required for live)"
+    Write-Substep "WARNING: No Executor Target (e.g., C1_TARGET) found in .env. Applying safe dummy address for local tests." -ForegroundColor Yellow
+    $env:OMEGA_CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"
+    Record-Step ".env Contract Address" $true "Dummy address applied for local tests"
 }
 
 $prereqCounter++
@@ -167,18 +175,18 @@ Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Che
 if (Get-Command cargo -ErrorAction SilentlyContinue) {
     if (-not (Test-Path "rust_engine\target\release\*.exe" -ErrorAction SilentlyContinue)) {
         Write-Substep "Building Rust engine (fixes compile blocker)..."
+        Push-Location rust_engine -ErrorAction Stop # Fail fast if we can't enter the directory
         try {
             Write-Progress -Id 2 -ParentId 1 -Activity "Building Rust Engine" -Status "Running 'cargo build --release'..." -PercentComplete 50
-            Push-Location rust_engine
             cargo build --release --quiet 2>&1 | Out-Null
-            Pop-Location
             Write-Substep "Rust build complete"
             $prereqScore++
             Record-Step "Rust engine build" $true
         } catch {
+            Record-Step "Rust engine build" $false "Build had issues (see previous fixes)"
+        } finally {
             Write-Progress -Id 2 -ParentId 1 -Completed
             Pop-Location
-            Record-Step "Rust engine build" $false "Build had issues (see previous fixes)"
         }
     } else {
         $prereqScore++
@@ -227,9 +235,7 @@ $results.Details["PrerequisiteScore"] = $prereqPercent
 # 2. SAFE SERVICE STARTUP (incl. Anvil)
 # ==============================================================================
 Write-Phase "2. Safe Service Startup"
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 2: Service Startup" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 2: Service Startup"
 
 $serviceSteps = 4
 $serviceCounter = 0
@@ -354,9 +360,7 @@ Write-Progress -Id 1 -ParentId 0 -Completed
 # 3 & 4. RUN UNIT TESTS + BASIC VALIDATION
 # ==============================================================================
 Write-Phase "3-4. Unit Tests and Basic Validation"
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 3-4: Core Validation" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 3-4: Core Validation"
 
 $validationSteps = 5
 $validationCounter = 0
@@ -455,9 +459,7 @@ Write-Progress -Id 1 -ParentId 0 -Completed
 # 5. EXECUTE SAFE BENCHMARKS
 # ==============================================================================
 Write-Phase "5. Safe Benchmarks (Anvil Fork + Dry Run)"
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 5: Benchmarks" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 5: Benchmarks"
 
 $benchmarkSteps = 2
 $benchmarkCounter = 0
@@ -497,9 +499,7 @@ Write-Progress -Id 1 -ParentId 0 -Completed
 # 6. COLLECT RESULTS
 # ==============================================================================
 Write-Phase "6. Collect and Aggregate Results"
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 6: Reporting" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 6: Reporting"
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 6: Reporting" -Status "Aggregating results..." -PercentComplete 50
 
 $reportDir = "out"
@@ -523,9 +523,7 @@ Write-Progress -Id 1 -ParentId 0 -Completed
 # 7. COMPUTE READINESS SCORE (0-100) - uses Python helper when available
 # ==============================================================================
 Write-Phase "7. Readiness Score Calculation"
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 7: Final Score" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 7: Final Score"
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 7: Final Score" -Status "Calculating..." -PercentComplete 50
 
 $passedSteps = ($results.Steps | Where-Object { $_.Success }).Count
@@ -576,9 +574,7 @@ Write-Host "`nFull report saved to out\readiness_report.json"
 # ==============================================================================
 # 8. SAFETY NOTES
 # ==============================================================================
-$phaseNum++
-$overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
-Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 8: Finalizing" -PercentComplete $overallPercent
+Update-OverallProgress -Status "Phase 8: Finalizing"
 
 Write-Phase "Safety Notes"
 Write-Host " - Live-fire benchmark was NOT executed (intentionally disabled)." -ForegroundColor Yellow

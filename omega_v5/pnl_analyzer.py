@@ -33,6 +33,13 @@ except ImportError as e:
 # Standard ERC20 Transfer event signature: Transfer(address,address,uint256)
 TRANSFER_EVENT_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
+# Chainlink MATIC/USD price feeds on Polygon (primary, secondary).
+# This provides resilience if one feed is stale or deprecated.
+CHAINLINK_NATIVE_USD_FEEDS = [
+    "0xAB594600376Ec9fD91F8e885dADF0CE036862dE0",  # MATIC / USD
+    "0x7bAC85A8a13A4BcD8abb3eB7d6b4d632c5a57676",  # Deprecated, but can be useful for historical queries
+]
+
 # Minimal ABI for a Chainlink price feed.
 CHAINLINK_FEED_ABI = [
     {
@@ -99,23 +106,43 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> dict:
 
     def get_native_price_direct(w3: Web3, block: int) -> Decimal:
         """
-        Gets the native token price (MATIC/USD) by calling the Chainlink oracle directly.
-        This is faster and more reliable than an external API for critical data.
+        Gets the native token price (e.g., MATIC/USD) by calling Chainlink oracles directly.
+        It iterates through a list of fallback feeds for resilience and includes a staleness check.
         """
-        # Chainlink MATIC/USD price feed on Polygon
-        feed_address = "0xAB594600376Ec9fD91F8e885dADF0CE036862dE0"
-        feed_contract = w3.eth.contract(address=feed_address, abi=CHAINLINK_FEED_ABI)
+        # Get the timestamp of the block being analyzed to check for stale oracle prices.
         try:
-            # Fetch the price at the specific block of the transaction
-            _roundId, answer, _startedAt, _updatedAt, _answeredInRound = (
-                feed_contract.functions.latestRoundData().call(block_identifier=block)
-            )
-            # The price has 8 decimals
-            return Decimal(answer) / Decimal(10**8)
+            block_timestamp = w3.eth.get_block(block)['timestamp']
         except Exception as e:
-            print(f"Warning: Direct oracle call to Chainlink failed: {e}", file=sys.stderr)
-            # Fallback to the existing pricing module if direct call fails
-            return get_price_usd(getattr(config, "WPOL_ADDRESS"), block_identifier=block)
+            print(f"Warning: Could not get timestamp for block {block}. Staleness check will be skipped. Error: {e}", file=sys.stderr)
+            block_timestamp = None
+
+        for feed_address in CHAINLINK_NATIVE_USD_FEEDS:
+            feed_contract = w3.eth.contract(address=feed_address, abi=CHAINLINK_FEED_ABI)
+            try:
+                # Fetch the price at the specific block of the transaction
+                _roundId, answer, _startedAt, updatedAt, _answeredInRound = (
+                    feed_contract.functions.latestRoundData().call(block_identifier=block)
+                )
+                # The price has 8 decimals.
+                price = Decimal(answer) / Decimal(10**8)
+
+                # Staleness check: if the price is more than 24 hours old relative to the transaction block, it's likely stale.
+                if block_timestamp and abs(block_timestamp - updatedAt) > 86400:
+                    print(f"Warning: Chainlink feed {feed_address} price is stale (updated {block_timestamp - updatedAt}s from block time). Trying next feed.", file=sys.stderr)
+                    continue
+                
+                if price > 0:
+                    return price
+
+            except Exception as e:
+                # This will catch reverts if the feed is deprecated for the given block, or other RPC errors.
+                print(f"Warning: Direct oracle call to Chainlink feed {feed_address} failed: {e}. Trying next feed.", file=sys.stderr)
+                continue  # Try the next feed in the list
+
+        # If all direct oracle calls fail, fall back to the project's main pricing module.
+        print("Warning: All direct Chainlink oracle calls failed. Falling back to generic pricing module.", file=sys.stderr)
+        native_token_symbol = getattr(config, "NATIVE_SYMBOL", "WPOL")
+        return get_price_usd(native_token_symbol, block_identifier=block)
 
 
     block_number = receipt["blockNumber"]
@@ -125,19 +152,17 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> dict:
     effective_gas_price = Decimal(receipt["effectiveGasPrice"])
     gas_cost_native = gas_used * effective_gas_price
 
-    # Use WPOL as the strict native token for gas pricing.
-    native_token_address = getattr(config, "WPOL_ADDRESS", None)
-    if not native_token_address:
-        print("Warning: Native token address (WPOL_ADDRESS) not found in config. Gas cost cannot be calculated in USD.", file=sys.stderr)
-        gas_cost_usd = Decimal("0")
-    else:
+    try:
         native_price_usd = get_native_price_direct(w3, block_number)
-        if native_price_usd is None:
-            print(f"Warning: Could not determine price for native token. Gas cost will be ignored.", file=sys.stderr)
-            gas_cost_usd = Decimal("0")
-        else:
+        if native_price_usd and native_price_usd > 0:
             # Assume native token (e.g., MATIC) has 18 decimals
             gas_cost_usd = (gas_cost_native / Decimal(10**18)) * Decimal(native_price_usd)
+        else:
+            print(f"Warning: Could not determine price for native token. Gas cost will be ignored.", file=sys.stderr)
+            gas_cost_usd = Decimal("0")
+    except Exception as e:
+        print(f"Warning: Failed to get native price for gas calculation. Error: {e}", file=sys.stderr)
+        gas_cost_usd = Decimal("0")
 
     # If the transaction failed, the PnL is simply the negative gas cost.
     if receipt["status"] != 1:
@@ -156,7 +181,7 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> dict:
     # 2a. Add native asset profit from trace
     native_profit_wei = _get_native_profit_from_trace(w3, tx_hash, executor_wallet_address)
     if native_profit_wei > 0:
-        native_price_usd = get_native_price_direct(w3, block_number) if native_token_address else Decimal("0")
+        native_price_usd = get_native_price_direct(w3, block_number)
         if native_price_usd and native_price_usd > 0:
             native_profit_usd = (native_profit_wei / Decimal(10**18)) * Decimal(native_price_usd)
             gross_profit_usd += native_profit_usd

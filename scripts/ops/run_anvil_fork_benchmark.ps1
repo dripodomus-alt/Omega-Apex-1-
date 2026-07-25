@@ -34,6 +34,55 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
 Set-Location $repoRoot
 
+# --- Helper Functions (aligned with project standards) ---
+function Write-Phase { param([string]$Message) Write-Host "`n" + ("=" * 80) + "`n" + " PHASE: $Message" + "`n" + ("=" * 80) -ForegroundColor Cyan }
+function Assert-Ok { param([bool]$Condition, [string]$Message) if (-not $Condition) { throw $Message } }
+function Assert-Command { param([string]$Name, [string]$InstallHint) if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw "$Name is not available on PATH. $InstallHint" } }
+function Parse-EnvFile {
+    param([string]$FilePath)
+    $config = @{}
+    if (Test-Path $FilePath) {
+        Get-Content $FilePath | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and $line -notmatch '^\s*#') {
+                $parts = $line -split '=', 2
+                if ($parts.Length -eq 2) {
+                    $key = $parts[0].Trim()
+                    $value = $parts[1].Trim()
+                    if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
+                        $value = $value.Substring(1, $value.Length - 2)
+                    }
+                    $config[$key] = $value
+                }
+            }
+        }
+    }
+    return $config
+}
+
+# --- PRE-FLIGHT CHECKS ---
+Write-Phase "Pre-flight System & Sanity Checks"
+
+Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on PATH."
+Assert-Command -Name "cast" -InstallHint "Install Foundry (which includes 'cast') and ensure it is on PATH."
+Assert-Command -Name "anvil" -InstallHint "Install Foundry (which includes 'anvil') and ensure it is on PATH."
+
+$envConfig = Parse-EnvFile -FilePath ".env"
+$forkRpcUrl = $envConfig.FORK_RPC_URL
+if ([string]::IsNullOrEmpty($forkRpcUrl)) {
+    $forkRpcUrl = "http://127.0.0.1:8545"
+    Write-Host "FORK_RPC_URL not found in .env, defaulting to $forkRpcUrl" -ForegroundColor Yellow
+}
+
+try {
+    Write-Host "Probing Anvil fork at $forkRpcUrl..."
+    $anvilChainId = cast chain-id --rpc-url $forkRpcUrl
+    Assert-Ok -Condition ($anvilChainId -eq 137) -Message "Anvil fork is running on wrong chain (ID: $anvilChainId). It must be a fork of Polygon mainnet (ID: 137)."
+    Write-Host "Anvil fork detected on Polygon mainnet (ChainID: $anvilChainId)." -ForegroundColor Green
+} catch {
+    throw "Could not connect to Anvil fork at '$forkRpcUrl'. Is Anvil running in a separate terminal? Error: $($_.Exception.Message)"
+}
+
 Write-Host "====================================================================" -ForegroundColor Cyan
 Write-Host " Anvil Fork Benchmark (SDK-Driven)" -ForegroundColor Cyan
 Write-Host "====================================================================" -ForegroundColor Cyan
