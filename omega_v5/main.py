@@ -28,7 +28,7 @@ from .config import ENABLE_LIQUIDATION_PIPELINE, _env
 from .aave_liquidations import AaveLiquidationScanner
 from .rpc_layer import connect, load_all_live_pools, DEEP_POOL_REGISTRY
 from .oracle_layer import refresh_token_prices, TOKEN_USD_PRICE
-from .flash_loan import FlashLoanParams, FlashSource, Profitability
+from .flash_loan import FlashLoanParams, FlashSource, Profitability, build_executable_route_economics
 from .liquidity_registry import build_verified_pool_registry, registry_summary
 from . import redis_cache
 from .opportunity_ranker import (
@@ -256,127 +256,161 @@ def collect_and_score_opportunities(
 ) -> tuple[list[LiveOpportunity], dict[tuple[tuple[str, ...], tuple[str, ...]], dict[str, Any]], list[dict[str, Any]]]:
     """
     Single logistics funnel for discovery + scoring.
-
-    Returns:
-      ranked_opps,
-      pre_math_lookup[(path, pools)] -> pre-math stats,
-      raw_positive_rows (all gross-rate > 1 candidates before net gate)
+    Prefers unified Rust path (find_and_rank) to reduce Python heavy lifting
+    and boundary crossings. Falls back to legacy. Uses authoritative economics.
     """
-    all_rates = compute_all_pool_rates(live_pools)
-
-    two_leg_spreads = detect_cross_pool_two_leg_spreads(all_rates)
-    stable_spreads = detect_pegged_stable_spreads(two_leg_spreads)
-    stable_keys = {spread_key(item.spread) for item in stable_spreads}
-    non_stable_two_leg = [s for s in two_leg_spreads if spread_key(s) not in stable_keys]
-
-    arb_engine = ArbitrageGraphEngine(all_rates)
-    bellman_cycles = arb_engine.bellman_ford_all_sources()
-
-    staged_blueprints, pre_rank_stats = route_execution_stager.pre_rank_routes(
-        all_rates,
-        live_pools,
-        principal_usd=principal_usd,
-        hops=(2, 3, 4),
-    )
-
     pre_math_lookup: dict[tuple[tuple[str, ...], tuple[str, ...]], dict[str, Any]] = {}
     raw_positive_rows: list[dict[str, Any]] = []
 
-    print(f"   Pre-math blueprints found: {len(staged_blueprints)}")
-    print(
-        f"   Pre-math stats: "
-        f"total_routes={pre_rank_stats.get('total_routes_considered', 0)} "
-        f"raw_positive={pre_rank_stats.get('rejection_counts', {}).get('raw_positive_candidates', 0)} "
-        f"rejections={pre_rank_stats.get('rejection_counts', {})}"
-    )
-    for bp in staged_blueprints:
-        sig = _route_sig(bp.path, bp.pool_sequence)
-        rate = Decimal(str(bp.approximate_gross_rate or "0"))
-        raw_delta_usd = (rate - Decimal("1")) * principal_usd
-        row = {
-            "source": "stager_pre_math",
-            "path": list(bp.path),
-            "pool_sequence": list(bp.pool_sequence),
-            "protocol_seq": list(bp.protocol_seq),
-            "pre_math_gross_rate": str(rate),
-            "raw_positive_delta_usd": str(raw_delta_usd),
-            "raw_positive": bool(rate > Decimal("1")),
-        }
-        pre_math_lookup[sig] = row
-        if rate > Decimal("1"):
-            raw_positive_rows.append(row)
-            if len(raw_positive_rows) <= 200:
-                print(
-                    f"     #{len(raw_positive_rows):03d} RAW_POS_DELTA "
-                    f"path={'->'.join(bp.path)} "
-                    f"rate={rate:.8f} "
-                    f"raw_delta_usd={raw_delta_usd:.6f}"
-                )
+    # Prepare prices for unified Rust path (thinner coordinator)
+    refresh_token_prices(force=True)
+    prices = {k: Decimal(str(v)) for k, v in TOKEN_USD_PRICE.items() if Decimal(str(v)) > 0}
 
-    for bp in staged_blueprints[: min(5, len(staged_blueprints))]:
-        try:
-            stage_res = route_execution_stager.stage_pre_ranked_route(
-                bp,
-                live_pools,
-                requested_principal_usd=principal_usd,
-                slippage_bps=slippage_bps,
+    ranked_opps: list[LiveOpportunity] = []
+
+    # Prefer Rust unified path to push work across boundary once
+    try:
+        if prices:
+            arb_engine = ArbitrageGraphEngine(live_pools, prices)
+            sizing_params = {
+                "principal_usd": str(principal_usd),
+                "slippage_bps": str(slippage_bps),
+            }
+            rust_opps, report = arb_engine.find_and_rank_opportunities(
+                sizing_params=sizing_params,
+                flash_source=FlashSource.BALANCER,
+                stager_max_token_paths=200,
+                stager_max_pre_ranked=100,
+                stager_max_quote_options_per_pair=5,
             )
-            if stage_res.get("status") == "staged_for_executor_truth":
-                print(
-                    f"   STAGED blueprint path={stage_res.get('path')} "
-                    f"net_gain={stage_res.get('net_formula', {}).get('net_gain_usd')}"
-                )
-        except Exception as exc:
-            print(f"   stage_preview_error={type(exc).__name__}: {exc}")
+            if rust_opps:
+                # Re-apply authoritative economics on Rust candidates to ensure consistency
+                for op in rust_opps:
+                    econ = build_executable_route_economics(
+                        path=op.path,
+                        pool_sequence=op.pool_sequence,
+                        pools=live_pools,
+                        principal_usd=principal_usd,
+                        flash_source=op.flash_source,
+                        slippage_bps=slippage_bps,
+                    )
+                    if econ.get("passes_gate"):
+                        # Update with authoritative values
+                        op.profitability.net_profit_usd = Decimal(str(econ["net_profit_usd"]))
+                        op.metadata["authoritative_economics"] = True
+                        ranked_opps.append(op)
+                print(f"   Used Rust unified path: {len(ranked_opps)} opportunities (report keys: {list(report.keys()) if report else []})")
+    except Exception as e:
+        print(f"   Rust unified path unavailable or failed ({type(e).__name__}), falling back to legacy Python.")
 
-    cycle_candidates = _dedupe_raw_cycle_candidates([*staged_blueprints, *bellman_cycles])
-    print(
-        "   cycle_blueprints="
-        f"stager:{len(staged_blueprints)} "
-        f"bellman:{len(bellman_cycles)} "
-        f"merged:{len(cycle_candidates)} "
-        f"raw_positive:{len(raw_positive_rows)} "
-        f"rejections:{pre_rank_stats.get('rejection_counts', {})}"
-    )
+    if not ranked_opps:
+        # Legacy Python path (kept for compatibility, but now secondary)
+        all_rates = compute_all_pool_rates(live_pools)
 
-    ranked_cycles = score_opportunities(
-        cycle_candidates,
-        live_pools,
-        principal_usd=principal_usd,
-        slippage_bps=slippage_bps,
-    )
-    ranked_two_leg = score_cross_pool_spreads(
-        non_stable_two_leg,
-        live_pools,
-        principal_usd=principal_usd,
-        slippage_bps=slippage_bps,
-    )
-    ranked_stable = score_pegged_stable_spreads(
-        stable_spreads,
-        live_pools,
-        principal_usd=principal_usd,
-        slippage_bps=slippage_bps,
-    )
-    print(
-        f"   Post-math candidates: "
-        f"cycles={len(ranked_cycles)} "
-        f"two_leg={len(ranked_two_leg)} "
-        f"stable={len(ranked_stable)}"
-    )
+        two_leg_spreads = detect_cross_pool_two_leg_spreads(all_rates)
+        stable_spreads = detect_pegged_stable_spreads(two_leg_spreads)
+        stable_keys = {spread_key(item.spread) for item in stable_spreads}
+        non_stable_two_leg = [s for s in two_leg_spreads if spread_key(s) not in stable_keys]
 
-    all_opps = ranked_stable + ranked_two_leg + ranked_cycles
-    best_by_signature: dict[str, LiveOpportunity] = {}
-    for op in all_opps:
-        signature = route_semantic_signature(op)
-        prev = best_by_signature.get(signature)
-        if prev is None or op.profitability.net_profit_usd > prev.profitability.net_profit_usd:
-            best_by_signature[signature] = op
+        arb_engine = ArbitrageGraphEngine(all_rates)
+        bellman_cycles = arb_engine.bellman_ford_all_sources()
 
-    ranked = sorted(
-        best_by_signature.values(),
-        key=lambda x: x.profitability.net_profit_usd,
-        reverse=True,
-    )
+        staged_blueprints, pre_rank_stats = route_execution_stager.pre_rank_routes(
+            all_rates,
+            live_pools,
+            principal_usd=principal_usd,
+            hops=(2, 3, 4),
+        )
+
+        print(f"   Pre-math blueprints found: {len(staged_blueprints)}")
+        print(
+            f"   Pre-math stats: "
+            f"total_routes={pre_rank_stats.get('total_routes_considered', 0)} "
+            f"raw_positive={pre_rank_stats.get('rejection_counts', {}).get('raw_positive_candidates', 0)} "
+            f"rejections={pre_rank_stats.get('rejection_counts', {})}"
+        )
+        for bp in staged_blueprints:
+            sig = _route_sig(bp.path, bp.pool_sequence)
+            rate = Decimal(str(bp.approximate_gross_rate or "0"))
+            raw_delta_usd = (rate - Decimal("1")) * principal_usd
+            row = {
+                "source": "stager_pre_math",
+                "path": list(bp.path),
+                "pool_sequence": list(bp.pool_sequence),
+                "protocol_seq": list(bp.protocol_seq),
+                "pre_math_gross_rate": str(rate),
+                "raw_positive_delta_usd": str(raw_delta_usd),
+                "raw_positive": bool(rate > Decimal("1")),
+            }
+            pre_math_lookup[sig] = row
+            if rate > Decimal("1"):
+                raw_positive_rows.append(row)
+
+        cycle_candidates = _dedupe_raw_cycle_candidates([*staged_blueprints, *bellman_cycles])
+        print(
+            "   cycle_blueprints="
+            f"stager:{len(staged_blueprints)} "
+            f"bellman:{len(bellman_cycles)} "
+            f"merged:{len(cycle_candidates)} "
+            f"raw_positive:{len(raw_positive_rows)} "
+        )
+
+        ranked_cycles = score_opportunities(
+            cycle_candidates,
+            live_pools,
+            principal_usd=principal_usd,
+            slippage_bps=slippage_bps,
+        )
+        ranked_two_leg = score_cross_pool_spreads(
+            non_stable_two_leg,
+            live_pools,
+            principal_usd=principal_usd,
+            slippage_bps=slippage_bps,
+        )
+        ranked_stable = score_pegged_stable_spreads(
+            stable_spreads,
+            live_pools,
+            principal_usd=principal_usd,
+            slippage_bps=slippage_bps,
+        )
+        print(
+            f"   Post-math candidates: "
+            f"cycles={len(ranked_cycles)} "
+            f"two_leg={len(ranked_two_leg)} "
+            f"stable={len(ranked_stable)}"
+        )
+
+        all_opps = ranked_stable + ranked_two_leg + ranked_cycles
+        best_by_signature: dict[str, LiveOpportunity] = {}
+        for op in all_opps:
+            signature = route_semantic_signature(op)
+            prev = best_by_signature.get(signature)
+            if prev is None or op.profitability.net_profit_usd > prev.profitability.net_profit_usd:
+                best_by_signature[signature] = op
+
+        ranked_opps = sorted(
+            best_by_signature.values(),
+            key=lambda x: x.profitability.net_profit_usd,
+            reverse=True,
+        )
+
+    # Final authoritative pass on all (ensures sizing/profit early)
+    final_ranked = []
+    for op in ranked_opps:
+        econ = build_executable_route_economics(
+            path=op.path,
+            pool_sequence=op.pool_sequence,
+            pools=live_pools,
+            principal_usd=principal_usd,
+            flash_source=op.flash_source,
+            slippage_bps=slippage_bps,
+        )
+        if econ.get("passes_gate", False):
+            op.profitability.net_profit_usd = Decimal(str(econ.get("net_profit_usd", op.profitability.net_profit_usd)))
+            op.metadata["authoritative_economics"] = True
+            final_ranked.append(op)
+
+    ranked = sorted(final_ranked, key=lambda x: x.profitability.net_profit_usd, reverse=True)
     return ranked, pre_math_lookup, raw_positive_rows
 
 

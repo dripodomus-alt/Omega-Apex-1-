@@ -72,15 +72,6 @@ class ArbitrageGraphEngine:
             self.pools = {}
             self.prices = {}
 
-    def bellman_ford_all_sources(self) -> list[dict]:
-        """
-        Legacy method for Bellman-Ford cycle detection.
-        This method is maintained for compatibility with older parts of the codebase.
-        """
-        if self.mode != "legacy":
-            raise RuntimeError("bellman_ford_all_sources can only be called in legacy (rates-only) mode.")
-        return rust_engine.rust_bellman_ford_cycles(self.rates)
-
     def find_and_rank_opportunities(
         self,
         *,
@@ -88,7 +79,7 @@ class ArbitrageGraphEngine:
         flash_source: FlashSource,
         stager_max_token_paths: int,
         stager_max_pre_ranked: int,
-        stager_max_quote_options_per_pair: int,
+        max_quote_options_per_pair: int,
     ) -> tuple[list[LiveOpportunity], dict[str, Any]]:
         """
         Delegates the entire discovery and ranking process to the Rust engine.
@@ -104,7 +95,7 @@ class ArbitrageGraphEngine:
             flash_source=flash_source.value,
             stager_max_token_paths=stager_max_token_paths,
             stager_max_pre_ranked=stager_max_pre_ranked,
-            stager_max_quote_options_per_pair=stager_max_quote_options_per_pair,
+            max_quote_options_per_pair=max_quote_options_per_pair,
         )
 
         ranked_opportunities = _reconstruct_opportunities(ranked_dicts)
