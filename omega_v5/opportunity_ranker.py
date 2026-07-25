@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import asdict, dataclass, field, is_dataclass, replace
+import time
 from decimal import Decimal
 from types import SimpleNamespace
 from typing import Any, Iterable, Optional
@@ -47,13 +48,16 @@ from .flash_loan import ( # type: ignore
     live_min_net_profit_usd,
     build_executable_route_economics,
 )
-from .oracle_layer import PriceUnavailable, token_price_usd
+from .oracle_layer import PriceUnavailable
 from .pool_quality import route_quality_metadata, route_quality_passed
 from .ranker import CrossPoolSpread
 from .sizing import RouteSizing, optimal_flash_for_route, apply_injection_to_route_dict, estimate_route_tvl_usd
 from .stable_strategies import PeggedStableSpread
 from .route_execution_stager import PreRankedRoute
 from .pricing.net_delta import raw_execution_gate_passes, route_within_lifespan
+from .pricing.engine_config import get_engine
+from .pricing.precision_pricing import PricingContext, PRICE_SCALE, PricingError
+from .units import get_token_metadata
 from . import rpc_layer
 from .pnl_tracker import record_lifespan_event, record_stage_event
 
@@ -131,8 +135,13 @@ class LiveOpportunity:
         """Converts the opportunity to a dictionary format compatible with legacy reporting tools."""
         base_token = self.path[0] if self.path else ""
         try:
-            base_price = token_price_usd(base_token)
-        except PriceUnavailable:
+            # Use the new precision engine for a canonical price, then convert to Decimal for legacy compatibility.
+            engine = get_engine()
+            ctx = PricingContext(chain_id=rpc_layer.CHAIN_ID, current_block=rpc_layer.BLOCK, current_timestamp=int(time.time()))
+            token_meta = get_token_metadata(base_token)
+            price_result = engine.get_usd_price(token_meta.address, ctx)
+            base_price = Decimal(price_result.price_usd_x18) / Decimal(PRICE_SCALE)
+        except (PricingError, PriceUnavailable):
             base_price = Decimal("0")
 
         principal_usd = self.profitability.flashloan.principal_usd
@@ -292,13 +301,19 @@ def _score_closed_path(
         return None
 
     try:
-        base_price = Decimal(str(token_price_usd(path[0])))
-    except Exception:
-        base_price = Decimal("0")
-    if base_price <= 0 or principal_usd <= 0:
+        # Pre-flight check using the canonical PrecisionPricingEngine
+        engine = get_engine()
+        ctx = PricingContext(chain_id=rpc_layer.CHAIN_ID, current_block=current_block, current_timestamp=int(time.time()))
+        token_meta = get_token_metadata(path[0])
+        price_result = engine.get_usd_price(token_meta.address, ctx)
+        base_price_x18 = price_result.price_usd_x18
+    except (PricingError, Exception):
+        base_price_x18 = 0
+
+    if base_price_x18 <= 0 or principal_usd <= 0:
         logger.debug(
-            "Path %s rejected at pre-flight: invalid base price (%.4f) or principal (%.2f)",
-            path, base_price, principal_usd
+            "Path %s rejected at pre-flight: invalid base price (x18=%d) or principal (%.2f)",
+            path, base_price_x18, principal_usd
         )
         return None
 

@@ -17,13 +17,15 @@ from typing import Any
 
 from web3 import Web3
 
+from .config import normalize_protocol, FULLY_EXECUTABLE_PROTOCOLS
 from .contract_deployments import deployment_address
 from .math_engine import DeFiEngineMath
 from . import rpc_layer
 from .rpc_layer import TOKEN_DECIMALS, TOKEN_ADDRESSES
 
 
-CLMM_PROTOCOLS = {"UniswapV3", "QuickSwapV3", "Algebra"}
+# Canonical CLMM keys only
+CLMM_PROTOCOLS = {"V3_CLMM", "QS_V3_ALGEBRA"}
 V3_MIN_SQRT_RATIO_PLUS_ONE = 4295128740
 V3_MAX_SQRT_RATIO_MINUS_ONE = 1461446703485210103287273052203988822378723970341
 
@@ -134,14 +136,18 @@ def _math_quote(pool: dict[str, Any], token_in: str, token_out: str, amount_in: 
         return Decimal("0")
     i = tokens.index(token_in)
     j = tokens.index(token_out)
-    proto = pool.get("protocol")
-    if proto == "UniswapV2":
+    proto_raw = pool.get("protocol", "")
+    try:
+        proto = normalize_protocol(str(proto_raw))
+    except Exception:
+        proto = str(proto_raw)
+    if proto == "V2_CPMM" or proto == "QS_V2_CPMM":
         return DeFiEngineMath.query_uniswap_v2(pool["reserves"][i], pool["reserves"][j], amount_in, pool["fee"])
-    if proto == "Curve":
+    if proto == "CURVE_STABLE":
         amounts = [Decimal("0")] * len(pool["reserves"])
         amounts[i] = amount_in
         return DeFiEngineMath.query_curve_stable(pool["reserves"], amounts, i, j, pool["A"])
-    if proto == "Balancer":
+    if proto == "BAL_WEIGHTED":
         return DeFiEngineMath.query_balancer_weighted(
             pool["reserves"], pool["weights"], amount_in, i, j, pool["swap_fee"]
         )
@@ -161,7 +167,11 @@ def quote_route_for_executor(path: list[str], pool_sequence: list[str], pools: d
             return ExecutableQuote(Decimal("0"), 0, clmm_quoted, clmm_unquoted, proofs)
 
         pool = pools[pool_id]
-        proto = str(pool.get("protocol", ""))
+        proto_raw = str(pool.get("protocol", ""))
+        try:
+            proto = normalize_protocol(proto_raw)
+        except Exception:
+            proto = proto_raw
         token_in = path[hop_idx]
         token_out = path[hop_idx + 1]
 
@@ -172,7 +182,7 @@ def quote_route_for_executor(path: list[str], pool_sequence: list[str], pools: d
                 proofs.append({"hop": hop_idx, "pool_id": pool_id, "protocol": proto, "status": "fail", "reason": "zero_raw_amount_in"})
                 return ExecutableQuote(Decimal("0"), 0, clmm_quoted, clmm_unquoted, proofs)
             try:
-                if proto == "UniswapV3":
+                if proto == "V3_CLMM":
                     amount_out_raw = _quote_uniswap_v3(pool, token_in, token_out, amount_in_raw)
                 else:
                     amount_out_raw = _quote_algebra(pool, token_in, token_out, amount_in_raw)

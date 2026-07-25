@@ -15,26 +15,26 @@ from typing import Iterable, Sequence
 
 from web3 import Web3
 
-from .config import EXECUTOR_CONTRACT, _env
+from .config import (
+    EXECUTOR_CONTRACT,
+    _env,
+    PROTOCOL_REGISTRY,
+    FULLY_EXECUTABLE_PROTOCOLS,
+    normalize_protocol,
+)
 from .flash_loan import FlashSource
 
 
 ZERO_ADDRESS = "0x" + "00" * 20
-SUPPORTED_ROUTE_PROTOCOLS = {
-    "UniswapV2",
-    "UniswapV3",
-    "QuickSwapV3",
-    "Algebra",
-    "Curve",
-    "Balancer",
-}
+
+# Use canonical internal keys only. No free-text.
+SUPPORTED_ROUTE_PROTOCOLS = set(FULLY_EXECUTABLE_PROTOCOLS) | {"BAL_WEIGHTED"}  # BAL_WEIGHTED is partially but supported for weighted
+
+# Map canonical key -> pool kind (for on-chain routePoolKind)
 ROUTE_POOL_KIND = {
-    "UniswapV2": 1,
-    "UniswapV3": 2,
-    "QuickSwapV3": 3,
-    "Algebra": 3,
-    "Curve": 4,
-    "Balancer": 5,
+    k: v.get("pool_kind")
+    for k, v in PROTOCOL_REGISTRY.items()
+    if v.get("pool_kind") is not None
 }
 
 
@@ -259,7 +259,15 @@ def validate_route_shape(path: Sequence[str], pool_addresses: Sequence[str]) -> 
 
 
 def validate_route_protocols(protocol_seq: Sequence[str]) -> None:
-    unsupported = sorted({protocol for protocol in protocol_seq if protocol not in SUPPORTED_ROUTE_PROTOCOLS})
+    """Enforce canonical internal keys only. Normalize on the fly for legacy input."""
+    normalized = []
+    for p in protocol_seq:
+        try:
+            canon = normalize_protocol(p)
+            normalized.append(canon)
+        except Exception as e:
+            raise AdapterSemanticError(str(e))
+    unsupported = [p for p in normalized if p not in SUPPORTED_ROUTE_PROTOCOLS]
     if unsupported:
         raise AdapterSemanticError(
             "route contains protocols without executable source-adapter swap support: "
@@ -309,7 +317,9 @@ def validate_onchain_route_pool_kinds(
     pool_addresses: Sequence[str],
     protocol_seq: Sequence[str],
 ) -> None:
-    """Fail before signing if the adapter route-kind allowlist cannot execute the route."""
+    """Fail before signing if the adapter route-kind allowlist cannot execute the route.
+    protocol_seq must use canonical keys.
+    """
     try:
         from . import rpc_layer
     except Exception:
@@ -334,9 +344,10 @@ def validate_onchain_route_pool_kinds(
     missing: list[str] = []
     mismatched: list[str] = []
     for pool, protocol in zip(pool_addresses, protocol_seq):
-        expected = ROUTE_POOL_KIND.get(protocol)
+        canon = normalize_protocol(protocol)
+        expected = ROUTE_POOL_KIND.get(canon)
         if expected is None:
-            raise AdapterSemanticError(f"unsupported executable route protocol: {protocol}")
+            raise AdapterSemanticError(f"unsupported executable route protocol: {canon}")
         try:
             actual = int(contract.functions.routePoolKind(Web3.to_checksum_address(pool)).call())
         except Exception as exc:
@@ -344,7 +355,7 @@ def validate_onchain_route_pool_kinds(
         if actual == 0:
             missing.append(pool)
         elif actual != expected:
-            mismatched.append(f"{pool}: expected {expected} for {protocol}, got {actual}")
+            mismatched.append(f"{pool}: expected {expected} for {canon}, got {actual}")
     if missing:
         raise AdapterSemanticError(
             "adapter routePoolKind unset for live route pool(s): " + ", ".join(missing)

@@ -22,7 +22,7 @@ from eth_abi import encode
 from web3 import Web3
 
 from . import rpc_layer
-from .config import CHAIN_ID
+from .config import CHAIN_ID, normalize_protocol
 from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, MIN_NET_PROFIT_USD, evaluate_profitability
 from .oracle_layer import token_price_usd
@@ -66,9 +66,9 @@ def _hop_fee_fraction(hop: dict[str, Any] | None = None, pool: dict[str, Any] | 
     """
     raw: Any = None
     if hop:
-        raw = hop.get("fee", hop.get("fee_tier", hop.get("fee_bps")))
+        raw = hop.get("fee", hop.get("fee_tier", hop.get("fee_bps"))
     if raw is None and pool:
-        raw = pool.get("fee_tier", pool.get("fee", pool.get("fee_bps", pool.get("swap_fee"))))
+        raw = pool.get("fee_tier", pool.get("fee", pool.get("fee_bps", pool.get("swap_fee")))
     if raw is None:
         raw = 3000
 
@@ -131,7 +131,7 @@ def _get_min_tvl(pool_sequence: tuple[str, ...], pools: dict[str, dict]) -> Deci
 class PreRankedRoute:
     path: tuple[str, ...]
     pool_sequence: tuple[str, ...]
-    protocol_seq: tuple[str, ...]
+    protocol_seq: tuple[str, ...]  # canonical internal keys only
     liquidity_keys: tuple[str, ...]
     route_class_seq: tuple[str, ...]
     approximate_gross_rate: Decimal
@@ -228,6 +228,10 @@ def _fee_tier_from_entry(entry: dict[str, Any]) -> int:
 
 def _destination_identity(entry: dict[str, Any], fallback_pool_id: Any = "") -> dict[str, Any]:
     protocol_family = str(entry.get("protocol") or entry.get("invariant") or "unknown")
+    try:
+        protocol_family = normalize_protocol(protocol_family)
+    except Exception:
+        pass
     factory_or_vault = str(
         entry.get("factory")
         or entry.get("factory_address")
@@ -471,7 +475,7 @@ def pre_rank_routes(
     max_pre_ranked: int = 0,
     base_tokens: Iterable[str] | None = None,
 ) -> tuple[list[PreRankedRoute], dict[str, Any]]:
-    """Primary multi-hop discovery for the funnel."""
+    """Primary multi-hop discovery for the funnel. protocol_seq uses canonical keys."""
     counters: Counter[str] = Counter()
     scored_candidates: list[tuple[PreRankedRoute, Decimal]] = []
     token_paths = enumerate_closed_token_paths(
@@ -508,7 +512,16 @@ def pre_rank_routes(
             route_classes = tuple(
                 str(entry.get("route_class") or "NATIVE_POOL_ROUTE") for entry in combo
             )
-            protocol_seq = tuple(str(entry.get("protocol") or "") for entry in combo)
+            raw_protocol_seq = tuple(str(entry.get("protocol") or "") for entry in combo)
+            # Normalize to canonical internal keys immediately
+            protocol_seq = []
+            for p in raw_protocol_seq:
+                try:
+                    protocol_seq.append(normalize_protocol(p) if p else p)
+                except Exception:
+                    protocol_seq.append(p)
+            protocol_seq = tuple(protocol_seq)
+
             reject_reasons: list[str] = []
             if any(pool_id not in pools for pool_id in pool_sequence):
                 reject_reasons.append("missing_live_pool")
@@ -531,7 +544,7 @@ def pre_rank_routes(
             pre_ranked = PreRankedRoute(
                 path=path,
                 pool_sequence=pool_sequence,
-                protocol_seq=protocol_seq,
+                protocol_seq=protocol_seq,  # canonical
                 liquidity_keys=liquidity_keys,
                 route_class_seq=route_classes,
                 approximate_gross_rate=approx_rate,
@@ -807,32 +820,15 @@ def stage_pre_ranked_route(
         ),
         "discovery_block": route.discovery_block,
         "current_block": current_block,
+        "hop_fees_usd": str(hop_fees_total),
+        "hop_fee_breakdown": [str(f) for f in hop_fee_breakdown],
         "amount_out": str(amount_out),
         "amount_out_min": str(amount_out_min),
-        "slippage_bps": str(slip),
-        "min_amount_out_bps": str(extra_min_bps),
-        "hop_fees_usd": str(hop_fees_total),
-        "net_formula": {
-            "raw_delta_usd": prof.gross_amount_out - prof.flashloan.principal_usd,
-            "pre_math_raw_delta_usd": route.approximate_raw_delta_usd,
-            "flashloan_fee_usd": prof.flashloan.fee_usd,
-            "gas_cost_usd": prof.gas_cost_usd,
-            "relay_or_private_submit_cost_usd": prof.relay_tip_usd,
-            "risk_buffer_usd": prof.risk_buffer_usd,
-            "extra_slippage_buffer_usd": str(extra_slippage_buffer_usd),
-            "hop_fees_usd": hop_fees_total,
-            "hop_fee_breakdown_usd": hop_fee_breakdown,
-            "net_gain_usd": prof.net_profit_usd,
-            "gas_accounting": prof.gas_accounting,
-            "gas_payer": prof.gas_payer,
+        "out_usd": str(out_usd),
+        "out_usd_min": str(out_usd_min),
+        "extra_slippage_buffer_usd": str(extra_slippage_buffer_usd),
+        "profitability": {
+            "net_profit_usd": str(prof.net_profit_usd),
+            "passes_gate": prof.passes_gate,
         },
     })
-
-
-def build_stage_report(routes: list[PreRankedRoute], stats: dict) -> dict:
-    return {
-        "routes": [_json_ready(r.__dict__ if hasattr(r, "__dict__") else r) for r in routes],
-        "stats": stats,
-        "timestamp": time.time(),
-        "n_plus_4_lifespan": N_PLUS_4_LIFESPAN,
-    }

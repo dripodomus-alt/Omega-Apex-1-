@@ -5,7 +5,7 @@
 
 import os
 from decimal import Decimal
-from typing import List
+from typing import List, Dict, Any
 
 from .paths import env_path
 
@@ -450,3 +450,145 @@ ENABLE_APPRENTICE_METADATA_PROMOTIONS: bool = (
 APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE: int = int(
     _env("APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE", "5") or "5"
 )
+
+# ==============================================================================
+# GLOBAL SYSTEM PROTOCOL MAP - Canonical Internal Keys
+# Rules:
+# - Use Internal Key as the canonical string in route metadata (protocol_seq, pool_sequence).
+# - Every discovered opportunity must carry its key. No free-text protocol names.
+# - Add new protocols only by extending this table first.
+# ==============================================================================
+
+PROTOCOL_REGISTRY: Dict[str, Dict[str, Any]] = {
+    "V2_CPMM": {
+        "display_name": "Uniswap V2 / QuickSwap V2 (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Constant product market maker. Full simulation + execution via flash swap adapter.",
+        "precision_pricing": True,
+    },
+    "V3_CLMM": {
+        "display_name": "Uniswap V3 (CLMM)",
+        "family": "CLMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 2,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Concentrated liquidity. Full eth_call simulation + executable quotes.",
+        "precision_pricing": True,
+    },
+    "QS_V2_CPMM": {
+        "display_name": "QuickSwap V2 (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "QuickSwap V2 fork of Uniswap V2. Treated as first-class V2.",
+        "precision_pricing": True,
+    },
+    "QS_V3_ALGEBRA": {
+        "display_name": "QuickSwap V3 (Algebra CLMM)",
+        "family": "CLMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 3,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Algebra-based V3. Full support in executable quotes and adapters.",
+        "precision_pricing": True,
+    },
+    "BAL_WEIGHTED": {
+        "display_name": "Balancer V2 Weighted Pools",
+        "family": "Weighted",
+        "status": "partially_executable",
+        "adapters": ["OmegaBalancerCapitalSourceAdapter"],
+        "pool_kind": 5,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Only Weighted Pools are executable. Complex pools (stable, composable) are discovery-only.",
+        "precision_pricing": True,
+    },
+    "CURVE_STABLE": {
+        "display_name": "Curve Stable / Factory Pools",
+        "family": "StableSwap",
+        "status": "discovery_only",
+        "adapters": [],
+        "pool_kind": 4,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED"],
+        "notes": "Price-only simulation. No execution path built. Pending full registry + adapter.",
+        "precision_pricing": True,
+    },
+    "AAVE_V3": {
+        "display_name": "Aave V3",
+        "family": "Lending",
+        "status": "fully_executable",
+        "adapters": ["OmegaAaveV3CapitalSourceAdapter", "OmegaAaveV3LiquidationAdapter"],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Liquidations and flashloan capital source. Separate liquidation executor path.",
+        "precision_pricing": True,
+    },
+    "ROUTE_AGGREGATOR": {
+        "display_name": "1inch / 0x / Paraswap Aggregators",
+        "family": "Aggregator",
+        "status": "discovery_only",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "RANKED"],
+        "notes": "Used for discovery and pricing reference only. No direct execution.",
+        "precision_pricing": False,
+    },
+}
+
+# Derived sets for fast checks (use these instead of free-text)
+CANONICAL_PROTOCOL_KEYS: List[str] = list(PROTOCOL_REGISTRY.keys())
+FULLY_EXECUTABLE_PROTOCOLS: frozenset[str] = frozenset(
+    k for k, v in PROTOCOL_REGISTRY.items() if v.get("status") == "fully_executable"
+)
+DISCOVERY_ONLY_PROTOCOLS: frozenset[str] = frozenset(
+    k for k, v in PROTOCOL_REGISTRY.items() if v.get("status") == "discovery_only"
+)
+PARTIALLY_EXECUTABLE_PROTOCOLS: frozenset[str] = frozenset(
+    k for k, v in PROTOCOL_REGISTRY.items() if v.get("status") == "partially_executable"
+)
+
+def get_protocol_info(key: str) -> Dict[str, Any]:
+    """Return registry entry for a canonical internal key. Raises on unknown."""
+    if key not in PROTOCOL_REGISTRY:
+        raise KeyError(f"Unknown protocol key: {key}. Extend PROTOCOL_REGISTRY in config.py first.")
+    return PROTOCOL_REGISTRY[key]
+
+def is_fully_executable(key: str) -> bool:
+    return key in FULLY_EXECUTABLE_PROTOCOLS
+
+def normalize_protocol(raw: str) -> str:
+    """Map legacy/display names to canonical internal key. Fail closed on unknown."""
+    if not raw:
+        raise ValueError("Empty protocol")
+    raw = str(raw).strip()
+    # Direct match
+    if raw in PROTOCOL_REGISTRY:
+        return raw
+    # Legacy / display name mapping (for migration)
+    legacy_map = {
+        "UniswapV2": "V2_CPMM",
+        "UniswapV3": "V3_CLMM",
+        "QuickSwapV2": "QS_V2_CPMM",
+        "QuickSwapV3": "QS_V3_ALGEBRA",
+        "Algebra": "QS_V3_ALGEBRA",
+        "Balancer": "BAL_WEIGHTED",
+        "Curve": "CURVE_STABLE",
+        "AaveV3": "AAVE_V3",
+        "Aave V3": "AAVE_V3",
+        "V2": "V2_CPMM",
+        "V3": "V3_CLMM",
+    }
+    if raw in legacy_map:
+        return legacy_map[raw]
+    # Try case-insensitive display match
+    for k, v in PROTOCOL_REGISTRY.items():
+        if raw.lower() == v.get("display_name", "").lower():
+            return k
+    raise ValueError(f"Unknown protocol '{raw}'. Add to PROTOCOL_REGISTRY before use.")

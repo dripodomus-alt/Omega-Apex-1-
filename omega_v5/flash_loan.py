@@ -35,6 +35,9 @@ from .config import (
     PROTOCOL_OVERHEAD_USD,
     STABLE_RISK_BUFFER_USD,
 )
+from .pricing.engine_config import get_engine
+from .pricing.precision_pricing import PricingContext, PRICE_SCALE, PricingError
+from .units import get_token_metadata
 
 # ── Flash loan source addresses (Polygon mainnet) ─────────────────────────────
 AAVE_V3_POOL_POLYGON = "0x794a61358D6845594F94dc1DB02A252b5b4814aD"
@@ -701,7 +704,7 @@ def build_executable_route_economics(
     - Dimensional: USD, raw, with sources
     """
     from .sizing import optimal_flash_for_route, estimate_route_tvl_usd
-    from .oracle_layer import token_price_usd
+    from . import rpc_layer
 
     if not path or not pool_sequence:
         return {"passes_gate": False, "reason": "invalid_path"}
@@ -709,10 +712,17 @@ def build_executable_route_economics(
     base_asset = path[0]
     try:
         if base_price is None:
-            base_price = Decimal(str(token_price_usd(base_asset)))
+            # Use the canonical PrecisionPricingEngine for the base asset price.
+            engine = get_engine()
+            ctx = PricingContext(chain_id=rpc_layer.CHAIN_ID, current_block=rpc_layer.BLOCK, current_timestamp=int(time.time()))
+            token_meta = get_token_metadata(base_asset)
+            price_result = engine.get_usd_price(token_meta.address, ctx)
+            # Convert to Decimal for compatibility with the rest of this function's logic.
+            base_price = Decimal(price_result.price_usd_x18) / Decimal(PRICE_SCALE)
+
         if base_price <= 0:
             return {"passes_gate": False, "reason": "no_base_price"}
-    except Exception:
+    except (PricingError, Exception):
         return {"passes_gate": False, "reason": "price_unavailable"}
 
     # Use provided quote or default to executable quote

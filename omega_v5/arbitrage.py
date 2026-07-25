@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from . import rust_engine
+from .config import normalize_protocol
 from .flash_loan import FlashLoanParams, FlashSource, Profitability
 from .opportunity_ranker import LiveOpportunity
 from .pricing.precision_pricing import (
@@ -22,7 +23,9 @@ __all__ = ["run_arbitrage_discovery", "PrecisionPricingEngine", "PRICE_SCALE"]
 
 
 def _reconstruct_opportunities(opp_data_list: list[dict]) -> list[LiveOpportunity]:
-    """Deserializes a list of opportunity dicts from Rust back into LiveOpportunity objects."""
+    """Deserializes a list of opportunity dicts from Rust back into LiveOpportunity objects.
+    Ensures protocol_seq uses canonical internal keys.
+    """
     opps = []
     for data in opp_data_list:
         try:
@@ -38,7 +41,24 @@ def _reconstruct_opportunities(opp_data_list: list[dict]) -> list[LiveOpportunit
                         pass
 
             prof_data["flashloan"] = flash_data
-            data["profitability"] = prof_data
+
+            # Normalize protocol_seq to canonical keys
+            if "protocol_seq" in data:
+                raw = data["protocol_seq"]
+                if isinstance(raw, (list, tuple)):
+                    canon = []
+                    for p in raw:
+                        try:
+                            canon.append(normalize_protocol(str(p)))
+                        except Exception:
+                            canon.append(str(p))
+                    data["protocol_seq"] = tuple(canon)
+                elif isinstance(raw, str):
+                    try:
+                        data["protocol_seq"] = (normalize_protocol(raw),)
+                    except Exception:
+                        data["protocol_seq"] = (raw,)
+
             opps.append(LiveOpportunity(**data))
         except Exception:
             continue

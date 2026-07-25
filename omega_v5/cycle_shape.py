@@ -30,24 +30,28 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Any, Iterable, Optional
 
+from .config import (
+    PROTOCOL_REGISTRY,
+    FULLY_EXECUTABLE_PROTOCOLS,
+    normalize_protocol,
+)
+
 
 # Protocols / invariants allowed on any hop of the expanded cycle.
-ANY_INVARIANT_PROTOCOLS: frozenset[str] = frozenset({
-    "UniswapV2",
-    "UniswapV3",
-    "QuickSwapV3",
-    "Algebra",
-    "Curve",
-    "Balancer",
-})
+# Now sourced from canonical registry. Only canonical keys allowed.
+ANY_INVARIANT_PROTOCOLS: frozenset[str] = frozenset(
+    k for k, v in PROTOCOL_REGISTRY.items()
+)
 
 PROTOCOL_TO_INVARIANT: dict[str, str] = {
-    "UniswapV2": "constant_product",
-    "UniswapV3": "concentrated_liquidity",
-    "QuickSwapV3": "algebra_concentrated_liquidity",
-    "Algebra": "algebra_concentrated_liquidity",
-    "Curve": "stable_swap",
-    "Balancer": "weighted_invariant",
+    "V2_CPMM": "constant_product",
+    "V3_CLMM": "concentrated_liquidity",
+    "QS_V2_CPMM": "constant_product",
+    "QS_V3_ALGEBRA": "algebra_concentrated_liquidity",
+    "BAL_WEIGHTED": "weighted_invariant",
+    "CURVE_STABLE": "stable_swap",
+    "AAVE_V3": "lending",
+    "ROUTE_AGGREGATOR": "aggregator",
 }
 
 # Strategies that are closed flash cycles (path[0] == path[-1] == flash asset).
@@ -71,7 +75,7 @@ class CycleHop:
     token_in: str
     token_out: str
     pool_id: str
-    protocol: str
+    protocol: str  # MUST be canonical internal key
     invariant: str
     liquidity_key: str = ""
     role: str = "MID_HOP"  # FLASH_BUY_MID | MID_TO_MID | MID_SELL_FLASH
@@ -109,7 +113,7 @@ class FlashCycleShape:
     path: list[str]
     hops: list[CycleHop]
     pool_sequence: list[str] = field(default_factory=list)
-    protocol_seq: list[str] = field(default_factory=list)
+    protocol_seq: list[str] = field(default_factory=list)  # canonical keys only
     invariants: list[str] = field(default_factory=list)
     hop_count: int = 0
     shape_id: str = ""
@@ -144,7 +148,7 @@ class FlashCycleShape:
             "path": list(self.path),
             "hop_count": self.hop_count,
             "pool_sequence": list(self.pool_sequence),
-            "protocol_seq": list(self.protocol_seq),
+            "protocol_seq": list(self.protocol_seq),  # canonical keys
             "invariants": list(self.invariants),
             "hops": [h.as_metadata() for h in self.hops],
             "is_closed": self.is_closed,
@@ -179,7 +183,8 @@ def hop_role(hop_index: int, hop_count: int) -> str:
 def invariant_for_protocol(protocol: str, explicit: str = "") -> str:
     if explicit:
         return explicit
-    return PROTOCOL_TO_INVARIANT.get(protocol, protocol or "unknown")
+    canon = normalize_protocol(protocol) if protocol else protocol
+    return PROTOCOL_TO_INVARIANT.get(canon, canon or "unknown")
 
 
 def expand_cycle_shape(
@@ -195,6 +200,7 @@ def expand_cycle_shape(
     Requires path[0] == path[-1] (flash asset in and out).
     Mid-tokens are path[1:-1] — any discoverable/executable assets.
     Each hop may bind any supported protocol/invariant.
+    protocol_seq must end up as canonical keys.
     """
     if len(path) < 3:
         raise ValueError("cycle path needs at least flash->mid->flash (len>=3)")
@@ -219,10 +225,11 @@ def expand_cycle_shape(
             (pools[i] if i < len(pools) else "")
             or entry.get("pool_id", "")
         )
-        protocol = str(
+        raw_proto = str(
             (protos[i] if i < len(protos) else "")
             or entry.get("protocol", "")
         )
+        protocol = normalize_protocol(raw_proto) if raw_proto else ""
         inv = invariant_for_protocol(protocol, str(entry.get("invariant", "")))
         liq = str(entry.get("liquidity_key", pool_id))
         try:
@@ -234,7 +241,7 @@ def expand_cycle_shape(
             token_in=t_in,
             token_out=t_out,
             pool_id=pool_id,
-            protocol=protocol,
+            protocol=protocol,  # canonical
             invariant=inv,
             liquidity_key=liq,
             role=hop_role(i, hop_count),
@@ -247,7 +254,7 @@ def expand_cycle_shape(
         path=list(path),
         hops=hops,
         pool_sequence=[h.pool_id for h in hops],
-        protocol_seq=[h.protocol for h in hops],
+        protocol_seq=[h.protocol for h in hops],  # canonical keys
         invariants=[h.invariant for h in hops],
         hop_count=hop_count,
     )
@@ -355,6 +362,7 @@ def tag_cycle_dict(cycle: dict, preferred_flash: str | None = None) -> dict:
     """
     Attach expanded flash-cycle shape fields onto a detector cycle dict.
     Rotates path onto a flash-friendly asset when possible.
+    All protocol values normalized to canonical keys.
     """
     path = list(cycle.get("path") or [])
     if len(path) >= 3 and path[0] == path[-1]:
@@ -376,7 +384,14 @@ def tag_cycle_dict(cycle: dict, preferred_flash: str | None = None) -> dict:
                 edges[i] = edge
 
     pools = [str((e or {}).get("pool_id", "")) for e in edges]
-    protos = [str((e or {}).get("protocol", "")) for e in edges]
+    raw_protos = [str((e or {}).get("protocol", "")) for e in edges]
+    protos = []
+    for p in raw_protos:
+        try:
+            protos.append(normalize_protocol(p) if p else "")
+        except Exception:
+            protos.append(p)  # will fail later in validation if bad
+
     try:
         shape = expand_cycle_shape(path, pools, protos, edges=edges)
         shape_meta = shape.as_metadata()
