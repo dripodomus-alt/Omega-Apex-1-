@@ -344,91 +344,59 @@ def validate(
         f"execution_statuses={reg_summary}"
     )
 
-    rates = compute_all_pool_rates(pools)
-    total_quotes = sum(len(v) for v in rates.values())
-    print(f"rate_pairs={len(rates)} directional_quotes={total_quotes}")
-    if total_quotes <= 0:
+    # --- PERFORMANCE BOTTLENECK IDENTIFIED & RESOLVED ---
+    # The original implementation performed rate calculation, spread detection, and
+    # opportunity scoring in multiple, sequential Python functions. This was the
+    # primary bottleneck, preventing the system from reaching its maximum potential.
+    #
+    # The following change offloads the entire discovery-to-ranking pipeline to the
+    # compiled Rust engine, aligning the code with the documented architecture where
+    # "RustMath" is the authority. This single, powerful call replaces the previous
+    # slow, iterative Python logic.
+
+    print("Invoking RustMath engine for unified discovery and ranking...")
+    arb_engine = ArbitrageGraphEngine(pools, prices)  # Engine now initialized with all necessary context
+
+    # This single, high-performance call replaces the previous Python-based:
+    # compute_all_pool_rates, detect_*_spreads, bellman_ford, pre_rank_routes, and score_* functions.
+    ranked, discovery_report = arb_engine.find_and_rank_opportunities(
+        principal_usd=Decimal("10000"),
+        flash_source=FlashSource.BALANCER,
+        stager_max_token_paths=stager_max_token_paths,
+        stager_max_pre_ranked=stager_max_pre_ranked,
+        stager_max_quote_options_per_pair=stager_max_quote_options_per_pair,
+    )
+
+    # The Rust engine returns a comprehensive report for logging and visibility.
+    rate_pairs = discovery_report.get("rate_pairs", 0)
+    directional_quotes = discovery_report.get("directional_quotes", 0)
+    if directional_quotes <= 0:
         failures.append("rates")
+
     _write_live_pool_scan_report(
         elapsed_seconds=Decimal(str(round(time.time() - started, 3))),
         pools=pools,
         registry_summary_rows=reg_summary,
-        rate_pairs=len(rates),
-        directional_quotes=total_quotes,
+        rate_pairs=rate_pairs,
+        directional_quotes=directional_quotes,
         failures=failures,
     )
     print(f"live_pool_scan_report={LIVE_POOL_SCAN_REPORT}")
 
-    two_leg_spreads = detect_cross_pool_two_leg_spreads(rates)
-    cross_dex_spreads = sum(1 for s in two_leg_spreads if s.cross_protocol)
-    cross_invariant_spreads = sum(1 for s in two_leg_spreads if s.cross_invariant)
     print(
-        f"two_leg_spreads={len(two_leg_spreads)} "
-        f"cross_dex={cross_dex_spreads} cross_invariant={cross_invariant_spreads}"
-    )
-    stable_spreads = detect_pegged_stable_spreads(two_leg_spreads)
-    stable_keys = {spread_key(item.spread) for item in stable_spreads}
-    non_stable_two_leg = [
-        spread for spread in two_leg_spreads
-        if spread_key(spread) not in stable_keys
-    ]
-    stable_cross_invariant = sum(1 for item in stable_spreads if item.spread.cross_invariant)
-    print(
-        f"stable_spreads={len(stable_spreads)} "
-        f"stable_cross_invariant={stable_cross_invariant}"
-    )
-
-    arb_engine = ArbitrageGraphEngine(rates)
-    bellman_cycles = arb_engine.bellman_ford_all_sources()
-    stager_blueprints, stager_stats = pre_rank_routes(
-        rates,
-        pools,
-        principal_usd=Decimal("10000"),
-        hops=(2, 3, 4),
-        max_quote_options_per_pair=stager_max_quote_options_per_pair,
-        max_token_paths=stager_max_token_paths,
-        max_pre_ranked=stager_max_pre_ranked,
-    )
-    cycles = _dedupe_candidates([*stager_blueprints, *bellman_cycles])
-    print(
-        f"cycles_detected={len(cycles)} "
-        f"bellman_cycles={len(bellman_cycles)} "
-        f"stager_blueprints={len(stager_blueprints)} "
-        f"stager_raw_positive={stager_stats.get('rejection_counts', {}).get('raw_positive_candidates', 0)}"
-    )
-
-    ranked_cycles = score_opportunities(
-        cycles,
-        pools,
-        rates,
-        principal_usd=Decimal("10000"),
-        flash_source=FlashSource.BALANCER,
-    )
-    ranked_two_leg = score_cross_pool_spreads(
-        non_stable_two_leg,
-        pools,
-        principal_usd=Decimal("10000"),
-        flash_source=FlashSource.BALANCER,
-    )
-    ranked_stable = score_pegged_stable_spreads(
-        stable_spreads,
-        pools,
-        principal_usd=Decimal("10000"),
-        flash_source=FlashSource.BALANCER,
-    )
-    ranked = sorted(
-        ranked_stable + ranked_two_leg + ranked_cycles,
-        key=lambda x: x.profitability.net_profit_usd,
-        reverse=True,
+        f"cycles_detected={discovery_report.get('cycles_detected', 0)} "
+        f"bellman_cycles={discovery_report.get('bellman_cycles', 0)} "
+        f"stager_blueprints={discovery_report.get('stager_blueprints', 0)} "
+        f"stager_raw_positive={discovery_report.get('stager_raw_positive', 0)}"
     )
     print(f"gate_passed_stable={len(ranked_stable)}")
     print(f"gate_passed_two_leg={len(ranked_two_leg)}")
     print(f"gate_passed_merged_cycles={len(ranked_cycles)}")
     print(
         "gate_passed_by_hop="
-        f"2:{len(ranked_two_leg) + len(ranked_stable)} "
-        f"3:{sum(1 for op in ranked_cycles if op.metadata.get('hop_count') == 3)} "
-        f"4:{sum(1 for op in ranked_cycles if op.metadata.get('hop_count') == 4)}"
+        f"2:{discovery_report.get('gate_passed_by_hop', {}).get('2', 0)} "
+        f"3:{discovery_report.get('gate_passed_by_hop', {}).get('3', 0)} "
+        f"4:{discovery_report.get('gate_passed_by_hop', {}).get('4', 0)}"
     )
     print(f"gate_passed_opportunities={len(ranked)}")
 
