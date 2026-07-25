@@ -11,11 +11,11 @@ Updated for compatibility with PrecisionPricingEngine:
 from decimal import Decimal, ROUND_FLOOR
 from typing import Any, Dict, Optional, cast
 
-from ..units import (
-    usd_expense_to_base_raw,
+from ..units import ( # Updated to use new precision helpers
     token_atomic_to_usd_x18,
     usd_x18_to_token_atomic,
     get_token_metadata,
+    usd_expense_to_base_raw,
 )
 from ..flash_loan import (
     ExpenseBreakdown,
@@ -26,8 +26,8 @@ from ..flash_loan import (
     deduct_expenses_from_raw_delta,
     estimate_static_gas_usd,
 )
-from ..rpc_layer import TOKEN_DECIMALS
-from ..pricing.precision_pricing import (
+from ..rpc_layer import TOKEN_DECIMALS # Kept for legacy paths
+from .precision_pricing import ( # Import from the new engine
     PRICE_SCALE,
     mul_div,
     Rounding,
@@ -86,9 +86,7 @@ def compute_net_base_surplus(
 ) -> int:
     """Deduct expenses using exact integer conversion (new precision path)."""
     base_meta = get_token_metadata(base_asset)
-    expense_in_base = usd_x18_to_token_atomic(
-        expenses_usd_x18, base_meta, flash_price_x18, Rounding.UP
-    )
+    expense_in_base = usd_x18_to_token_atomic(expenses_usd_x18, base_meta, flash_price_x18, Rounding.UP)
     return max(0, delta_raw - expense_in_base)
 
 

@@ -5,7 +5,6 @@
 # the same dynamic RPC selection logic as the main Python application.
 # ==============================================================================
 
-import argparse
 from . import rpc_layer
 
 def main():

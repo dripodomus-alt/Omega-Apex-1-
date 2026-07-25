@@ -28,18 +28,18 @@ import asyncio
 from .config import (
     CHAIN_ID, PRIVATE_KEY, EXECUTOR_CONTRACT, BROADCAST_RPC_URL, BROADCAST_RPC_FALLBACK_URLS, OWNER_ADDRESS,
     C1_PAYLOAD_TARGET, REQUIRED_CONFIRM, CONFIRM_FLAG, LIVE_FLAG, EXEC_MODE,
-    MEV_ENABLED,
+    MEV_ENABLED, FLASHBOTS_RELAY_URL,
     MEV_PUBLIC_FALLBACK_ENABLED,
 )
 from .opportunity_ranker import LiveOpportunity
-from .rpc_layer import BLOCK as CURRENT_BLOCK, w3, TOKEN_ADDRESSES, TOKEN_DECIMALS
+from .rpc_layer import BLOCK as CURRENT_BLOCK, w3, TOKEN_ADDRESSES
 from .pricing.net_delta import route_within_lifespan
 from .pnl_tracker import (
     record_lifespan_event, record_stage_event, record_successful_submission, record_pnl_event
 )
 from .payload_envelope import PayloadEnvelope, build_payload_envelope
 from .execution_trace import compute_trace_hash
-from .accounting import to_raw_units
+from .units import to_raw_units, TOKEN_DECIMALS
 from .gas_oracle import eip1559_fee_params
 from .flash_loan import route_tx_gas_limit
 from .transport_lanes import web3_for_lane, LANE_EXACT_C1_ETH_CALL
@@ -47,6 +47,7 @@ from .revert_decoder import format_revert
 from .adapter_registry import AdapterSemanticError
 from .execution_trace import record_execution_trace
 from .oracle_layer import token_price_usd
+from . import rpc_layer # Import the new rpc_layer
 from .webhook_dispatcher import dispatch_webhook
 
 EXECUTE_FLASH_ARB_SELECTOR = Web3.keccak(
@@ -177,8 +178,13 @@ def wallet_address() -> str:
 
 
 def _broadcast_w3() -> Web3:
-    """Build a Web3 client for the configured broadcast URL."""
-    return Web3(Web3.HTTPProvider(BROADCAST_RPC_URL))
+    """
+    Build a Web3 client for the primary (non-MEV) broadcast URL.
+    The new submission logic will handle MEV endpoints separately.
+    """
+    # Use the dynamically selected primary broadcast URL
+    url = rpc_layer.BROADCAST_ENDPOINTS[0]['url'] if rpc_layer.BROADCAST_ENDPOINTS else BROADCAST_RPC_URL
+    return Web3(Web3.HTTPProvider(url))
 
 
 def _receipt_dict(receipt: Any) -> dict[str, Any]:
@@ -354,7 +360,60 @@ def stage_for_submission(
     )
 
 
-def submit_staged_batch(
+async def _try_submit_mev(staged: StagedForSubmission, w3: Web3, endpoint: dict) -> str | None:
+    """Attempts to submit a transaction to an MEV relay."""
+    op = staged.opportunity
+    tx_to_sign = {**staged.tx, "nonce": w3.eth.get_transaction_count(wallet_address())}
+    signed_tx = w3.eth.account.sign_transaction(tx_to_sign, PRIVATE_KEY)
+    
+    mev_provider = Web3(Web3.HTTPProvider(endpoint['url']))
+    
+    try:
+        if endpoint.get("mev_capability") == "Flashbots":
+            # Flashbots-style bundle
+            bundle = [{"signed_transaction": signed_tx.rawTransaction}]
+            block_number = w3.eth.block_number
+            # Send for next block
+            tx_hash_bytes = mev_provider.eth.send_bundle(bundle, target_block_number=block_number + 1)
+            logger.info(f"MEV BUNDLE submitted to {endpoint['url']} for block {block_number + 1}")
+            return tx_hash_bytes.hex()
+
+        elif endpoint.get("mev_capability") == "PrivateTx":
+            # Generic private transaction
+            tx_hash_bytes = mev_provider.eth.send_private_transaction({"tx": signed_tx.rawTransaction.hex()})
+            logger.info(f"PRIVATE TX submitted to {endpoint['url']}")
+            return tx_hash_bytes.hex()
+
+    except Exception as e:
+        logger.warning(f"MEV submission to {endpoint['url']} failed: {e}")
+    
+    return None
+
+
+async def _try_submit_public(staged: StagedForSubmission, w3: Web3, endpoint: dict) -> str | None:
+    """Attempts to submit a transaction to a public RPC endpoint."""
+    try:
+        public_provider = Web3(Web3.HTTPProvider(endpoint['url']))
+        if not public_provider.is_connected():
+            logger.warning(f"Public broadcast endpoint {endpoint['url']} is not connected.")
+            return None
+
+        wallet = Account.from_key(PRIVATE_KEY)
+        nonce = public_provider.eth.get_transaction_count(wallet.address)
+        tx_to_sign = {**staged.tx, "nonce": nonce, "from": wallet.address}
+
+        signed_tx = public_provider.eth.account.sign_transaction(tx_to_sign, PRIVATE_KEY)
+        tx_hash_bytes = public_provider.eth.send_raw_transaction(signed_tx.rawTransaction)
+        logger.info(f"PUBLIC TX submitted to {endpoint['url']}, tx_hash: {tx_hash_bytes.hex()}")
+        return tx_hash_bytes.hex()
+
+    except Exception as e:
+        logger.error(f"Public submission to {endpoint['url']} FAILED: {e}")
+    
+    return None
+
+
+async def submit_staged_batch(
     staged_txs: list[StagedForSubmission],
     dry_run: bool = True,
 ) -> list[ExecutionResult]:
@@ -365,6 +424,9 @@ def submit_staged_batch(
     results = []
     if not staged_txs:
         return results
+
+    # Use the primary discovery RPC for nonce checks and receipts
+    w3 = rpc_layer.w3
 
     # For now, we submit sequentially. A future MEV/bundle implementation
     # would take the whole batch.
@@ -395,43 +457,40 @@ def submit_staged_batch(
         else:
             # --- LIVE PATH: Sign, Broadcast, and Wait for Receipt ---
             tx_hash = ""
-            try:
-                broadcast_w3 = _broadcast_w3()
-                if not broadcast_w3 or not broadcast_w3.is_connected():
-                    raise ConnectionError("Broadcast RPC is not available or not connected.")
-
-                wallet = Account.from_key(PRIVATE_KEY)
-                nonce = broadcast_w3.eth.get_transaction_count(wallet.address)
-                tx_to_sign = {**staged.tx, "nonce": nonce, "from": wallet.address}
-
-                signed_tx = broadcast_w3.eth.account.sign_transaction(tx_to_sign, PRIVATE_KEY)
-                tx_hash_bytes = broadcast_w3.eth.send_raw_transaction(signed_tx.rawTransaction)
-                tx_hash = tx_hash_bytes.hex()
-
-                logger.info(f"LIVE SUBMISSION broadcast for {op.path}, tx_hash: {tx_hash}")
-                record_successful_submission(tx_hash=tx_hash, route=list(op.path), opp_id=str(id(op)), block=current_block, net_pnl_usd=op.profitability.net_profit_usd)
-
-                # Wait for receipt
-                receipt = broadcast_w3.eth.wait_for_transaction_receipt(tx_hash_bytes, timeout=120)
-
-                if receipt and receipt.status == 1:
-                    gas_used = Decimal(receipt.get("gasUsed", 0))
-                    gas_price_wei = Decimal(receipt.get("effectiveGasPrice", 0))
-                    gas_cost_matic = (gas_used * gas_price_wei) / Decimal("1e18")
-                    gas_cost_usd = gas_cost_matic * token_price_usd("WPOL")
-
-                    # A more accurate PnL would decode logs, but for now we use the pre-simulated profit
-                    realized_pnl = op.profitability.net_profit_usd
-
-                    record_pnl_event(mode="live", stage="C1", status="CONFIRMED", route=list(op.path), expected_net_usd=op.profitability.net_profit_usd, realized_net_usd=realized_pnl, gas_cost_usd=gas_cost_usd, tx_hash=tx_hash, block=receipt.blockNumber, metadata={"receipt": _receipt_dict(receipt)})
-                    results.append(ExecutionResult(success=True, tx_hash=tx_hash, net_pnl_usd=realized_pnl, block=receipt.blockNumber))
+            submission_successful = False
+            for endpoint in rpc_layer.BROADCAST_ENDPOINTS:
+                if endpoint.get("mev_capability", "None") != "None":
+                    tx_hash = await _try_submit_mev(staged, w3, endpoint)
                 else:
-                    logger.warning(f"Transaction reverted on-chain for {op.path}, tx_hash: {tx_hash}")
-                    record_pnl_event(mode="live", stage="C1", status="REVERTED", route=list(op.path), expected_net_usd=op.profitability.net_profit_usd, tx_hash=tx_hash, block=receipt.blockNumber if receipt else current_block, metadata={"receipt": _receipt_dict(receipt)})
-                    results.append(ExecutionResult(success=False, tx_hash=tx_hash, detail="Transaction reverted on-chain", block=receipt.blockNumber if receipt else current_block))
+                    tx_hash = await _try_submit_public(staged, w3, endpoint)
 
-            except Exception as e:
-                logger.error(f"LIVE SUBMISSION FAILED for {op.path}: {e}")
+                if tx_hash:
+                    submission_successful = True
+                    record_successful_submission(tx_hash=tx_hash, route=list(op.path), opp_id=str(id(op)), block=current_block, net_pnl_usd=op.profitability.net_profit_usd)
+                    
+                    # Wait for receipt using the reliable discovery RPC
+                    try:
+                        receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+                        if receipt and receipt.status == 1:
+                            gas_used = Decimal(receipt.get("gasUsed", 0))
+                            gas_price_wei = Decimal(receipt.get("effectiveGasPrice", 0))
+                            gas_cost_matic = (gas_used * gas_price_wei) / Decimal("1e18")
+                            gas_cost_usd = gas_cost_matic * token_price_usd("WPOL")
+                            realized_pnl = op.profitability.net_profit_usd # Placeholder
+                            record_pnl_event(mode="live", stage="C1", status="CONFIRMED", route=list(op.path), expected_net_usd=op.profitability.net_profit_usd, realized_net_usd=realized_pnl, gas_cost_usd=gas_cost_usd, tx_hash=tx_hash, block=receipt.blockNumber, metadata={"receipt": _receipt_dict(receipt)})
+                            results.append(ExecutionResult(success=True, tx_hash=tx_hash, net_pnl_usd=realized_pnl, block=receipt.blockNumber))
+                        else:
+                            logger.warning(f"Transaction reverted on-chain for {op.path}, tx_hash: {tx_hash}")
+                            record_pnl_event(mode="live", stage="C1", status="REVERTED", route=list(op.path), expected_net_usd=op.profitability.net_profit_usd, tx_hash=tx_hash, block=receipt.blockNumber if receipt else current_block, metadata={"receipt": _receipt_dict(receipt)})
+                            results.append(ExecutionResult(success=False, tx_hash=tx_hash, detail="Transaction reverted on-chain", block=receipt.blockNumber if receipt else current_block))
+                    except Exception as e:
+                        logger.error(f"Receipt wait/processing failed for tx {tx_hash}: {e}")
+                        results.append(ExecutionResult(success=False, tx_hash=tx_hash, detail=f"Receipt wait failed: {e}", block=current_block))
+                    
+                    break # Exit loop on successful submission
+
+            if not submission_successful:
+                logger.error(f"LIVE SUBMISSION FAILED for {op.path}: All broadcast endpoints failed.")
                 record_pnl_event(
                     mode="live",
                     stage="C1",
@@ -440,7 +499,7 @@ def submit_staged_batch(
                     expected_net_usd=op.profitability.net_profit_usd,
                     tx_hash=tx_hash,
                     block=current_block,
-                    metadata={"error": str(e)},
+                    metadata={"error": "All broadcast endpoints failed"},
                 )
                 results.append(ExecutionResult(success=False, tx_hash=tx_hash, detail=str(e), block=current_block))
 
@@ -509,8 +568,8 @@ async def run_execution_loop(
 
     # SUBMISSION of the batch
     is_dry_run = not execution_armed()
-    logger.info(f"run_execution_loop: Submitting {len(staged_for_submission)} staged transactions (dry_run={is_dry_run}).")
-    submission_results = submit_staged_batch(staged_for_submission, dry_run=is_dry_run)
+    logger.info(f"run_execution_loop: Submitting {len(staged_for_submission)} staged transactions (dry_run={is_dry_run})...")
+    submission_results = await submit_staged_batch(staged_for_submission, dry_run=is_dry_run)
 
     executed_count = sum(1 for r in submission_results if r.success)
 

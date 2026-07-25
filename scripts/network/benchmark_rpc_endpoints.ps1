@@ -89,6 +89,7 @@ $testBlock = {
     $type = "UNKNOWN"
     $writable = $false
     $debuggable = $false
+    $mevCapability = "None"
 
     if ($url.StartsWith("http")) {
         $type = "HTTP"
@@ -182,6 +183,7 @@ $testBlock = {
         Failures  = $failures
         Writable  = $writable
         Debuggable = $debuggable
+        MevCapability = $mevCapability
         Latencies = $latencies
     }
 }
@@ -206,6 +208,9 @@ foreach ($result in $rawResults) {
         } else { "N/A" }
         Debug = if ($result.Type -eq "HTTP") {
             $result.Debuggable
+        } else { "N/A" }
+        MevCapability = if ($result.Type -eq "HTTP") {
+            $result.MevCapability
         } else { "N/A" }
         SuccessRate = if (($result.Successes + $result.Failures) -gt 0) {
             [math]::Round(($result.Successes / ($result.Successes + $result.Failures)) * 100, 2)

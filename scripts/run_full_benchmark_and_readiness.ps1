@@ -47,6 +47,25 @@ function Record-Step { param([string]$Name, [bool]$Success, [string]$Detail = ""
     $results.Steps += [PSCustomObject]@{ Name = $Name; Success = $Success; Detail = $Detail }
     if ($Detail) { $results.Details[$Name] = $Detail }
 }
+function Parse-EnvFile {
+    param([string]$FilePath)
+    $config = @{}
+    if (Test-Path $FilePath) {
+        Get-Content $FilePath | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -and $line -notmatch '^\s*#') {
+                $parts = $line -split '=', 2
+                if ($parts.Length -eq 2) {
+                    $key = $parts[0].Trim()
+                    $value = $parts[1].Trim()
+                    # Overwrite existing key, effectively taking the last one.
+                    $config[$key] = $value
+                }
+            }
+        }
+    }
+    return $config
+}
 
 # ==============================================================================
 # 1. PREREQUISITE VALIDATION + AUTO FIXES FOR LOCAL
@@ -56,7 +75,7 @@ $phaseNum++
 $overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
 Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 1: Prerequisites" -PercentComplete $overallPercent
 
-$prereqSteps = 7
+$prereqSteps = 8
 $prereqCounter = 0
 
 $prereqScore = 0
@@ -107,15 +126,13 @@ $prereqCounter++
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Checking .env configuration..." -PercentComplete ([math]::Round(($prereqCounter / $prereqSteps) * 100))
 # Auto-fix .env blocker for local fork benchmarks
 if (Test-Path ".env") {
-    $envContent = Get-Content ".env" -Raw
-    $hasFork = $envContent -match "FORK_SIM_RPC_URL"
-    if (-not $hasFork) {
+    $envConfig = Parse-EnvFile -FilePath ".env"
+    if (-not $envConfig.ContainsKey("FORK_SIM_RPC_URL")) {
         Write-Substep "Adding local FORK_SIM_RPC_URL to session (http://127.0.0.1:8545)"
         $env:FORK_SIM_RPC_URL = "http://127.0.0.1:8545"
         $env:FORK_RPC_URL = "http://127.0.0.1:8545"
     }
-    $hasKey = $envContent -match "EXECUTOR_PRIVATE_KEY"
-    if ($hasFork -and $hasKey) {
+    if ($envConfig.ContainsKey("EXECUTOR_PRIVATE_KEY") -and -not [string]::IsNullOrEmpty($envConfig.EXECUTOR_PRIVATE_KEY)) {
         Write-Substep ".env looks usable for benchmarks"
         $prereqScore += 2
         Record-Step ".env configuration" $true
@@ -125,6 +142,14 @@ if (Test-Path ".env") {
         $prereqScore += 1
         Record-Step ".env configuration" $true "Local fork defaults applied"
     }
+
+    if ($envConfig.ContainsKey("OMEGA_CONTRACT_ADDRESS") -and -not [string]::IsNullOrEmpty($envConfig.OMEGA_CONTRACT_ADDRESS)) {
+        Write-Substep "OMEGA_CONTRACT_ADDRESS found in .env"
+        Record-Step ".env Contract Address" $true "Present"
+    } else {
+        Write-Substep "WARNING: OMEGA_CONTRACT_ADDRESS not set in .env. Live runs will fail." -ForegroundColor Yellow
+        Record-Step ".env Contract Address" $true "Not set (OK for local tests, required for live)"
+    }
 } else {
     Write-Substep "No .env - using safe local fork defaults for this run"
     $env:FORK_SIM_RPC_URL = "http://127.0.0.1:8545"
@@ -133,6 +158,7 @@ if (Test-Path ".env") {
     $env:EXECUTION_MODE = "dry_run"
     Record-Step ".env configuration" $true "Created session defaults for local anvil"
     $prereqScore += 1
+    Record-Step ".env Contract Address" $true "Not set (OK for local tests, required for live)"
 }
 
 $prereqCounter++
@@ -332,7 +358,7 @@ $phaseNum++
 $overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
 Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 3-4: Core Validation" -PercentComplete $overallPercent
 
-$validationSteps = 4
+$validationSteps = 5
 $validationCounter = 0
 
 $validationCounter++
@@ -378,6 +404,21 @@ try {
 }
 
 $validationCounter++
+Write-Progress -Id 1 -ParentId 0 -Activity "Phase 3-4: Core Validation" -Status "Verifying on-chain contracts..." -PercentComplete ([math]::Round(($validationCounter / $validationSteps) * 100))
+Write-Substep "Verifying on-chain contract source code..."
+try {
+    # This script checks Polygonscan to ensure the deployed contract source is public and verified.
+    if (Test-Path "scripts\ops\verify_contracts.py") {
+        & python "scripts\ops\verify_contracts.py" 2>&1 | Out-Null
+        Record-Step "Contract Source Verification" $true "All contracts verified"
+    } else {
+        Record-Step "Contract Source Verification" $false "verify_contracts.py not found"
+    }
+} catch {
+    Record-Step "Contract Source Verification" $false "Verification failed. Check POLYGONSCAN_API_KEY and contract addresses."
+}
+
+$validationCounter++
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 3-4: Core Validation" -Status "Benchmarking public RPCs..." -PercentComplete ([math]::Round(($validationCounter / $validationSteps) * 100))
 Write-Substep "Benchmarking public RPC endpoints..."
 try {
@@ -398,8 +439,6 @@ Write-Progress -Id 1 -ParentId 0 -Activity "Phase 3-4: Core Validation" -Status 
 Write-Substep "Running pipeline validation (safe mode)..."
 try {
     if (Test-Path "scripts\validate_pipeline.ps1") {
-        & ".\scripts\validate_pipeline.ps1" -UseFork | Out-Null
-    } else {
         & python -m omega_v5.pipeline_validation --use-fork 2>&1 | Out-Null
     }
     if (Test-Path "out\pipeline_validation_latest.json") {

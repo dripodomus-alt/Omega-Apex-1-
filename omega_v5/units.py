@@ -18,8 +18,8 @@ from decimal import Decimal, ROUND_FLOOR
 from typing import Optional
 
 from . import rpc_layer
-from .oracle_layer import PriceUnavailable, token_price_usd
-from .pricing.precision_pricing import (
+from .exceptions import PriceUnavailable
+from .pricing import (
     PrecisionPricingEngine,
     TokenMetadata,
     PRICE_SCALE,
@@ -68,6 +68,7 @@ def raw_to_usd(symbol: str, raw_amount: int, price_usd: Decimal) -> Decimal:
 
 
 # ── New precision (integer-only) paths — matches TS PrecisionPricingEngine ────
+
 def get_token_metadata(symbol: str, chain_id: int = 137) -> TokenMetadata:
     """Helper to build TokenMetadata from known registry (best-effort)."""
     addr = rpc_layer.TOKEN_ADDRESSES.get(symbol, "0x0000000000000000000000000000000000000000")
@@ -131,26 +132,19 @@ def get_price_usd_x18(symbol: str, engine: Optional[PrecisionPricingEngine] = No
     Returns price of 1 whole token as int scaled to 1e18.
     Falls back to legacy oracle_layer if no engine provided.
     """
-    if engine is not None:
-        # In real usage the caller would pass a fully wired engine + context
-        # Here we provide a simple path for gradual migration.
-        pass  # full engine path is used via PrecisionPricingEngine.get_usd_price
-
-    # Legacy fallback (Decimal -> scaled int)
-    try:
-        price_dec = token_price_usd(symbol)
-        if price_dec <= 0:
-            return 0
-        # Convert Decimal price to 1e18 integer
-        scaled = int((price_dec * Decimal(PRICE_SCALE)).to_integral_value(rounding=ROUND_FLOOR))
-        return max(0, scaled)
-    except (PriceUnavailable, Exception):
-        return 0
+    # This now delegates to the canonical implementation in the precision_pricing module.
+    from .pricing.precision_pricing import get_price_usd_x18 as _get_price
+    return _get_price(symbol, engine)
 
 
-def atomic_amount_to_usd_x18(
-    symbol: str, amount_atomic: int, price_usd_x18: int
-) -> int:
+def atomic_amount_to_usd_x18(symbol: str, amount_atomic: int, price_usd_x18: int) -> int:
     """Convenience using registry metadata + precision math."""
     token = get_token_metadata(symbol)
     return token_atomic_to_usd_x18(amount_atomic, token, price_usd_x18)
+
+
+def usd_expense_to_base_raw(
+    expense_usd_x18: int, base_token: TokenMetadata, base_price_x18: int
+) -> int:
+    """Converts a USD-denominated expense (x18) to a base token's atomic units."""
+    return usd_x18_to_token_atomic(expense_usd_x18, base_token, base_price_x18, Rounding.UP)

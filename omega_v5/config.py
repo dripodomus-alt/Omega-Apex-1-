@@ -232,8 +232,12 @@ RPC_ROTATION_WSS_URLS: List[str] = _csv_env(
     "RPC_ROTATION_WSS_URLS",
     ",".join([NODECORE_WSS_URL, DRPC_LB_WSS_URL, "wss://polygon.drpc.org", "wss://polygon-bor-rpc.publicnode.com", GETBLOCK_POLYGON_RPC_WSS, INFURA_WSS]),
 )
-FLASHBOTS_RELAY_URL: str = _env("FLASHBOTS_RELAY_URL")
-TITAN_MEV_US_WEST: str = _env("TITAN_MEV_US_WEST")
+# ── MEV Relays / Builders ─────────────────────────────────────────────────────
+FLASHBOTS_RELAY_URL: str = _env("FLASHBOTS_RELAY_URL", "https://relay.flashbots.net")
+TITAN_MEV_US_WEST: str = _env("TITAN_MEV_US_WEST", "https://rpc.titanbuilder.xyz/")
+BEAVER_BUILD_URL: str = _env("BEAVER_BUILD_URL", "https://rpc.beaverbuild.org/")
+RSYNC_BUILDER_URL: str = _env("RSYNC_BUILDER_URL", "https://rsync-builder.xyz/")
+
 DODO_RPC_PROVIDER_URL: str = _env("DODO_RPC_PROVIDER_URL")
 DODO_RPC_PROXY_URL: str = _env("DODO_RPC_PROXY_URL")
 DODO_RPC_SOURCES: str = _env("DODO_RPC_SOURCES", "ChainList")
@@ -422,6 +426,7 @@ C2_PAYLOAD_TARGET: str = _first_env(
 )
 LIQUIDATION_EXECUTOR_ADDRESS: str = _first_env(
     "LIQUIDATION_EXECUTOR_ADDRESS",
+    default="0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951",
 )
 ADAPTER_CONFIGURATION_TARGET: str = _first_env(
     "ADAPTER_CONFIGURATION_TARGET",

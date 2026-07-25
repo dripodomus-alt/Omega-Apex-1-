@@ -1,35 +1,78 @@
 # ==============================================================================
-# rpc_layer.py  —  WSS/HTTP RPC connection, deep pool registry, live state loader
-# Extracted from Cell 6 of notebooks/omega_v5.ipynb (updated to use publicnode WSS)
+# rpc_layer.py -- Dynamic, Resilient, and Performance-Aware RPC Configuration
+#
+# This module automatically selects the best RPC endpoints for different roles
+# based on a benchmark report. It provides a single source of truth for RPC
+# URLs and Web3 instances throughout the application.
 # ==============================================================================
 
+import json
 import os
-import sys
-import time
-from collections import Counter
-from itertools import combinations
-from decimal import Decimal
-from typing import Optional
-
-import requests
+from pathlib import Path
 from web3 import Web3
 
-from .config import (
-    WSS_URL, HTTP_URL, HTTP_URL_2, CHAINSTACK_URL, CHAIN_ID, ASSET_MATRIX,
-    DODO_RPC_EXTRA_HTTP_URLS, DODO_RPC_PROVIDER_URL, DODO_RPC_PROXY_URL, DODO_RPC_SOURCES,
-    REDIS_RPC_CACHE_TTL_SECONDS, ENABLE_FACTORY_POOL_DISCOVERY,
-    ENABLE_APPRENTICE_METADATA_PROMOTIONS, APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE,
-    DISCOVERY_MAX_TOKEN_PAIRS, BROADCAST_RPC_URL, RPC_REQUEST_TIMEOUT_SECONDS,
-    POOL_LOAD_SLEEP_SECONDS, DISCOVERY_MAX_PROMOTED_POOLS,
-    POLYGON_TOKEN_LIST_BASES, ENABLE_INDEXER_STATE_READS,
-    ENABLE_DYNAMIC_POOL_REGISTRY, DYNAMIC_POOLS_JSON_PATH, DYNAMIC_POOL_REGISTRY_MAX_POOLS,
-    ENABLE_CURVE_POOL_REGISTRY, CURVE_POOL_REGISTRY_API_BASE_URL,
-    CURVE_POOL_REGISTRY_FAMILIES, CURVE_POOL_REGISTRY_MAX_POOLS,
-    CURVE_POOL_REGISTRY_MIN_USD_TVL,
-)
-from .contract_deployments import deployment_address
-from .pool_quality import CLMM_AUDIT_KEY, V2_AUDIT_KEY, filter_rankable_pools
-from .redis_cache import get_json, key as redis_key, set_json
+# --- Dynamic RPC Configuration ---
+
+# The root of the project is assumed to be two levels up from this file's directory.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+RPC_BENCHMARK_FILE = PROJECT_ROOT / "out" / "rpc_benchmark.json"
+
+# Default fallbacks in case the benchmark file doesn't exist or is invalid.
+# These can also be overridden by environment variables for maximum flexibility.
+DEFAULT_DISCOVERY_URL = "https://polygon.publicnode.com"
+DEFAULT_BROADCAST_URL = "https://polygon.drpc.org"  # A known fast, writable provider
+DEFAULT_WSS_URLS = ["wss://polygon.drpc.org"]
+
+# Initialize with defaults or environment variables
+DISCOVERY_RPC_URL = os.getenv("DISCOVERY_RPC_URL", DEFAULT_DISCOVERY_URL)
+BROADCAST_RPC_URL = os.getenv("BROADCAST_RPC_URL", DEFAULT_BROADCAST_URL)
+_listener_urls_str = os.getenv("LISTENER_WSS_URLS")
+LISTENER_WSS_URLS = _listener_urls_str.split(',') if _listener_urls_str else DEFAULT_WSS_URLS
+
+# This will be a list of dicts, e.g., [{"url": "...", "mev_capability": "Flashbots"}, ...]
+BROADCAST_ENDPOINTS = [{"url": BROADCAST_RPC_URL, "mev_capability": "None"}]
+
+# --- Dynamic Selection Logic ---
+# This block will override the defaults if a valid benchmark report is found.
+if RPC_BENCHMARK_FILE.exists():
+    try:
+        with open(RPC_BENCHMARK_FILE, 'r', encoding='utf-8') as f:
+            endpoints = json.load(f)
+
+        # Filter for endpoints with 100% success rate, already sorted by latency.
+        reliable_endpoints = [e for e in endpoints if e.get("SuccessRate") == 100]
+
+        # 1. Select the best BROADCAST endpoints (MEV > Writable HTTP)
+        mev_endpoints = [e for e in reliable_endpoints if e.get("Type") == "HTTP" and e.get("MevCapability") != "None"]
+        writable_endpoints = [e for e in reliable_endpoints if e.get("Type") == "HTTP" and e.get("Writable")]
+
+        # Prioritize MEV, then fast writable endpoints
+        broadcast_candidates = mev_endpoints + [w for w in writable_endpoints if w not in mev_endpoints]
+        if broadcast_candidates:
+            BROADCAST_ENDPOINTS = [
+                {"url": e["Url"], "mev_capability": e.get("MevCapability", "None")}
+                for e in broadcast_candidates[:5] # Take top 5 for redundancy
+            ]
+            # The single BROADCAST_RPC_URL is the top choice for simple submissions
+            BROADCAST_RPC_URL = broadcast_candidates[0]["Url"]
+
+        # 2. Select the best DISCOVERY endpoint (fastest, reliable HTTP)
+        http_endpoints = [e for e in reliable_endpoints if e.get("Type") == "HTTP"]
+        if http_endpoints:
+            DISCOVERY_RPC_URL = http_endpoints[0]["Url"]
+
+        # 3. Select top 3 WSS endpoints for redundant listeners
+        wss_endpoints = [e for e in reliable_endpoints if e.get("Type") == "WSS"]
+        if wss_endpoints:
+            LISTENER_WSS_URLS = [e["Url"] for e in wss_endpoints[:3]]
+
+        print("--- Dynamically Configured RPCs from Benchmark ---")
+    except Exception as e:
+        print(f"Warning: Could not parse RPC benchmark file. Using defaults/env vars. Error: {e}")
+        print("--- Using Default/Environment RPCs ---")
+else:
+    print("--- Using Default/Environment RPCs (no benchmark file found) ---")
+
 
 # ── State ─────────────────────────────────────────────────────────────────────
 w3:       Optional[Web3] = None
@@ -37,18 +80,18 @@ BLOCK:    int            = 0
 RPC_LIVE: bool           = False
 FACTORY_DISCOVERY_STATS: dict = {}
 LAST_POOL_QUALITY_STATS: dict = {}
-POLYGON_TOKEN_LIST_DISCOVERY_STATS: dict = {}
-POLYGON_TOKEN_LIST_DISCOVERY_SYMBOLS: list[str] = []
-SUBGRAPH_POOL_INTEL_STATS: dict = {}
-DYNAMIC_POOL_REGISTRY_STATS: dict = {}
-CURVE_POOL_REGISTRY_STATS: dict = {}
-APPRENTICE_METADATA_PROMOTION_STATS: dict = {}
 
-UNISWAP_V3_FACTORY_POLYGON = deployment_address("UNISWAP_V3_FACTORY")
-QUICKSWAP_V2_FACTORY_POLYGON = deployment_address("QUICKSWAP_V2_FACTORY")
-QUICKSWAP_ALGEBRA_FACTORY_POLYGON = deployment_address("QUICKSWAP_ALGEBRA_FACTORY")
-BALANCER_VAULT_POLYGON = deployment_address("BALANCER_VAULT")
-MULTICALL3_ADDRESS = deployment_address("MULTICALL3_ADDRESS")
+# --- Expose a default Web3 Instance ---
+# For convenience, other modules can import `w3` and it will point to the fast discovery instance.
+try:
+    w3 = Web3(Web3.HTTPProvider(DISCOVERY_RPC_URL))
+    RPC_LIVE = w3.is_connected()
+    if RPC_LIVE:
+        BLOCK = w3.eth.block_number
+except Exception as e:
+    print(f"Warning: Could not connect to discovery RPC {DISCOVERY_RPC_URL}. Error: {e}")
+    w3 = None
+    RPC_LIVE = False
 
 
 def _host_label(url: str) -> str:
@@ -145,99 +188,14 @@ def _inject_poa_middleware(provider: Web3) -> None:
             pass
 
 
-def connect(
-    http_urls: Optional[list[str]] = None,
-    wss_url: Optional[str] = None,
-    prefer_wss: bool = True,
-) -> bool:
-    """
-    Establishes the best available RPC connection.
-
-    Priority
-    --------
-    1. WSS  wss://polygon-bor-rpc.publicnode.com  (real-time, low latency)
-    2. HTTP https://polygon-bor-rpc.publicnode.com
-    3. HTTP https://rpc.ankr.com/polygon
-    4. HTTP https://polygon-rpc.com
-
-    Sets module-level ``w3``, ``BLOCK``, and ``RPC_LIVE``.
-    Returns True when a live connection is established.
-    """
-    global w3, BLOCK, RPC_LIVE
-
-    target_wss = wss_url if wss_url is not None else WSS_URL
-    if wss_url is None:
-        try:
-            from .transport_lanes import select_endpoint
-
-            lane_wss = select_endpoint("wss_block_heads", probe_if_stale=False)
-            target_wss = lane_wss or target_wss
-        except Exception:
-            pass
-
-    # 1. WSS first unless a caller explicitly requests HTTP-only validation.
-    if prefer_wss and target_wss:
-        try:
-            ws_provider = getattr(Web3, "WebsocketProvider", None) or getattr(
-                Web3, "LegacyWebSocketProvider", None
-            )
-            if ws_provider is None:
-                raise RuntimeError("installed web3 package has no websocket provider")
-            try:
-                provider = ws_provider(target_wss, websocket_timeout=15)
-            except TypeError:
-                provider = ws_provider(target_wss)
-            _ws = Web3(provider)
-            _inject_poa_middleware(_ws)
-            BLOCK    = _ws.eth.block_number
-            w3       = _ws
-            RPC_LIVE = True
-            print(f"✅ WSS connected  →  {_host_label(target_wss)}  block #{BLOCK:,}")
-            return True
-        except Exception as exc:
-            print(f"  ⚠️  WSS [{_host_label(target_wss)}] unavailable: {exc}")
-
-    # 2–4. HTTP fallback chain
-    if http_urls is not None:
-        fallback_urls = http_urls
+# Legacy connect function for backward compatibility.
+# It now just reports the status of the auto-configured connection.
+def connect(*args, **kwargs) -> bool:
+    if RPC_LIVE and w3:
+        print(f"✅ RPC layer already connected to {w3.provider.endpoint_uri if w3.provider else 'N/A'}")
     else:
-        try:
-            from .transport_lanes import endpoint_candidates_for_lane, select_endpoint
-
-            lane_read = select_endpoint("v2_reserves_multicall")
-            lane_discovery_candidates = endpoint_candidates_for_lane("quickswap_v2_factory_discovery")
-        except Exception:
-            lane_read = ""
-            lane_discovery_candidates = []
-        fallback_urls = [
-            lane_read,
-            HTTP_URL,
-            HTTP_URL_2,
-            DODO_RPC_PROXY_URL,
-            *lane_discovery_candidates,
-            *dodo_provider_endpoints(CHAIN_ID),
-            BROADCAST_RPC_URL,
-            "https://rpc.ankr.com/polygon",
-            "https://polygon-rpc.com",
-        ]
-    for url in dict.fromkeys(filter(None, fallback_urls)):
-        if not url:
-            continue
-        try:
-            _cand = Web3(Web3.HTTPProvider(url, request_kwargs={"timeout": RPC_REQUEST_TIMEOUT_SECONDS}))
-            _inject_poa_middleware(_cand)
-            BLOCK    = _cand.eth.block_number
-            w3       = _cand
-            RPC_LIVE = True
-            lbl      = _host_label(url)
-            print(f"✅ HTTP connected  →  {lbl}  block #{BLOCK:,}")
-            return True
-        except Exception as exc:
-            lbl = _host_label(url)
-            print(f"  ⚠️  HTTP [{lbl}] unavailable: {exc}")
-
-    print("⚠️  All RPC endpoints unreachable. Live pool loading is unavailable.")
-    return False
+        print("⚠️ RPC layer is not connected.")
+    return RPC_LIVE
 
 
 # ── Deep Pool Address Registry (Polygon mainnet, verified) ────────────────────

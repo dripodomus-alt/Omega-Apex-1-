@@ -24,6 +24,7 @@ import requests
 from .config import ONEINCH_API_KEY, COINGECKO_KEY
 from . import rpc_layer, redis_cache
 from .rpc_layer import TOKEN_ADDRESSES
+from .exceptions import PriceUnavailable
 from .pricing.precision_pricing import (
     OracleSource,
     OracleObservation,
@@ -43,12 +44,9 @@ CHAINLINK_FEEDS: Dict[str, str] = {
 }
 
 # Legacy price cache (kept)
+_price_cache: Dict[str, tuple[float, Decimal]] = {}
 _price_cache: Dict[str, Decimal] = {}
 _cache_ttl = 30  # seconds
-
-
-class PriceUnavailable(Exception):
-    pass
 
 
 def _get_chainlink_price(feed_address: str) -> Decimal:
@@ -138,7 +136,7 @@ class LegacyOracleSource(OracleSource):
             price_dec = token_price_usd(token.symbol)
             # Convert Decimal price (e.g. 1.0001) to 18-decimal integer answer
             # We treat the legacy price as having 18 decimals for simplicity here.
-            answer = int((price_dec * (10 ** 18)).to_integral_value())
+            answer = int(price_dec * (10 ** 18))
             answer_decimals = 18
         except Exception as e:
             # Surface as non-positive so validation rejects it cleanly
@@ -182,30 +180,8 @@ def get_precision_price_x18(
     Convenience: returns a price scaled to 1e18 using the precision engine + legacy adapter.
     This is the bridge the rest of the pipeline should call for critical paths.
     """
-    from .pricing.precision_pricing import (
-        PrecisionPricingEngine,
-        PricingContext,
-        TokenMetadata,
-    )
+    from .pricing.precision_pricing import get_price_usd_x18 as _get_price
 
-    token = TokenMetadata(
-        chain_id=chain_id,
-        address=TOKEN_ADDRESSES.get(symbol, "0x0"),
-        symbol=symbol,
-        decimals=int(rpc_layer.TOKEN_DECIMALS.get(symbol, 18)),
-    )
-    policy = build_default_policy(token.address)
-    source = LegacyOracleSource("legacy_oracle")
-
-    engine = PrecisionPricingEngine(
-        tokens=[token],
-        policies=[policy],
-        sources=[source],
-    )
-    ctx = PricingContext(
-        chain_id=chain_id,
-        current_block=current_block or 50_000_000,
-        current_timestamp=current_ts or int(time.time()),
-    )
-    result = engine.get_usd_price(token.address, ctx)
-    return result.price_usd_x18
+    # This function now delegates to the canonical implementation in the
+    # precision_pricing module, which has the full engine logic.
+    return _get_price(symbol)
