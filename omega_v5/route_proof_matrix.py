@@ -20,20 +20,17 @@ from decimal import Decimal
 from typing import Any
 
 from . import rpc_layer
-from .config import CHAIN_ID, HTTP_URL
+from .arbitrage import ArbitrageGraphEngine
+from .config import (
+    CHAIN_ID, HTTP_URL, MAX_FLASH_PRINCIPAL_USD, MAX_ROUTE_IMPACT,
+    FLASH_ROUTE_TVL_FRACTIONS,
+)
 from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, evaluate_profitability
 from .oracle_layer import TOKEN_USD_SOURCE, refresh_token_prices, token_price_usd
 from .paths import output_path
 from .pool_quality import filter_rankable_pools
-from .ranker import compute_all_pool_rates
-from .route_execution_stager import (
-    SUPPORTED_HOPS,
-    _json_ready,
-    build_stage_report,
-    enumerate_closed_token_paths,
-    pre_rank_routes,
-)
+from .route_execution_stager import SUPPORTED_HOPS, _json_ready
 
 
 LATEST_PROOF_REPORT = output_path("route_proof_matrix_latest.json")
@@ -638,39 +635,48 @@ def run_profile(
         raise RuntimeError("RPC connection failed")
 
     pools, pool_load_stats = _load_profile_pools(profile)
-    refresh_token_prices(force=True)
-    rates = compute_all_pool_rates(pools)
+    prices = refresh_token_prices(force=True)
 
-    pre_ranked, pre_stats = pre_rank_routes(
-        rates,
-        pools,
-        principal_usd=profile.principal_usd,
-        hops=profile.hops,
-        max_quote_options_per_pair=profile.max_quote_options_per_pair,
-        max_token_paths=profile.max_token_paths,
-        max_pre_ranked=profile.max_pre_ranked,
-    )
-    stage_report = build_stage_report(
-        pools=pools,
-        rates=rates,
-        principal_usd=profile.principal_usd,
-        hops=profile.hops,
-        stage_limit=profile.stage_limit,
-        max_quote_options_per_pair=profile.max_quote_options_per_pair,
-        max_token_paths=profile.max_token_paths,
-        max_pre_ranked=profile.max_pre_ranked,
-        slippage_bps=profile.slippage_bps,
+    # --- New Unified Pipeline ---
+    arb_engine = ArbitrageGraphEngine(pools, prices)
+    sizing_params = {
+        "min_principal_usd": str(profile.principal_usd),
+        "max_principal_usd": str(MAX_FLASH_PRINCIPAL_USD),
+        "tvl_fractions": [str(f) for f in FLASH_ROUTE_TVL_FRACTIONS],
+        "max_impact_bps": int(MAX_ROUTE_IMPACT * 10000),
+    }
+    ranked_opps, discovery_report = arb_engine.find_and_rank_opportunities(
+        sizing_params=sizing_params,
         flash_source=flash_source,
+        stager_max_token_paths=profile.max_token_paths,
+        stager_max_pre_ranked=profile.max_pre_ranked,
+        max_quote_options_per_pair=profile.max_quote_options_per_pair,
     )
-    stage_report["pre_rank_diagnostic"] = pre_stats
-    stage_report["pre_rank_diagnostic"]["raw_positive_routes_before_stage"] = len(pre_ranked)
+
+    # Reconstruct a report compatible with the proof matrix's expectations
+    staged_routes = [opp.as_dict() for opp in ranked_opps[:profile.stage_limit or len(ranked_opps)]]
+    stage_report = {
+        "routes": staged_routes,
+        "stage": {
+            "attempted": discovery_report.get("cycles_detected", 0),
+            "staged_for_executor_truth": len(staged_routes),
+        },
+        "quote_edges": {
+            "directional_quote_edges": discovery_report.get("directional_quotes", 0),
+            "rate_pairs": discovery_report.get("rate_pairs", 0),
+        },
+        "pre_rank": {
+            "pre_ranked_returned": discovery_report.get("stager_blueprints", 0),
+        },
+        "pre_rank_diagnostic": discovery_report,
+    }
+
     report = _enrich_stage_report(stage_report, pools, profile)
-    report["exact_route_probes"] = _build_exact_route_probes(
-        rates,
-        pools,
-        profile,
-        limit=max(profile.stage_limit * 4, 20) if profile.stage_limit > 0 else 100,
-    )
+    report["exact_route_probes"] = {
+        "enabled": False,
+        "reason": "This has been superseded by the unified Rust engine's discovery process.",
+        "discovery_report": discovery_report,
+    }
     report.update({
         "schema_version": "omega_v5.route_proof_matrix.v1",
         "updated_at": int(time.time()),

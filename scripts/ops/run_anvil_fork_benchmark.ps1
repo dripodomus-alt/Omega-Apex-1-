@@ -7,10 +7,10 @@
   and Confirmation against the local Anvil RPC endpoint.
 
   This is a safe way to benchmark the full transaction lifecycle without using real funds.
-  It assumes an Anvil fork is already running and accessible at the FORK_SIM_RPC_URL.
+  It assumes an Anvil fork of Polygon mainnet is already running and accessible at the FORK_SIM_RPC_URL.
 .EXAMPLE
-  # First, start the Anvil fork in a separate terminal:
-  # powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\pm2\boot_all.ps1
+  # First, start an Anvil fork in a separate terminal.
+  # The fork must use an RPC URL for Polygon mainnet (chain 137).
 
   # Then, run a single benchmark cycle against the fork.
   .\scripts\ops\run_anvil_fork_benchmark.ps1
@@ -65,19 +65,19 @@ try {
     Assert-Ok ($chainId -eq 137) "The Anvil fork is running on the wrong chain (ID: $chainId). It must be a fork of Polygon mainnet (ID: 137)."
 }
 catch {
-    throw "Could not connect to Anvil fork at '$rpcUrl'. Please ensure it is running. You can start it with 'scripts\pm2\boot_all.ps1'."
+    throw "Could not connect to Anvil fork at '$rpcUrl'. Please ensure it is running. The `boot_all.ps1` script is marked as obsolete; you may need to start Anvil manually."
 }
 
 $configuredAddress = $envConfig.EXECUTOR_WALLET
 $balanceWei = cast balance $configuredAddress
-$balanceEth = cast from-wei $balanceWei
+$balanceNative = cast from-wei $balanceWei
 
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
 Write-Host "  BENCHMARK TARGET: Anvil Fork" -ForegroundColor Yellow
 Write-Host "  EXECUTOR WALLET : $configuredAddress" -ForegroundColor Yellow
 Write-Host "  NETWORK (ChainID) : $chainId" -ForegroundColor Yellow
 Write-Host "  RPC ENDPOINT    : $rpcUrl" -ForegroundColor Yellow
-Write-Host "  NATIVE BALANCE  : $balanceEth ETH (Forked State)" -ForegroundColor Yellow
+Write-Host "  NATIVE BALANCE  : $balanceNative POL (Forked State)" -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
 
 # --- BENCHMARK EXECUTION ---

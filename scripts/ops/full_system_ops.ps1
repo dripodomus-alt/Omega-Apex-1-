@@ -1,7 +1,11 @@
 <#
 .DEPRECATION_NOTICE
-  This script is part of the legacy omega_v5 (Python/PM2) architecture and is now obsolete.
-  - For local development, use 'scripts/ops/start_local_dev.ps1'.
-  - For production, use the Docker and Kubernetes infrastructure.
+  This script is part of a legacy architecture and is now obsolete.
+  The current system is a Python/Rust application and does not use this orchestration method.
+  
+  - To run a local benchmark, use `run_anvil_fork_benchmark.ps1`.
+  - To run a live benchmark, use `run_live_fire_benchmark.ps1`.
+  
   This file is preserved as a historical artifact and should not be used.
 #>
+Write-Host "[DEPRECATED] This script is obsolete." -ForegroundColor Yellow

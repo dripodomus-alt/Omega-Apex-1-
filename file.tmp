@@ -1,6 +1,6 @@
 # OMEGA-FINALLY-RICH - Autonomous DeFi Arbitrage & Liquidation Engine
 
-**OMEGA-FINALLY-RICH** is an institutional-grade, autonomous arbitrage and liquidation engine for EVM-compatible networks. It is designed for high-frequency opportunity discovery, robust economic modeling, and secure, verifiable execution. This system continuously scans decentralized exchanges (DEXs) for multi-hop arbitrage opportunities and Aave V3 for under-collateralized borrowing positions, executing profitable trades via a secure smart contract.
+**OMEGA-FINALLY-RICH** is an institutional-grade, autonomous arbitrage and liquidation engine for EVM-compatible networks, specifically tuned for Polygon PoS (Chain 137). It is designed for high-frequency opportunity discovery, robust economic modeling, and secure, verifiable execution. This system continuously scans decentralized exchanges (DEXs) for multi-hop arbitrage opportunities and Aave V3 for under-collateralized borrowing positions, executing profitable trades via a secure smart contract.
 
 ---
 
@@ -14,7 +14,6 @@
 - [Profitability Expectations](#profitability-expectations)
 - [Getting Started](#getting-started)
 - [Local Development](#local-development)
-- [Production Deployment](#production-deployment)
 - [Activation Sequence for Mainnet](#activation-sequence-for-mainnet)
 - [Security Model: The Execution Guard Wall](#security-model-the-execution-guard-wall)
 - [Development & Testing](#development--testing)
@@ -29,27 +28,21 @@
 * **Multi-Hop Arbitrage**: Discovers and executes complex 2, 3, and 4+ hop arbitrage routes across multiple DEXs using flash loans.
 * **Simulation Engine**: Models profit, gas, slippage, and fees with high fidelity before execution.
 * **Verifiable Execution Funnel**: Every opportunity passes through a rigorous, multi-stage validation pipeline (`DISCOVERED` → `RANKED` → `SIMULATED` → `PREPARED`), with final gates using `eth_call` simulations for on-chain truth.
-* **User-Signed Transaction Flow**: The system prepares transaction calldata but requires the user to sign and broadcast, ensuring a non-custodial and secure operational model.
 - **Intelligent Ranking Engine (ML Alpha)**: An optional machine learning model can be enabled to re-rank opportunities based on their predicted probability of success, optimizing the use of the `eth_call` truth-gating budget.
-* **Production-Grade Infrastructure**: A container-native architecture with first-class support for Docker and Kubernetes deployment.
 
 ## System Architecture
 
-The system is a modern TypeScript monorepo managed by `pnpm`. This structure promotes code reuse, simplifies dependency management, and enables a clean separation of concerns.
+The system is a high-performance hybrid Python/Rust application, orchestrated with PowerShell scripts.
 
-1.  **`apps/web`**: The Next.js frontend, providing the live execution terminal, route visualizer, and wallet command center.
+1.  **`omega_v5/`**: The core Python package containing all business logic for discovery, ranking, simulation, execution, and data analysis.
 
-2.  **`apps/api`**: The FastAPI (or Node.js compatible) backend that serves opportunities, handles simulation requests, and prepares execution calldata.
+2.  **`rust_engine/`**: A high-performance Rust binary that handles computationally intensive tasks, such as graph-based arbitrage detection. This is a critical component for maximizing performance.
 
-3.  **`apps/worker`**: The background worker process responsible for discovery, ranking, and simulation. It continuously scans blockchains for opportunities and pushes them to the API and WebSocket feeds.
+3.  **`scripts/`**: A collection of PowerShell scripts for operations (`ops`), deployment (`cloud`), and development workflows. These are the primary entry points for interacting with the system.
 
-4.  **`packages/*`**: A collection of shared libraries for core logic, including:
-    -   `adapters`: Connectors for various DEXs (Uniswap, Curve, Balancer, etc.).
-    -   `simulation`: The economic modeling engine for profit, gas, and slippage.
-    -   `execution`: Transaction builders and contract interaction logic.
-    -   `ui`: Shared React components used by the web application.
+4.  **`contracts/`**: The Solidity smart contracts that are deployed on-chain to execute trades securely.
 
-5.  **`infrastructure/*`**: Docker, Kubernetes, and monitoring configurations for production deployment.
+5.  **`docs/`**: Detailed documentation covering architecture, schemas, and operational procedures.
 
 ## Performance Metrics
 
@@ -59,7 +52,6 @@ The system is a modern TypeScript monorepo managed by `pnpm`. This structure pro
 | **Opportunity Discovery Rate** | 100-300+ per cycle | Number of potential routes with a gross positive spread found. |
 | **Post-Gate Executables** | 10-30 per cycle | Number of routes passing all economic and simulation gates. |
 | **RPC Usage (Dry Run)** | ~250-500 calls/cycle | Primarily `eth_call` for quoting and `eth_getLogs` for discovery. |
-| **Max Throughput (Staged)** | 8 routes/cycle | The system is configured to stage the top 8 non-conflicting routes per cycle. |
 
 ## Execution Coverage & Metadata
 
@@ -157,54 +149,47 @@ The following are **predictions**, not guarantees. They are based on extensive b
 
 ### Prerequisites
 
-- **Node.js** (v20+)
-- **pnpm** (`npm install -g pnpm`)
-- **Docker**
+- **Python** (v3.10+)
+- **PowerShell** (v7+)
+- **Rust & Cargo**: Required to build the `rust_engine`.
+- **Foundry (Anvil & Cast)**: For local testing and blockchain interaction.
 
 ### Installation & Configuration
 
 1.  **Clone the repository**:
 
     ```powershell
-    git clone <your-repo-url>
-    cd OMEGA-FINALLY-RICH
+    git clone https://github.com/The-Urban-Genius/omega-V5-copilot-update-jupyter-notebook-matrix-setup.git
+    cd omega-V5-copilot-update-jupyter-notebook-matrix-setup
     ```
 
 2.  **Configure Secrets**: You **must** copy `.env.example` to `.env` and fill in your secrets.
     - `EXECUTOR_PRIVATE_KEY`: The private key of the wallet that will execute transactions.
     - `BROADCAST_RPC_URL`: A **private, writable** RPC URL for submitting transactions (e.g., from Alchemy or Infura).
-    - `DATABASE_URL`: Connection string for your PostgreSQL database.
-    - `REDIS_URL`: Connection string for your Redis instance.
+    - `FORK_SIM_RPC_URL`: A local RPC URL for the Anvil fork (e.g., `http://127.0.0.1:8545`).
+
+3.  **Install Python dependencies**:
+    ```powershell
+    pip install -r requirements.txt
+    ```
+
+4.  **Build the Rust Engine**:
+    ```powershell
+    cargo build --release --manifest-path rust_engine/Cargo.toml
+    ```
 
 ## Local Development
 
-The entire local development stack (web, api, worker) can be started with a single command.
+Local development relies on running an Anvil fork of the mainnet. You can run benchmarks and validation scripts against this safe, local environment.
 
-```powershell
-# This will install dependencies and start all services in parallel.
-.\scripts\ops\start_local_dev.ps1
-```
-
-You can monitor the services using standard PowerShell job commands (`Get-Job`, `Receive-Job`) or stop them all with `.\scripts\ops\start_local_dev.ps1 -Stop`.
-
-## Production Deployment
-
-The system is designed to be deployed with Docker or Kubernetes.
-
-### Docker Compose
-
-For a simple, single-node deployment:
-
-```bash
-docker compose up -d --build
-```
-
-You can monitor the status of all services using `pm2`:
-
-```bash
-pm2 list
-pm2 logs omega-engine
-```
+1.  **Start the Anvil Fork**: In a dedicated terminal, start a local fork of the Polygon mainnet.
+    ```powershell
+    anvil --fork-url <YOUR_POLYGON_MAINNET_RPC_URL>
+    ```
+2.  **Run the Anvil Benchmark**: In another terminal, run the benchmark script that targets your local fork.
+    ```powershell
+    .\scripts\ops\run_anvil_fork_benchmark.ps1
+    ```
 
 ## Activation Sequence for Mainnet
 
@@ -214,60 +199,92 @@ To achieve true mainnet readiness, the system must be activated in stages. **Do 
 The system starts in this mode. It discovers and simulates opportunities but **does not sign or broadcast** any transactions. It is used to verify that the discovery and ranking pipelines are healthy.
 
 ### 2. Shadow Mode
-In this mode, the system builds the exact transaction calldata and simulates it using `eth_call` against a live mainnet fork. This is the final verification step before live execution and proves that the generated payloads are valid.
+In this mode, the system builds the exact transaction calldata and simulates it using `eth_call` against a live mainnet fork (Anvil). This is the final verification step before live execution and proves that the generated payloads are valid.
+- **Run with:** `.\scripts\ops\run_anvil_fork_benchmark.ps1`
 
 ### 3. Canary Mode
 The first live execution mode. The system will broadcast **at most one** transaction per cycle with a **small, bounded principal**. This is a critical safety check to validate the entire execution path with minimal risk.
+- **Run with:** `.\scripts\ops\run_live_fire_benchmark.ps1 -ConfirmLiveFire`
 
 ### 4. Live Mode
 Full autonomous operation with the principal and execution limits defined in your configuration. Only activate this after successful and profitable canary runs.
+- **Run with:** `.\scripts\ops\run_live_fire_benchmark.ps1 -ConfirmLiveFire -Cycles <N>`
 
+---
+
+## Final Pre-Broadcast Verification
+
+Before activating `canary` or `live` mode, you must run the `pipeline_validation` proof. This script aggregates all system proofs and provides a definitive verdict.
+
+```powershell
+# From your local machine or inside the VM
+python -m omega_v5.mainnet_finalizer --probe
+```
+
+Review the output artifact at `out/mainnet_finalizer_latest.json`.
+
+| Verdict | Meaning | Action |
+| :--- | :--- | :--- |
+| **`SHADOW_READY`** | The system is configured correctly for simulation, but a live-executable opportunity has **not** been found. | Continue running in `dry_run` or `shadow` mode. **Do not proceed to live.** |
+| **`CANARY_READY`** | All systems are go. A profitable, `eth_call`-verified opportunity has been found and a valid payload was constructed. | **Safe to activate `canary` mode.** |
+| **`BLOCKED`** | A critical misconfiguration or failure was detected (e.g., RPC failure, invalid private key). | Review the `failures` and `detail` sections of the report. **Do not proceed.** |
+
+**You must see a `CANARY_READY` verdict before any live activation.**
+
+---
 
 ## Security Model: The Execution Guard Wall
 
 The system is built on a "fail-closed" principle. The following guards form a wall that a transaction payload must pass before it can be signed and broadcast. If any check fails, execution is blocked.
 
-- **User-Signed Transactions**: The platform prepares transaction calldata but does not have access to user private keys. The user must sign and broadcast all transactions through their own wallet, providing the ultimate security guarantee.
+- **No `eth_call` Pass, No Broadcast**: The transaction must succeed in a final `eth_call` simulation against the live chain state.
+- **No Verified Adapter, No Payload**: The selected flash loan source (e.g., Balancer) must have a deployed and verified adapter contract configured in the executor.
+- **No Route Kind Coverage, No Route**: Every pool in the route must belong to a supported protocol family (e.g., `V3_CLMM`) for which a swap implementation exists.
+- **No Executor Bytecode, No Execution**: The target executor contract address must have valid bytecode on-chain.
+- **No Valid Private Key, No Signing**: The `EXECUTOR_PRIVATE_KEY` must be valid and correspond to the `EXECUTOR_WALLET`.
+- **No Writable Lane, No Broadcast**: A healthy, explicitly configured `BROADCAST_RPC_URL` must be available. Read-only RPCs are never used for submission.
+- **No Fork/`eth_call` Agreement, No Broadcast**: If fork simulation is enabled, its result must match the `eth_call` simulation.
+- **WaaS/Session Signer Isolation**: Delegated signing paths (like Web3-as-a-Service) are kept outside the primary arbitrage hot path for maximum security.
 
-These rules are enforced programmatically by the `worker` and `api` services.
+These rules are enforced programmatically by `omega_v5/execution_truth.py` and `omega_v5/mainnet_finalizer.py`.
 
+---
 
 ## Development & Testing
 
 - **Run Unit Tests**:
 
-    ```bash
+    ```powershell
     pytest
     ```
+
+- **Run Payload Structure Proof**: This script generates a proof artifact demonstrating the correct calldata structure for C1, C2, and Liquidation transactions. It is the definitive reference for the on-chain executor's expected input.
+
+    ```powershell
+    python -m omega_v5.payload_structure_proof
+    ```
+    The output is saved to `out/payload_structure_proof_latest.json`.
 
 ## Repository Map
 
 ```text
-OMEGA-FINALLY-RICH/
-├── apps/
-│   ├── web/                 # Next.js execution terminal
-│   ├── api/                 # FastAPI backend
-│   └── worker/              # Discovery + simulation workers
-├── packages/
-│   ├── adapters/            # DEX adapters
-│   ├── execution/           # Transaction builders & deployment scripts
-│   ├── simulation/          # Profit/gas/slippage engine
-│   ├── mev/                 # MEV analysis
-│   ├── ranking/             # Opportunity scoring
-│   ├── shared/              # Shared types/utils
-│   └── ui/                  # Shared UI components
-├── infrastructure/
-│   ├── docker/
-│   ├── kubernetes/
-│   └── monitoring/
-└── docs/
+omega_v5/               Python runtime package
+rust_engine/            Mandatory Rust graph-cycle engine
+contracts/              Solidity executors and source adapters
+scripts/ops/            Operational scripts for benchmarking, deployment, and validation.
+scripts/network/        RPC probe and benchmark tools
+scripts/rust/           Rust build/preflight helpers
+docs/                   Architecture and operator notes
+infra/compose/          Optional indexer/Kafka/Redpanda compose assets
+out/                    Runtime proof artifacts and generated state
+cache/                  Local caches
+logs/                   PM2/runtime logs
 ```
 
 Root runtime files:
 
 - `.env`: local active configuration. Contains secrets; never publish it.
 - `.env.example`: safe template.
-- `ecosystem.config.cjs`: PM2 process profile.
 - `foundry.toml`: Solidity/Foundry profile.
 - `requirements.txt`: Python dependencies.
 
@@ -275,15 +292,13 @@ Root runtime files:
 
 | Component | Main Files | Output |
 | --- | --- | --- |
-| Runtime config | `omega_v5/config.py` | Chain 137 constants, RPC lanes, adapter env, runtime flags |
-| Transport lanes | `omega_v5/transport_lanes.py` | 32 typed lanes, Redis streams, endpoint scoring |
+| Runtime config | `omega_v5/config.py` | Chain 137 constants, RPC URLs, adapter env, runtime flags |
 | DODO metadata | `vendor/web3-rpc-provider`, `omega_v5/rpc_layer.py` | Compiled Polygon endpoint candidates |
 | Live RPC loader | `omega_v5/rpc_layer.py` | Live pool state, token orientation, V3 TVL metadata |
 | Rust graph engine | `rust_engine/`, `omega_v5/rust_engine.py` | Bellman-Ford negative-cycle paths |
 | Ranking | `omega_v5/opportunity_ranker.py` | Top route candidates, net-profit estimates |
 | Execution | `omega_v5/execution.py` | C1 calldata, exact-call checks, broadcast, traces |
 | Liquidation | `omega_v5/aave_liquidations.py`, `omega_v5/liquidation_*` | Scanner-only liquidation packets and payload path |
-| Runtime control | `omega_v5/runtime_control.py`, `omega_v5/api.py` | UI/API live/dry-run toggle, settings, PnL |
 | Route proof matrix | `omega_v5/route_proof_matrix.py` | Fastest-to-maximum route coverage and precision proofs |
 | Proofs | `omega_v5/session_proof.py`, `omega_v5/runtime_alignment.py`, `omega_v5/pipeline_validation.py`, `omega_v5/mainnet_finalizer.py` | JSON validation artifacts |
 
@@ -294,25 +309,14 @@ boundary:
 
 1. Configuration loads from `.env` through `omega_v5/config.py`. Shell
    overrides win over file values.
-2. Runtime mode is controlled by `omega_v5/runtime_control.py` and surfaced
-   through `omega_v5/api.py`.
-3. Transport lanes in `omega_v5/transport_lanes.py` select role-specific RPC
-   endpoints for reads, exact calls, fork simulation, receipts, and broadcast.
-4. `omega_v5/rpc_layer.py` connects to Polygon Chain 137 and hydrates live pool
-   state. It verifies token addresses, decimals, pool orientation, V2 canonical
-   pairs, and V3/Algebra orientation.
-5. Metadata enrichment runs through token lists, Curve/Balancer/DODO/indexer
-   metadata, and the apprentice metadata proposal/review gate. Metadata alone
-   never promotes a route to execution.
+4. `omega_v5/rpc_layer.py` connects to Polygon Chain 137 and hydrates live pool state. It verifies token addresses, decimals, pool orientation, V2 canonical pairs, and V3/Algebra orientation.
+5. Metadata enrichment runs through token lists, Curve/Balancer/DODO/indexer metadata, and the apprentice metadata proposal/review gate. Metadata alone never promotes a route to execution.
 6. `omega_v5/oracle_layer.py` refreshes live USD prices from CoinGecko,
-   optional 1inch, and Chainlink where available.
-7. `omega_v5/ranker.py` builds directional quote edges from live pool state.
-8. `omega_v5/route_execution_stager.py` enumerates 2/3/4-hop closed routes,
-   pre-ranks raw-positive math, applies route quality and sizing gates, then
-   writes staged route artifacts.
-9. `omega_v5/route_proof_matrix.py` runs profile-based live proofs. It can
-   prove metadata, exact route quotes, SPLS accounting, and rejection causes
-   even when no raw-positive route survives staging.
+   and Chainlink where available.
+7. `omega_v5/arbitrage.py` (via `pipeline_validation.py`) calls the Rust engine to perform discovery, ranking, and sizing in one high-performance step.
+8. The Rust engine (`rust_engine/`) performs the heavy lifting of finding cycles and profitable routes.
+9. `omega_v5/route_proof_matrix.py` runs profile-based live proofs by leveraging the high-performance Rust engine. It can
+   prove metadata, exact route quotes, SPLS accounting, and rejection causes for all discovered opportunities.
 10. `omega_v5/opportunity_ranker.py` converts candidates to execution-shaped
     opportunities with flash-capital, gas, relay, risk, and raw-unit accounting.
 11. `omega_v5/execution_truth.py` is the final executor-semantics gate. It
@@ -321,10 +325,7 @@ boundary:
 12. `omega_v5/execution.py` builds C1 calldata, simulates by `eth_call`, signs
     only when live guards are armed, and sends only through a healthy writable
     broadcast lane.
-13. `omega_v5/state_machine.py`, `omega_v5/execution_trace.py`, and
-    `omega_v5/pnl_tracker.py` record C1/C2 state, receipt traces, and PnL.
-14. `omega_v5/mainnet_finalizer.py` converts all proof artifacts into the final
-    `SHADOW_READY`, `CANARY_READY`, or blocked verdict.
+14. `omega_v5/mainnet_finalizer.py` converts all proof artifacts into the final `SHADOW_READY`, `CANARY_READY`, or blocked verdict.
 
 Read-only proof commands can increase progressively:
 
@@ -357,71 +358,11 @@ Speed is created by separating responsibilities:
 - Rust handles graph cycle detection. Python does not run the Bellman-Ford hot
   loop when the Rust binary is unavailable.
 - Redis stores endpoint health, queues, runtime signals, PnL books, and proof
-  events. It does not cache live reserves for execution.
-- RPC lanes separate WSS telemetry, reads, exact calls, fork simulation,
-  broadcasts, receipt watching, and runtime control.
+  events. It does not cache live reserves for execution. (Note: Redis usage is being phased out in favor of a simpler architecture).
 - DODOEX endpoint metadata is used for discovery only. The system compiles
   extra Polygon endpoints into that metadata, then validates them through Redis
   health scoring before lane selection.
-- PM2 runs each operational service independently: Redis, Anvil fork, DODO RPC
-  provider, API, and engine.
-
-Primary performance controls:
-
-```dotenv
-TRANSPORT_LANES_ENABLED=true
-RPC_MAX_RPS_PER_LANE=8
-RPC_EXACT_CALL_MAX_RPS=3
-RPC_BROADCAST_MAX_RPS=2
-RPC_HEALTH_TTL_SECONDS=15
-RPC_FAILED_TTL_SECONDS=60
-OMEGA_ENGINE_PRINT_TOP_ROUTES=50
-OMEGA_ENGINE_EXECUTE_TOP=5
-OMEGA_ENGINE_INTERVAL_SECONDS=10
-```
-
-## Productivity Model
-
-The stack is operated through repeatable commands and proof artifacts rather
-than manual notebook state.
-
-Boot everything:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pm2\boot_all.ps1 -Reset
-```
-
-API and UI:
-
-```text
-http://127.0.0.1:8080/
-http://127.0.0.1:8080/health
-http://127.0.0.1:8080/api/runtime/status
-```
-
-Runtime toggles:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8080/api/runtime/mode `
-  -ContentType application/json `
-  -Body '{"mode":"dry_run","actor":"operator"}'
-
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8080/api/runtime/mode `
-  -ContentType application/json `
-  -Body '{"mode":"live","actor":"operator"}'
-```
-
-Cycle settings:
-
-```powershell
-Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8080/api/runtime/settings `
-  -ContentType application/json `
-  -Body '{"execute_top":5,"print_top_routes":50,"interval_seconds":60,"canary_mode":false}'
-```
-
-Allowed `execute_top` values are `5`, `10`, and `15`. If canary mode is enabled,
-the configured batch remains visible but the effective live execution cap is
-forced to one route.
+- PM2 can be used to manage background processes like Anvil.
 
 ## Profitability Model
 
@@ -509,11 +450,11 @@ Dynamic flash sizing:
 PREFERRED_FLASH_SOURCE=BALANCER
 FLASH_BASE_ASSETS=USDC,USDC.e,USDT,DAI,WPOL,WETH,WBTC
 ENABLE_DYNAMIC_FLASH_SIZING=true
-MIN_FLASH_PRINCIPAL_USD=5000
-MAX_FLASH_PRINCIPAL_USD=100000
-MAX_ROUTE_TVL_FRACTION=0.15
+MIN_FLASH_PRINCIPAL_USD=10000
+MAX_FLASH_PRINCIPAL_USD=250000
+MAX_ROUTE_TVL_FRACTION=0.50
 MAX_ROUTE_IMPACT=0.01
-FLASH_ROUTE_TVL_FRACTIONS=0.10,0.15
+FLASH_ROUTE_TVL_FRACTIONS=0.15,0.25,0.50
 FLASH_SIZE_LADDER_BPS=1000,1500
 ```
 
@@ -577,98 +518,6 @@ profitability or speed, and it does not bypass C1/C2 route gates.
 
 ## RPC and Endpoint Strategy
 
-Do not run discovery, WSS, exact calls, fork simulation, and live broadcast
-through one public RPC.
-
-Role split:
-
-```dotenv
-PRIMARY_READ_RPC_URL=https://lb.drpc.live/polygon/<key>
-EXACT_CALL_RPC_URL=https://lb.drpc.live/polygon/<key>
-PRIMARY_WSS_URL=wss://lb.drpc.live/polygon/<key>
-TELEMETRY_RPC_URL=https://polygon-bor-rpc.publicnode.com
-BROADCAST_RPC_URL=https://your-writable-rpc
-BROADCAST_WSS_URL=wss://your-writable-wss
-BROADCAST_RPC_FALLBACK_URLS=https://your-second-writable-rpc,https://polygon.drpc.org
-BROADCAST_WSS_FALLBACK_URLS=wss://your-second-writable-wss,wss://polygon.drpc.org
-FORK_UPSTREAM_RPC_URL=https://lb.drpc.live/polygon/<key>
-FORK_RPC_URL=http://127.0.0.1:8545
-FORK_SIM_RPC_URL=http://127.0.0.1:8545
-DODO_RPC_PROVIDER_URL=http://127.0.0.1:3000
-DODO_RPC_PROXY_URL=https://lb.drpc.live/polygon/<key>
-DODO_RPC_EXTRA_HTTP_URLS=https://lb.drpc.live/polygon/<key>,https://polygon.drpc.org,https://polygon-bor-rpc.publicnode.com
-```
-
-DODOEX/web3-rpc-provider is not itself Polygon RPC. It is endpoint metadata.
-Omega calls it to discover candidate RPC URLs, appends curated extra endpoints,
-validates them, caches health in Redis, and then assigns them to lanes.
-
-Broadcast fallback is explicit. A public or low-cost JSON-RPC endpoint can be
-used for transaction submission only if it is listed in
-`BROADCAST_RPC_FALLBACK_URLS` and passes the broadcast lane health probe. The
-signing path remains local: Omega signs the exact calldata and submits the raw
-transaction through JSON-RPC `eth_sendRawTransaction`.
-
-The 32 lanes are:
-
-```text
-00 WSS block heads
-01 WSS pending tx
-02 WSS pool event logs
-03 WSS heartbeat/finality
-04 V2 reserves
-05 V3 slot0/liquidity
-06 Algebra slot0/liquidity
-07 Balancer Vault reads
-08 Curve reads
-09 Aave reads
-10 Chainlink oracle reads
-11 gas/baseFee/priority reads
-12 QuickSwap V2 discovery
-13 Uniswap V3 discovery
-14 Algebra discovery
-15 Curve registry discovery
-16 Balancer pool discovery
-17 token metadata/decimals
-18 theoretical ranking
-19 CLMM final quoter/sizing
-20 exact C1 eth_call
-21 exact liquidation eth_call
-22 fork simulation
-23 route-kind adapter audit
-24 live broadcast primary
-25 public broadcast fallback
-26 nonce manager
-27 receipt watcher
-28 C1 trace/PnL
-29 C2 trace/PnL
-30 liquidation trace/PnL
-31 runtime control/circuit breaker
-```
-
-### Gas And Discovery Intelligence 2.0
-
-Polygon EIP-1559 fee logic is sourced from Polygon Gas Station V2 when healthy:
-
-```dotenv
-POLYGON_GAS_STATION_URL=https://gasstation.polygon.technology/v2
-POLYGON_GAS_STATION_ENABLED=true
-POLYGON_GAS_STATION_TIER=fast
-POLYGON_GAS_STATION_TTL_SECONDS=6
-POLYGON_MIN_PRIORITY_FEE_GWEI=25
-POLYGON_MAX_FEE_SAFETY_MULTIPLIER=1.15
-```
-
-The system uses this quote in three places:
-
-```text
-profitability gas cost
-executor truth base-fee context
-EIP-1559 maxFeePerGas / maxPriorityFeePerGas transaction fields
-```
-
-RPC `eth_gasPrice` is fallback only.
-
 Subgraphs are discovery-intelligence inputs only:
 
 ```dotenv
@@ -731,12 +580,6 @@ omega:proofs:session_signer
 
 ## Anvil and Foundry Fork
 
-The fork lane must match runtime reads:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\start_anvil_fork.ps1
-```
-
 The fork resolver:
 
 - pulls DODO endpoint metadata when available;
@@ -793,12 +636,6 @@ BALANCER_V3_VAULT_POLYGON=
 
 Compile:
 
-```powershell
-python -m py_compile omega_v5\config.py omega_v5\rpc_layer.py omega_v5\transport_lanes.py omega_v5\session_proof.py omega_v5\runtime_alignment.py omega_v5\api.py
-pnpm --dir vendor\web3-rpc-provider build
-node -c ecosystem.config.cjs
-```
-
 Rust:
 
 ```powershell
@@ -833,19 +670,6 @@ python -m omega_v5.runtime_alignment --probe --json
 ```
 
 Artifact:
-
-```text
-out/runtime_alignment_latest.json
-```
-
-API proof endpoints:
-
-```text
-GET  /api/proofs/session-signer
-POST /api/proofs/session-signer/run?samples=5
-GET  /api/proofs/runtime-alignment
-POST /api/proofs/runtime-alignment/run?probe=true
-```
 
 Pipeline validation:
 
@@ -935,62 +759,6 @@ A green live production alignment additionally requires:
 - `OMEGA_RUNTIME_MODE=live` or runtime mode set to live through the API/UI.
 - `EXECUTION_MODE=live`.
 - `LIVE_TRADING=1`.
-- `CONFIRM_MAINNET_EXECUTION=I_UNDERSTAND_POLYGON_MAINNET_RISK`.
-- Valid executor private key.
-- Healthy writable broadcast RPC.
-- Exact-call passed executable route queue.
-
-## PM2 Operations
-
-Full boot, proof, and one-shot autonomous dry-run:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\full_system_ops.ps1 `
-  -Mode dry_run -ResetPm2 -ExecuteTop 5 -PrintTopRoutes 50 -ExactCallProofRoutes 5
-```
-
-Live mode is intentionally gated. It requires explicit operator acknowledgement,
-a healthy selected broadcast endpoint, and exact-call proof before the script
-starts a live cycle:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\full_system_ops.ps1 `
-  -Mode live -AllowBroadcast -LiveAck I_UNDERSTAND_POLYGON_MAINNET_RISK `
-  -ExecuteTop 5 -PrintTopRoutes 50 -ExactCallProofRoutes 5
-```
-
-`PrintTopRoutes` controls operator visibility. `ExactCallProofRoutes` controls
-how many top candidates are executor-truth tested during the boot proof, so the
-proof can stay bounded under RPC limits while the engine still prints the top
-50 ranked routes.
-
-`RunOnce` is available for foreground diagnostics, but production operation uses
-the PM2-managed `omega-engine` daemon. Do not run a duplicate foreground cycle
-unless you are intentionally debugging outside PM2.
-
-Start/restart:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pm2\boot_all.ps1 -Reset
-pm2 restart omega-engine --update-env
-pm2 save
-pm2 status
-```
-
-Health:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8080/health
-Invoke-RestMethod http://127.0.0.1:8080/api/runtime/status
-Invoke-RestMethod http://127.0.0.1:8080/api/sourced-layers/status
-Invoke-RestMethod http://127.0.0.1:8080/api/pnl
-```
-
-Stop:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pm2\stop_all.ps1
-```
 
 ## Live Execution Standard
 
@@ -1013,8 +781,7 @@ If any step fails, the route is rejected or staged as dry-run only.
 
 The Omega V5 system is designed with a split-deployment model for security and scalability:
 
-- **API & Dashboard**: A stateless container deployed to a serverless platform like **Google Cloud Run**. This provides a read-only monitoring surface. See [Cloud Run Deployment Guide](docs/cloud_run_local_source_pipeline.md).
-- **Execution Engine**: The stateful, sensitive trading engine (including Redis, Anvil, and the PM2-managed processes) runs on a secured, private **Virtual Machine**.
+- **Monitoring**: A separate, stateless dashboard can be deployed to a platform like **Google Cloud Run** to provide a read-only view of the live engine.
 
 For detailed instructions on setting up a production-grade VM on Google Cloud, see the [**Secure Execution VM Setup Guide**](docs/gcp_execution_vm_setup.md).
 
@@ -1064,21 +831,7 @@ MIT
 
 ## Final Runtime Conclusion
 
-The current runtime is production-structured but remains fail-closed for live
-arbitrage until the executor-truth gate finds at least one `eth_call`-executable
-route. The system has live Chain 137 pool discovery, dynamic pool expansion,
-Curve registry staging, V3/Algebra orientation and decimals audits, route-kind
-adapter coverage, Redis transport lanes, PM2 boot scripts, runtime PnL books,
-liquidation tracking, finalizer reporting, and backend-controlled live/dry-run
-runtime toggles.
-
-Current source of truth:
-
-```text
-GET /api/finalizer/report
-GET /api/runtime/status?probe=true
-POST /api/pipeline/validate?no_eth_call=false
-```
+The current runtime is production-structured but remains fail-closed for live arbitrage until the executor-truth gate finds at least one `eth_call`-executable route. The system has live Chain 137 pool discovery, dynamic pool expansion, Curve registry staging, V3/Algebra orientation and decimals audits, route-kind adapter coverage, PM2 boot scripts, runtime PnL books, liquidation tracking, and finalizer reporting.
 
 The frontend may toggle `dry_run` and `live`, but it never signs or broadcasts.
 Live submission still requires:
@@ -1137,13 +890,7 @@ OMEGA_ML_MIN_CONFIDENCE=0.70
 
 Each model requires a `model_card.json` under `models/<model_id>/` with Polygon
 Chain 137 scope, validation metrics, confidence, and `execution_authority=false`.
-Until those artifacts exist and pass validation, ML status is visible through:
-
-```text
-GET /api/ml/status
-GET /api/sourced-layers/status
-GET /api/finalizer/report
-```
+Until those artifacts exist and pass validation, ML status is visible through the `pipeline_validation` report.
 
 Professional conclusion: the architecture is capable of competing at a high
 level because it separates broad discovery from exact executor truth. It cannot

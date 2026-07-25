@@ -404,9 +404,6 @@ def validate(
         f"stager_blueprints={discovery_report.get('stager_blueprints', 0)} "
         f"stager_raw_positive={discovery_report.get('stager_raw_positive', 0)}"
     )
-    print(f"gate_passed_stable={len(ranked_stable)}")
-    print(f"gate_passed_two_leg={len(ranked_two_leg)}")
-    print(f"gate_passed_merged_cycles={len(ranked_cycles)}")
     print(
         "gate_passed_by_hop="
         f"2:{discovery_report.get('gate_passed_by_hop', {}).get('2', 0)} "

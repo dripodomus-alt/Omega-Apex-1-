@@ -34,6 +34,32 @@ except ImportError as e:
 TRANSFER_EVENT_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 
+def _get_native_profit_from_trace(w3: Web3, tx_hash: str, executor_address: str) -> Decimal:
+    """
+    Uses debug_traceTransaction with a callTracer to find native asset profit.
+    This is more robust for profit delivered as MATIC/ETH instead of an ERC20.
+    """
+    native_profit = Decimal("0")
+    try:
+        trace = w3.provider.make_request(
+            "debug_traceTransaction", [tx_hash, {"tracer": "callTracer"}]
+        )
+    except Exception as e:
+        print(f"Warning: debug_traceTransaction failed: {e}. Native profit will be ignored.", file=sys.stderr)
+        return native_profit
+
+    def find_value_transfers(call: dict):
+        nonlocal native_profit
+        if call.get("to", "").lower() == executor_address.lower() and int(call.get("value", "0x0"), 16) > 0:
+            native_profit += Decimal(int(call.get("value", "0x0"), 16))
+
+        for sub_call in call.get("calls", []):
+            find_value_transfers(sub_call)
+
+    find_value_transfers(trace)
+    return native_profit
+
+
 def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> Decimal:
     """
     Analyzes a single transaction to calculate its net profit in USD.
@@ -58,10 +84,10 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> Decimal:
     effective_gas_price = Decimal(receipt["effectiveGasPrice"])
     gas_cost_native = gas_used * effective_gas_price
 
-    # Assume a WNATIVE address is configured for pricing the gas token (e.g., WMATIC)
-    native_token_address = getattr(config, "WMATIC_ADDRESS", getattr(config, "WETH_ADDRESS", None))
+    # Use WPOL as the strict native token for gas pricing.
+    native_token_address = getattr(config, "WPOL_ADDRESS", None)
     if not native_token_address:
-        print("Warning: Native token address (WMATIC_ADDRESS/WETH_ADDRESS) not found in config. Gas cost cannot be calculated in USD.", file=sys.stderr)
+        print("Warning: Native token address (WPOL_ADDRESS) not found in config. Gas cost cannot be calculated in USD.", file=sys.stderr)
         gas_cost_usd = Decimal("0")
     else:
         native_price_usd = get_price_usd(native_token_address, block_identifier=block_number)
@@ -78,9 +104,22 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> Decimal:
         return -gas_cost_usd
 
     # 2. Calculate Gross Profit in USD by summing incoming transfers to the executor wallet
+    # 2. Calculate Gross Profit in USD
     gross_profit_usd = Decimal("0")
     executor_wallet_address = Web3.to_checksum_address(config.EXECUTOR_WALLET)
 
+    # 2a. Add native asset profit from trace
+    native_profit_wei = _get_native_profit_from_trace(w3, tx_hash, executor_wallet_address)
+    if native_profit_wei > 0:
+        native_price_usd = get_price_usd(native_token_address, block_identifier=block_number) if native_token_address else Decimal("0")
+        if native_price_usd and native_price_usd > 0:
+            native_profit_usd = (native_profit_wei / Decimal(10**18)) * Decimal(native_price_usd)
+            gross_profit_usd += native_profit_usd
+            print(f"  -> Detected internal transfer of {native_profit_wei / Decimal(10**18):.6f} native token (${native_profit_usd:.2f}) to executor wallet.", file=sys.stderr)
+        else:
+            print(f"Warning: Could not price native profit of {native_profit_wei} wei.", file=sys.stderr)
+
+    # 2b. Add ERC20 profit from event logs
     for log in receipt["logs"]:
         # Check if it's an ERC20 Transfer event with the correct number of topics
         if log["topics"][0].hex() == TRANSFER_EVENT_TOPIC and len(log["topics"]) == 3:

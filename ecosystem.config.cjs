@@ -1,8 +1,11 @@
 /**
  * @DEPRECATION_NOTICE
- * This file is part of the legacy omega_v5 (Python/PM2) architecture and is now obsolete.
- * The concerns it managed (process management, environment variable injection) are now
- * handled by Docker Compose for local environments and Kubernetes for production.
+ * This file is part of a legacy architecture and is now obsolete.
+ * The `pm2` process manager is no longer the primary tool for service orchestration
+ * in this project.
+ *
+ * - For local development, use the scripts in `scripts/ops/`.
+ * - For production, refer to the deployment guides in `docs/`.
  * This file is preserved as a historical artifact and should not be used.
  */
 module.exports = {

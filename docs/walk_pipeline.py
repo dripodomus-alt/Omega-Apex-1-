@@ -20,16 +20,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from omega_v5 import (
     rpc_layer,
     ArbitrageGraphEngine,
-    get_config_value,
     final_truth_rank, truth_summary,
     base_fee_gwei as _base_fee_gwei,
-    score_cross_pool_spreads,
-    score_opportunities,
-    score_pegged_stable_spreads,
     print_live_opportunities,
-    compute_all_pool_rates, detect_cross_pool_two_leg_spreads,
     DEEP_POOL_REGISTRY,
-    detect_pegged_stable_spreads,
+    FlashSource,
+    get_config_value,
+    MIN_FLASH_PRINCIPAL_USD, MAX_FLASH_PRINCIPAL_USD, FLASH_ROUTE_TVL_FRACTIONS, MAX_ROUTE_IMPACT,
 )
 
 
@@ -68,58 +65,49 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         }
 
         print("\n--- [Discovery Summary] ---")
-        base_assets_str = get_config_value("FLASH_BASE_ASSETS", "USDC,USDC.e,WPOL,WETH")
-        base_assets = set(base_assets_str.split(','))
-
-        all_pool_tokens = set()
-        for pool in live_pools:
-            all_pool_tokens.update(pool['tokens'])
-
-        mid_tokens = all_pool_tokens - base_assets
-
+        prices = rpc_layer.TOKEN_PRICES
         print(f"  - Pools discovered: {len(live_pools)}")
-        print(f"  - Base assets configured: {len(base_assets)} ({', '.join(sorted(list(base_assets)))})")
-        print(f"  - Mid-tier assets found: {len(mid_tokens)}")
+        print(f"  - Prices loaded for {len(prices)} tokens.")
 
         print("\n--- Asset Prices (USD) ---")
         # Sort prices by token symbol for consistent output
-        sorted_prices = sorted(rpc_layer.TOKEN_PRICES.items())
+        sorted_prices = sorted(prices.items())
         for token, price in sorted_prices:
             if price > 0:
                 print(f"  - {token:<10}: ${price:,.4f}")
         report["steps"]["discovery_summary"] = {
-            "pools": len(live_pools), "base_assets": len(base_assets), "mid_tier_assets": len(mid_tokens),
-            "prices": {k: str(v) for k, v in rpc_layer.TOKEN_PRICES.items()}
+            "pools": len(live_pools),
+            "prices": {k: str(v) for k, v in prices.items()}
         }
 
-        print("\n--- [Step 2: Theoretical Opportunity Discovery] ---")
+        print("\n--- [Step 2: Unified Discovery & Ranking via Rust Engine] ---")
         step_start = time.monotonic()
-        rates = compute_all_pool_rates(live_pools)
-        print(f"✅ Computed {sum(len(v) for v in rates.values())} directional quotes across {len(rates)} pairs.")
+        arb_engine = ArbitrageGraphEngine(live_pools, prices)
+        sizing_params = {
+            "min_principal_usd": str(MIN_FLASH_PRINCIPAL_USD),
+            "max_principal_usd": str(MAX_FLASH_PRINCIPAL_USD),
+            "tvl_fractions": [str(f) for f in FLASH_ROUTE_TVL_FRACTIONS],
+            "max_impact_bps": int(MAX_ROUTE_IMPACT * 10000),
+        }
+        ranked_opps, discovery_report = arb_engine.find_and_rank_opportunities(
+            sizing_params=sizing_params,
+            flash_source=FlashSource.BALANCER,
+            stager_max_token_paths=500,
+            stager_max_pre_ranked=100,
+            stager_max_quote_options_per_pair=2,
+        )
+        print(f"✅ Rust engine returned {len(ranked_opps)} ranked opportunities.")
+        print(f"✅ Discovery report: {discovery_report}")
 
-        two_leg_spreads = detect_cross_pool_two_leg_spreads(rates)
-        stable_spreads = detect_pegged_stable_spreads(two_leg_spreads)
-        engine = ArbitrageGraphEngine(rates)
-        cycles = engine.bellman_ford_all_sources()
-        print(f"✅ Discovered {len(two_leg_spreads)} 2-hop spreads (including {len(stable_spreads)} stable pairs).")
-        print(f"✅ Discovered {len(cycles)} 3+ hop cycles via graph search.")
         report["steps"]["discovery"] = {
             "duration_seconds": time.monotonic() - step_start,
-            "two_hop_spreads": len(two_leg_spreads),
-            "stable_spreads": len(stable_spreads),
-            "multi_hop_cycles": len(cycles),
+            "ranked_count": len(ranked_opps),
+            "discovery_report": discovery_report,
         }
 
         print("\n--- [Step 3: Economic Ranking] ---")
-        step_start = time.monotonic()
-        ranked_opps = sorted(
-            score_pegged_stable_spreads(stable_spreads, live_pools, principal_usd)
-            + score_cross_pool_spreads(two_leg_spreads, live_pools, principal_usd)
-            + score_opportunities(cycles, live_pools, rates, principal_usd),
-            key=lambda item: item.profitability.net_profit_usd,
-            reverse=True,
-        )
-        print(f"✅ Scored and ranked {len(ranked_opps)} theoretical opportunities.")
+        # This step is now part of the unified Rust engine call. We just display the results.
+        print(f"✅ Displaying {len(ranked_opps)} opportunities scored by the Rust engine.")
         print("Top 50 theoretical opportunities (before on-chain verification):")
         print_live_opportunities(ranked_opps, max_count=50)
         report["steps"]["ranking"] = {

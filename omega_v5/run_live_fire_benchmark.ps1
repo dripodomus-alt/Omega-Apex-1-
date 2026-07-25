@@ -43,6 +43,7 @@ param(
 
     [int]$Cycles = 1,
     [int]$MaxParallelTx = 1,
+    [int]$MaxParallelTx = 10,
     [double]$MinProfitUSD = 5.0,
     [int]$TxConfirmationTimeoutSec = 120
 )
@@ -77,6 +78,18 @@ Assert-Ok (-not [string]::IsNullOrEmpty($rpcUrl)) "BROADCAST_RPC_URL is not set 
 
 $env:ETH_RPC_URL = $rpcUrl # Set for subsequent cast commands
 
+$publicRpc = "https://polygon.drpc.org"
+Write-Substep "Verifying chain synchronization..."
+try {
+    $primaryBlock = cast block-number --rpc-url $rpcUrl
+    $publicBlock = cast block-number --rpc-url $publicRpc
+    $blockLag = $publicBlock - $primaryBlock
+    Assert-Ok ($blockLag -lt 5) "FATAL: Primary RPC ($rpcUrl) is lagging the public chain by $blockLag blocks. Halting for safety."
+    Write-Host "Primary RPC is synchronized with the public chain (Lag: $blockLag blocks)." -ForegroundColor Green
+} catch {
+    throw "Could not verify chain synchronization. Primary or public RPC may be down. Error: $($_.Exception.Message)"
+}
+
 $chainId = cast chain-id
 
 if ($Signer -eq 'PrivateKey') {
@@ -88,14 +101,12 @@ if ($Signer -eq 'PrivateKey') {
     $configuredAddress = $envConfig.EXECUTOR_WALLET
     Assert-Ok ($derivedAddress.ToLower() -eq $configuredAddress.ToLower()) "FATAL: Address derived from EXECUTOR_PRIVATE_KEY ($derivedAddress) does not match EXECUTOR_WALLET ($configuredAddress) in .env file. Check for typos."
 
-    $balanceWei = cast balance $configuredAddress
-    $balanceEth = cast from-wei $balanceWei
     Write-Host "Wallet sanity checks passed." -ForegroundColor Green
 }
 else {
     Write-Substep "Preparing for signing with '$Signer'..."
-    $configuredAddress = "N/A (derived from $Signer)"
-    $balanceEth = "N/A (derived from $Signer)"
+    $configuredAddress = $envConfig.EXECUTOR_WALLET
+    $balanceNative = "N/A (derived from $Signer)"
     Write-Host "Wallet address and balance will be determined by the '$Signer' device/service." -ForegroundColor Yellow
     if ($Signer -eq 'GcpKms') {
         Assert-Ok ($SignerArgs.ContainsKey('KeyName') -and -not [string]::IsNullOrEmpty($SignerArgs.KeyName)) "-SignerArgs must contain 'KeyName' for GcpKms signer."
@@ -111,11 +122,14 @@ else {
 
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
 Write-Host "  SIGNER TYPE     : $Signer" -ForegroundColor Yellow
-Write-Host "  EXECUTOR WALLET : $configuredAddress" -ForegroundColor Yellow
+Write-Host "  EXECUTOR WALLET : $envConfig.EXECUTOR_WALLET" -ForegroundColor Yellow
 Write-Host "  NETWORK (ChainID) : $chainId" -ForegroundColor Yellow
 Write-Host "  RPC ENDPOINT    : $rpcUrl" -ForegroundColor Yellow
-Write-Host "  NATIVE BALANCE  : $balanceEth ETH" -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
+
+$initialBalanceWei = cast balance $envConfig.EXECUTOR_WALLET
+$initialBalanceNative = cast from-wei $initialBalanceWei
+Write-Host "Initial wallet balance: $initialBalanceNative POL" -ForegroundColor Green
 
 $confirmation = Read-Host "`nThis script will execute REAL transactions on the network above. Are you absolutely sure you want to proceed? [y/N]"
 if ($confirmation -ne 'y') {
@@ -126,6 +140,7 @@ if ($confirmation -ne 'y') {
 
 $allResults = @()
 $privateKeyForSigning = if ($Signer -eq 'PrivateKey') { $envConfig.EXECUTOR_PRIVATE_KEY } else { $null }
+$executorAddress = $envConfig.EXECUTOR_WALLET
 
 for ($i = 1; $i -le $Cycles; $i++) {
     Write-Phase "Benchmark Cycle $i of $Cycles"
@@ -144,6 +159,11 @@ for ($i = 1; $i -le $Cycles; $i++) {
     }
 
     try {
+        # --- Per-Cycle Wallet & Nonce Check ---
+        $cycleBalanceWei = cast balance $executorAddress
+        $cycleBalanceNative = cast from-wei $cycleBalanceWei
+        $currentNonce = cast nonce $executorAddress
+        Write-Host "Cycle $i Start | Balance: $cycleBalanceNative POL | Next Nonce: $currentNonce"
         # --- PHASE 1: Opportunity Discovery ---
         Write-Substep "Running discovery pipeline..."
         $discoveryTime = Measure-Command {
@@ -184,15 +204,18 @@ for ($i = 1; $i -le $Cycles; $i++) {
         Write-Substep "Broadcasting $($opsToExecute.Count) transaction(s) in parallel..."
         $broadcastJobs = @()
         $broadcastTime = Measure-Command {
-            foreach ($op in $opsToExecute) {
+            for ($txIndex = 0; $txIndex -lt $opsToExecute.Count; $txIndex++) {
+                $op = $opsToExecute[$txIndex]
+                $txNonce = $currentNonce + $txIndex
                 $job = Start-ThreadJob -ScriptBlock {
-                    param($tx, $rpcUrl, $signer, $signerArgs, $privateKeyForSigning)
+                    param($tx, $rpcUrl, $signer, $signerArgs, $privateKeyForSigning, $nonce)
 
                     $env:ETH_RPC_URL = $rpcUrl
 
                     if ($signer -eq 'PrivateKey') {
                         # For private key, we must create the signed raw transaction first, then broadcast it.
                         $createArgs = @("tx", "create")
+                        $createArgs += "--nonce $nonce"
                         if ($tx.to) { $createArgs += $tx.to }
                         if ($tx.value -and $tx.value -ne "0") { $createArgs += "--value $($tx.value)" }
                         if ($tx.gasLimit) { $createArgs += "--gas-limit $($tx.gasLimit)" }
@@ -208,6 +231,7 @@ for ($i = 1; $i -le $Cycles; $i++) {
                     else {
                         # For hardware/KMS signers, `cast send` handles signing and broadcasting in one step.
                         $sendArgs = @("send")
+                        $sendArgs += "--nonce $nonce"
                         $sendArgs += $tx.to
                         if ($tx.value -and $tx.value -ne "0") { $sendArgs += "--value $($tx.value)" }
                         if ($tx.gasLimit) { $sendArgs += "--gas-limit $($tx.gasLimit)" }
@@ -224,7 +248,7 @@ for ($i = 1; $i -le $Cycles; $i++) {
                         $txHash = & cast @sendArgs
                         return $txHash
                     }
-                } -ArgumentList $op.transaction, $rpcUrl, $Signer, $SignerArgs, $privateKeyForSigning
+                } -ArgumentList $op.transaction, $rpcUrl, $Signer, $SignerArgs, $privateKeyForSigning, $txNonce
                 $broadcastJobs += $job
             }
             $sentTxs = $broadcastJobs | Wait-Job | Receive-Job

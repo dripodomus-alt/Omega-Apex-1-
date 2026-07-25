@@ -126,6 +126,46 @@ class LiveOpportunity:
     quality: dict[str, Any] = field(default_factory=dict)
     block_detected: int = 0
 
+    def as_dict(self) -> dict[str, Any]:
+        """Converts the opportunity to a dictionary format compatible with legacy reporting tools."""
+        base_token = self.path[0] if self.path else ""
+        try:
+            base_price = token_price_usd(base_token)
+        except PriceUnavailable:
+            base_price = Decimal("0")
+
+        principal_usd = self.profitability.flashloan.principal_usd
+        base_amount_in = principal_usd / base_price if base_price > 0 else Decimal("0")
+
+        # Attempt to get the detailed expense breakdown if it exists
+        expense_breakdown = {}
+        if hasattr(self.profitability, "expense_breakdown") and self.profitability.expense_breakdown:
+            if is_dataclass(self.profitability.expense_breakdown):
+                expense_breakdown = asdict(self.profitability.expense_breakdown)
+            elif isinstance(self.profitability.expense_breakdown, dict):
+                expense_breakdown = self.profitability.expense_breakdown
+
+        return {
+            "path": self.path,
+            "pool_sequence": self.pool_sequence,
+            "protocol_seq": self.protocol_seq,
+            "opp_id": self.metadata.get("opp_id", f"OPP-RUST-{id(self)}"),
+            "status": "staged_for_executor_truth",
+            "stage": "staged_for_executor_truth",
+            "reason": "profitability_gate_passed",
+            "selected_principal_usd": principal_usd,
+            "principal_usd": principal_usd,
+            "selected_base_amount_in": base_amount_in,
+            "base_token": base_token,
+            "base_token_usd": base_price,
+            "net_gain_usd": self.profitability.net_profit_usd,
+            "net_formula": expense_breakdown,
+            "sizing": self.metadata.get("sizing", {}),
+            "flash_source": self.flash_source.value,
+            "discovery_block": self.block_detected,
+            "current_block": getattr(rpc_layer, "BLOCK", 0),
+        }
+
 
 def _normalize_pre_ranked(candidate: Any) -> dict:
     """Convert PreRankedRoute / dict / cycle object into a scoring dict."""
