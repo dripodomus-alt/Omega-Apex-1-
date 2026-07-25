@@ -43,7 +43,7 @@ from .flash_loan import ( # type: ignore
     live_min_net_profit_usd,
     build_executable_route_economics,
 )
-from .oracle_layer import PriceUnavailable
+from .oracle_layer import PriceUnavailable, token_price_usd
 from .pool_quality import route_quality_metadata, route_quality_passed
 from .ranker import CrossPoolSpread
 from .sizing import RouteSizing, optimal_flash_for_route, apply_injection_to_route_dict, estimate_route_tvl_usd
@@ -178,11 +178,27 @@ def rank_live_opportunity(
     except Exception:
         principal = Decimal("10000")
 
-    # Use legacy quote + economics for now
+    if principal <= 0:
+        return None
+
+    # Replace placeholder math with a call to the executable quoter to align
+    # ranking with the truth gate.
     try:
-        gross_out = principal * Decimal("1.002")  # placeholder
-        prof = evaluate_profitability(gross_out, principal, hops=len(pool_sequence), flash_source=flash_source, asset=path[0])
-    except Exception:
+        base_asset = path[0]
+        price = Decimal(str(token_price_usd(base_asset)))
+        if price <= 0:
+            return None
+        amount_in = principal / price
+
+        quote = quote_route_for_executor(path, pool_sequence, pools, amount_in)
+        # For CLMM routes, we require an on-chain quote proof to avoid ranking based on
+        # inaccurate invariant math. Non-CLMM routes can proceed with math-based quotes.
+        if not quote.clmm_proven and any(p in {"V3_CLMM", "QS_V3_ALGEBRA"} for p in protocol_seq):
+             return None
+
+        gross_out = quote.amount_out * price
+        prof = evaluate_profitability(gross_out, principal, hops=len(pool_sequence), flash_source=flash_source, asset=base_asset)
+    except (PriceUnavailable, ValueError, Exception):
         return None
 
     opp = LiveOpportunity(
@@ -190,7 +206,7 @@ def rank_live_opportunity(
         pool_sequence=pool_sequence,
         protocol_seq=protocol_seq,
         profitability=prof,
-        gross_rate=Decimal("1.002"),
+        gross_rate=gross_out / principal if principal > 0 else Decimal("0"),
         gross_out_usd=gross_out,
         flash_source=flash_source,
         metadata={

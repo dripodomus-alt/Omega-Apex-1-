@@ -27,6 +27,8 @@ from .config import (
     DYNAMIC_SIZE_IMPACT_PENALTY_BPS,
     DYNAMIC_SIZE_MAX_SEARCH_STEPS,
     DYNAMIC_SIZE_OPT_BINS_USD,
+    DETERMINISTIC_APEX_INJECTOR_ENABLED,
+    normalize_protocol,
     ENABLE_DYNAMIC_FLASH_SIZING,
     ENABLE_DYNAMIC_SIZE_OPTIMIZER,
     FLASH_ROUTE_TVL_FRACTIONS,
@@ -38,6 +40,7 @@ from .config import (
 from .flash_loan import FlashSource, evaluate_profitability, live_min_net_profit_usd
 from .liquidity_registry import _local_tvl_usd
 from .oracle_layer import token_price_usd
+from .precision_pricing import PrecisionPricingEngine
 from .quantum_logic_gate import create_vqc_circuit, simulate_and_measure
 from .redis_cache import get_json, key as redis_key
 
@@ -277,6 +280,31 @@ def _get_rin_rout_from_metadata(
     Prefer real reserves when present; else split TVL 50/50.
     """
     pool = (pools or {}).get(pool_id, {}) or {}
+
+    # --- V3 Virtual Reserve Logic (Apex Injector) ---
+    if DETERMINISTIC_APEX_INJECTOR_ENABLED:
+        try:
+            protocol = normalize_protocol(pool.get("protocol", ""))
+            if protocol in {"V3_CLMM", "QS_V3_ALGEBRA"}:
+                sqrtPriceX96 = int(pool.get("sqrtPriceX96", 0))
+                liquidity = int(pool.get("liquidity", 0))
+                if sqrtPriceX96 > 0 and liquidity > 0:
+                    # V3 logic: r0 is virtual reserve of token0, r1 is virtual reserve of token1
+                    r0_virtual, r1_virtual = PrecisionPricingEngine.get_v3_virtual_reserves(sqrtPriceX96, liquidity)
+
+                    tokens = list(pool.get("tokens") or [])
+                    if len(tokens) >= 2:
+                        p0 = token_price_usd(str(tokens[0]))
+                        p1 = token_price_usd(str(tokens[1]))
+
+                        # Convert virtual reserves to USD values for the derivative formula
+                        usd0 = r0_virtual * Decimal(str(p0))
+                        usd1 = r1_virtual * Decimal(str(p1))
+                        return max(usd0, Decimal("1")), max(usd1, Decimal("1"))
+        except Exception:
+            # Fallback to TVL logic if V3-specific fields are missing/invalid
+            pass
+
     tokens = list(pool.get("tokens") or pool.get("token_addresses") or [])
     reserves = list(pool.get("reserves") or pool.get("reserve_balances") or [])
 

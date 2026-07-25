@@ -146,6 +146,39 @@ PROTOCOL_ALIAS_MAP: Dict[str, str] = {
     "Balancer": "BAL_WEIGHTED",
 }
 
+# This function is critical for normalizing protocol names from various sources
+# into the canonical keys used by the system.
+def normalize_protocol(p: str) -> str:
+    """Converts a protocol alias to its canonical internal key."""
+    # Normalize input for matching: uppercase, replace common separators
+    p_norm = str(p or "").upper().replace("-", "_").replace(" ", "_")
+
+    # Direct match in alias map
+    if p_norm in PROTOCOL_ALIAS_MAP:
+        return PROTOCOL_ALIAS_MAP[p_norm]
+
+    # Direct match in registry (already canonical)
+    if p_norm in PROTOCOL_REGISTRY:
+        return p_norm
+
+    # Handle common legacy names not in alias map
+    if "UNISWAP" in p_norm and "V2" in p_norm: return "V2_CPMM"
+    if "UNISWAP" in p_norm and "V3" in p_norm: return "V3_CLMM"
+    if "QUICKSWAP" in p_norm and "V2" in p_norm: return "QS_V2_CPMM"
+    if "QUICKSWAP" in p_norm and "V3" in p_norm: return "QS_V3_ALGEBRA"
+    if "SUSHISWAP" in p_norm: return "SUSHI_V2_CPMM"
+
+    # If no match, return the normalized input for downstream validation.
+    return p_norm
+
+# List of protocols that are fully supported for execution.
+FULLY_EXECUTABLE_PROTOCOLS: List[str] = [
+    k for k, v in PROTOCOL_REGISTRY.items() if v.get("status") == "fully_executable"
+]
+
+def get_config_value(key: str, default: Any = None) -> Any:
+    """Helper to get a config value by its string name."""
+    return globals().get(key, default)
 
 # ==============================================================================
 # ENVIRONMENT HELPERS
@@ -472,3 +505,16 @@ ENABLE_FACTORY_POOL_DISCOVERY: bool = _bool_env("ENABLE_FACTORY_POOL_DISCOVERY",
 DISCOVERY_MAX_TOKEN_PAIRS: int = int(_env("DISCOVERY_MAX_TOKEN_PAIRS", "160") or "160")
 DISCOVERY_MAX_PROMOTED_POOLS: int = int(_env("DISCOVERY_MAX_PROMOTED_POOLS", "192") or "192")
 POOL_LOAD_SLEEP_SECONDS: Decimal = Decimal(_env("POOL_LOAD_SLEEP_SECONDS", "0.02") or "0.02")
+
+# ==============================================================================
+# APEX INJECTOR & VIRTUAL RESERVES (July 2026 Target)
+# ==============================================================================
+# Enables the deterministic apex injector, which uses calculus-derived formulas
+# and virtual reserves for V3 pools to find the mathematically optimal principal.
+DETERMINISTIC_APEX_INJECTOR_ENABLED: bool = _bool_env("DETERMINISTIC_APEX_INJECTOR_ENABLED", "true")
+
+# Note on Balancer V3 as Primary Capital Source:
+# The target architecture uses Balancer V3 for its transient storage (EIP-1153)
+# capabilities, which significantly reduces gas costs for flash loans. The current
+# BALANCER entry in CAPITAL_SOURCE_REGISTRY uses the V2 vault, which will be
+# upgraded when V3 is live on Polygon.
