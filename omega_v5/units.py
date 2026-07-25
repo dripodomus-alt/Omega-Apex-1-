@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 from decimal import Decimal, ROUND_FLOOR
+from functools import lru_cache
 from typing import Optional
 
 from . import rpc_layer
@@ -69,6 +70,7 @@ def raw_to_usd(symbol: str, raw_amount: int, price_usd: Decimal) -> Decimal:
 
 # ── New precision (integer-only) paths — matches TS PrecisionPricingEngine ────
 
+@lru_cache(maxsize=128)
 def get_token_metadata(symbol: str, chain_id: int = 137) -> TokenMetadata:
     """Helper to build TokenMetadata from known registry (best-effort)."""
     addr = rpc_layer.TOKEN_ADDRESSES.get(symbol, "0x0000000000000000000000000000000000000000")

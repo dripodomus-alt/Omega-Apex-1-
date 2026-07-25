@@ -440,58 +440,13 @@ EXECUTOR_CONTRACT: str = _first_env(
     "C1_PAYLOAD_TARGET",
     "C1_TARGET",
     "C1_ARB_EXECUTOR_ADDRESS",
-    "HFT_DEFAULT_TARGET",
     default=CANONICAL_ON_CHAIN_MUSCLE,
 )
 
-# ── Dynamic sizing, stable micro-arb, and newer runtime compatibility knobs ────
-V6_ENABLED: bool = _env("V6_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
-V6_CAPITAL_ALLOCATION_ENABLED: bool = (
-    _env("V6_CAPITAL_ALLOCATION_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
-)
-ENABLE_DYNAMIC_SIZE_OPTIMIZER: bool = (
-    _env("ENABLE_DYNAMIC_SIZE_OPTIMIZER", "true").lower() in {"1", "true", "yes", "on"}
-)
-ML_SIZE_PREDICTION_ENABLED: bool = (
-    _env("ML_SIZE_PREDICTION_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
-)
-DYNAMIC_SIZE_OPT_BINS_USD: List[Decimal] = [
-    Decimal(item.strip())
-    for item in _env("DYNAMIC_SIZE_OPT_BINS_USD", "500,1000,2500,5000,7500,10000,15000,25000").split(",")
-    if item.strip()
-]
-DYNAMIC_SIZE_MAX_SEARCH_STEPS: int = int(_env("DYNAMIC_SIZE_MAX_SEARCH_STEPS", "20") or "20")
-DYNAMIC_SIZE_IMPACT_PENALTY_BPS: Decimal = Decimal(_env("DYNAMIC_SIZE_IMPACT_PENALTY_BPS", "25"))
-# Stable micro-arb floors aligned with ~$0.001 Polygon gas (not $0.25 legacy)
-STABLE_MIN_NET_PROFIT_USD: Decimal = Decimal(_env("STABLE_MIN_NET_PROFIT_USD", "0.01"))
-STABLE_RISK_BUFFER_USD: Decimal = Decimal(_env("STABLE_RISK_BUFFER_USD", "0.005"))
-
-TOKEN_CALIBRATION_CACHE_TTL_SECONDS: int = int(_env("TOKEN_CALIBRATION_CACHE_TTL_SECONDS", "300") or "300")
-TOKEN_CALIBRATION_MAX_MULTICALL_BATCH: int = int(_env("TOKEN_CALIBRATION_MAX_MULTICALL_BATCH", "40") or "40")
-OMEGA_ML_MODEL_DIR: str = _env("OMEGA_ML_MODEL_DIR", "models")
-MIN_WALLET_GAS_BUFFER_POL: Decimal = Decimal(_env("MIN_WALLET_GAS_BUFFER_POL", "1"))
-MEV_ENABLED: bool = _env("MEV_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
-MEV_PUBLIC_FALLBACK_ENABLED: bool = (
-    _env("MEV_PUBLIC_FALLBACK_ENABLED", "false").lower() in {"1", "true", "yes", "on"}
-)
+# ── Apprentice metadata promotion controls (used by rpc_layer) ────────────────
 ENABLE_APPRENTICE_METADATA_PROMOTIONS: bool = (
-    _env("ENABLE_APPRENTICE_METADATA_PROMOTIONS", "true").lower() in {"1", "true", "yes", "on"}
+    _env("ENABLE_APPRENTICE_METADATA_PROMOTIONS", "false").lower() in {"1", "true", "yes", "on"}
 )
 APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE: int = int(
-    _env("APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE", "25") or "25"
+    _env("APPRENTICE_METADATA_MAX_PROMOTIONS_PER_CYCLE", "5") or "5"
 )
-
-# Default protocol overhead fee, can be overridden by environment variables.
-# This represents a small, fixed USD cost for any on-chain activity (e.g., contract deployment, one-time approvals).
-PROTOCOL_OVERHEAD_USD: Decimal = Decimal(_env("PROTOCOL_OVERHEAD_USD", "0.001"))
-
-
-if __name__ == "__main__":
-    print(f"✅ Asset Matrix verified. Initialized {len(ASSET_MATRIX)} core tokens for Chain {CHAIN_ID} evaluation.")
-
-
-def get_config_value(name: str, default=None):
-    """Return a loaded config constant or environment value."""
-    if name in globals():
-        return globals()[name]
-    return os.environ.get(name, default)

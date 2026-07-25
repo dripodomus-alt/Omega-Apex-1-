@@ -18,7 +18,6 @@ import argparse
 import json
 import time
 from pathlib import Path
-
 import numpy as np
 import pennylane as qml
 from sklearn.model_selection import train_test_split
@@ -32,6 +31,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from omega_v5.paths import output_path, models_path
+from omega_v5.quantum_models import create_vqc_circuit
 
 
 def load_and_prepare_data(data_path: Path) -> tuple[np.ndarray, np.ndarray, list[str]]:
@@ -52,8 +52,6 @@ def load_and_prepare_data(data_path: Path) -> tuple[np.ndarray, np.ndarray, list
         "principal_usd",
         "slippage_bps",
         "num_legs",
-        "principal_to_tvl_ratio",
-        "gas_cost_usd",
     ]
 
     for rec in records:
@@ -64,19 +62,14 @@ def load_and_prepare_data(data_path: Path) -> tuple[np.ndarray, np.ndarray, list
         try:
             # Engineer richer features for a more accurate model
             principal = float(rec.get("principal_usd", 0))
-            route_tvl = float(rec.get("route_tvl_usd", 0))
 
-            # Ratio of trade size to route liquidity. High values may indicate higher risk/slippage.
-            # Cap at 1.0 if TVL is zero or trade is larger than TVL.
-            principal_to_tvl = min(1.0, (principal / route_tvl) if route_tvl > 0 else 1.0)
-
+            # The number of legs/swaps is a better feature for complexity and gas than the number of tokens.
+            num_legs = max(0, len(rec.get("path", [])) - 1)
             feat_vector = [
                 float(rec.get("pre_math_gross_rate", 1.0)),
                 principal,
                 float(rec.get("slippage_bps", 0)),
-                len(rec.get("path", [])),
-                principal_to_tvl,
-                float(rec.get("gas_cost_usd", 0)),
+                num_legs,
             ]
             features.append(feat_vector)
 
@@ -113,14 +106,7 @@ def main(args):
 
     # 3. Define the Quantum Circuit (VQC)
     num_qubits = len(feature_names)
-    dev = qml.device("default.qubit", wires=num_qubits)
-
-    @qml.qnode(dev)
-    def circuit(weights, x):
-        qml.AngleEmbedding(x, wires=range(num_qubits))
-        qml.StronglyEntanglingLayers(weights, wires=range(num_qubits))
-        return qml.expval(qml.PauliZ(0))
-
+    circuit = create_vqc_circuit(num_qubits)
     def variational_classifier(weights, x):
         return circuit(weights, x)
 

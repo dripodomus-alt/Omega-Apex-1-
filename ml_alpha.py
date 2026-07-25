@@ -13,14 +13,14 @@ import json
 import os
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Any, Callable, List
+from typing import Any, List
 
 import joblib
 import numpy as np
-import pennylane as qml
 
 from .opportunity_ranker import LiveOpportunity, replace
 from .paths import output_path
+from .quantum_models import create_vqc_circuit
 
 MODEL_DIR = output_path("models")
 _model_cache = {}
@@ -37,21 +37,6 @@ class MLAlphaStatus:
     execution_authority: bool = False
     status: str = "disabled"
     detail: str = ""
-
-
-# This part is duplicated from train_vqc_ranker.py.
-# For production, this should be refactored into a shared model-definition module.
-def _get_vqc_circuit(num_qubits: int) -> Callable:
-    """Creates and returns a Pennylane VQC circuit."""
-    dev = qml.device("default.qubit", wires=num_qubits)
-
-    @qml.qnode(dev)
-    def circuit(weights, x):
-        qml.AngleEmbedding(x, wires=range(num_qubits))
-        qml.StronglyEntanglingLayers(weights, wires=range(num_qubits))
-        return qml.expval(qml.PauliZ(0))
-
-    return circuit
 
 
 def ml_alpha_status() -> dict[str, Any]:
@@ -120,7 +105,7 @@ def _load_model_artifacts(status: dict) -> bool:
         scaler = joblib.load(scaler_path)
         weights = np.load(weights_path)
         num_features = len(card.get("features", []))
-        circuit = _get_vqc_circuit(num_features)
+        circuit = create_vqc_circuit(num_features)
 
         _model_cache[model_id] = {
             "scaler": scaler,
@@ -158,13 +143,11 @@ def rerank_by_ml_alpha(opportunities: List[LiveOpportunity]) -> List[LiveOpportu
             # This logic assumes the LiveOpportunity object and engine can provide these features.
             # This part is highly dependent on the data available in the `LiveOpportunity` object.
             principal = float(opp.profitability.flashloan.principal_usd)
-            # If TVL is not present, default to 0. This is a pessimistic but truthful signal.
-            route_tvl = float(opp.metadata.get("route_tvl_usd", 0))
             slippage_bps = float(opp.metadata.get("slippage_bps", 0))
-            gas_cost_usd = float(opp.profitability.gas_cost_usd)
-            principal_to_tvl = min(1.0, (principal / route_tvl) if route_tvl > 0 else 1.0)
+            # Use the number of legs (swaps) to match the training script's feature engineering.
+            num_legs = max(0, len(opp.path) - 1)
 
-            feature_vector = [float(opp.gross_rate), principal, slippage_bps, len(opp.path), principal_to_tvl, gas_cost_usd]
+            feature_vector = [float(opp.gross_rate), principal, slippage_bps, num_legs]
             feature_vector_scaled = model["scaler"].transform([feature_vector])
 
             # The VQC model returns a score from -1 (bad) to 1 (good)
