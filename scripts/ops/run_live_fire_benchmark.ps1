@@ -101,8 +101,8 @@ try {
     $primaryBlock = cast block-number --rpc-url $rpcUrl
     $publicBlock = cast block-number --rpc-url $publicRpc
     $blockLag = $publicBlock - $primaryBlock
-    Assert-Ok ($blockLag -lt 5) "FATAL: Primary RPC ($rpcUrl) is lagging the public chain by $blockLag blocks. Halting for safety."
-    Write-Host "Primary RPC is synchronized with the public chain (Lag: $blockLag blocks)." -ForegroundColor Green
+    Assert-Ok ([Math]::Abs($blockLag) -lt 5) "FATAL: High block lag between primary RPC ($rpcUrl) and public RPC ($publicRpc). Lag: $blockLag blocks. Halting for safety."
+    Write-Host "RPCs are synchronized (Lag: $blockLag blocks)." -ForegroundColor Green
 } catch {
     throw "Could not verify chain synchronization. Primary or public RPC may be down. Error: $($_.Exception.Message)"
 }
