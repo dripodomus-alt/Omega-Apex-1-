@@ -77,7 +77,8 @@ Assert-Ok (-not [string]::IsNullOrEmpty($rpcUrl)) "BROADCAST_RPC_URL is not set 
 
 $env:ETH_RPC_URL = $rpcUrl # Set for subsequent cast commands
 
-$publicRpc = "https://polygon.drpc.org"
+$publicRpc = $envConfig.TELEMETRY_RPC_URL
+Assert-Ok (-not [string]::IsNullOrEmpty($publicRpc)) "TELEMETRY_RPC_URL is not set in .env. A public RPC is required for chain sync verification."
 Write-Substep "Verifying chain synchronization..."
 try {
     $primaryBlock = cast block-number --rpc-url $rpcUrl

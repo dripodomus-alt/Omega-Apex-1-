@@ -3,6 +3,7 @@ use itertools::Itertools;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
+use md5;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::{self, Read};
@@ -331,6 +332,66 @@ fn quote_uniswap_v2(reserve_in: Decimal, reserve_out: Decimal, amount_in: Decima
     numerator / denominator
 }
 
+/// Iteratively calculates the Curve invariant `D`.
+fn get_d_curve(x: Decimal, y: Decimal, a: Decimal) -> Decimal {
+    let s = x + y;
+    if s == dec!(0) {
+        return dec!(0);
+    }
+
+    let mut d = s;
+    let ann = a * dec!(2);
+
+    for _ in 0..64 { // Using fewer iterations for performance in a discovery context
+        let d_p_num = d.powi(3);
+        let d_p_den = dec!(4) * x * y;
+        if d_p_den == dec!(0) { return dec!(0); }
+        let d_p = d_p_num / d_p_den;
+        
+        let d_prev = d;
+
+        let d_num = (ann * s + dec!(2) * d_p) * d;
+        let d_den = (ann - dec!(1)) * d + dec!(3) * d_p;
+        if d_den == dec!(0) { return dec!(0); }
+        d = d_num / d_den;
+
+        if (d - d_prev).abs() <= dec!(1) { // Using 1 as the precision threshold, as in Vyper contracts (for raw units)
+            break;
+        }
+    }
+    d
+}
+
+/// Solves for the output amount `y` in a Curve pool using Newton's method.
+fn get_y_curve(x_new: Decimal, d: Decimal, a: Decimal) -> Decimal {
+    let ann = a * dec!(2);
+    if ann == dec!(0) { return dec!(0); }
+
+    // Solve for y using Newton's method on the StableSwap invariant equation,
+    // which can be simplified to a quadratic form: y^2 + b*y - c = 0
+    let b = x_new + d / ann - d;
+    
+    let c_num = d.powi(3);
+    let c_den = dec!(4) * ann * x_new;
+    if c_den == dec!(0) { return dec!(0); }
+    let c = c_num / c_den;
+
+    // Iterative solver (Newton's method) to find y for f(y) = y^2 + b*y - c = 0
+    // y_{k+1} = (y_k^2 + c) / (2*y_k + b)
+    let mut y = d / dec!(2); // Start with a reasonable guess
+    for _ in 0..64 {
+        let y_prev = y;
+        let y_numerator = y.powi(2) + c;
+        let y_denominator = dec!(2) * y + b;
+        if y_denominator == dec!(0) { return dec!(0); }
+        y = y_numerator / y_denominator;
+        if (y - y_prev).abs() <= dec!(1) {
+            break;
+        }
+    }
+    y
+}
+
 /// Quotes a full route by iterating through its pools.
 /// NOTE: This is a simplified implementation. A production version would need to
 /// implement quoting logic for V3, Balancer, Curve, etc., and select the
@@ -359,7 +420,7 @@ fn quote_route(
                 current_amount = quote_uniswap_v2(reserve_in, reserve_out, current_amount, fee);
             }
             "UniswapV3" | "QuickSwapV3" | "Algebra" => {
-                // --- PRODUCTION EXTENSION: Uniswap V3 / CLMM Math ---
+                // --- Uniswap V3 / CLMM Math ---
                 // This uses a virtual reserves model, which is a correct approximation
                 // for swaps that do not cross a tick boundary. A full implementation
                 // would require iterating through tick data.
@@ -387,7 +448,8 @@ fn quote_route(
                 }
             }
             "Balancer" => {
-                // --- PRODUCTION EXTENSION: Balancer Weighted Pool Math ---
+                // --- Balancer Weighted Pool Math ---
+                // Implements the formula: amountOut = balanceOut * (1 - (balanceIn / (balanceIn + amountIn))^(weightIn / weightOut))
                 if let (Some(reserves), Some(weights), Some(swap_fee)) = (&pool.reserves, &pool.weights, pool.swap_fee) {
                     let token_in = &path[i];
                     let token_out = &path[i + 1];
@@ -421,13 +483,24 @@ fn quote_route(
                 }
             }
             "Curve" => {
-                // --- PRODUCTION EXTENSION: Curve StableSwap Math ---
-                // A full implementation requires an iterative solver (e.g., Newton-Raphson)
-                // to find `D` for the StableSwap invariant. This is a placeholder that
-                // applies a standard fee, which is sufficient for discovery but not for
-                // precise execution quoting.
-                let fee = pool.fee_bps.map(|f| f / dec!(10000)).unwrap_or(dec!(0.0004));
-                current_amount *= dec!(1) - fee;
+                // --- Curve StableSwap Math ---
+                // This uses an iterative solver to find the invariant `D` and then
+                // solves for the output amount `y`. This is a significant improvement
+                // over a simple fee model and is necessary for accurate Curve pricing.
+                let token_in = &path[i];
+                let token_in_idx = pool.tokens.iter().position(|t| t == token_in);
+                if let Some(idx) = token_in_idx {
+                    if let (Some(reserves), Some(a)) = (&pool.reserves, pool.a) {
+                         if reserves.len() == 2 {
+                            let (x, y) = (reserves[idx], reserves[1-idx]);
+                            let d = get_d_curve(x, y, a);
+                            let y_new = get_y_curve(x + current_amount, d, a);
+                            current_amount = y - y_new;
+                         }
+                    }
+                } else {
+                    current_amount = dec!(0);
+                }
             }
             _ => {
                 // Unsupported protocol for quoting in this simplified engine
