@@ -60,16 +60,19 @@ def _get_native_profit_from_trace(w3: Web3, tx_hash: str, executor_address: str)
     return native_profit
 
 
-def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> Decimal:
+def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> dict:
     """
-    Analyzes a single transaction to calculate its net profit in USD.
+    Analyzes a single transaction to calculate its gross and net profit in USD.
 
     Args:
         w3: The Web3 instance.
         tx_hash: The transaction hash to analyze.
 
     Returns:
-        The net profit in USD as a Decimal, or a negative value for losses.
+        A dictionary containing:
+        - gross_profit_usd: The total value of assets swept to the executor.
+        - net_profit_usd: The gross profit minus gas costs.
+        - gas_cost_usd: The calculated gas cost in USD.
     """
     try:
         receipt: TxReceipt = w3.eth.get_transaction_receipt(tx_hash)
@@ -101,7 +104,11 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> Decimal:
     # If the transaction failed, the PnL is simply the negative gas cost.
     if receipt["status"] != 1:
         print(f"Transaction {tx_hash} failed (reverted). PnL is negative gas cost.", file=sys.stderr)
-        return -gas_cost_usd
+        return {
+            "gross_profit_usd": Decimal("0"),
+            "net_profit_usd": -gas_cost_usd,
+            "gas_cost_usd": gas_cost_usd,
+        }
 
     # 2. Calculate Gross Profit in USD by summing incoming transfers to the executor wallet
     # 2. Calculate Gross Profit in USD
@@ -156,7 +163,11 @@ def analyze_transaction_pnl(w3: Web3, tx_hash: str) -> Decimal:
     print(f"  Gas Cost:     ${gas_cost_usd:.4f} USD", file=sys.stderr)
     print(f"  Net Profit:   ${net_profit_usd:.4f} USD", file=sys.stderr)
 
-    return net_profit_usd
+    return {
+        "gross_profit_usd": gross_profit_usd,
+        "net_profit_usd": net_profit_usd,
+        "gas_cost_usd": gas_cost_usd,
+    }
 
 
 def main():
@@ -164,10 +175,15 @@ def main():
     Main entry point for the PnL analyzer script.
     """
     parser = argparse.ArgumentParser(description="Calculate Net Profit/Loss (PnL) for a list of transactions.")
+    # Changed to handle one hash at a time to simplify JSON output and script integration.
     parser.add_argument(
-        "--tx-hashes",
+        "--tx-hash",
         required=True,
-        help="A comma-separated list of transaction hashes to analyze."
+        help="A single transaction hash to analyze."
+    )
+    parser.add_argument(
+        "--rpc-url",
+        help="Optional RPC URL to use. Overrides the one from the config/environment."
     )
     args = parser.parse_args()
 
@@ -175,26 +191,30 @@ def main():
         print("Fatal: EXECUTOR_WALLET is not defined in the environment/config.", file=sys.stderr)
         sys.exit(1)
 
-    # Initialize RPC connection from the project's rpc_layer
-    try:
-        rpc_layer.init()
-        if not rpc_layer.RPC_LIVE or rpc_layer.w3 is None:
-            raise ConnectionError("RPC layer could not be initialized or is not live.")
-        w3 = rpc_layer.w3
-    except Exception as e:
-        print(f"Fatal: Could not connect to RPC endpoint. {e}", file=sys.stderr)
-        sys.exit(1)
+    w3 = None
+    if args.rpc_url:
+        try:
+            w3 = Web3(Web3.HTTPProvider(args.rpc_url))
+            if not w3.is_connected():
+                raise ConnectionError(f"Could not connect to provided RPC: {args.rpc_url}")
+        except Exception as e:
+            print(f"Fatal: Could not connect to provided RPC endpoint. {e}", file=sys.stderr)
+            sys.exit(1)
+    else:
+        # Initialize RPC connection from the project's rpc_layer
+        try:
+            rpc_layer.init()
+            if not rpc_layer.RPC_LIVE or rpc_layer.w3 is None:
+                raise ConnectionError("RPC layer could not be initialized or is not live.")
+            w3 = rpc_layer.w3
+        except Exception as e:
+            print(f"Fatal: Could not connect to default RPC endpoint. {e}", file=sys.stderr)
+            sys.exit(1)
 
-    tx_hashes = [h.strip() for h in args.tx_hashes.split(',') if h.strip()]
-    total_net_profit = Decimal("0")
+    pnl_data = analyze_transaction_pnl(w3, args.tx_hash)
 
-    for tx_hash in tx_hashes:
-        total_net_profit += analyze_transaction_pnl(w3, tx_hash)
-
-    # Output the final result as JSON to stdout, converting Decimal to float
-    result = {
-        "net_profit_usd": float(total_net_profit)
-    }
+    # Output the final result as JSON to stdout, converting Decimals to floats
+    result = {k: float(v) for k, v in pnl_data.items()}
     print(json.dumps(result))
 
 
