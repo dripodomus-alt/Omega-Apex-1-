@@ -272,7 +272,7 @@ $phaseNum++
 $overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
 Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 3-4: Core Validation" -PercentComplete $overallPercent
 
-$validationSteps = 3
+$validationSteps = 4
 $validationCounter = 0
 
 $validationCounter++
@@ -316,6 +316,22 @@ try {
     Write-Progress -Id 1 -ParentId 0 -Activity "Phase 3-4: Core Validation" -Status "Preflight checks skipped (no RPC?)" -PercentComplete ([math]::Round(($validationCounter / $validationSteps) * 100))
     Record-Step "Preflight" $false "Could not run preflight (common if no RPC)"
 }
+
+$validationCounter++
+Write-Progress -Id 1 -ParentId 0 -Activity "Phase 3-4: Core Validation" -Status "Benchmarking public RPCs..." -PercentComplete ([math]::Round(($validationCounter / $validationSteps) * 100))
+Write-Substep "Benchmarking public RPC endpoints..."
+try {
+    if (Test-Path "scripts\network\benchmark_rpc_endpoints.ps1") {
+        # Run with a small sample size to keep it fast and save the report
+        & ".\scripts\network\benchmark_rpc_endpoints.ps1" -IncludeEnv -Samples 3 -OutputFile "out\rpc_benchmark.json" | Out-Null
+        Record-Step "RPC benchmark" $true "Report saved to out/rpc_benchmark.json"
+    } else {
+        Record-Step "RPC benchmark" $false "Script not found"
+    }
+} catch {
+    Record-Step "RPC benchmark" $false $_.Exception.Message
+}
+
 
 $validationCounter++
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 3-4: Core Validation" -Status "Running pipeline validation..." -PercentComplete ([math]::Round(($validationCounter / $validationSteps) * 100))

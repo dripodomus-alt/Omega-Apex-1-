@@ -28,7 +28,8 @@ param(
     [string]$Urls,
 
     [int]$Samples = 5,
-    [int]$TimeoutSec = 8
+    [int]$TimeoutSec = 8,
+    [string]$OutputFile = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -232,6 +233,15 @@ foreach ($result in $rawResults) {
 $sortedReport = $finalReport | Sort-Object -Property @{Expression = "SuccessRate"; Descending = $true }, @{Expression = "AvgLatencyMs"; Ascending = $true }
 
 $sortedReport | Format-Table -AutoSize -Wrap
+
+if (-not [string]::IsNullOrEmpty($OutputFile)) {
+    $outputDir = Split-Path -Path $OutputFile -Parent
+    if ($outputDir -and (-not (Test-Path $outputDir))) {
+        New-Item -ItemType Directory -Path $outputDir | Out-Null
+    }
+    $sortedReport | ConvertTo-Json -Depth 5 | Out-File -FilePath $OutputFile -Encoding utf8
+    Write-Host "`nBenchmark report saved to '$OutputFile'" -ForegroundColor Green
+}
 
 Write-Host "`nBenchmark complete. The table above is ranked by success rate, then by average latency." -ForegroundColor Green
 Write-Host "Lower latency is better. Use this data to populate your primary and fallback RPC URLs."
