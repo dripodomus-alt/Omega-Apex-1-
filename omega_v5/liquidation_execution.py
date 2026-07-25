@@ -225,46 +225,11 @@ def simulate_liquidation(tx: dict[str, Any], from_addr: str | None = None) -> tu
     call_tx = {"to": tx["to"], "data": tx["data"], "value": tx.get("value", 0)}
     if from_addr:
         call_tx["from"] = from_addr
-    exact_w3 = web3_for_lane(LANE_EXACT_LIQUIDATION_ETH_CALL)
-    providers = []
-    for provider in (exact_w3, rpc_layer.w3):
-        if provider is not None and all(provider is not existing for existing in providers):
-            providers.append(provider)
-    if not providers:
-        record_truth_candidate({
-            "payload_hash": payload_hash,
-            "stage": "LIQUIDATION",
-            "status": "NO_EXACT_CALL_RPC",
-            "to": tx.get("to", ""),
-        })
+    if rpc_layer.w3 is None:
         return False, "liquidation exact-call RPC unavailable"
-    for attempt, provider in enumerate(providers, 1):
-        try:
-            result = provider.eth.call(call_tx, block_identifier="latest")
-            record_truth_candidate({
-                "payload_hash": payload_hash,
-                "stage": "LIQUIDATION",
-                "status": "EXACT_CALL_PASS",
-                "to": tx.get("to", ""),
-                "from": from_addr or "",
-                "result": result.hex(),
-                "attempt": attempt,
-            })
-            return True, result.hex()
-        except Exception as exc:
-            detail = f"{type(exc).__name__}: {format_revert(exc)}"
-            if attempt < len(providers) and any(
-                marker in detail.lower()
-                for marker in ("429", "rate limit", "timeout", "tls", "ssl", "connection")
-            ):
-                continue
-            record_truth_candidate({
-                "payload_hash": payload_hash,
-                "stage": "LIQUIDATION",
-                "status": "EXACT_CALL_FAIL",
-                "to": tx.get("to", ""),
-                "from": from_addr or "",
-                "detail": detail,
-                "attempt": attempt,
-            })
-            return False, detail
+    try:
+        result = rpc_layer.w3.eth.call(call_tx, block_identifier="latest")
+        return True, result.hex()
+    except Exception as exc:
+        detail = f"{type(exc).__name__}: {format_revert(exc)}"
+        return False, detail

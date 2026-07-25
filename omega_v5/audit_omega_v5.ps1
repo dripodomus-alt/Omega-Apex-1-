@@ -144,13 +144,20 @@ log_header "3. SECURITY AUDIT - HIGH-ENTROPY SECRET SCAN"
 
 log_info "Scanning source tree for unencrypted API keys, private keys, and secrets..."
 $LEAK_FOUND = 0
-$# Exclude common build and dependency directories for Node.js/monorepo projects
+# Exclude common build and dependency directories for Node.js/monorepo projects
 $excludeDirs = @(".git", "node_modules", "target", "dist", ".venv", "cache", "out", ".next", "build")
 $excludeFiles = @("*.log", ".env.example", "Cargo.lock")
 
-foreach ($pattern in $SECRET_PATTERNS) {
-    $FOUND_LEAKS = Get-ChildItem -Path $ProjectDir -Recurse -Exclude $excludeDirs | Where-Object { $_.PSIsContainer -eq $false } | Select-String -Pattern $pattern -Exclude $excludeFiles -ErrorAction SilentlyContinue
+# Get a list of files to scan, correctly excluding specified directories to avoid performance issues.
+# This method avoids recursing into excluded directories from the start.
+$itemsToScan = Get-ChildItem -Path $ProjectDir -Force | Where-Object { -not ($_.PSIsContainer -and $_.Name -in $excludeDirs) }
+$filesToScan = $itemsToScan | ForEach-Object {
+    if ($_.PSIsContainer) { Get-ChildItem -Path $_.FullName -Recurse -File -ErrorAction SilentlyContinue }
+    else { $_ }
+}
 
+foreach ($pattern in $SECRET_PATTERNS) {
+    $FOUND_LEAKS = $filesToScan | Select-String -Pattern $pattern -Exclude $excludeFiles -ErrorAction SilentlyContinue
     if ($FOUND_LEAKS) {
         log_error "Potential secret/key exposure detected for pattern '$pattern':"
         $FOUND_LEAKS | ForEach-Object { Write-Host $_ -ForegroundColor Red }

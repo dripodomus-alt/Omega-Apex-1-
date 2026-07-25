@@ -17,7 +17,7 @@ New-Item -ItemType Directory -Force -Path $proofDir | Out-Null
 # --- Helper Functions ---
 function Write-Step { param([string]$Message) Write-Host "`n==> $Message" }
 function Assert-Ok { param([bool]$Condition, [string]$Message) if (!$Condition) { throw $Message } }
-function Require-Command { param([string]$Name, [string]$InstallHint) if (!(Get-Command $Name -ErrorAction SilentlyContinue)) { throw "$Name is not available on PATH. $InstallHint" } }
+function Assert-Command { param([string]$Name, [string]$InstallHint) if (!(Get-Command $Name -ErrorAction SilentlyContinue)) { throw "$Name is not available on PATH. $InstallHint" } }
 function Assert-File-Freshness {
     param([string]$FilePath, [int]$MaxAgeSeconds)
     $file = Get-Item $FilePath
@@ -32,12 +32,12 @@ function Invoke-JsonPost {
 
 # --- 1. Pre-flight Checks ---
 Write-Step "Step 1: Pre-flight System & Cloud Checks"
-Require-Command "python" "Install Python and ensure it is on PATH."
-Require-Command "pm2" "Install with: npm install -g pm2"
-Require-Command "node" "Install Node.js and ensure it is on PATH."
-Require-Command "anvil" "Install Foundry, then restart this shell."
-Require-Command "redis-server" "Install Redis or point PM2 at an existing Redis instance."
-Require-Command "gcloud" "Install Google Cloud SDK and authenticate with `gcloud auth login`."
+Assert-Command "python" "Install Python and ensure it is on PATH."
+Assert-Command "pm2" "Install with: npm install -g pm2"
+Assert-Command "node" "Install Node.js and ensure it is on PATH."
+Assert-Command "anvil" "Install Foundry, then restart this shell."
+Assert-Command "redis-server" "Install Redis or point PM2 at an existing Redis instance."
+Assert-Command "gcloud" "Install Google Cloud SDK and authenticate with `gcloud auth login`."
 Write-Host "Running live-mode prerequisite checks for potential autonomous activation..."
 # Try to get project ID from env var, then from gcloud config
 $effectiveProject = $env:GCP_PROJECT_ID
@@ -56,7 +56,7 @@ Write-Host "Verifying wallet configuration..."
 Assert-Ok ($env:EXECUTOR_WALLET -ne $null -and $env:EXECUTOR_WALLET -ne "") "EXECUTOR_WALLET environment variable is not set. This is required."
 Assert-Ok ($env:EXECUTOR_WALLET.Length -eq 42 -and $env:EXECUTOR_WALLET.StartsWith("0x")) "EXECUTOR_WALLET is not a valid Ethereum address."
 # The private key is essential for any potential live run.
-Assert-Ok ($env:EXECUTOR_PRIVATE_KEY -ne $null -and $env:EXECUTOR_PRIVATE_KEY -ne "") "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for any potential live run."
+Assert-Ok ($null -ne $env:EXECUTOR_PRIVATE_KEY -and $env:EXECUTOR_PRIVATE_KEY -ne "") "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for any potential live run."
 Write-Host "Wallet configuration checks passed." -ForegroundColor Green
 # --- 2. System Boot ---
 Write-Step "Step 2: Booting All PM2-Managed Services"
