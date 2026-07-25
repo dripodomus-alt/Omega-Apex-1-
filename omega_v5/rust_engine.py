@@ -127,3 +127,43 @@ def rust_pre_rank_routes(
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError):
         # Fail closed if the Rust pre-ranker isn't implemented or fails.
         return []
+
+
+def rust_find_and_rank_opportunities(
+    pools: dict[str, dict],
+    prices: dict[str, str],
+    *,
+    principal_usd: Decimal,
+    flash_source: str,
+    stager_max_token_paths: int,
+    stager_max_pre_ranked: int,
+    stager_max_quote_options_per_pair: int,
+    timeout_seconds: int = 60,
+) -> tuple[list[dict], dict]:
+    """
+    Offloads the entire discovery-to-ranking pipeline to the Rust engine.
+    This single call replaces multiple Python steps for maximum performance.
+    """
+    binary = assert_rust_engine_ready()
+    input_data = {
+        "pools": pools,
+        "prices": prices,
+        "principal_usd": str(principal_usd),
+        "flash_source": flash_source,
+        "stager_max_token_paths": stager_max_token_paths,
+        "stager_max_pre_ranked": stager_max_pre_ranked,
+        "stager_max_quote_options_per_pair": stager_max_quote_options_per_pair,
+    }
+    try:
+        proc = subprocess.run(
+            [str(binary), "find-and-rank"],
+            input=json.dumps(input_data, default=str),
+            text=True, capture_output=True, timeout=timeout_seconds, check=True,
+        )
+        payload = json.loads(proc.stdout)
+        ranked = payload.get("ranked_opportunities", [])
+        report = payload.get("discovery_report", {})
+        return ranked, report
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, json.JSONDecodeError, FileNotFoundError) as e:
+        error_report = {"error": f"Rust engine 'find-and-rank' failed: {type(e).__name__}", "detail": str(e)}
+        return [], error_report

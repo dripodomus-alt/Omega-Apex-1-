@@ -1,137 +1,111 @@
+#!/usr/bin/env python3
 # ==============================================================================
-# arbitrage.py  —  Arbitrage path graph + Bellman-Ford negative-cycle detection
-# Extracted from Cell 5 of notebooks/omega_v5.ipynb
-#
-# Graph representation
-# --------------------
-#   Nodes  : token symbols
-#   Edges  : (token_in, token_out, weight=-log(rate), pool_id, protocol)
-#
-# Canonical executable cycle shape
-# --------------------------------
-#   FLASHLOAN_ASSET
-#     -> BUY any mid-token on ANY invariant
-#     -> [hop any mid-token on ANY invariant]*
-#     -> SELL back to FLASHLOAN_ASSET on ANY invariant
-#     -> SURPLUS after repay
-#
-# Closed path form: [flash, mid_1, ..., mid_k, flash]
-#
-# Arbitrage condition
-# -------------------
-#   A cycle  t0 → t1 → … → tn → t0  is profitable when
-#       ∏ rate_i  >  1   ⟺   Σ (-log(rate_i))  <  0
-#   i.e. a *negative-weight cycle* in the transformed graph.
-#   Bellman-Ford detects these in O(V·E) time.
+# arbitrage.py -- Hybrid Python/Rust engine for arbitrage discovery.
 # ==============================================================================
 
-import math
-from typing import Dict, List, Tuple
+from __future__ import annotations
 
-from .cycle_shape import tag_cycle_dict
-from .liquidity_registry import PRODUCTION_ROUTING_SPINE
-from .rust_engine import rust_bellman_ford_cycles
+from decimal import Decimal, InvalidOperation
+from typing import Any
+
+from . import rust_engine
+from .flash_loan import FlashLoanParams, FlashSource, Profitability
+from .opportunity_ranker import LiveOpportunity
 
 
-SHAPE_FORMULA = (
-    "FLASHLOAN_ASSET -> BUY_ANY_MID(ANY_INVARIANT) "
-    "[-> ANY_MID(ANY_INVARIANT)]* -> SELL_TO_FLASH(ANY_INVARIANT) -> SURPLUS"
-)
+def _reconstruct_opportunities(opp_data_list: list[dict]) -> list[LiveOpportunity]:
+    """Deserializes a list of opportunity dicts from Rust back into LiveOpportunity objects."""
+    opps = []
+    for data in opp_data_list:
+        try:
+            prof_data = data.pop("profitability", {})
+            flash_data = prof_data.pop("flashloan", {})
+
+            # Convert all flashloan fields to Decimal where needed
+            for k, v in flash_data.items():
+                if k not in ["asset", "source"] and v is not None:
+                    flash_data[k] = Decimal(str(v))
+            if "source" in flash_data and flash_data["source"]:
+                flash_data["source"] = FlashSource(flash_data["source"])
+            flash_params = FlashLoanParams(**flash_data)
+
+            # Convert all other profitability fields to Decimal where possible
+            for k, v in prof_data.items():
+                if isinstance(v, (str, int, float)) and v is not None:
+                    try:
+                        prof_data[k] = Decimal(str(v))
+                    except InvalidOperation:
+                        pass  # Keep as is if not a valid decimal
+
+            profitability = Profitability(flashloan=flash_params, **prof_data)
+
+            data["path"] = tuple(data.get("path", []))
+            data["pool_sequence"] = tuple(data.get("pool_sequence", []))
+            data["protocol_seq"] = tuple(data.get("protocol_seq", []))
+            opp = LiveOpportunity(profitability=profitability, **data)
+            opps.append(opp)
+        except (InvalidOperation, TypeError, KeyError, ValueError) as e:
+            print(f"  [ARBITRAGE_ENGINE] Skipping malformed opportunity data from Rust: {e}")
+            continue
+    return opps
 
 
 class ArbitrageGraphEngine:
-    """Constructs and analyses a directed exchange-rate graph for arbitrage detection."""
+    """
+    Hybrid Python/Rust engine for arbitrage discovery.
+    Supports both legacy rate-based Bellman-Ford and the new unified
+    find-and-rank pipeline that offloads the entire process to Rust.
+    """
 
-    def __init__(self, rates: dict):
-        self.edges:  List[Tuple] = []   # (u, v, weight, pool_id, protocol, rate)
-        self.tokens: List[str]   = []
-        self._build_graph(rates)
+    def __init__(self, rates_or_pools: dict, prices: dict | None = None):
+        # The constructor is now flexible.
+        # If `prices` is provided, we are in the new "unified" mode.
+        # Otherwise, we are in the legacy "rates-only" mode.
+        if prices is not None:
+            self.mode = "unified"
+            self.pools = rates_or_pools
+            self.prices = prices
+            self.rates = {}  # Not used in this mode
+        else:
+            self.mode = "legacy"
+            self.rates = rates_or_pools
+            self.pools = {}
+            self.prices = {}
 
-    def _build_graph(self, rates: dict) -> None:
-        token_set = set()
-        for (tin, tout), pool_list in rates.items():
-            token_set.add(tin)
-            token_set.add(tout)
-            for entry in pool_list:
-                r = float(entry["rate"])
-                if r <= 0:
-                    continue
-                weight = -math.log(r)
-                self.edges.append((tin, tout, weight, entry["pool_id"], entry["protocol"], r))
-        self.tokens = sorted(token_set)
-        print(f"📐 Graph built: {len(self.tokens)} nodes (tokens), {len(self.edges)} edges (pool routes)")
+    def bellman_ford_all_sources(self) -> list[dict]:
+        """
+        Legacy method for Bellman-Ford cycle detection.
+        This method is maintained for compatibility with older parts of the codebase.
+        """
+        if self.mode != "legacy":
+            raise RuntimeError("bellman_ford_all_sources can only be called in legacy (rates-only) mode.")
+        return rust_engine.rust_bellman_ford_cycles(self.rates)
 
-    def bellman_ford_all_sources(self) -> List[dict]:
-        """Runs the Rust-mandatory Bellman-Ford engine on the graph."""
-        rates: dict[tuple[str, str], list[dict]] = {}
-        for token_in, token_out, _weight, pool_id, protocol, rate in self.edges:
-            rates.setdefault((token_in, token_out), []).append({
-                "pool_id": pool_id,
-                "protocol": protocol,
-                "rate": rate,
-            })
-        opportunities = rust_bellman_ford_cycles(rates)
-        tagged = [tag_cycle_dict(opp) for opp in opportunities]
-        print(f"🦀 Rust Bellman-Ford engine returned {len(tagged)} negative-cycle candidate(s)")
-        print(f"   Shape: {SHAPE_FORMULA}")
-        return tagged
+    def find_and_rank_opportunities(
+        self,
+        *,
+        principal_usd: Decimal,
+        flash_source: FlashSource,
+        stager_max_token_paths: int,
+        stager_max_pre_ranked: int,
+        stager_max_quote_options_per_pair: int,
+    ) -> tuple[list[LiveOpportunity], dict[str, Any]]:
+        """
+        Delegates the entire discovery and ranking process to the Rust engine.
+        This is the new, high-performance entry point.
+        """
+        if self.mode != "unified":
+            raise RuntimeError("find_and_rank_opportunities can only be called in unified (pools/prices) mode.")
 
+        ranked_dicts, report = rust_engine.rust_find_and_rank_opportunities(
+            pools=self.pools,
+            prices=self.prices,
+            principal_usd=principal_usd,
+            flash_source=flash_source.value,
+            stager_max_token_paths=stager_max_token_paths,
+            stager_max_pre_ranked=stager_max_pre_ranked,
+            stager_max_quote_options_per_pair=stager_max_quote_options_per_pair,
+        )
 
-def merge_cycle_sets(*cycle_sets: List[dict]) -> List[dict]:
-    merged: dict[tuple, dict] = {}
-    for cycles in cycle_sets:
-        for cycle in cycles:
-            tagged = tag_cycle_dict(cycle)
-            pools = tuple(
-                edge.get("pool_id", "")
-                for edge in tagged.get("edges", [])
-                if edge
-            )
-            key = (tuple(tagged.get("path", [])), pools)
-            existing = merged.get(key)
-            if existing is None or tagged.get("profit_pct", 0) > existing.get("profit_pct", 0):
-                merged[key] = tagged
-    return sorted(merged.values(), key=lambda x: x["profit_pct"], reverse=True)
-
-
-def print_arb_report(opportunities: List[dict], max_show: int = 20) -> None:
-    """Pretty-prints ranked arbitrage opportunities in expanded flash-cycle form."""
-    if not opportunities:
-        print("  ↳ No profitable arbitrage cycles detected in the current pool state.")
-        return
-
-    print(f"\n{'=' * 90}")
-    print(f"🔥 ARBITRAGE OPPORTUNITY REPORT  —  {len(opportunities)} unique cycle(s) detected")
-    print(f"   Shape: {SHAPE_FORMULA}")
-    print(f"{'=' * 90}")
-
-    for rank, opp in enumerate(opportunities[:max_show], 1):
-        tagged = tag_cycle_dict(opp) if "cycle_shape" not in opp else opp
-        path_str = " → ".join(tagged["path"])
-        hops     = len(tagged["path"]) - 1
-        profit   = tagged["profit_pct"]
-        cum      = tagged["cumulative_rate"]
-        flash    = tagged.get("flash_asset") or tagged["path"][0]
-        mids     = tagged.get("mid_tokens") or tagged["path"][1:-1]
-        tier     = "🟢 STRONG" if profit > 1.0 else ("🟡 MARGINAL" if profit > 0.1 else "🔴 MICRO")
-        print(f"\n  #{rank:>3}  {tier}")
-        print(f"       Path ({hops} hop{'s' if hops != 1 else ''}): {path_str}")
-        print(f"       Flash/Mids : FLASH({flash}) mids={mids}")
-        print(f"       Cumulative Rate: {cum:.8f}   Gross Profit: {profit:+.6f}%")
-        print(f"       Pool Sequence (any invariant per hop):")
-        for ep in tagged["edges"]:
-            if ep:
-                print(
-                    f"         ├─ [{ep.get('protocol', '?'):<12}] {ep.get('pool_id')}  "
-                    f"rate={float(ep.get('rate', 0)):.6f}  "
-                    f"{ep.get('token_in')}->{ep.get('token_out')}"
-                )
-
-    if len(opportunities) > max_show:
-        print(f"\n  … and {len(opportunities) - max_show} additional cycles (truncated).")
-
-    print(f"\n{'=' * 90}")
-    best = tag_cycle_dict(opportunities[0]) if opportunities else {}
-    print(f"  ★  Best gross opportunity: {best.get('profit_pct', 0):+.6f}% on path: {' → '.join(best.get('path', []))}")
-    print(f"     ⚠️  Note: gross profit does not account for gas costs, slippage, or MEV.")
-    print(f"{'=' * 90}\n")
+        ranked_opportunities = _reconstruct_opportunities(ranked_dicts)
+        return ranked_opportunities, report
