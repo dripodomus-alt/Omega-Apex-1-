@@ -221,10 +221,11 @@ def _score_closed_path(
     min_net_override: Optional[Decimal] = None,
     risk_buffer_override: Optional[Decimal] = None,
     strategy: str = "FLASH_MULTI_MID_CYCLE"
-) -> LiveOpportunity | None: # type: ignore
+) -> LiveOpportunity | None:
     current_block = getattr(rpc_layer, "BLOCK", 0)
+    opp_id_for_logs = f"{strategy}-{'-'.join(path)}-{'-'.join(pool_seq)}"
 
-    # This function was modified to only return `LiveOpportunity | None`.
+    # This function is designed to fail closed, returning `None` on any failure.
     # It no longer returns a tuple `(None, "reason")` on failure, which was
     # a critical bug as tuples are truthy.
 
@@ -233,6 +234,7 @@ def _score_closed_path(
             stage="RANK",
             status="PATH_MISALIGN",
             route=list(path),
+            opp_id=opp_id_for_logs,
             block=current_block,
         )
         return None
@@ -243,6 +245,7 @@ def _score_closed_path(
             discovery_block=disc_block,
             current_block=current_block,
             route=list(path),
+            opp_id=opp_id_for_logs,
             status="EXPIRED_AT_RANK",
         )
         return None
@@ -252,8 +255,13 @@ def _score_closed_path(
     except Exception:
         base_price = Decimal("0")
     if base_price <= 0 or principal_usd <= 0:
-        logger.debug("Path %s failed: invalid base price or principal", path)
+        logger.debug(
+            "Path %s rejected at pre-flight: invalid base price (%.4f) or principal (%.2f)",
+            path, base_price, principal_usd
+        )
         return None
+
+    # --- Step 1: Dynamic Sizing ---
 
     # --- ML Alpha Injection for Sizing ---
     try:
@@ -288,14 +296,14 @@ def _score_closed_path(
     except (ImportError, ModuleNotFoundError):
         pass  # Fail closed if ML module not present
 
-    # 1. Define the gross quote function for the sizer. It must return the slippage-adjusted USD value.
+    # Define the gross quote function for the sizer. It must return the slippage-adjusted USD value.
     def quote_function(p_usd: Decimal) -> Decimal:
         amt_in = p_usd / base_price
         gross_out_optimistic, _ = _quote_route_amount(path, pool_seq, pools, amt_in)
         min_out_units = amount_out_min_from_quote(gross_out_optimistic, slippage_bps)
         return min_out_units * base_price
 
-    # 2. Use the new dynamic sizer to find the optimal principal.
+    # Use the new dynamic sizer to find the optimal principal.
     # The sizer's internal profitability evaluation now correctly uses the slippage-adjusted amount via the quote_function.
     sizing_result = optimal_flash_for_route(
         pool_sequence=pool_seq, # type: ignore
@@ -315,11 +323,18 @@ def _score_closed_path(
     min_pool_tvl_usd = Decimal(str(getattr(sizing_result, "min_pool_tvl_usd", 0)))
 
     if not live_principal_eligible or selected_principal_usd <= 0:
+        logger.debug(
+            "Path %s rejected at sizing: not eligible or zero principal. Reason: %s",
+            path, getattr(sizing_result, "reason", "N/A")
+        )
         return None
 
-    # 3. Use the canonical `calculate_route_economics` function for the final, authoritative P&L.
+    # --- Step 2: Final Profitability Gate ---
+
+    # Use the canonical `calculate_route_economics` function for the final, authoritative P&L.
     # This correctly applies the impact penalty and separates the min_profit threshold from expenses.
     final_gross_out_usd_slip = quote_function(selected_principal_usd)
+
     base_prof = getattr(sizing_result, "profitability_at_selection", None)
     if not base_prof:
         base_prof = evaluate_profitability(
@@ -330,6 +345,7 @@ def _score_closed_path(
             path[0],
         )
     if not base_prof or not getattr(base_prof, "flashloan", None):
+        logger.debug("Path %s rejected: base profitability object could not be constructed.", path)
         return None
 
     economics = calculate_route_economics(
@@ -343,6 +359,8 @@ def _score_closed_path(
         risk_buffer_usd=risk_buffer_override or base_prof.risk_buffer_usd,
         minimum_profit_usd=min_net_override or live_min_net_profit_usd(),
     )
+
+    # --- Step 3: Construct Final Opportunity Object ---
 
     # The `economics` object is a `RouteEconomics` instance, but the `LiveOpportunity`
     # expects a `Profitability` instance. We'll construct a compliant `Profitability`
@@ -365,10 +383,16 @@ def _score_closed_path(
         final_profitability = SimpleNamespace(**final_profitability_fields)
 
     if not economics.passes_gate:
-        logger.debug(f"Route failed gate at optimal size: {path}")
+        logger.debug(
+            "Path %s rejected at final gate: net profit %.4f <= min profit %.4f. Reason: %s",
+            path, economics.economic_net_profit_usd, economics.minimum_profit_usd, economics.rejection_reason
+        )
         return None
 
-    # The gross_out_usd for the metadata should be the optimistic, pre-slippage value.
+    # --- Step 4: Final Metadata Enrichment ---
+
+    # The gross_out_usd for the LiveOpportunity metadata should be the optimistic,
+    # pre-slippage value for maximum transparency.
     # We can re-quote once at the selected optimal size to get this.
     optimal_amount_in = selected_principal_usd / base_price
     gross_out_optimistic_units, quote = _quote_route_amount(path, pool_seq, pools, optimal_amount_in)
@@ -404,6 +428,7 @@ def _score_closed_path(
         stage="RANK", # type: ignore
         status="SCORED",
         route=list(path),
+        opp_id=opp_id_for_logs,
         block=current_block,
     )
     return opp

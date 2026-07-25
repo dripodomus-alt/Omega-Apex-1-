@@ -17,7 +17,7 @@ from .config import CHAIN_ID, LIQUIDATION_EXECUTOR_ADDRESS, LIQUIDATION_MIN_NET_
 from .oracle_layer import token_price_usd
 from .accounting import usd_to_token_raw_floor
 from .paths import output_path
-from .payload_envelope import PayloadEnvelope, build_payload_envelope
+from .payload_envelope import PayloadEnvelope, build_liquidation_payload_envelope
 from .revert_decoder import format_revert
 from .rpc_layer import TOKEN_ADDRESSES, TOKEN_DECIMALS
 
@@ -191,8 +191,7 @@ def build_liquidation_payload_envelope(
     tx: dict[str, Any],
 ) -> PayloadEnvelope:
     packet_data = _packet_dict(packet)
-    return build_payload_envelope(
-        kind="LIQUIDATION",
+    return build_liquidation_payload_envelope(
         target=tx["to"],
         calldata=tx["data"],
         unique_salt=str(packet_data.get("blockNumber", "")),
@@ -269,4 +268,3 @@ def simulate_liquidation(tx: dict[str, Any], from_addr: str | None = None) -> tu
                 "attempt": attempt,
             })
             return False, detail
-

@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
@@ -15,11 +15,12 @@ from web3 import Web3
 from .config import CHAIN_ID
 
 
-ENVELOPE_DOMAINS = {
-    "ARBITRAGE_C1": "omega_v5.envelope.arbitrage_c1.v1",
-    "ARBITRAGE_C2": "omega_v5.envelope.arbitrage_c2.v1",
-    "LIQUIDATION": "omega_v5.envelope.liquidation.v1",
-}
+# Explicit domain strings for payload envelope construction.
+# These ensure that signatures for one type of transaction cannot be replayed
+# for another, providing a critical security boundary.
+DOMAIN_ARBITRAGE_C1 = "omega_v5.envelope.arbitrage_c1.v1"
+DOMAIN_ARBITRAGE_C2 = "omega_v5.envelope.arbitrage_c2.v1"
+DOMAIN_LIQUIDATION = "omega_v5.envelope.liquidation.v1"
 
 
 UNIFIED_ROUTE_SCHEMA_VERSION = "omega_v5.unified_invariant_route.v1"
@@ -105,35 +106,35 @@ class UnifiedRouteEnvelope:
         block_key: str | None = None,
         block: int | None = None,
     ) -> "UnifiedRouteEnvelope":
+        """
+        Efficiently returns a new envelope with an updated stage.
+
+        This method avoids full object reconstruction by using `dataclasses.replace`
+        and only copying the dictionaries that are being modified. This is
+        significantly more performant than the previous `as_dict()` and
+        re-initialization pattern.
+        """
         normalized = stage.lower()
         if normalized not in UNIFIED_ROUTE_STAGES:
             raise ValueError(f"unsupported unified route stage: {stage}")
-        data = self.as_dict()
-        data[normalized].update(_json_ready(params))
+
+        # Create a mutable copy of the target stage's data
+        current_stage_data = getattr(self, normalized)
+        new_stage_data = current_stage_data.copy()
+        new_stage_data.update(_json_ready(params))
+
+        # Prepare the changes for dataclasses.replace
+        changes = {normalized: new_stage_data}
         if status:
-            data["status"] = status
+            changes["status"] = status
         if block_key:
-            data["blocks"][block_key] = block
-        return UnifiedRouteEnvelope(
-            opp_id=data["opp_id"],
-            route=data["route"],
-            status=data["status"],
-            chain_id=data["chain_id"],
-            schema_version=data["schema_version"],
-            blocks=data["blocks"],
-            discovery=data["discovery"],
-            intake=data["intake"],
-            ranking=data["ranking"],
-            staging=data["staging"],
-            fees=data["fees"],
-            math=data["math"],
-            quote=data["quote"],
-            simulation=data["simulation"],
-            payload=data["payload"],
-            submission=data["submission"],
-            settlement=data["settlement"],
-            trace=data["trace"],
-        )
+            # Create a mutable copy of the blocks dictionary to update it
+            new_blocks = self.blocks.copy()
+            new_blocks[block_key] = block
+            changes["blocks"] = new_blocks
+
+        # Return a new, updated, immutable instance
+        return replace(self, **changes)
 
 
 def build_unified_route_envelope(
@@ -391,23 +392,27 @@ def payload_selector(calldata: str) -> str:
     return "0x" + data[:4].hex()
 
 
-def build_payload_envelope(
+def _build_generic_payload_envelope(
     *,
     kind: str,
+    domain: str,
     target: str,
     calldata: str,
     metadata: dict[str, Any] | None = None,
     parent_envelope_id: str = "",
     unique_salt: str = "",
 ) -> PayloadEnvelope:
-    domain = ENVELOPE_DOMAINS.get(kind)
-    if not domain:
-        raise ValueError(f"unsupported payload envelope kind: {kind}")
+    """
+    Internal helper to construct a domain-separated payload envelope.
+    This function is the single source of truth for envelope ID generation.
+    """
     if not Web3.is_address(target):
         raise ValueError(f"invalid payload target: {target}")
     calldata_hash = Web3.keccak(_calldata_bytes(calldata)).hex()
     selector = payload_selector(calldata)
     created_ns = time.time_ns()
+    # The seed for the envelope ID is a pipe-separated string of all critical,
+    # domain-separating fields. This ensures uniqueness and prevents replay.
     seed = "|".join([
         domain,
         str(CHAIN_ID),
@@ -430,4 +435,65 @@ def build_payload_envelope(
         parent_envelope_id=parent_envelope_id,
         created_ns=created_ns,
         metadata=metadata or {},
+    )
+
+
+def build_c1_arbitrage_payload_envelope(
+    *,
+    target: str,
+    calldata: str,
+    metadata: dict[str, Any] | None = None,
+    unique_salt: str = "",
+) -> PayloadEnvelope:
+    """Builds a domain-separated payload envelope for a C1 arbitrage transaction."""
+    return _build_generic_payload_envelope(
+        kind="ARBITRAGE_C1",
+        domain=DOMAIN_ARBITRAGE_C1,
+        target=target,
+        calldata=calldata,
+        metadata=metadata,
+        unique_salt=unique_salt,
+    )
+
+
+def build_c2_arbitrage_payload_envelope(
+    *,
+    target: str,
+    calldata: str,
+    parent_c1_envelope_id: str,
+    metadata: dict[str, Any] | None = None,
+    unique_salt: str = "",
+) -> PayloadEnvelope:
+    """
+    Builds a domain-separated payload envelope for a C2 arbitrage transaction.
+    The C2 envelope is explicitly linked to its parent C1 envelope.
+    """
+    if not parent_c1_envelope_id:
+        raise ValueError("C2 arbitrage payloads must be linked to a parent C1 envelope ID.")
+    return _build_generic_payload_envelope(
+        kind="ARBITRAGE_C2",
+        domain=DOMAIN_ARBITRAGE_C2,
+        target=target,
+        calldata=calldata,
+        parent_envelope_id=parent_c1_envelope_id,
+        metadata=metadata,
+        unique_salt=unique_salt,
+    )
+
+
+def build_liquidation_payload_envelope(
+    *,
+    target: str,
+    calldata: str,
+    metadata: dict[str, Any] | None = None,
+    unique_salt: str = "",
+) -> PayloadEnvelope:
+    """Builds a domain-separated payload envelope for a liquidation transaction."""
+    return _build_generic_payload_envelope(
+        kind="LIQUIDATION",
+        domain=DOMAIN_LIQUIDATION,
+        target=target,
+        calldata=calldata,
+        metadata=metadata,
+        unique_salt=unique_salt,
     )

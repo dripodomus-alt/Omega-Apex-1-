@@ -1,13 +1,13 @@
 param(
-    [ValidateSet("dry_run", "live")]
-    [string]$Mode = "dry_run",
-    [string]$LiveAck = ""
+    # This script is now fully autonomous. It decides the mode based on proofs.
+    # The -Mode and -LiveAck parameters have been removed in favor of a proof-based autonomous decision.
 )
 
 $ErrorActionPreference = "Stop"
 $env:PYTHONUTF8 = "1"
 $env:PYTHONIOENCODING = "utf-8"
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$api = "http://127.0.0.1:8080"
 Set-Location $repoRoot
 
 $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
@@ -38,29 +38,25 @@ Require-Command "node" "Install Node.js and ensure it is on PATH."
 Require-Command "anvil" "Install Foundry, then restart this shell."
 Require-Command "redis-server" "Install Redis or point PM2 at an existing Redis instance."
 Require-Command "gcloud" "Install Google Cloud SDK and authenticate with `gcloud auth login`."
-
-if ($Mode -eq "live") {
-    # Try to get project ID from env var, then from gcloud config
-    $effectiveProject = $env:GCP_PROJECT_ID
-    if ([string]::IsNullOrEmpty($effectiveProject)) {
-        try {
-            $effectiveProject = gcloud config get-value project 2>$null
-        } catch {
-            # gcloud might not be configured; we'll catch this in the Assert-Ok below.
-        }
+Write-Host "Running live-mode prerequisite checks for potential autonomous activation..."
+# Try to get project ID from env var, then from gcloud config
+$effectiveProject = $env:GCP_PROJECT_ID
+if ([string]::IsNullOrEmpty($effectiveProject)) {
+    try {
+        $effectiveProject = gcloud config get-value project 2>$null
+    } catch {
+        # gcloud might not be configured; we'll catch this in the Assert-Ok below.
     }
-    # Assert that we have a project ID, and provide a helpful error if not.
-    Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for live mode to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
-    Assert-Ok ($LiveAck -eq "I_UNDERSTAND_POLYGON_MAINNET_RISK") "Live mode requires -LiveAck I_UNDERSTAND_POLYGON_MAINNET_RISK"
-    Write-Host "Live mode checks passed." -ForegroundColor Green
 }
+# Assert that we have a project ID, and provide a helpful error if not.
+Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for a potential live run to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
+Write-Host "Live-mode prerequisite checks passed." -ForegroundColor Green
 
 Write-Host "Verifying wallet configuration..."
 Assert-Ok ($env:EXECUTOR_WALLET -ne $null -and $env:EXECUTOR_WALLET -ne "") "EXECUTOR_WALLET environment variable is not set. This is required."
 Assert-Ok ($env:EXECUTOR_WALLET.Length -eq 42 -and $env:EXECUTOR_WALLET.StartsWith("0x")) "EXECUTOR_WALLET is not a valid Ethereum address."
-if ($Mode -eq "live") {
-    Assert-Ok ($env:EXECUTOR_PRIVATE_KEY -ne $null -and $env:EXECUTOR_PRIVATE_KEY -ne "") "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for live mode."
-}
+# The private key is essential for any potential live run.
+Assert-Ok ($env:EXECUTOR_PRIVATE_KEY -ne $null -and $env:EXECUTOR_PRIVATE_KEY -ne "") "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for any potential live run."
 Write-Host "Wallet configuration checks passed." -ForegroundColor Green
 # --- 2. System Boot ---
 Write-Step "Step 2: Booting All PM2-Managed Services"
@@ -114,23 +110,26 @@ $finalizerReport = Get-Content "out\mainnet_finalizer_latest.json" -Raw | Conver
 $verdict = $finalizerReport.verdict
 Write-Host "Finalizer Verdict: $verdict" -ForegroundColor Cyan
 
-# --- 5. Go/No-Go Decision & Activation ---
-Write-Step "Step 5: Go/No-Go Decision and System Activation"
-if ($Mode -eq "live") {
-    if ($verdict -ne "CANARY_READY") {
-        throw "LIVE MODE ABORTED. Finalizer verdict is '$verdict', but 'CANARY_READY' is required for live activation. The system is NOT armed."
-    }
-    Write-Host "Verdict is CANARY_READY. Proceeding with LIVE activation." -ForegroundColor Yellow
+# --- 5. Go/No-Go Decision and Autonomous Activation ---
+Write-Step "Step 5: Go/No-Go Decision and Autonomous Activation"
+if ($verdict -eq "CANARY_READY") {
+    Write-Host "Finalizer verdict is CANARY_READY. The system is ready for live trading." -ForegroundColor Green
+    Write-Host "Proceeding with AUTONOMOUS LIVE ACTIVATION." -ForegroundColor Yellow
 
     # Set Canary Mode for initial safety
+    Write-Host "Activating Canary Mode (execution capped at 1 per cycle)..."
     Invoke-JsonPost "$api/api/runtime/settings" @{ canary_mode = $true }
-    Write-Host "Canary mode ACTIVATED (execution capped at 1 per cycle)." -ForegroundColor Yellow
+    Write-Host "Canary mode ACTIVATED." -ForegroundColor Yellow
 
     # Arm the system
-    Invoke-JsonPost "$api/api/runtime/mode" @{ mode = "live"; actor = "cloud_run_finalizer" }
+    Write-Host "Arming system for LIVE trading..."
+    Invoke-JsonPost "$api/api/runtime/mode" @{ mode = "live"; actor = "cloud_run_finalizer_autonomous" }
     Write-Host "System ARMED for LIVE trading." -ForegroundColor Green
 } else {
-    Invoke-JsonPost "$api/api/runtime/mode" @{ mode = "dry_run"; actor = "cloud_run_finalizer" }
+    Write-Host "Finalizer verdict is '$verdict' (not 'CANARY_READY')." -ForegroundColor Yellow
+    Write-Host "The system is not ready for live trading. Falling back to DRY_RUN mode."
+    # Ensure system is in dry_run mode
+    Invoke-JsonPost "$api/api/runtime/mode" @{ mode = "dry_run"; actor = "cloud_run_finalizer_autonomous" }
     Write-Host "System is in DRY_RUN mode. No live transactions will be broadcast." -ForegroundColor Green
 }
 

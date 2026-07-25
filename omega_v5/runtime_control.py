@@ -162,14 +162,25 @@ def _validated(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def get_runtime_state() -> dict[str, Any]:
-    state = _read_redis_state() or _read_file_state() or default_state()
-    state = _validated(state)
-    _write_file_state(state)
-    _write_redis_state(state)
-    return state
+    """
+    Gets the current runtime state with a Redis-first strategy.
+
+    This is a read-only operation. It reads from Redis if available, otherwise
+    falls back to the local file, and finally to environment defaults. It does
+    not write or sync state back to the stores.
+    """
+    state = _read_redis_state()
+    if state is None:
+        state = _read_file_state()
+
+    if state is None:
+        state = default_state()
+
+    return _validated(state)
 
 
 def set_runtime_mode(mode: str, *, actor: str = "api") -> dict[str, Any]:
+    """Sets the runtime mode and persists it to both Redis and the file cache."""
     normalized = normalize_mode(mode)
     if normalized not in VALID_MODES:
         raise ValueError(f"unsupported runtime mode: {mode}")
@@ -187,6 +198,7 @@ def set_runtime_mode(mode: str, *, actor: str = "api") -> dict[str, Any]:
 
 
 def update_runtime_settings(settings: dict[str, Any], *, actor: str = "api") -> dict[str, Any]:
+    """Updates runtime settings and persists them to both Redis and the file cache."""
     state = get_runtime_state()
     current = dict(state.get("settings", {}))
     allowed = {
