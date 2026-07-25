@@ -72,6 +72,28 @@ class LiquidationDiscoveryCard(BaseModel):
         json_encoders = {Decimal: lambda v: f"{v:.2f}"}
 
 
+class TradeExecutionRequest(BaseModel):
+    """Payload for submitting a trade for execution from the UI."""
+    route_signature: str = Field(..., description="The unique signature of the route to execute, as provided by the discovery card.")
+    principal_usd: Decimal = Field(..., description="The principal amount in USD for the flash loan. Can be the optimal size or a user-defined value.")
+    expected_net_profit_usd: Decimal = Field(..., description="The net profit the UI expects. Used for a final backend sanity check.")
+    actor: str = Field("UI_MANUAL_EXECUTION", description="Identifier for who or what initiated the request, for auditing purposes.")
+
+    class Config:
+        json_encoders = {Decimal: lambda v: f"{v:.2f}"}
+
+
+class ExecutionResponse(BaseModel):
+    """Standard response for an action/execution request."""
+    status: str = Field(..., description="The status of the request (e.g., 'submitted', 'rejected').")
+    message: str = Field(..., description="A human-readable message providing details about the outcome.")
+    tx_hash: Optional[str] = Field(None, description="The transaction hash if the trade was successfully broadcast.")
+
+
+
+
+
+
 # ==============================================================================
 # 2. API Endpoints
 # These endpoints will be called by the frontend to fetch data for the dashboard.
@@ -125,3 +147,46 @@ async def get_liquidation_discovery_cards(
         LiquidationDiscoveryCard(borrower="0x...baddebt", health_factor=Decimal("0.94"), debt_asset="USDC", collateral_asset="WETH", net_profit_usd=Decimal("125.30"), exit_route=["WETH", "USDC"]),
     ]
     return mock_liquidations
+
+
+@router.post("/dashboard/execute-trade", response_model=ExecutionResponse, tags=["Dashboard Actions"])
+async def execute_trade_from_ui(
+    request: TradeExecutionRequest,
+    engine = Depends(get_discovery_engine_instance)
+):
+    """
+    Receives a request from the UI to execute a specific arbitrage trade.
+    This endpoint finds the opportunity, performs final validation, and submits
+    it to the execution pipeline (the "truth gate").
+    """
+    # In a real implementation, this would be the logic:
+    # 1. Find the opportunity in the engine's current ranked list.
+    #    opportunity = engine.find_opportunity_by_signature(request.route_signature)
+    #    if not opportunity:
+    #        return ExecutionResponse(status="rejected", message="Route not found or expired.")
+    #
+    # 2. Update the opportunity with the user-specified principal.
+    #    opportunity.profitability.flashloan.principal_usd = request.principal_usd
+    #    # ... re-evaluate profitability with the new size ...
+    #
+    # 3. Sanity check the expected profit.
+    #    if abs(opportunity.profitability.net_profit_usd - request.expected_net_profit_usd) > SOME_TOLERANCE:
+    #        return ExecutionResponse(status="rejected", message="Profitability mismatch. Market may have shifted.")
+    #
+    # 4. Submit to the execution pipeline.
+    #    execution_result = await engine.submit_for_execution(opportunity)
+    #    return ExecutionResponse(**execution_result.dict())
+
+    # Placeholder response for demonstration:
+    print(f"Received execution request for route: {request.route_signature} with size ${request.principal_usd:,.2f}")
+    if "UniV3" in request.route_signature:
+        return ExecutionResponse(
+            status="submitted",
+            message=f"Trade for route {request.route_signature} submitted to execution pipeline.",
+            tx_hash="0x" + "a" * 64 # Mock transaction hash
+        )
+    else:
+        return ExecutionResponse(
+            status="rejected",
+            message="Route rejected by pre-flight simulation (mock). Market conditions may have changed."
+        )
