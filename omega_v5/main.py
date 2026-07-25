@@ -681,13 +681,5 @@ def main() -> None:
     )
 
 
-def _run_liquidation_scan(live_pools: dict) -> list:
-    try:
-        return AaveLiquidationScanner(live_pools).scan()
-    except Exception as exc:
-        print(f"   liquidation_lane=BLOCKED detail={type(exc).__name__}: {exc}")
-        return []
-
-
 if __name__ == "__main__":
     main()

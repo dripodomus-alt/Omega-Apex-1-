@@ -40,7 +40,17 @@ Require-Command "redis-server" "Install Redis or point PM2 at an existing Redis 
 Require-Command "gcloud" "Install Google Cloud SDK and authenticate with `gcloud auth login`."
 
 if ($Mode -eq "live") {
-    Assert-Ok ($env:GCP_PROJECT_ID -ne $null -and $env:GCP_PROJECT_ID -ne "") "GCP_PROJECT_ID environment variable must be set for live mode to fetch secrets."
+    # Try to get project ID from env var, then from gcloud config
+    $effectiveProject = $env:GCP_PROJECT_ID
+    if ([string]::IsNullOrEmpty($effectiveProject)) {
+        try {
+            $effectiveProject = gcloud config get-value project 2>$null
+        } catch {
+            # gcloud might not be configured; we'll catch this in the Assert-Ok below.
+        }
+    }
+    # Assert that we have a project ID, and provide a helpful error if not.
+    Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for live mode to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
     Assert-Ok ($LiveAck -eq "I_UNDERSTAND_POLYGON_MAINNET_RISK") "Live mode requires -LiveAck I_UNDERSTAND_POLYGON_MAINNET_RISK"
     Write-Host "Live mode checks passed." -ForegroundColor Green
 }
@@ -56,10 +66,24 @@ Write-Host "Wallet configuration checks passed." -ForegroundColor Green
 Write-Step "Step 2: Booting All PM2-Managed Services"
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pm2\boot_all.ps1 -Reset | Tee-Object -FilePath (Join-Path $proofDir "pm2_boot.txt")
 Assert-Ok ($LASTEXITCODE -eq 0) "PM2 boot FAILED. See $proofDir\pm2_boot.txt"
-Start-Sleep -Seconds 5 # Allow services to initialize
-$api = "http://127.0.0.1:8080"
-$health = Invoke-RestMethod "$api/health"
-Assert-Ok ([bool]$health.ok) "API health check failed after boot."
+$apiHealthcheckTimeoutSec = 30
+$healthCheckStart = Get-Date
+$apiHealthy = $false
+
+Write-Host "Waiting for API to become healthy at $api/health (Timeout: ${apiHealthcheckTimeoutSec}s)..."
+while (((Get-Date) - $healthCheckStart).TotalSeconds -lt $apiHealthcheckTimeoutSec) {
+    try {
+        $response = Invoke-RestMethod -Uri "$api/health" -Method Get -TimeoutSec 2
+        if ($response.ok) {
+            $apiHealthy = $true
+            break
+        }
+    } catch {
+        Write-Host "." -NoNewline
+        Start-Sleep -Seconds 2
+    }
+}
+Assert-Ok ($apiHealthy) "API health check failed after boot. It did not become healthy within $apiHealthcheckTimeoutSec seconds."
 Write-Host "All services are online." -ForegroundColor Green
 
 # --- 3. Verification Proofs ---
