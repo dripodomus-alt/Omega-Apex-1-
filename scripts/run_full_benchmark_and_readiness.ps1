@@ -281,7 +281,7 @@ if (-not $SkipTests) {
     Write-Substep "Running pytest..."
     try {
         # Pytest exit codes: 0=OK, 1=failures, 5=no tests found
-        $testOutput = & pytest --tb=short -q 2>&1 | Out-String
+        $testOutput = & pytest --timeout=60 --tb=short -q 2>&1 | Out-String
         # Can't show granular progress, but we can show it's running.
         Write-Progress -Id 2 -ParentId 1 -Activity "Pytest Execution" -Status "Waiting for test results..."
         if ($LASTEXITCODE -eq 0) {
