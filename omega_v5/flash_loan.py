@@ -24,7 +24,7 @@ from dataclasses import asdict, dataclass, field, replace
 from decimal import Decimal
 from enum import Enum
 from decimal import InvalidOperation
-from typing import Any, Optional
+from typing import Any, Optional, Callable
 
 from .accounting import GasCost, gas_cost_from_gwei
 from .config import (
@@ -673,4 +673,126 @@ def stable_profitability_overrides() -> dict[str, Decimal]:
     return {
         "min_net_profit_usd_override": STABLE_MIN_NET_PROFIT_USD,
         "risk_buffer_usd_override": STABLE_RISK_BUFFER_USD,
+    }
+
+
+# ==============================================================================
+# build_executable_route_economics - Authoritative single source for full P&L
+# Uses sizing + full profitability engine with dimensional accuracy.
+# Reduces duplication and boundary crossings by being the last word on economics.
+# ==============================================================================
+
+def build_executable_route_economics(
+    *,
+    path: tuple[str, ...],
+    pool_sequence: tuple[str, ...],
+    pools: dict,
+    principal_usd: Decimal,
+    flash_source: FlashSource = FlashSource.BALANCER,
+    slippage_bps: Decimal = Decimal("15"),
+    quote_fn: Optional[Callable[[Decimal], Decimal]] = None,
+    base_price: Optional[Decimal] = None,
+) -> dict:
+    """
+    Authoritative economics for a route.
+    - Applies optimal flash sizing (TVL cap + peak delta)
+    - Uses full evaluate_profitability + calculate_route_economics
+    - Returns complete profile ready for payload / truth / execution
+    - Dimensional: USD, raw, with sources
+    """
+    from .sizing import optimal_flash_for_route, estimate_route_tvl_usd
+    from .oracle_layer import token_price_usd
+
+    if not path or not pool_sequence:
+        return {"passes_gate": False, "reason": "invalid_path"}
+
+    base_asset = path[0]
+    try:
+        if base_price is None:
+            base_price = Decimal(str(token_price_usd(base_asset)))
+        if base_price <= 0:
+            return {"passes_gate": False, "reason": "no_base_price"}
+    except Exception:
+        return {"passes_gate": False, "reason": "price_unavailable"}
+
+    # Use provided quote or default to executable quote
+    if quote_fn is None:
+        from .executable_quotes import quote_route_for_executor
+        from .opportunity_ranker import amount_out_min_from_quote
+
+        def default_quote(p_usd: Decimal) -> Decimal:
+            amt_in = p_usd / base_price
+            gross_out, _ = quote_route_for_executor(list(path), list(pool_sequence), pools, amt_in)
+            min_out = amount_out_min_from_quote(Decimal(str(gross_out)), slippage_bps)
+            return min_out * base_price
+        quote_fn = default_quote
+
+    # Get TVL snapshot for cap
+    min_tvl = estimate_route_tvl_usd(pool_sequence, pools) or Decimal("0")
+
+    # Run optimal sizing (uses quote_fn for accurate curve)
+    sizing = optimal_flash_for_route(
+        pool_sequence=pool_sequence,
+        pools=pools,
+        base_asset=base_asset,
+        hops=len(path) - 1,
+        flash_source=flash_source,
+        requested_principal_usd=principal_usd,
+        quote_fn=quote_fn,
+        base_usd_price=base_price,
+    )
+
+    selected_principal = Decimal(str(
+        getattr(sizing, "selected_principal_usd", None) or
+        getattr(sizing, "injection_usd", principal_usd)
+    ))
+    if selected_principal <= 0:
+        selected_principal = principal_usd
+
+    # Get gross at selected size (slippage adjusted)
+    gross_out_usd = quote_fn(selected_principal)
+
+    # Full profitability using the engine
+    prof = evaluate_profitability(
+        gross_amount_out_usd=gross_out_usd,
+        principal_usd=selected_principal,
+        hops=len(path) - 1,
+        flash_source=flash_source,
+        asset=base_asset,
+    )
+
+    # Authoritative economics object
+    economics = calculate_route_economics(
+        flash_principal_usd=selected_principal,
+        gross_sell_out_usd=gross_out_usd,
+        min_tvl_usd=min_tvl,
+        flash_fee_usd=prof.flashloan.fee_usd if prof.flashloan else Decimal("0"),
+        gas_cost_usd=prof.gas_cost_usd,
+        relay_tip_usd=prof.relay_tip_usd,
+        builder_fee_usd=Decimal("0"),
+        protocol_overhead_usd=prof.protocol_overhead_usd,
+        risk_buffer_usd=prof.risk_buffer_usd,
+        minimum_profit_usd=live_min_net_profit_usd(),
+    )
+
+    # Complete profile
+    return {
+        "path": path,
+        "pool_sequence": pool_sequence,
+        "selected_principal_usd": str(selected_principal),
+        "gross_out_usd": str(gross_out_usd),
+        "flash_fee_usd": str(economics.flash_fee_usd),
+        "gas_cost_usd": str(economics.gas_cost_usd),
+        "relay_tip_usd": str(economics.relay_tip_usd),
+        "impact_penalty_usd": str(economics.impact_penalty_usd),
+        "net_profit_usd": str(economics.economic_net_profit_usd),
+        "passes_gate": economics.passes_gate,
+        "min_tvl_usd": str(min_tvl),
+        "sizing": getattr(sizing, "as_payload_fields", lambda: {})(),
+        "profitability": {
+            "raw_delta_usd": str(prof.raw_delta_usd),
+            "total_expenses_usd": str(prof.total_expenses_usd),
+            "expense_breakdown": prof.expense_breakdown,
+        },
+        "source": "build_executable_route_economics",
     }

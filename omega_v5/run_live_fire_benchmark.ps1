@@ -42,7 +42,6 @@ param(
     [hashtable]$SignerArgs = @{},
 
     [int]$Cycles = 1,
-    [int]$MaxParallelTx = 1,
     [int]$MaxParallelTx = 10,
     [double]$MinProfitUSD = 5.0,
     [int]$TxConfirmationTimeoutSec = 120

@@ -45,6 +45,7 @@ from .flash_loan import ( # type: ignore
     calculate_route_economics,
     evaluate_profitability,
     live_min_net_profit_usd,
+    build_executable_route_economics,
 )
 from .oracle_layer import PriceUnavailable, token_price_usd
 from .pool_quality import route_quality_metadata, route_quality_passed
@@ -301,171 +302,72 @@ def _score_closed_path(
         )
         return None
 
-    # --- Step 1: Dynamic Sizing ---
-
-    # --- ML Alpha Injection for Sizing ---
-    try:
-        from .ml_alpha_ranker import predict_optimal_size_bin
-
-        # 1. Get min TVL for the route
-        min_tvl = estimate_route_tvl_usd(pool_seq, pools)
-
-        # 2. Get a preliminary quote and profitability at the initial principal
-        prelim_amount_in = principal_usd / base_price
-        prelim_gross_out_units, _ = _quote_route_amount(path, pool_seq, pools, prelim_amount_in)
-        prelim_gross_out_usd = prelim_gross_out_units * base_price
-        if prelim_gross_out_usd <= principal_usd:
-            return None
-        prelim_profitability = evaluate_profitability(
-            prelim_gross_out_usd, principal_usd, len(path) - 1, flash_source, path[0]
-        )
-        if not getattr(prelim_profitability, "passes_gate", False):
-            return None
-
-        # 3. Create a preliminary opportunity object to feed to the size predictor
-        prelim_opp = LiveOpportunity(
-            path=path,
-            pool_sequence=pool_seq,
-            protocol_seq=proto_seq,
-            profitability=prelim_profitability,
-            metadata={"sizing": {"min_pool_tvl_usd": str(min_tvl)}},
-        )
-        
-        # 4. Use the ML model to predict a better starting principal
-        principal_usd = predict_optimal_size_bin(prelim_opp)
-    except (ImportError, ModuleNotFoundError):
-        pass  # Fail closed if ML module not present
-
-    # Define the gross quote function for the sizer. It must return the slippage-adjusted USD value.
-    def quote_function(p_usd: Decimal) -> Decimal:
-        amt_in = p_usd / base_price
-        gross_out_optimistic, _ = _quote_route_amount(path, pool_seq, pools, amt_in)
-        min_out_units = amount_out_min_from_quote(gross_out_optimistic, slippage_bps)
-        return min_out_units * base_price
-
-    # Use the new dynamic sizer to find the optimal principal.
-    # The sizer's internal profitability evaluation now correctly uses the slippage-adjusted amount via the quote_function.
-    sizing_result = optimal_flash_for_route(
-        pool_sequence=pool_seq, # type: ignore
+    # Use the authoritative build_executable_route_economics early.
+    # This reduces duplication, trusts the central sizing + profitability,
+    # and makes the Python coordinator thinner.
+    econ = build_executable_route_economics(
+        path=path,
+        pool_sequence=pool_seq,
         pools=pools,
-        base_asset=path[0],
-        hops=len(path) - 1,
+        principal_usd=principal_usd,
         flash_source=flash_source,
-        requested_principal_usd=principal_usd,
-        quote_fn=quote_function,
-        base_usd_price=base_price,
-    )
-    selected_principal_usd = Decimal(str(
-        getattr(sizing_result, "selected_principal_usd", None)
-        or getattr(sizing_result, "injection_usd", 0)
-    ))
-    live_principal_eligible = bool(getattr(sizing_result, "live_principal_eligible", False))
-    min_pool_tvl_usd = Decimal(str(getattr(sizing_result, "min_pool_tvl_usd", 0)))
-
-    if not live_principal_eligible or selected_principal_usd <= 0:
-        logger.debug(
-            "Path %s rejected at sizing: not eligible or zero principal. Reason: %s",
-            path, getattr(sizing_result, "reason", "N/A")
-        )
-        return None
-
-    # --- Step 2: Final Profitability Gate ---
-
-    # Use the canonical `calculate_route_economics` function for the final, authoritative P&L.
-    # This correctly applies the impact penalty and separates the min_profit threshold from expenses.
-    final_gross_out_usd_slip = quote_function(selected_principal_usd)
-
-    base_prof = getattr(sizing_result, "profitability_at_selection", None)
-    if not base_prof:
-        base_prof = evaluate_profitability(
-            final_gross_out_usd_slip,
-            selected_principal_usd,
-            len(path) - 1,
-            flash_source,
-            path[0],
-        )
-    if not base_prof or not getattr(base_prof, "flashloan", None):
-        logger.debug("Path %s rejected: base profitability object could not be constructed.", path)
-        return None
-
-    economics = calculate_route_economics(
-        flash_principal_usd=selected_principal_usd,
-        gross_sell_out_usd=final_gross_out_usd_slip,
-        min_tvl_usd=min_pool_tvl_usd,
-        flash_fee_usd=base_prof.flashloan.fee_usd,
-        gas_cost_usd=base_prof.gas_cost_usd,
-        relay_tip_usd=base_prof.relay_tip_usd,
-        builder_fee_usd=Decimal("0"), # Not yet modeled in this part of the pipeline
-        risk_buffer_usd=risk_buffer_override or base_prof.risk_buffer_usd,
-        minimum_profit_usd=min_net_override or live_min_net_profit_usd(),
+        slippage_bps=slippage_bps,
     )
 
-    # --- Step 3: Construct Final Opportunity Object ---
-
-    # The `economics` object is a `RouteEconomics` instance, but the `LiveOpportunity`
-    # expects a `Profitability` instance. We'll construct a compliant `Profitability`
-    # object using the final computed net profit, while preserving the detailed
-    # flashloan and gas info from the sizer's `base_prof`.
-    if is_dataclass(base_prof):
-        final_profitability = replace(
-            base_prof,
-            net_profit_usd=economics.economic_net_profit_usd,
-            passes_gate=economics.passes_gate,
-            expense_breakdown=asdict(economics),
-        )
-    else:
-        final_profitability_fields = dict(vars(base_prof))
-        final_profitability_fields.update({
-            "net_profit_usd": economics.economic_net_profit_usd,
-            "passes_gate": economics.passes_gate,
-            "expense_breakdown": asdict(economics),
-        })
-        final_profitability = SimpleNamespace(**final_profitability_fields)
-
-    if not economics.passes_gate:
+    if not econ.get("passes_gate", False):
         logger.debug(
-            "Path %s rejected at final gate: net profit %.4f <= min profit %.4f. Reason: %s",
-            path, economics.economic_net_profit_usd, economics.minimum_profit_usd, economics.rejection_reason
+            "Path %s rejected at authoritative economics: %s",
+            path, econ.get("reason", "gate_failed")
         )
         return None
 
-    # --- Step 4: Final Metadata Enrichment ---
+    selected_principal_usd = Decimal(str(econ.get("selected_principal_usd", principal_usd)))
+    gross_out_usd = Decimal(str(econ.get("gross_out_usd", "0")))
 
-    # The gross_out_usd for the LiveOpportunity metadata should be the optimistic,
-    # pre-slippage value for maximum transparency.
-    # We can re-quote once at the selected optimal size to get this.
-    optimal_amount_in = selected_principal_usd / base_price
-    gross_out_optimistic_units, quote = _quote_route_amount(path, pool_seq, pools, optimal_amount_in)
-    gross_out_optimistic_usd = gross_out_optimistic_units * base_price
+    # Build minimal profitability from the authoritative result
+    flash_params = FlashLoanParams(
+        source=flash_source,
+        asset=path[0],
+        principal_usd=selected_principal_usd,
+        fee_bps=Decimal("0"),
+        fee_usd=Decimal(str(econ.get("flash_fee_usd", "0"))),
+        repayment_usd=selected_principal_usd + Decimal(str(econ.get("flash_fee_usd", "0"))),
+    )
+    final_profitability = Profitability(
+        gross_amount_out=gross_out_usd,
+        flashloan=flash_params,
+        gas_cost_usd=Decimal(str(econ.get("gas_cost_usd", "0"))),
+        relay_tip_usd=Decimal(str(econ.get("relay_tip_usd", "0"))),
+        risk_buffer_usd=Decimal("0.005"),
+        net_profit_usd=Decimal(str(econ.get("net_profit_usd", "0"))),
+        profit_to_gas=Decimal("0"),
+        passes_gate=True,
+        expense_breakdown=econ.get("profitability", {}).get("expense_breakdown"),
+    )
 
-    # Build the LiveOpportunity with the new sizing information
-    if hasattr(sizing_result, "as_payload_fields"):
-        metadata = apply_injection_to_route_dict({}, sizing_result) # type: ignore
-    else:
-        metadata = {"sizing": getattr(sizing_result, "metadata", {})}
-        metadata["principal_usd"] = str(selected_principal_usd)
+    # Metadata from authoritative source
+    metadata = econ.get("sizing", {})
     metadata["slippage_bps"] = str(slippage_bps)
     metadata["pre_math_gross_rate"] = str(pre_math_rate) if pre_math_rate else None
     metadata["strategy"] = strategy
-    metadata["quote_detail"] = {
-        "clmm_unquoted": getattr(quote, "clmm_unquoted", -1),
-        "hop_proofs": getattr(quote, "hop_proofs", []),
-    }
-    gross_rate = gross_out_optimistic_usd / selected_principal_usd if selected_principal_usd > 0 else Decimal("0")
+    metadata["principal_usd"] = str(selected_principal_usd)
+    metadata["authoritative_economics"] = True  # proof we used central path
+
+    gross_rate = gross_out_usd / selected_principal_usd if selected_principal_usd > 0 else Decimal("0")
 
     opp = LiveOpportunity(
         path=path,
         pool_sequence=pool_seq,
         protocol_seq=proto_seq,
         profitability=final_profitability,
-        gross_rate=gross_rate, # This is now the optimistic rate
-        gross_out_usd=gross_out_optimistic_usd,
+        gross_rate=gross_rate,
+        gross_out_usd=gross_out_usd,
         flash_source=flash_source,
         metadata=metadata,
         block_detected=int(disc_block or current_block or 0),
     )
     record_stage_event(
-        stage="RANK", # type: ignore
+        stage="RANK",
         status="SCORED",
         route=list(path),
         opp_id=opp_id_for_logs,
