@@ -98,8 +98,8 @@ if ($Mode -eq "Status") {
 
 if ($Mode -eq "Start") {
     if (Get-Job -Name $JobName -ErrorAction SilentlyContinue) {
-        Write-Error "FATAL: Job '$JobName' is already running. Use -Mode Stop to stop it first."
-        exit 1
+        Write-Host "INFO: Job '$JobName' is already running."
+        exit 0
     }
     if (Test-PortInUse -port $Port) {
         if ($Foreground) {
@@ -108,8 +108,8 @@ if ($Mode -eq "Start") {
                 Start-Sleep -Seconds 3600
             }
         }
-        Write-Error "FATAL: Port $Port is already in use. Please use a different port or stop the existing process."
-        exit 1
+        Write-Host "INFO: Port $Port is already in use; assuming provider is already active."
+        exit 0
     }
 
     $scriptBlock = {

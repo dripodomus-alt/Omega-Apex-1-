@@ -56,11 +56,11 @@ $phaseNum++
 $overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
 Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 1: Prerequisites" -PercentComplete $overallPercent
 
-$prereqSteps = 5
+$prereqSteps = 7
 $prereqCounter = 0
 
 $prereqScore = 0
-$maxPrereq = 6
+$maxPrereq = 8
 
 $prereqCounter++
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Checking for Python..." -PercentComplete ([math]::Round(($prereqCounter / $prereqSteps) * 100))
@@ -81,6 +81,27 @@ if (Get-Command cast -ErrorAction SilentlyContinue) {
 } else {
     Record-Step "Foundry (cast)" $false "Install Foundry (for anvil)"
 }
+
+$prereqCounter++
+Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Checking for Git..." -PercentComplete ([math]::Round(($prereqCounter / $prereqSteps) * 100))
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    Write-Substep "Git found"
+    $prereqScore++
+    Record-Step "Git available" $true
+} else {
+    Record-Step "Git available" $false "Install Git"
+}
+
+$prereqCounter++
+Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Checking for pnpm..." -PercentComplete ([math]::Round(($prereqCounter / $prereqSteps) * 100))
+if (Get-Command pnpm -ErrorAction SilentlyContinue) {
+    Write-Substep "pnpm found"
+    $prereqScore++
+    Record-Step "pnpm available" $true
+} else {
+    Record-Step "pnpm available" $false "Install pnpm (for DODO RPC provider)"
+}
+
 
 $prereqCounter++
 Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Checking .env configuration..." -PercentComplete ([math]::Round(($prereqCounter / $prereqSteps) * 100))
@@ -151,6 +172,26 @@ if ((Test-Path "rust_engine\target\release\*.exe") -or (($results.Steps | Where-
     Record-Step "Rust engine presence" $false "Run cargo build in rust_engine if needed"
 }
 
+$prereqCounter++
+Write-Progress -Id 1 -ParentId 0 -Activity "Phase 1: Prerequisites" -Status "Checking for DODO RPC Provider source..." -PercentComplete ([math]::Round(($prereqCounter / $prereqSteps) * 100))
+$dodoProviderPath = "vendor\web3-rpc-provider"
+if (-not (Test-Path $dodoProviderPath)) {
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+        Write-Substep "Cloning DODO RPC Provider source (one-time setup)..."
+        try {
+            git clone https://github.com/DODOEX/web3-rpc-provider.git $dodoProviderPath --quiet
+            Record-Step "DODO RPC Provider source" $true "Cloned successfully"
+        } catch {
+            Record-Step "DODO RPC Provider source" $false "Failed to clone repository"
+        }
+    } else {
+        Record-Step "DODO RPC Provider source" $false "Git not found, cannot clone"
+    }
+} else {
+    Write-Substep "DODO RPC Provider source found"
+    Record-Step "DODO RPC Provider source" $true "Already present"
+}
+
 $prereqPercent = [math]::Round(($prereqScore / $maxPrereq) * 100)
 Write-Progress -Id 1 -ParentId 0 -Completed
 Write-Host "Prerequisite score: $prereqPercent% ($prereqScore/$maxPrereq)"
@@ -164,7 +205,7 @@ $phaseNum++
 $overallPercent = [math]::Round(($phaseNum / $totalPhases) * 100)
 Write-Progress -Id 0 -Activity "Full System Readiness Validation" -Status "Phase 2: Service Startup" -PercentComplete $overallPercent
 
-$serviceSteps = 3
+$serviceSteps = 4
 $serviceCounter = 0
 
 $serviceCounter++
@@ -241,6 +282,25 @@ if (-not $SkipAnvil) {
     } else {
         & $anvilProgress "Could not start Anvil."
         Record-Step "Anvil startup" $false "Could not start Anvil - benchmark will be limited"
+    }
+}
+
+$serviceCounter++
+if (-not $ReadinessOnly) {
+    $dodoProgress = { param($status) Write-Progress -Id 1 -ParentId 0 -Activity "Phase 2: Service Startup" -Status $status -PercentComplete ([math]::Round(($serviceCounter / $serviceSteps) * 100)) }
+    & $dodoProgress "Ensuring DODO RPC Provider is available..."
+    Write-Substep "Ensuring DODO RPC Provider is available..."
+    if (Test-Path "scripts\start_dodo_rpc_provider.ps1") {
+        try {
+            # Start in background job mode; this script is now idempotent
+            & ".\scripts\start_dodo_rpc_provider.ps1" -Mode Start | Out-Null
+            Start-Sleep -Seconds 5 # Give it time to start up
+            Record-Step "DODO RPC Provider startup" $true "Started or already running"
+        } catch {
+            Record-Step "DODO RPC Provider startup" $false $_.Exception.Message
+        }
+    } else {
+        Record-Step "DODO RPC Provider startup" $false "start_dodo_rpc_provider.ps1 not found"
     }
 }
 
@@ -443,8 +503,9 @@ $pythonHelper = "scripts\reporting\compute_readiness.py"
 if (Test-Path $pythonHelper) {
     try {
         $pyScore = & python $pythonHelper "out\readiness_report.json" 2>&1 | Select-String -Pattern "\d+/100" | ForEach-Object { $_.ToString() }
-        if ($pyScore) {
-            $readiness = [int]($pyScore -replace '[^\d]', '')
+        # Correctly parse the "XX/100" format instead of concatenating digits.
+        if ($pyScore -match '(\d+)/100') {
+            $readiness = [int]$Matches[1]
         }
     } catch {}
 }

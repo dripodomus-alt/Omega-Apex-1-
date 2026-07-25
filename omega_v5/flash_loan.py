@@ -130,8 +130,8 @@ class ExpenseBreakdown:
     flash_fee_usd: Decimal
     gas_cost_usd: Decimal
     relay_tip_usd: Decimal
-    protocol_overhead_usd: Decimal = Decimal("0")
     risk_buffer_usd: Decimal
+    protocol_overhead_usd: Decimal = Decimal("0")
     impact_penalty_usd: Decimal = Decimal("0")
     builder_fee_usd: Decimal = Decimal("0")
     total_expenses_usd: Decimal = Decimal("0")
@@ -196,11 +196,11 @@ class Profitability:
     flashloan: FlashLoanParams | None
     gas_cost_usd: Decimal
     relay_tip_usd: Decimal
-    protocol_overhead_usd: Decimal = Decimal("0")
     risk_buffer_usd: Decimal
     net_profit_usd: Decimal
     profit_to_gas: Decimal
     passes_gate: bool
+    protocol_overhead_usd: Decimal = Decimal("0")
     gas_units: Decimal = Decimal("0")
     gas_price_gwei: Decimal = GAS_PRICE_GWEI
     gas_price_source: str = "static_config"
