@@ -26,6 +26,7 @@ from omega_v5.config import (
     C1_PAYLOAD_TARGET,
     LIQUIDATION_EXECUTOR_ADDRESS,
     AAVE_V3_LIQUIDATION_ADAPTER,
+    PROTOCOL_ID_MAP,
 )
 from omega_v5.rpc_layer import TOKEN_ADDRESSES, TOKEN_DECIMALS
 from omega_v5.opportunity_ranker import LiveOpportunity
@@ -66,7 +67,6 @@ def _build_c1_c2_payload(op: LiveOpportunity) -> str:
     Executor function signature:
       executeFlashArb(address flashAsset, uint256 flashAmount, RouteStep[] calldata route)
     """
-    protocol_map = {"UniswapV3": 1, "QuickSwapV2": 2, "Balancer": 3, "QuickSwapV3": 4, "Algebra": 4}
     flash_asset = TOKEN_ADDRESSES[op.path[0]]
     principal_raw = _token_units_to_raw_floor(op.profitability.flashloan.principal_usd, TOKEN_DECIMALS[op.path[0]])
 
@@ -75,7 +75,7 @@ def _build_c1_c2_payload(op: LiveOpportunity) -> str:
         from_token = TOKEN_ADDRESSES[op.path[i]]
         to_token = TOKEN_ADDRESSES[op.path[i+1]]
         pool = op.pool_sequence[i]
-        protocol_id = protocol_map.get(op.protocol_seq[i], 0)
+        protocol_id = PROTOCOL_ID_MAP.get(op.protocol_seq[i], 0)
         route_steps.append((from_token, to_token, Web3.to_checksum_address(pool), protocol_id))
 
     selector = Web3.keccak(text="executeFlashArb(address,uint256,(address,address,address,uint8)[])")[:4].hex()

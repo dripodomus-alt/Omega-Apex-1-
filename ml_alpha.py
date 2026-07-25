@@ -158,8 +158,6 @@ def rerank_by_ml_alpha(opportunities: List[LiveOpportunity]) -> List[LiveOpportu
             # This logic assumes the LiveOpportunity object and engine can provide these features.
             # This part is highly dependent on the data available in the `LiveOpportunity` object.
             principal = float(opp.profitability.flashloan.principal_usd)
-            # Mocking missing features for demonstration
-            route_tvl = float(opp.metadata.get("route_tvl_usd", principal * 100)) # Mock TVL if not present
             # If TVL is not present, default to 0. This is a pessimistic but truthful signal.
             route_tvl = float(opp.metadata.get("route_tvl_usd", 0))
             slippage_bps = float(opp.metadata.get("slippage_bps", 0))
@@ -173,7 +171,6 @@ def rerank_by_ml_alpha(opportunities: List[LiveOpportunity]) -> List[LiveOpportu
             vqc_score = model["circuit"](model["weights"], feature_vector_scaled[0])
             confidence_factor = (Decimal(vqc_score) + 1) / 2  # Map [-1, 1] to [0, 1]
             predicted_surplus = opp.profitability.net_profit_usd * confidence_factor
-        except Exception:
         except Exception as e:
             # Fail closed: if feature extraction or prediction fails, use a pessimistic default
             # Log the error for debugging purposes.

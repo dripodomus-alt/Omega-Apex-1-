@@ -155,6 +155,8 @@ class PrecisionPricingEngine:
 
         prices.sort()
         min_price, max_price = prices[0], prices[-1]
+        if min_price <= 0:
+            raise PricingError("aggregated price is zero or negative", "INVALID_AGGREGATION_PRICE")
         deviation_bps = mul_div(max_price - min_price, 10000, min_price)
         if deviation_bps > policy.maximum_deviation_bps:
             raise PricingError("oracle deviation exceeded", "ORACLE_DEVIATION_EXCEEDED")
