@@ -15,8 +15,15 @@ $proofDir = Join-Path $repoRoot "out\finalizer\$stamp"
 New-Item -ItemType Directory -Force -Path $proofDir | Out-Null
 
 # --- Helper Functions ---
-function Write-Step { param([string]$Message) Write-Host "`n==> $Message" }
-function Assert-Ok { param([bool]$Condition, [string]$Message) if (-not $Condition) { throw $Message } }
+function Write-Phase {
+    param([string]$Title, [string]$Subtitle)
+    $timestamp = Get-Date -Format "HH:mm:ss"
+    Write-Host "`n" + ("-" * 80)
+    Write-Host "[$timestamp] $Title" -ForegroundColor Cyan
+    if (-not [string]::IsNullOrEmpty($Subtitle)) { Write-Host "  $Subtitle" -ForegroundColor Gray }
+    Write-Host ("-" * 80)
+}
+function Assert-Ok { param([bool]$Condition, [string]$Message) if (-not $Condition) { throw "[FAILURE] $Message" } }
 function Assert-Command { param([string]$Name, [string]$InstallHint) if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw "$Name is not available on PATH. $InstallHint" } }
 function Assert-File-Freshness {
     param([string]$FilePath, [int]$MaxAgeSeconds)
@@ -34,8 +41,11 @@ function Invoke-JsonPost {
     }
 }
 
+$totalTime = Measure-Command {
+try {
+
 # --- 1. Pre-flight Checks ---
-Write-Step "Step 1: Pre-flight System & Cloud Checks"
+Write-Phase -Title "Step 1: Pre-flight System & Cloud Checks" -Subtitle "Verifying toolchain, wallet, and cloud prerequisites..."
 Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on PATH."
 Assert-Command -Name "pm2" -InstallHint "Install with: npm install -g pm2"
 Assert-Command -Name "node" -InstallHint "Install Node.js and ensure it is on PATH."
@@ -70,9 +80,9 @@ Assert-Ok -Condition (-not [string]::IsNullOrEmpty($effectiveProject)) -Message 
 Write-Host "GCP prerequisites passed." -ForegroundColor Green
 
 Write-Host "Wallet configuration checks passed." -ForegroundColor Green
+
 # --- 2. System Boot ---
-try {
-    Write-Step "Step 2: Booting All PM2-Managed Services"
+    Write-Phase -Title "Step 2: Booting All PM2-Managed Services" -Subtitle "Starting all daemons via PM2 for a clean boot..."
     $pm2LogPath = Join-Path $proofDir "pm2_boot.txt"
     powershell -NoProfile -ExecutionPolicy Bypass -File scripts\pm2\boot_all.ps1 -Reset | Tee-Object -FilePath $pm2LogPath
     if ($LASTEXITCODE -ne 0) {
@@ -103,7 +113,7 @@ try {
     Write-Host "All services are online." -ForegroundColor Green
 
     # --- 3. Verification Proofs ---
-    Write-Step "Step 3: Running Verification Proofs"
+    Write-Phase -Title "Step 3: Running Verification Proofs" -Subtitle "Executing runtime, pipeline, and integrity proofs to verify system health..."
     Write-Host "Running Runtime Alignment Proof..."
     python -m omega_v5.runtime_alignment --probe | Tee-Object -FilePath (Join-Path $proofDir "runtime_alignment.txt")
     Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Runtime alignment proof FAILED."
@@ -121,7 +131,7 @@ try {
     Write-Host "All verification proofs PASSED." -ForegroundColor Green
 
     # --- 4. Finalizer Verdict ---
-    Write-Step "Step 4: Generating Finalizer Verdict"
+    Write-Phase -Title "Step 4: Generating Finalizer Verdict" -Subtitle "Aggregating all proofs to make an autonomous Go/No-Go decision..."
     python -m omega_v5.mainnet_finalizer --probe | Tee-Object -FilePath (Join-Path $proofDir "mainnet_finalizer.txt")
     Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Mainnet finalizer script FAILED."
     Assert-File-Freshness "out\mainnet_finalizer_latest.json" 15
@@ -131,7 +141,7 @@ try {
     Write-Host "Finalizer Verdict: $verdict" -ForegroundColor Cyan
 
     # --- 5. Go/No-Go Decision and Autonomous Activation ---
-    Write-Step "Step 5: Go/No-Go Decision and Autonomous Activation"
+    Write-Phase -Title "Step 5: Go/No-Go Decision & Autonomous Activation"
     if ($verdict -eq "CANARY_READY") {
         Write-Host "Finalizer verdict is CANARY_READY. The system is ready for live trading." -ForegroundColor Green
 
@@ -154,7 +164,7 @@ try {
     }
 
     # --- 6. Hand-off to Daemons ---
-    Write-Step "Step 6: Hand-off to Autonomous Daemons"
+    Write-Phase -Title "Step 6: Hand-off to Autonomous Daemons"
     Write-Host "=========================================================================="
     Write-Host "✅ SYSTEM IS NOW RUNNING AUTONOMOUSLY IN THE BACKGROUND."
     Write-Host "   The 'omega-engine' and 'omega-liquidation-watcher' daemons are active."
@@ -167,11 +177,16 @@ try {
     pm2 save
 
     pm2 status
-}
+
+} # End of main try block
 catch {
+    $errorLine = $_.InvocationInfo.ScriptLineNumber
+    $errorMessage = $_.Exception.Message
+
     Write-Host "`n" + ("!" * 80) -ForegroundColor Red
-    Write-Host "FATAL ERROR DURING FINALIZER EXECUTION. ATTEMPTING CLEAN SHUTDOWN." -ForegroundColor Red
-    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  FATAL ERROR DURING FINALIZER EXECUTION. ATTEMPTING CLEAN SHUTDOWN." -ForegroundColor Red
+    Write-Host "  Failure at: line $errorLine" -ForegroundColor Red
+    Write-Host "  Error: $errorMessage" -ForegroundColor Red
     Write-Host ("!" * 80) -ForegroundColor Red
     
     # Attempt to gracefully stop all services to prevent them from running in a bad state.
@@ -185,3 +200,10 @@ catch {
     # Re-throw the original exception to ensure the script exits with a non-zero code.
     throw
 }
+} # End of Measure-Command
+
+Write-Host "`n" + ("=" * 80)
+Write-Host "  FINALIZER SUMMARY" -ForegroundColor Green
+Write-Host "  Final Status: Autonomous loop initiated successfully." -ForegroundColor Green
+Write-Host "  Total Time  : $($totalTime.TotalSeconds.ToString('F2')) seconds" -ForegroundColor Green
+Write-Host ("=" * 80)
