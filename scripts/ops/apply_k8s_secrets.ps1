@@ -39,11 +39,23 @@ if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
 Write-Host "Parsing environment variables from '$EnvPath'..."
 $fromLiteralArgs = @()
 $count = 0
+# Regex to parse KEY=VALUE, handling single quotes, double quotes, unquoted values, and inline comments.
+# Group 1: The key
+# Group 2: The raw value part (which may include quotes)
+$envRegex = '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*((?:\'[^\']*\''|"[^"]*"|[^#]*))\s*(?:#.*)?$'
 
 foreach ($line in Get-Content $EnvPath) {
     $trimmed = $line.Trim()
     if ($trimmed -and -not $trimmed.StartsWith("#") -and $trimmed.Contains("=")) {
         $key, $value = $trimmed.Split("=", 2)
+    # Skip blank lines or lines that are only comments
+    if (-not $line.Trim() -or $line.Trim().StartsWith("#")) {
+        continue
+    }
+
+    if ($line -match $envRegex) {
+        $key = $Matches[1]
+        $value = $Matches[2].TrimEnd() # This is the raw value, e.g., "some string" or just a_value
         $fromLiteralArgs += "--from-literal=$key=$value"
         $count++
     }
