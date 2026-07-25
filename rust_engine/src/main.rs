@@ -518,6 +518,11 @@ fn quote_route(
                 // This uses a virtual reserves model, which is a correct approximation
                 // for swaps that do not cross a tick boundary. A full implementation
                 // would require iterating through tick data.
+                warn!(
+                    pool_address = %pool.address,
+                    "Using single-tick approximation for UniswapV3 quote. Does not handle tick crossings."
+                );
+
                 if let (Some(sqrt_price_x96), Some(liquidity)) =
                     (pool.sqrt_price_x96, pool.liquidity)
                 {
@@ -585,7 +590,11 @@ fn quote_route(
                             current_amount = dec!(0);
                             continue;
                         };
-                        current_amount = amount_out_dec / scaling_factor;
+                        // --- FIX: Use the output token's decimals for scaling ---
+                        let token_out = path[i + 1];
+                        let decimals_out = token_decimals.get(token_out).cloned().unwrap_or(18);
+                        let scaling_factor_out = Decimal::from(10u64).powu(decimals_out as u64);
+                        current_amount = amount_out_dec / scaling_factor_out;
                     } else {
                         current_amount = dec!(0);
                     }
@@ -1041,7 +1050,7 @@ fn run_find_and_rank() -> Result<FindAndRankResponse, String> {
                     route_pools.iter().map(|p| &p.address).collect::<Vec<_>>()
                 ))
                 .into_iter()
-                .fold(0, |acc, byte| (acc << 8) | byte as u64)
+                .fold(0, |acc, byte| (acc << 8) | byte as u64));
 
             let opp_json = LiveOpportunityJson {
                 opp_id,

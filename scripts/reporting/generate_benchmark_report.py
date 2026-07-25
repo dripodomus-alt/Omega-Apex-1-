@@ -89,6 +89,33 @@ def generate_report(directory: Path):
     print("\n--- Averages Per Cycle ---")
     print(success_df.mean().to_string())
 
+    # Also analyze the synthetic dry run log if it exists in the output directory
+    dry_run_log = directory / "dry_run_full_log.jsonl"
+    if dry_run_log.is_file():
+        print(f"\nAnalyzing synthetic dry run log: {dry_run_log}...")
+        dry_run_data = []
+        with open(dry_run_log, 'r', encoding='utf-8') as f:
+            for line in f:
+                try:
+                    dry_run_data.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+
+        if dry_run_data:
+            dry_run_df = pd.DataFrame(dry_run_data)
+            # Convert relevant columns to numeric for calculations
+            numeric_cols = ['spread_bps', 'flash_principal_usd', 'economic_net_profit_usd', 'headroom_usd']
+            for col in numeric_cols:
+                if col in dry_run_df.columns:
+                    dry_run_df[col] = pd.to_numeric(dry_run_df[col], errors='coerce')
+
+            print("\n--- Synthetic Dry Run (25-cycle) Summary ---")
+            passed_gate_df = dry_run_df[dry_run_df['passes_gate'] == True]
+            print(f"Total Profitable Routes Found: {len(passed_gate_df)}")
+            if not passed_gate_df.empty:
+                print(f"Average Net Profit (USD): ${passed_gate_df['economic_net_profit_usd'].mean():.4f}")
+                print(f"Max Net Profit (USD):     ${passed_gate_df['economic_net_profit_usd'].max():.4f}")
+                print(f"Average Spread (BPS):     {passed_gate_df['spread_bps'].mean():.2f}")
 
 def main():
     parser = argparse.ArgumentParser(description="Parse benchmark artifacts and generate a performance report.")
