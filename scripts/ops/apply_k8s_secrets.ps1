@@ -5,6 +5,13 @@
   This script parses a .env file and uses its key-value pairs to create a
   Kubernetes generic secret. This is the recommended way to apply environment
   configuration to the OMEGA-FINALLY-RICH stack when deploying to Kubernetes.
+
+.WARNING
+  This method stores secrets as base64-encoded plain text inside Kubernetes.
+  For a production-grade deployment, it is strongly recommended to use a
+  dedicated secrets management solution like the Google Secrets Store CSI Driver
+  or HashiCorp Vault, which can mount secrets directly into pods without
+  storing them in etcd.
 .EXAMPLE
   # Create a secret named 'omega-secrets' in the default namespace from .env
   .\scripts\ops\apply_k8s_secrets.ps1 -SecretName "omega-secrets"

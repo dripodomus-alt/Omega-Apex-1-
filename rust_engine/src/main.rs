@@ -1,15 +1,16 @@
+use alloy_primitives::U256;
 use clap::{Parser, Subcommand};
-use itertools::Itertools;
+use rust_decimal::prelude::ToPrimitive;
 use rust_decimal::Decimal;
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use rust_decimal::MathematicalOps;
 use rust_decimal_macros::dec;
 use serde::{Deserialize, Serialize};
-use md5;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::io::{self, Read};
-
+use std::str::FromStr;
+use tracing::{error, info, instrument, warn};
+use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 // --- Bellman-Ford specific structs ---
 #[derive(Debug, Clone, Deserialize)]
@@ -105,11 +106,11 @@ struct Pool {
     tokens: Vec<String>,
     reserves: Option<Vec<Decimal>>,
     // V3 fields
-    sqrt_price_x96: Option<Decimal>,
-    liquidity: Option<Decimal>,
+    #[serde(default)]
+    sqrt_price_x96: Option<U256>,
+    #[serde(default)]
+    liquidity: Option<U256>,
     fee_bps: Option<Decimal>,
-    decimal_adjustment: Option<Decimal>,
-    // Balancer fields
     weights: Option<Vec<Decimal>>,
     swap_fee: Option<Decimal>,
     // Curve fields
@@ -124,7 +125,6 @@ struct SizingParams {
     min_principal_usd: String,
     max_principal_usd: String,
     tvl_fractions: Vec<String>,
-    max_impact_bps: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -139,16 +139,14 @@ struct EconomicParams {
     balancer_flash_fee_bps: String,
 }
 
-
 #[derive(Debug, Deserialize)]
 struct FindAndRankRequest {
     pools: HashMap<String, serde_json::Value>,
     prices: HashMap<String, String>,
+    #[serde(default)]
+    token_decimals: HashMap<String, u8>,
     sizing_params: SizingParams,
     flash_source: String,
-    stager_max_token_paths: u32,
-    stager_max_pre_ranked: u32,
-    stager_max_quote_options_per_pair: u32,
     economic_params: EconomicParams,
 }
 
@@ -266,7 +264,9 @@ fn detect_negative_cycles(tokens: &[String], edges: &[Edge]) -> Vec<Opportunity>
                 }
                 first_seen.insert(cur, path_rev.len());
                 path_rev.push(cur);
-                let Some(edge_idx) = pred_edge[cur] else { break };
+                let Some(edge_idx) = pred_edge[cur] else {
+                    break;
+                };
                 edge_rev.push(edge_idx);
                 let Some(prev) = pred[cur] else { break };
                 cur = prev;
@@ -329,15 +329,44 @@ fn detect_negative_cycles(tokens: &[String], edges: &[Edge]) -> Vec<Opportunity>
             });
         }
     }
-    out.sort_by(|a, b| b.profit_pct.partial_cmp(&a.profit_pct).unwrap_or(std::cmp::Ordering::Equal));
+    out.sort_by(|a, b| {
+        b.profit_pct
+            .partial_cmp(&a.profit_pct)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     out
 }
 
 /// Quotes a single Uniswap V2 pool.
-fn quote_uniswap_v2(reserve_in: Decimal, reserve_out: Decimal, amount_in: Decimal, fee: Decimal) -> Decimal {
+fn quote_uniswap_v2(
+    reserve_in: Decimal,
+    reserve_out: Decimal,
+    amount_in: Decimal,
+    fee: Decimal,
+) -> Decimal {
     if amount_in <= dec!(0) || reserve_in <= dec!(0) || reserve_out <= dec!(0) {
         return dec!(0);
     }
+    let amount_in_with_fee = amount_in * (dec!(1) - fee);
+    let numerator = amount_in_with_fee * reserve_out;
+    let denominator = reserve_in + amount_in_with_fee;
+    if denominator <= dec!(0) {
+        return dec!(0);
+    }
+    numerator / denominator
+}
+
+/// Example quoting function for a hypothetical "HyperSwap" DEX.
+/// This assumes a simple constant product model with a 0.25% fee.
+fn quote_hyper_swap(
+    reserve_in: Decimal,
+    reserve_out: Decimal,
+    amount_in: Decimal,
+) -> Decimal {
+    if amount_in <= dec!(0) || reserve_in <= dec!(0) || reserve_out <= dec!(0) {
+        return dec!(0);
+    }
+    let fee = dec!(0.0025); // HyperSwap's 0.25% fee
     let amount_in_with_fee = amount_in * (dec!(1) - fee);
     let numerator = amount_in_with_fee * reserve_out;
     let denominator = reserve_in + amount_in_with_fee;
@@ -362,15 +391,19 @@ fn get_d_curve(reserves: &[Decimal], a: Decimal) -> Decimal {
     for _ in 0..255 {
         let mut d_p = d;
         for x in reserves {
-            if x.is_zero() { return Decimal::ZERO; }
+            if x.is_zero() {
+                return Decimal::ZERO;
+            }
             d_p = d_p * d / (n_coins * x);
         }
-        
+
         let d_prev = d;
 
         let numerator = (ann * s + d_p * n_coins) * d;
         let denominator = (ann - Decimal::ONE) * d + (n_coins + Decimal::ONE) * d_p;
-        if denominator.is_zero() { return Decimal::ZERO; }
+        if denominator.is_zero() {
+            return Decimal::ZERO;
+        }
         d = numerator / denominator;
 
         if (d - d_prev).abs() <= Decimal::ONE {
@@ -382,14 +415,23 @@ fn get_d_curve(reserves: &[Decimal], a: Decimal) -> Decimal {
 
 /// Solves for the output amount `y` in an n-coin Curve pool using Newton's method.
 /// Aligned with the Python implementation in `math_engine.py`.
-fn get_y_curve(i: usize, j: usize, x: Decimal, reserves: &[Decimal], a: Decimal, d: Decimal) -> Decimal {
+fn get_y_curve(
+    i: usize,
+    j: usize,
+    x: Decimal,
+    reserves: &[Decimal],
+    a: Decimal,
+    d: Decimal,
+) -> Decimal {
     let n_coins = Decimal::from(reserves.len());
     let ann = a * n_coins;
 
     let mut new_reserves = reserves.to_vec();
     new_reserves[i] += x;
 
-    let s_ = new_reserves.iter().enumerate()
+    let s_ = new_reserves
+        .iter()
+        .enumerate()
         .filter(|(k, _)| *k != j)
         .map(|(_, val)| val)
         .sum::<Decimal>();
@@ -397,16 +439,20 @@ fn get_y_curve(i: usize, j: usize, x: Decimal, reserves: &[Decimal], a: Decimal,
     let mut y = d / n_coins;
     for _ in 0..255 {
         let y_prev = y;
-        
+
         let mut p_ = y;
         for (k, val) in new_reserves.iter().enumerate() {
             if k != j {
-                if val.is_zero() { return Decimal::ZERO; }
+                if val.is_zero() {
+                    return Decimal::ZERO;
+                }
                 p_ *= val;
             }
         }
-        
-        if p_.is_zero() || y.is_zero() { return Decimal::ZERO; }
+
+        if p_.is_zero() || y.is_zero() {
+            return Decimal::ZERO;
+        }
 
         // f(y) = Ann*S + D = Ann*D + D^(n+1) / (n^n * P)
         // We solve for y in: Ann*(S_ + y) + D = Ann*D + D^(n+1)/(n^n * P' * y)
@@ -416,11 +462,13 @@ fn get_y_curve(i: usize, j: usize, x: Decimal, reserves: &[Decimal], a: Decimal,
 
         let term_for_f = d_pow_n_plus_1 / (n_coins_pow_n * p_);
         let f = ann * (s_ + y) + d - ann * d - term_for_f;
-        
+
         // f'(y) = Ann + D^(n+1)/(n^n * P' * y^2)
         let f_prime = ann + (term_for_f * n_coins) / y;
 
-        if f_prime.is_zero() { return Decimal::ZERO; }
+        if f_prime.is_zero() {
+            return Decimal::ZERO;
+        }
 
         y = y - f / f_prime;
 
@@ -437,8 +485,9 @@ fn get_y_curve(i: usize, j: usize, x: Decimal, reserves: &[Decimal], a: Decimal,
 /// correct quoter based on `pool.protocol`.
 fn quote_route(
     amount_in: Decimal,
-    route_pools: &[&'static Pool],
-    path: &[&'static str],
+    route_pools: &[&Pool],
+    path: &[&str],
+    token_decimals: &HashMap<String, u8>,
 ) -> Decimal {
     let mut current_amount = amount_in;
     for (i, pool) in route_pools.iter().enumerate() {
@@ -447,12 +496,18 @@ fn quote_route(
         }
         match pool.protocol.as_str() {
             "UniswapV2" | "QuickSwapV2" => {
-                let token_in = &path[i];
+                let token_in = path[i];
                 let _token_out = &path[i + 1];
                 let (reserve_in, reserve_out) = if &pool.tokens[0] == token_in {
-                    (pool.reserves.as_ref().unwrap()[0], pool.reserves.as_ref().unwrap()[1])
+                    (
+                        pool.reserves.as_ref().unwrap()[0],
+                        pool.reserves.as_ref().unwrap()[1],
+                    )
                 } else {
-                    (pool.reserves.as_ref().unwrap()[1], pool.reserves.as_ref().unwrap()[0])
+                    (
+                        pool.reserves.as_ref().unwrap()[1],
+                        pool.reserves.as_ref().unwrap()[0],
+                    )
                 };
                 // Uniswap V2 fee is 0.3% (30 bps)
                 let fee = pool.fee_bps.map(|f| f / dec!(10000)).unwrap_or(dec!(0.003));
@@ -463,22 +518,74 @@ fn quote_route(
                 // This uses a virtual reserves model, which is a correct approximation
                 // for swaps that do not cross a tick boundary. A full implementation
                 // would require iterating through tick data.
-                if let (Some(sqrt_price_x96), Some(liquidity)) = (pool.sqrt_price_x96, pool.liquidity) {
-                    if liquidity > dec!(0) && sqrt_price_x96 > dec!(0) {
-                        // This is much faster and more precise than converting to f64.
-                        let sqrt_price = sqrt_price_x96 >> 96;
-                        
-                        let (reserve0, reserve1) = (liquidity / sqrt_price, liquidity * sqrt_price);
-
+                if let (Some(sqrt_price_x96), Some(liquidity)) =
+                    (pool.sqrt_price_x96, pool.liquidity)
+                {
+                    if liquidity > U256::ZERO && sqrt_price_x96 > U256::ZERO {
                         let token_in = path[i];
-                        let (reserve_in, reserve_out) = if &pool.tokens[0] == token_in {
-                            (reserve0, reserve1)
-                        } else {
-                            (reserve1, reserve0)
+                        let decimals = token_decimals.get(token_in).cloned().unwrap_or(18); // Default to 18 if not found
+
+                        // --- Production-Grade U256 Math ---
+                        let scaling_factor = Decimal::from(10u64).powu(decimals as u64);
+                        let amount_in_raw_str =
+                            (current_amount * scaling_factor).floor().to_string();
+                        let Ok(amount_in_raw) = U256::from_str(&amount_in_raw_str) else {
+                            current_amount = dec!(0);
+                            continue;
                         };
-                        
-                        let fee = pool.fee_bps.map(|f| f / dec!(10000)).unwrap_or(dec!(0.0005));
-                        current_amount = quote_uniswap_v2(reserve_in, reserve_out, current_amount, fee);
+
+                        let q96 = U256::from(1) << 96;
+
+                        // Calculate virtual reserves using U256 math to avoid precision loss.
+                        let reserve0_raw = liquidity
+                            .checked_mul(q96)
+                            .and_then(|n| n.checked_div(sqrt_price_x96))
+                            .unwrap_or(U256::ZERO);
+                        let reserve1_raw = liquidity
+                            .checked_mul(sqrt_price_x96)
+                            .and_then(|n| n.checked_div(q96))
+                            .unwrap_or(U256::ZERO);
+
+                        if reserve0_raw.is_zero() || reserve1_raw.is_zero() {
+                            current_amount = dec!(0);
+                            continue;
+                        }
+
+                        let (reserve_in_raw, reserve_out_raw) = if &pool.tokens[0] == token_in {
+                            (reserve0_raw, reserve1_raw)
+                        } else {
+                            (reserve1_raw, reserve0_raw)
+                        };
+
+                        // The fee is passed in basis points (e.g., 5 for 0.05%).
+                        let fee_bps_u64 = pool.fee_bps.and_then(|d| d.to_u64()).unwrap_or(5); // Default to 5 bps
+                        let fee_factor = U256::from(1_000_000 - fee_bps_u64 * 100); // Convert bps to ppm
+                        let amount_in_with_fee = amount_in_raw
+                            .checked_mul(fee_factor)
+                            .and_then(|n| n.checked_div(U256::from(1_000_000)))
+                            .unwrap_or(U256::ZERO);
+
+                        // Standard constant product formula with raw integer units
+                        let numerator = amount_in_with_fee
+                            .checked_mul(reserve_out_raw)
+                            .unwrap_or(U256::ZERO);
+                        let denominator = reserve_in_raw
+                            .checked_add(amount_in_with_fee)
+                            .unwrap_or(U256::ZERO);
+
+                        if denominator.is_zero() {
+                            current_amount = dec!(0);
+                            continue;
+                        }
+                        let amount_out_raw = numerator / denominator;
+
+                        // Convert result back to Decimal
+                        let Ok(amount_out_dec) = Decimal::from_str(&amount_out_raw.to_string())
+                        else {
+                            current_amount = dec!(0);
+                            continue;
+                        };
+                        current_amount = amount_out_dec / scaling_factor;
                     } else {
                         current_amount = dec!(0);
                     }
@@ -489,7 +596,9 @@ fn quote_route(
             "Balancer" => {
                 // --- Balancer Weighted Pool Math ---
                 // Implements the formula: amountOut = balanceOut * (1 - (balanceIn / (balanceIn + amountIn))^(weightIn / weightOut))
-                if let (Some(reserves), Some(weights), Some(swap_fee)) = (&pool.reserves, &pool.weights, &pool.swap_fee) {
+                if let (Some(reserves), Some(weights), Some(swap_fee)) =
+                    (&pool.reserves, &pool.weights, &pool.swap_fee)
+                {
                     let token_in = path[i];
                     let token_out = &path[i + 1];
 
@@ -497,13 +606,17 @@ fn quote_route(
                     let token_out_idx = pool.tokens.iter().position(|t| t == token_out);
 
                     if let (Some(idx_in), Some(idx_out)) = (token_in_idx, token_out_idx) {
-                        if idx_in < reserves.len() && idx_out < reserves.len() && idx_in < weights.len() && idx_out < weights.len() {
+                        if idx_in < reserves.len()
+                            && idx_out < reserves.len()
+                            && idx_in < weights.len()
+                            && idx_out < weights.len()
+                        {
                             let balance_in = reserves[idx_in];
                             let balance_out = reserves[idx_out];
                             let weight_in = weights[idx_in];
                             let weight_out = weights[idx_out];
                             let amount_in_with_fee = current_amount * (dec!(1) - *swap_fee);
-                            
+
                             if balance_in > dec!(0) && weight_out > dec!(0) {
                                 let ratio = balance_in / (balance_in + amount_in_with_fee);
                                 let weight_ratio = weight_in / weight_out;
@@ -535,9 +648,13 @@ fn quote_route(
                     if let (Some(reserves), Some(a)) = (&pool.reserves, pool.a) {
                         let d = get_d_curve(reserves, a);
                         if d > dec!(0) {
-                            let y_new = get_y_curve(idx_in, idx_out, current_amount, reserves, a, d);
+                            let y_new =
+                                get_y_curve(idx_in, idx_out, current_amount, reserves, a, d);
                             let amount_out = reserves[idx_out] - y_new;
-                            let fee = pool.fee_bps.map(|f| f / dec!(10000)).unwrap_or(dec!(0.0004));
+                            let fee = pool
+                                .fee_bps
+                                .map(|f| f / dec!(10000))
+                                .unwrap_or(dec!(0.0004));
                             current_amount = amount_out * (dec!(1) - fee);
                         } else {
                             current_amount = dec!(0);
@@ -546,6 +663,22 @@ fn quote_route(
                 } else {
                     current_amount = dec!(0);
                 }
+            }
+            "HyperSwap" => {
+                // This is our new, hypothetical DEX protocol.
+                let token_in = path[i];
+                let (reserve_in, reserve_out) = if &pool.tokens[0] == token_in {
+                    (
+                        pool.reserves.as_ref().unwrap()[0],
+                        pool.reserves.as_ref().unwrap()[1],
+                    )
+                } else {
+                    (
+                        pool.reserves.as_ref().unwrap()[1],
+                        pool.reserves.as_ref().unwrap()[0],
+                    )
+                };
+                current_amount = quote_hyper_swap(reserve_in, reserve_out, current_amount);
             }
             _ => {
                 // Unsupported protocol for quoting in this simplified engine
@@ -566,17 +699,36 @@ fn evaluate_profitability_rust(
     economic_params: &EconomicParams,
 ) -> Profitability {
     // These are now passed in from the Python layer via `economic_params`.
-    let gas_cost_usd = economic_params.gas_cost_usd.parse::<Decimal>().unwrap_or(dec!(0.15));
-    let relay_tip_usd = economic_params.relay_tip_usd.parse::<Decimal>().unwrap_or(dec!(0));
-    let risk_buffer_bps = economic_params.risk_buffer_bps.parse::<Decimal>().unwrap_or(dec!(5));
-    let min_net_profit_usd = economic_params.min_net_profit_usd.parse::<Decimal>().unwrap_or(dec!(1.0));
+    let gas_cost_usd = economic_params
+        .gas_cost_usd
+        .parse::<Decimal>()
+        .unwrap_or(dec!(0.15));
+    let relay_tip_usd = economic_params
+        .relay_tip_usd
+        .parse::<Decimal>()
+        .unwrap_or(dec!(0));
+    let risk_buffer_bps = economic_params
+        .risk_buffer_bps
+        .parse::<Decimal>()
+        .unwrap_or(dec!(5));
+    let min_net_profit_usd = economic_params
+        .min_net_profit_usd
+        .parse::<Decimal>()
+        .unwrap_or(dec!(1.0));
 
     let risk_buffer_usd = principal_usd * risk_buffer_bps / dec!(10000);
 
     let flash_fee_bps = if flash_source == "BALANCER" {
-        economic_params.balancer_flash_fee_bps.parse::<Decimal>().unwrap_or(dec!(0))
-    } else { // Aave, Uniswap V3, etc.
-        economic_params.aave_v3_flash_fee_bps.parse::<Decimal>().unwrap_or(dec!(5))
+        economic_params
+            .balancer_flash_fee_bps
+            .parse::<Decimal>()
+            .unwrap_or(dec!(0))
+    } else {
+        // Aave, Uniswap V3, etc.
+        economic_params
+            .aave_v3_flash_fee_bps
+            .parse::<Decimal>()
+            .unwrap_or(dec!(5))
     };
     let flash_fee_usd = principal_usd * flash_fee_bps / dec!(10000);
 
@@ -599,19 +751,20 @@ fn evaluate_profitability_rust(
         gas_cost_usd,
         relay_tip_usd,
         risk_buffer_usd,
-        passes_gate: passes
+        passes_gate: passes,
     }
 }
 
 // --- Main Find and Rank Logic (simplified for compilation) ---
 /// Finds the optimal trade size for a given route. Ported from `optimal_flash_sizer.py`.
-fn find_optimal_injection<'a>(
-    route_pools: &[&'a Pool],
-    path: &[&'a str],
-    prices: &'a HashMap<String, Decimal>,
-    sizing_params: &'a SizingParams,
+fn find_optimal_injection(
+    route_pools: &[&Pool],
+    path: &[&str],
+    prices: &HashMap<String, Decimal>,
+    sizing_params: &SizingParams,
+    token_decimals: &HashMap<String, u8>,
     flash_source: &str,
-    economic_params: &'a EconomicParams,
+    economic_params: &EconomicParams,
 ) -> Option<(Decimal, Profitability)> {
     let base_asset = path[0];
     let base_price = match prices.get(base_asset) {
@@ -619,24 +772,37 @@ fn find_optimal_injection<'a>(
         _ => return None,
     };
 
-    let min_tvl = route_pools.iter()
+    let min_tvl = route_pools
+        .iter()
         .filter_map(|p| p.total_executable_liquidity_usd)
         .min()
         .unwrap_or(dec!(0));
 
-    if min_tvl <= dec!(0) { return None; }
+    if min_tvl <= dec!(0) {
+        return None;
+    }
 
-    let max_tvl_fraction = sizing_params.tvl_fractions.iter()
+    let max_tvl_fraction = sizing_params
+        .tvl_fractions
+        .iter()
         .filter_map(|s| s.parse::<Decimal>().ok())
         .max_by(|a, b| a.partial_cmp(b).unwrap())
         .unwrap_or(dec!(0.5));
 
     let route_cap_usd = min_tvl * max_tvl_fraction;
-    let max_principal_usd = sizing_params.max_principal_usd.parse::<Decimal>().unwrap_or(dec!(250000));
+    let max_principal_usd = sizing_params
+        .max_principal_usd
+        .parse::<Decimal>()
+        .unwrap_or(dec!(250000));
     let hard_cap_usd = route_cap_usd.min(max_principal_usd);
-    let min_principal_usd = sizing_params.min_principal_usd.parse::<Decimal>().unwrap_or(dec!(5000));
+    let min_principal_usd = sizing_params
+        .min_principal_usd
+        .parse::<Decimal>()
+        .unwrap_or(dec!(5000));
 
-    if hard_cap_usd < min_principal_usd { return None; }
+    if hard_cap_usd < min_principal_usd {
+        return None;
+    }
 
     // 2. Build size ladder
     let mut ladder: BTreeSet<Decimal> = BTreeSet::new();
@@ -659,15 +825,27 @@ fn find_optimal_injection<'a>(
     let mut best_profitability: Option<Profitability> = None;
 
     for size_usd in ladder.into_iter().filter(|s| *s >= min_principal_usd) {
-        let amount_in = size_usd / base_price;
-        let amount_out = quote_route(amount_in, route_pools, path);
-        if amount_out <= dec!(0) { continue; }
+        let amount_in = size_usd / base_price; // Principal in base asset units
+        let amount_out = quote_route(amount_in, route_pools, path, token_decimals); // Amount out in base asset units
 
+        if amount_out <= dec!(0) {
+            continue;
+        }
         let gross_out_usd = amount_out * base_price;
-        let profitability = evaluate_profitability_rust(gross_out_usd, size_usd, path.len() - 1, flash_source, base_asset, economic_params);
+        let profitability = evaluate_profitability_rust(
+            gross_out_usd,
+            size_usd,
+            path.len() - 1,
+            flash_source,
+            base_asset,
+            economic_params,
+        );
 
         if profitability.passes_gate {
-            if best_profitability.is_none() || profitability.net_profit_usd > best_profitability.as_ref().unwrap().net_profit_usd {
+            if best_profitability.is_none()
+                || profitability.net_profit_usd
+                    > best_profitability.as_ref().unwrap().net_profit_usd
+            {
                 best_profitability = Some(profitability);
                 best_size = size_usd;
             }
@@ -688,7 +866,9 @@ fn discover_routes<'a>(pools: &'a HashMap<String, Pool>) -> Vec<(Vec<&'a str>, V
         // This handles pools with more than 2 tokens correctly by iterating all pairs.
         for token_in in &pool.tokens {
             for token_out in &pool.tokens {
-                if token_in == token_out { continue; }
+                if token_in == token_out {
+                    continue;
+                }
                 adjacency
                     .entry(token_in)
                     .or_default()
@@ -706,7 +886,9 @@ fn discover_routes<'a>(pools: &'a HashMap<String, Pool>) -> Vec<(Vec<&'a str>, V
             if let Some(pools_ba) = adjacency.get(*token_b).and_then(|m| m.get(*token_a)) {
                 for pool1 in pools_ab {
                     for pool2 in pools_ba {
-                        if pool1.address == pool2.address { continue; }
+                        if pool1.address == pool2.address {
+                            continue;
+                        }
                         // Use borrowed slices instead of creating new Strings to avoid allocations.
                         routes.push((vec![*token_a, *token_b, *token_a], vec![*pool1, *pool2]));
                     }
@@ -716,16 +898,24 @@ fn discover_routes<'a>(pools: &'a HashMap<String, Pool>) -> Vec<(Vec<&'a str>, V
             // 3-hop routes: A -> B -> C -> A
             if let Some(sub_sub_adj) = adjacency.get(*token_b) {
                 for (token_c, pools_bc) in sub_sub_adj {
-                    if *token_c == *token_a { continue; } // This is a 2-hop, already handled
+                    if *token_c == *token_a {
+                        continue;
+                    } // This is a 2-hop, already handled
                     if let Some(pools_ca) = adjacency.get(*token_c).and_then(|m| m.get(*token_a)) {
                         for pool1 in pools_ab {
                             for pool2 in pools_bc {
                                 for pool3 in pools_ca {
                                     // Ensure no pool is used twice in the same route
-                                    if pool1.address == pool2.address || pool1.address == pool3.address || pool2.address == pool3.address {
+                                    if pool1.address == pool2.address
+                                        || pool1.address == pool3.address
+                                        || pool2.address == pool3.address
+                                    {
                                         continue;
                                     }
-                                    routes.push((vec![*token_a, *token_b, *token_c, *token_a], vec![*pool1, *pool2, *pool3]));
+                                    routes.push((
+                                        vec![*token_a, *token_b, *token_c, *token_a],
+                                        vec![*pool1, *pool2, *pool3],
+                                    ));
                                 }
                             }
                         }
@@ -788,40 +978,70 @@ fn run_bellman_ford() -> Result<BellmanFordResponse, String> {
     })
 }
 
+#[instrument]
 fn run_find_and_rank() -> Result<FindAndRankResponse, String> {
     // 1. Deserialize the request from Python
     let mut input = String::new();
     io::stdin()
         .read_to_string(&mut input)
         .map_err(|err| format!("stdin_read_failed: {err}"))?;
-    eprintln!("[RUST_ENGINE] Received request from stdin ({} bytes)", input.len());
+    info!(request_bytes = input.len(), "Received request from stdin");
 
     let req: FindAndRankRequest =
         serde_json::from_str(&input).map_err(|err| format!("json_decode_failed: {err}"))?;
 
     // 2. Parse pools and prices into structured, decimal-based formats
-    eprintln!("[RUST_ENGINE] Parsing {} pools and {} prices...", req.pools.len(), req.prices.len());
-    let pools: HashMap<String, Pool> = req.pools.into_iter()
+    info!(
+        pool_count = req.pools.len(),
+        price_count = req.prices.len(),
+        "Parsing pools and prices"
+    );
+    let pools: HashMap<String, Pool> = req
+        .pools
+        .into_iter()
         .filter_map(|(k, v)| serde_json::from_value(v).ok().map(|p: Pool| (k, p)))
         .collect();
-    let prices: HashMap<String, Decimal> = req.prices.into_iter()
+    let prices: HashMap<String, Decimal> = req
+        .prices
+        .into_iter()
         .filter_map(|(k, v)| v.parse::<Decimal>().ok().map(|p| (k, p)))
         .collect();
+    let token_decimals: HashMap<String, u8> = req.token_decimals;
 
     // 3. Discover potential arbitrage routes (2 and 3-hop)
-    eprintln!("[RUST_ENGINE] Discovering routes from {} pools...", pools.len());
+    info!(pool_count = pools.len(), "Discovering routes");
     let routes = discover_routes(&pools);
-    eprintln!("[RUST_ENGINE] Discovered {} potential routes (2 and 3-hop).", routes.len());
+    info!(route_count = routes.len(), "Discovered routes");
     let mut profitable_opportunities = Vec::new();
 
     // 4. For each route, find the optimal size and check for profitability
-    eprintln!("[RUST_ENGINE] Sizing and evaluating routes for profitability...");
+    info!("Sizing and evaluating routes for profitability");
     for (path, route_pools) in routes {
-        if let Some((optimal_size, profitability)) = find_optimal_injection(&route_pools, &path, &prices, &req.sizing_params, &req.flash_source, &req.economic_params) {
+        if let Some((optimal_size, profitability)) = find_optimal_injection(
+            &route_pools,
+            &path,
+            &prices,
+            &req.sizing_params,
+            &token_decimals,
+            &req.flash_source,
+            &req.economic_params,
+        ) {
             let gross_out_usd = profitability.gross_amount_out_usd;
-            let gross_rate = if optimal_size > dec!(0) { gross_out_usd / optimal_size } else { dec!(0) };
+            let gross_rate = if optimal_size > dec!(0) {
+                gross_out_usd / optimal_size
+            } else {
+                dec!(0)
+            };
 
-            let opp_id = format!("OPP-RUST-{:x}", md5::compute(format!("{:?}-{:?}", path, route_pools.iter().map(|p|&p.address).collect::<Vec<_>>())).into_iter().fold(0, |acc, byte| (acc << 8) | byte as u64));
+            let opp_id = format!(
+                "OPP-RUST-{:x}",
+                md5::compute(format!(
+                    "{:?}-{:?}",
+                    path,
+                    route_pools.iter().map(|p| &p.address).collect::<Vec<_>>()
+                ))
+                .into_iter()
+                .fold(0, |acc, byte| (acc << 8) | byte as u64)
 
             let opp_json = LiveOpportunityJson {
                 opp_id,
@@ -843,10 +1063,13 @@ fn run_find_and_rank() -> Result<FindAndRankResponse, String> {
         }
     }
 
-    eprintln!("[RUST_ENGINE] Found {} profitable opportunities.", profitable_opportunities.len());
+    info!(count = profitable_opportunities.len(), "Found profitable opportunities");
     // 5. Sort opportunities by net profit
     profitable_opportunities.sort_by(|a, b| {
-        b.profitability.net_profit_usd.partial_cmp(&a.profitability.net_profit_usd).unwrap_or(std::cmp::Ordering::Equal)
+        b.profitability
+            .net_profit_usd
+            .partial_cmp(&a.profitability.net_profit_usd)
+            .unwrap_or(std::cmp::Ordering::Equal)
     });
 
     // 6. Serialize the results back to JSON values for Python
@@ -867,7 +1090,7 @@ fn run_find_and_rank() -> Result<FindAndRankResponse, String> {
         error: None,
     };
 
-    eprintln!("[RUST_ENGINE] Ranking complete. Returning {} opportunities to Python.", ranked_opportunities.len());
+    info!(count = ranked_opportunities.len(), "Ranking complete");
     // 8. Return the final response
     Ok(FindAndRankResponse {
         ranked_opportunities,
@@ -876,6 +1099,13 @@ fn run_find_and_rank() -> Result<FindAndRankResponse, String> {
 }
 
 fn main() {
+    // Initialize the structured JSON logger.
+    // It reads the log level from the RUST_LOG environment variable (e.g., RUST_LOG=info).
+    tracing_subscriber::registry()
+        .with(fmt::layer().json())
+        .with(EnvFilter::from_default_env())
+        .init();
+
     let cli = Cli::parse();
 
     let result = match cli.command {
@@ -886,13 +1116,13 @@ fn main() {
         Commands::FindAndRank => match run_find_and_rank() {
             Ok(response) => serde_json::to_string(&response).map_err(|e| e.to_string()),
             Err(e) => Err(e.to_string()),
-        },
+        }
     };
 
     match result {
         Ok(json) => println!("{}", json),
         Err(e) => {
-            eprintln!("Error: {}", e);
+            error!(error = %e, "An error occurred in the Rust engine");
             std::process::exit(1);
         }
     }

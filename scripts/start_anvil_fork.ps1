@@ -35,10 +35,15 @@ if (Test-AnvilAlive -Url $localUrl -ExpectedChainId $ChainId) {
     }
 }
 
-$forkOutput = & $pythonExecutable -m omega_v5.fork_rpc --print-url 2>$null
-$forkUrl = $forkOutput | Where-Object { $_ -match "^https?://" } | Select-Object -First 1
-if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($forkUrl)) {
-    throw "Could not resolve a Polygon fork RPC URL."
+$forkUrl = ""
+try {
+    $forkOutput = & $pythonExecutable -m omega_v5.fork_rpc --print-url 2>$null
+    $forkUrl = $forkOutput | Where-Object { $_ -match "^https?://" } | Select-Object -First 1
+} catch {}
+
+if ([string]::IsNullOrWhiteSpace($forkUrl)) {
+    Write-Warning "Could not resolve a dynamic fork RPC URL via 'omega_v5.fork_rpc'. Using a public fallback."
+    $forkUrl = "https://polygon.publicnode.com"
 }
 
 Write-Host "Starting Anvil Polygon fork on $localUrl"

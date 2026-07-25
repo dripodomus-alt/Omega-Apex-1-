@@ -44,6 +44,23 @@ Assert-Ok ($env:EXECUTOR_WALLET -ne $null -and $env:EXECUTOR_WALLET -ne "") "EXE
 Assert-Ok ($env:EXECUTOR_WALLET.Length -eq 42 -and $env:EXECUTOR_WALLET.StartsWith("0x")) "EXECUTOR_WALLET is not a valid Ethereum address."
 # The private key is essential for any potential live run.
 Assert-Ok ($null -ne $env:EXECUTOR_PRIVATE_KEY -and $env:EXECUTOR_PRIVATE_KEY -ne "") "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for any potential live run."
+Write-Host "[SECURITY NOTE] For production, it is recommended that the application fetches the private key from a secret manager at runtime, rather than relying on a persistent environment variable." -ForegroundColor Yellow
+
+Write-Host "Verifying GCP prerequisites for live activation..."
+# Try to get project ID from env var, then from gcloud config
+$effectiveProject = $env:GCP_PROJECT_ID
+if ([string]::IsNullOrEmpty($effectiveProject)) {
+    try {
+        $effectiveProject = gcloud config get-value project 2>$null
+    }
+    catch {
+        # gcloud might not be configured; we'll catch this in the Assert-Ok below.
+    }
+}
+# Assert that we have a project ID, and provide a helpful error if not.
+Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for a live run to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
+Write-Host "GCP prerequisites passed." -ForegroundColor Green
+
 Write-Host "Wallet configuration checks passed." -ForegroundColor Green
 # --- 2. System Boot ---
 Write-Step "Step 2: Booting All PM2-Managed Services"
@@ -102,22 +119,6 @@ Write-Step "Step 5: Go/No-Go Decision and Autonomous Activation"
 if ($verdict -eq "CANARY_READY") {
     Write-Host "Finalizer verdict is CANARY_READY. The system is ready for live trading." -ForegroundColor Green
 
-    # --- Live-Run Prerequisite Check ---
-    Write-Host "Verifying GCP prerequisites for live activation..."
-    # Try to get project ID from env var, then from gcloud config
-    $effectiveProject = $env:GCP_PROJECT_ID
-    if ([string]::IsNullOrEmpty($effectiveProject)) {
-        try {
-            $effectiveProject = gcloud config get-value project 2>$null
-        }
-        catch {
-            # gcloud might not be configured; we'll catch this in the Assert-Ok below.
-        }
-    }
-    # Assert that we have a project ID, and provide a helpful error if not.
-    Assert-Ok (-not [string]::IsNullOrEmpty($effectiveProject)) "GCP_PROJECT_ID environment variable is not set, and no active project is configured in gcloud. This is required for a live run to fetch secrets. Set it via `$env:GCP_PROJECT_ID='your-project'` or `gcloud config set project your-project`."
-    Write-Host "GCP prerequisites passed." -ForegroundColor Green
-
     Write-Host "Proceeding with AUTONOMOUS LIVE ACTIVATION." -ForegroundColor Yellow
     # Set Canary Mode for initial safety
     Write-Host "Activating Canary Mode (execution capped at 1 per cycle)..."
@@ -143,5 +144,10 @@ Write-Host "✅ SYSTEM IS NOW RUNNING AUTONOMOUSLY IN THE BACKGROUND."
 Write-Host "   The 'omega-engine' and 'omega-liquidation-watcher' daemons are active."
 Write-Host "   Monitor the system via the API/UI: http://127.0.0.1:8080"
 Write-Host "   To stop all services, run: pm2 delete all"
+Write-Host "   To view logs, run: pm2 logs"
 Write-Host "=========================================================================="
+# Persist the PM2 process list to ensure automatic restart on server reboot.
+Write-Host "Saving PM2 process list for startup..."
+pm2 save
+
 pm2 status
