@@ -25,20 +25,27 @@ if (Test-Path $gcloudBin) {
 $null = Get-Command gcloud -ErrorAction Stop
 
 $values = [ordered]@{}
+# Regex to parse KEY=VALUE, handling single quotes, double quotes, unquoted values, and inline comments.
+# - Group 1: The key (e.g., "API_KEY")
+# - Group 2: The value if it's single-quoted (e.g., 'value') -> content only
+# - Group 3: The value if it's double-quoted (e.g., "value") -> content only
+# - Group 4: The value if it's unquoted (e.g., value)
+$envRegex = '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(?:\'([^\']*)\'|"([^"]*)"|([^#]*))\s*(?:#.*)?$'
+
 foreach ($line in Get-Content $EnvPath) {
     $trimmed = $line.Trim()
+    # Skip blank lines or lines that are only comments
     if (-not $trimmed -or $trimmed.StartsWith("#")) {
         continue
     }
-    if ($trimmed -notmatch "^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$") {
-        continue
+
+    if ($trimmed -match $envRegex) {
+        $key = $Matches[1]
+        # The value is in one of the capturing groups 2, 3, or 4. Coalesce them.
+        # Group 4 (unquoted) needs an extra trim for trailing whitespace before a comment.
+        $value = $Matches[2] + $Matches[3] + $Matches[4].TrimEnd()
+        $values[$key] = $value
     }
-    $key = $Matches[1]
-    $value = $Matches[2].Trim()
-    if (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'"))) {
-        $value = $value.Substring(1, $value.Length - 2)
-    }
-    $values[$key] = $value
 }
 
 if ($values.Count -eq 0) {

@@ -45,9 +45,6 @@ $count = 0
 $envRegex = '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*((?:\'[^\']*\''|"[^"]*"|[^#]*))\s*(?:#.*)?$'
 
 foreach ($line in Get-Content $EnvPath) {
-    $trimmed = $line.Trim()
-    if ($trimmed -and -not $trimmed.StartsWith("#") -and $trimmed.Contains("=")) {
-        $key, $value = $trimmed.Split("=", 2)
     # Skip blank lines or lines that are only comments
     if (-not $line.Trim() -or $line.Trim().StartsWith("#")) {
         continue
