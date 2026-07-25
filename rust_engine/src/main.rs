@@ -483,6 +483,7 @@ fn get_y_curve(
 /// NOTE: This is a simplified implementation. A production version would need to
 /// implement quoting logic for V3, Balancer, Curve, etc., and select the
 /// correct quoter based on `pool.protocol`.
+#[instrument(skip_all, fields(path = ?path, amount_in = %amount_in))]
 fn quote_route(
     amount_in: Decimal,
     route_pools: &[&Pool],
@@ -766,6 +767,7 @@ fn evaluate_profitability_rust(
 
 // --- Main Find and Rank Logic (simplified for compilation) ---
 /// Finds the optimal trade size for a given route. Ported from `optimal_flash_sizer.py`.
+#[instrument(skip_all, fields(path = ?path))]
 fn find_optimal_injection(
     route_pools: &[&Pool],
     path: &[&str],
