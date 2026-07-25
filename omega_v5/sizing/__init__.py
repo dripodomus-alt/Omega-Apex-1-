@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 # ==============================================================================
-# omega_v5/sizing — Phase-4 flash sizing package (2.0)
+# omega_v5/sizing — Phase-4 flash sizing package
 #
 # Public API used by opportunity_ranker, payload staging, and tests.
+# Delegates to the OFFICIAL capital_injector for all injection decisions.
 # ==============================================================================
 
 from __future__ import annotations
@@ -10,13 +11,14 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any, Iterable, Sequence
 
-# Config symbols re-exported so tests can monkeypatch omega_v5.sizing.X
 from ..config import (
+    BELLMAN_CURVE_DECAY_FACTOR,
     DYNAMIC_SIZE_IMPACT_PENALTY_BPS,
     DYNAMIC_SIZE_MAX_SEARCH_STEPS,
     DYNAMIC_SIZE_OPT_BINS_USD,
     ENABLE_DYNAMIC_FLASH_SIZING,
     ENABLE_DYNAMIC_SIZE_OPTIMIZER,
+    ENABLE_QUANTUM_SIZING,
     FLASH_ROUTE_TVL_FRACTIONS,
     FLASH_SIZE_LADDER_BPS,
     MAX_FLASH_PRINCIPAL_USD,
@@ -25,6 +27,20 @@ from ..config import (
 )
 from ..flash_loan import FlashSource, evaluate_profitability
 from ..oracle_layer import token_price_usd
+
+from ..capital_injector import (
+    CAPITAL_SOURCE_REGISTRY,
+    EXECUTION_VENUE_REGISTRY,
+    CapitalInjectionResult,
+    RouteMetadata,
+    check_self_cannibalization,
+    compute_derivative_optimal_size,
+    compute_optimal_injection,
+    import_metadata_for_route,
+    optimal_flash_injection as _official_optimal_flash_injection,
+    prepare_sizing_for_rust,
+    register_execution_venue,
+)
 
 from .dynamic_optimizer import (
     DynamicSizeResult,
@@ -43,12 +59,12 @@ from .optimal_flash_sizer import (
     build_size_ladder,
     estimate_pool_tvl_usd,
     find_peak_delta_injection,
-    optimal_flash_injection,
     snapshot_route_tvl,
 )
 
-# Canonical aliases
-optimal_flash_for_route = optimal_flash_injection
+optimal_flash_for_route = _official_optimal_flash_injection
+compute_optimal_flash_injection = compute_optimal_injection
+optimal_flash_injection = _official_optimal_flash_injection
 
 
 def optimize_route_principal(
@@ -61,50 +77,48 @@ def optimize_route_principal(
     base_rate: Decimal | None = None,
     steps: int = 12,
 ) -> RouteSizing:
-    """
-    Stager-facing entry used by route_execution_stager.stage_pre_ranked_route.
-
-    Caps requested principal by route TVL and runs optimize_principal_with_dynamic.
-    """
+    """Stager-facing entry. Uses official capital_injector first (guard + derivative)."""
     requested = Decimal(str(principal_usd or 0))
     pool_ids = [str(p) for p in (pool_sequence or []) if p]
 
-    # Prefer peak-delta injection when TVL is known; bridge to RouteSizing.
     try:
-        opt = optimal_flash_injection(
-            pool_sequence=pool_ids, # type: ignore
+        inj = compute_optimal_injection(
+            pool_sequence=pool_ids,
             pools=pools or {},
-            base_asset=(path[0] if path else "USDC"),
-            hops=max(2, len(pool_ids)),
+            path=path,
             flash_source=flash_source,
             requested_principal_usd=requested if requested > 0 else None,
             base_rate=base_rate if base_rate is not None else Decimal("1.001"),
         )
-        if opt.injection_usd > 0:
-            return RouteSizing(
-                selected_principal_usd=opt.injection_usd,
-                max_profit_usd=opt.peak_net_profit_usd,
-                min_pool_tvl_usd=opt.min_pool_tvl_usd,
-                search_upper_bound_usd=opt.hard_cap_usd,
-                search_steps=int(getattr(opt, "peak_index", 0) or 0),
-                profitability_at_selection=None,
-                search_space_details={
-                    "method": opt.method,
-                    "reason": opt.reason,
-                    "version": "2.0",
-                },
-                method=("proof_only_below_min_flash_principal" if opt.proof_only_below_minimum else f"optimize_route_principal:{opt.method}"),
-                metadata={
-                    "flash_principal_raw": int(opt.injection_raw_hint or 0),
-                    "live_principal_eligible": opt.live_principal_eligible,
-                    "proof_only_below_minimum": opt.proof_only_below_minimum,
-                    "minimum_principal_usd": str(MIN_FLASH_PRINCIPAL_USD),
-                },
-            )
+        # Surface cannibalization as zero-size RouteSizing
+        return RouteSizing(
+            selected_principal_usd=inj.optimal_injection_usd,
+            max_profit_usd=inj.peak_surplus_usd,
+            min_pool_tvl_usd=inj.min_tvl_usd,
+            search_upper_bound_usd=inj.hard_cap_usd,
+            search_steps=steps,
+            profitability_at_selection=None,
+            search_space_details={
+                "method": inj.method,
+                "reason": inj.reason,
+                "quantum_score": str(inj.quantum_score),
+                "cannibalization_detected": inj.cannibalization_detected,
+                "version": "capital_injector_official",
+            },
+            method=f"capital_injector:{inj.method}",
+            metadata={
+                "flash_principal_raw": 0,
+                "live_principal_eligible": inj.live_eligible,
+                "proof_only_below_minimum": not inj.live_eligible,
+                "minimum_principal_usd": str(MIN_FLASH_PRINCIPAL_USD),
+                "bottleneck": inj.bottleneck_pool_id,
+                "cannibalization_detected": inj.cannibalization_detected,
+                "cannibalization_message": inj.cannibalization_message,
+            },
+        )
     except Exception:
         pass
 
-    # Fallback: pure TVL-capped dynamic ladder without live quote
     def _quote(p: Decimal) -> Decimal:
         rate = base_rate if base_rate is not None else Decimal("1.001")
         return p * rate
@@ -121,9 +135,20 @@ def optimize_route_principal(
     )
 
 
-
 __all__ = [
-    # 2.0 dynamic optimizer
+    "CAPITAL_SOURCE_REGISTRY",
+    "EXECUTION_VENUE_REGISTRY",
+    "CapitalInjectionResult",
+    "RouteMetadata",
+    "check_self_cannibalization",
+    "compute_derivative_optimal_size",
+    "compute_optimal_injection",
+    "import_metadata_for_route",
+    "prepare_sizing_for_rust",
+    "register_execution_venue",
+    "optimal_flash_for_route",
+    "compute_optimal_flash_injection",
+    "optimal_flash_injection",
     "RouteSizing",
     "DynamicSizeResult",
     "dynamic_size_optimizer",
@@ -131,7 +156,6 @@ __all__ = [
     "optimize_route_principal",
     "estimate_route_tvl_usd",
     "_apply_impact_penalty",
-    # peak-delta / TVL injection
     "OptimalFlashSize",
     "RouteTvlSnapshot",
     "SizeSample",
@@ -139,10 +163,7 @@ __all__ = [
     "build_size_ladder",
     "estimate_pool_tvl_usd",
     "find_peak_delta_injection",
-    "optimal_flash_injection",
-    "optimal_flash_for_route",
     "snapshot_route_tvl",
-    # patch targets
     "evaluate_profitability",
     "token_price_usd",
     "MAX_FLASH_PRINCIPAL_USD",
@@ -155,5 +176,7 @@ __all__ = [
     "ENABLE_DYNAMIC_FLASH_SIZING",
     "ENABLE_DYNAMIC_SIZE_OPTIMIZER",
     "FLASH_SIZE_LADDER_BPS",
+    "BELLMAN_CURVE_DECAY_FACTOR",
+    "ENABLE_QUANTUM_SIZING",
     "Decimal",
 ]

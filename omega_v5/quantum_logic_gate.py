@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # ==============================================================================
 # quantum_logic_gate.py -- lightweight deterministic VQC compatibility shim.
+#
+# Extended with sizing-specific helpers for the official capital_injector.
 # ==============================================================================
 
 from __future__ import annotations
@@ -10,6 +12,8 @@ from math import cos, sin
 from typing import Iterable
 
 import numpy as np
+
+from .config import ENABLE_QUANTUM_SIZING, QUANTUM_SIZING_SHOTS
 
 
 @dataclass(frozen=True)
@@ -31,7 +35,6 @@ def create_vqc_circuit(
     *,
     reps: int = 1,
 ) -> VQCCircuit:
-    """Return a dependency-light circuit description for ML alpha experiments."""
     feature_tuple = _as_float_tuple(features)
     weight_tuple = _as_float_tuple(np.ravel(list(weights)))
     return VQCCircuit(
@@ -43,7 +46,6 @@ def create_vqc_circuit(
 
 
 def simulate_and_measure(circuit: VQCCircuit, *, shots: int = 100) -> dict[str, int]:
-    """Deterministically approximate binary measurement counts for a VQC shim."""
     shot_count = max(1, int(shots))
     phase = 0.0
     for idx, value in enumerate(circuit.features):
@@ -54,3 +56,23 @@ def simulate_and_measure(circuit: VQCCircuit, *, shots: int = 100) -> dict[str, 
     ones = int(round(probability_one * shot_count))
     ones = min(shot_count, max(0, ones))
     return {"0": shot_count - ones, "1": ones}
+
+
+def quantum_size_stability_score(
+    size_fraction: float,
+    surplus_signal: float,
+    *,
+    shots: int | None = None,
+) -> float:
+    """
+    Quantum-inspired score for a candidate injection size.
+    Used by capital_injector.
+    """
+    if not ENABLE_QUANTUM_SIZING:
+        return 0.5
+    s = shots or QUANTUM_SIZING_SHOTS
+    features = [size_fraction, surplus_signal, size_fraction * 0.8]
+    weights = [0.9, 1.1, 0.6]
+    circuit = create_vqc_circuit(3, features, weights)
+    result = simulate_and_measure(circuit, shots=s)
+    return result.get("1", 0) / float(s)

@@ -5,6 +5,7 @@
 # PRIMARY multi-hop producer for the main funnel (via pre_rank_routes).
 # Produces PreRankedRoute blueprints for 2/3/4-hop closed flash cycles using
 # exhaustive token-path + pool-option product search.
+# Official capital_injector runs before sizing/Rust for cannibalization + OptimalSize.
 # ==============================================================================
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ from eth_abi import encode
 from web3 import Web3
 
 from . import rpc_layer
+from .capital_injector import compute_optimal_injection
 from .config import CHAIN_ID, normalize_protocol
 from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, MIN_NET_PROFIT_USD, evaluate_profitability
@@ -66,9 +68,9 @@ def _hop_fee_fraction(hop: dict[str, Any] | None = None, pool: dict[str, Any] | 
     """
     raw: Any = None
     if hop:
-        raw = hop.get("fee", hop.get("fee_tier", hop.get("fee_bps"))
+        raw = hop.get("fee", hop.get("fee_tier", hop.get("fee_bps")))
     if raw is None and pool:
-        raw = pool.get("fee_tier", pool.get("fee", pool.get("fee_bps", pool.get("swap_fee")))
+        raw = pool.get("fee_tier", pool.get("fee", pool.get("fee_bps", pool.get("swap_fee"))))
     if raw is None:
         raw = 3000
 
@@ -593,6 +595,8 @@ def stage_pre_ranked_route(
     Accepts either:
       stage_pre_ranked_route(route, principal_usd, pools)
       stage_pre_ranked_route(route, pools, requested_principal_usd=...)
+
+    Official capital_injector runs first (cannibalization guard + derivative OptimalSize).
     """
     # Compatibility: stage_pre_ranked_route(route, pools, requested_principal_usd=...)
     if pools is None and isinstance(principal_usd, dict):
@@ -614,6 +618,7 @@ def stage_pre_ranked_route(
     hop_fee_breakdown: list[Decimal] = []
     hop_fees_total = Decimal("0")
     base_amount_in = Decimal("0")
+    injector_meta: dict[str, Any] = {}
 
     def _attach_unified_schema(row: dict[str, Any]) -> dict[str, Any]:
         staged_row = dict(row)
@@ -652,6 +657,8 @@ def stage_pre_ranked_route(
         staged_row.setdefault("current_block", current_block)
         staged_row.setdefault("principal_usd", str(principal_usd))
         staged_row.setdefault("flash_source", flash_source.value)
+        if injector_meta:
+            staged_row.setdefault("capital_injector", injector_meta)
         try:
             envelope = add_staging_to_unified_envelope(
                 unified_envelope_from_pre_ranked(route),
@@ -683,7 +690,46 @@ def stage_pre_ranked_route(
             "hop_fees_usd": str(hop_fees_total),
         })
 
-    sizing = optimize_route_principal(principal_usd, route.pool_sequence, pools)
+    # === OFFICIAL CAPITAL INJECTOR (before legacy sizing / Rust) ===
+    try:
+        injection = compute_optimal_injection(
+            pool_sequence=route.pool_sequence,
+            pools=pools,
+            path=route.path,
+            protocol_seq=route.protocol_seq,
+            flash_source=flash_source,
+            requested_principal_usd=principal_usd if principal_usd > 0 else None,
+        )
+        injector_meta = injection.as_sizing_params()
+        injector_meta["reason"] = injection.reason
+        injector_meta["method"] = injection.method
+        if injection.cannibalization_detected:
+            record_stage_event(
+                stage="SIZING",
+                status="CANNIBALIZATION_BLOCKED",
+                route=list(route.path),
+                block=current_block,
+            )
+            return _attach_unified_schema({
+                "status": "rejected",
+                "stage": "self_cannibalization",
+                "reason": injection.cannibalization_message or "SELF-CANNIBALIZATION DETECTED",
+                "hop_fees_usd": str(hop_fees_total),
+                "selected_principal_usd": "0",
+            })
+        if injection.optimal_injection_usd > 0:
+            principal_usd = injection.optimal_injection_usd
+    except Exception as exc:
+        logger.warning("capital_injector failed, continuing with legacy sizing: %s", exc)
+        injector_meta = {"error": f"{type(exc).__name__}: {exc}"}
+
+    sizing = optimize_route_principal(
+        principal_usd,
+        route.pool_sequence,
+        pools,
+        path=route.path,
+        flash_source=flash_source,
+    )
     if sizing.selected_principal_usd <= 0:
         record_stage_event(
             stage="SIZING",

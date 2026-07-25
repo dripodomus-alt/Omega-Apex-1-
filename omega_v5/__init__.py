@@ -1,9 +1,7 @@
 # ==============================================================================
 # __init__.py -- Omega V5 Arbitrage Engine
 #
-# This file acts as the central index for the Omega V5 package. It makes key
-# components available for import at the top level, simplifying access for
-# scripts and external tools and ensuring a single source of truth.
+# Central index. Now exposes the official capital_injector.
 # ==============================================================================
 
 # --- Core Modules ---
@@ -28,12 +26,19 @@ from . import route_execution_stager
 from . import state_machine
 from . import stable_strategies
 from . import sizing
+from . import capital_injector   # OFFICIAL capital injector
 
 # --- Deferred Imports (to avoid circular dependencies) ---
 from . import liquidation_watcher
 
 # --- Key Class & Function Exports ---
 from .arbitrage import ArbitrageGraphEngine
+from .capital_injector import (
+    CapitalInjectionResult,
+    compute_optimal_injection,
+    import_metadata_for_route,
+    prepare_sizing_for_rust,
+)
 from .config import get_config_value
 from .execution_truth import final_truth_rank, truth_summary
 from .gas_oracle import base_fee_gwei
