@@ -10,7 +10,7 @@
 from decimal import Decimal
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 # --- Mock/Placeholder Imports ---
@@ -152,41 +152,54 @@ async def get_liquidation_discovery_cards(
 @router.post("/dashboard/execute-trade", response_model=ExecutionResponse, tags=["Dashboard Actions"])
 async def execute_trade_from_ui(
     request: TradeExecutionRequest,
-    engine = Depends(get_discovery_engine_instance)
+    engine = Depends(get_discovery_engine_instance) # Dependency injection of mock engine
 ):
     """
     Receives a request from the UI to execute a specific arbitrage trade.
     This endpoint finds the opportunity, performs final validation, and submits
     it to the execution pipeline (the "truth gate").
     """
-    # In a real implementation, this would be the logic:
-    # 1. Find the opportunity in the engine's current ranked list.
-    #    opportunity = engine.find_opportunity_by_signature(request.route_signature)
-    #    if not opportunity:
-    #        return ExecutionResponse(status="rejected", message="Route not found or expired.")
-    #
-    # 2. Update the opportunity with the user-specified principal.
-    #    opportunity.profitability.flashloan.principal_usd = request.principal_usd
-    #    # ... re-evaluate profitability with the new size ...
-    #
-    # 3. Sanity check the expected profit.
-    #    if abs(opportunity.profitability.net_profit_usd - request.expected_net_profit_usd) > SOME_TOLERANCE:
-    #        return ExecutionResponse(status="rejected", message="Profitability mismatch. Market may have shifted.")
-    #
-    # 4. Submit to the execution pipeline.
-    #    execution_result = await engine.submit_for_execution(opportunity)
-    #    return ExecutionResponse(**execution_result.dict())
-
-    # Placeholder response for demonstration:
     print(f"Received execution request for route: {request.route_signature} with size ${request.principal_usd:,.2f}")
-    if "UniV3" in request.route_signature:
+
+    # 1. Find the opportunity in the engine's current ranked list.
+    # MOCK: In a real system, `engine.find_opportunity_by_signature` would search the live ranked list.
+    opportunity = engine.find_opportunity_by_signature(request.route_signature)
+    if not opportunity:
+        raise HTTPException(status_code=404, detail="Route not found or has expired. Market conditions may have changed.")
+
+    # 2. Re-evaluate profitability with the user-specified principal. This is a critical
+    #    step to ensure the user's input is validated against a fresh, live quote.
+    # MOCK: `engine.requote_opportunity` would perform a live `eth_call` simulation.
+    try:
+        updated_opportunity = engine.requote_opportunity(opportunity, request.principal_usd)
+    except Exception as e: # Should be a specific quote failure exception
+        raise HTTPException(status_code=400, detail=f"Failed to get a fresh quote for the specified size. Reason: {e}")
+
+    # 3. Sanity check the expected profit against the fresh quote. This protects
+    #    against executing a trade based on a stale UI state, a key profitability guardrail.
+    PROFIT_TOLERANCE_USD = Decimal("1.00") # Allow up to $1.00 difference
+    profit_mismatch = abs(updated_opportunity.profitability.net_profit_usd - request.expected_net_profit_usd)
+
+    if profit_mismatch > PROFIT_TOLERANCE_USD:
+        msg = (
+            f"Profitability mismatch detected. UI expected ${request.expected_net_profit_usd:.2f}, "
+            f"but fresh quote yields ${updated_opportunity.profitability.net_profit_usd:.2f}. "
+            "The market has likely shifted. Please refresh and try again."
+        )
+        return ExecutionResponse(status="rejected", message=msg)
+
+    # 4. Submit the validated opportunity to the execution pipeline.
+    # MOCK: `engine.submit_for_execution` would pass it to the "truth gate" and broadcaster.
+    execution_result = await engine.submit_for_execution(updated_opportunity, actor=request.actor)
+
+    if execution_result.status == "submitted":
         return ExecutionResponse(
             status="submitted",
             message=f"Trade for route {request.route_signature} submitted to execution pipeline.",
-            tx_hash="0x" + "a" * 64 # Mock transaction hash
+            tx_hash=execution_result.tx_hash
         )
     else:
         return ExecutionResponse(
             status="rejected",
-            message="Route rejected by pre-flight simulation (mock). Market conditions may have changed."
+            message=execution_result.message or "Route rejected by pre-flight simulation. Market conditions may have changed."
         )

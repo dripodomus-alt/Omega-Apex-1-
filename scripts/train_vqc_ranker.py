@@ -52,6 +52,8 @@ def load_and_prepare_data(data_path: Path) -> tuple[np.ndarray, np.ndarray, list
         "principal_usd",
         "slippage_bps",
         "num_legs",
+        "principal_to_tvl_ratio",
+        "gas_cost_usd",
     ]
 
     for rec in records:
@@ -60,11 +62,21 @@ def load_and_prepare_data(data_path: Path) -> tuple[np.ndarray, np.ndarray, list
             continue
 
         try:
+            # Engineer richer features for a more accurate model
+            principal = float(rec.get("principal_usd", 0))
+            route_tvl = float(rec.get("route_tvl_usd", 0))
+
+            # Ratio of trade size to route liquidity. High values may indicate higher risk/slippage.
+            # Cap at 1.0 if TVL is zero or trade is larger than TVL.
+            principal_to_tvl = min(1.0, (principal / route_tvl) if route_tvl > 0 else 1.0)
+
             feat_vector = [
                 float(rec.get("pre_math_gross_rate", 1.0)),
-                float(rec.get("principal_usd", 0)),
+                principal,
                 float(rec.get("slippage_bps", 0)),
                 len(rec.get("path", [])),
+                principal_to_tvl,
+                float(rec.get("gas_cost_usd", 0)),
             ]
             features.append(feat_vector)
 
