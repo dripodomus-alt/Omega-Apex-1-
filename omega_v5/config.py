@@ -465,6 +465,17 @@ QUANTUM_ADJUSTMENT_SCALE: Decimal = Decimal(_env("QUANTUM_ADJUSTMENT_SCALE", "0.
 ML_RANKING_ENABLED: bool = _bool_env("ML_RANKING_ENABLED", "true")
 CURRENT_RANKER_MODEL: str = _env("CURRENT_RANKER_MODEL", "vqc_surplus_ranker_v1.1.0")
 
+# --- Apex Injector, Balancer V3 & Advanced ML ---
+DETERMINISTIC_APEX_INJECTOR_ENABLED: bool = _bool_env("OMEGA_INJECTOR_DETERMINISTIC_MODE", "true")
+APEX_INJECTOR_PRECISION_DECIMALS: int = int(_env("OMEGA_INJECTOR_PRECISION_DECIMALS", "18"))
+APEX_INJECTOR_MAX_TVL_IMPACT_BPS: int = int(_env("OMEGA_INJECTOR_MAX_TVL_IMPACT_BPS", "500"))
+
+BALANCER_V3_VAULT: str = _env("BALANCER_V3_VAULT", "0xBA12222222228d8Ba445958a75a0704d566BF2C8")
+ENABLE_TRANSIENT_STORAGE_FLASH: bool = _bool_env("ENABLE_TRANSIENT_STORAGE_FLASH", "true")
+
+RESERVE_DRIFT_THRESHOLD_MS: int = int(_env("OMEGA_RESERVE_DRIFT_THRESHOLD_MS", "200"))
+ML_LIQUIDITY_VOLATILITY_THRESHOLD: float = float(_env("OMEGA_ML_LIQUIDITY_VOLATILITY_THRESHOLD", "0.85"))
+
 # ==============================================================================
 # DISCOVERY PARAMETERS
 # ==============================================================================

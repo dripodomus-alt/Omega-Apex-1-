@@ -50,6 +50,10 @@ Assert-Ok -Condition ($env:EXECUTOR_WALLET.Length -eq 42 -and $env:EXECUTOR_WALL
 Assert-Ok -Condition ($null -ne $env:EXECUTOR_PRIVATE_KEY -and $env:EXECUTOR_PRIVATE_KEY -ne "") -Message "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for any potential live run."
 Write-Host "[SECURITY NOTE] For production, it is recommended that the application fetches the private key from a secret manager at runtime, rather than relying on a persistent environment variable." -ForegroundColor Yellow
 
+Write-Host "Verifying core configuration integrity..."
+python scripts/ops/validate_config.py
+Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Core configuration validation (validate_config.py) FAILED."
+
 Write-Host "Verifying GCP prerequisites for live activation..."
 # Try to get project ID from env var, then from gcloud config
 $effectiveProject = $env:GCP_PROJECT_ID
