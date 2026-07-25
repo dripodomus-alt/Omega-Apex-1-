@@ -1,100 +1,57 @@
 # ==============================================================================
-# Docker Compose for Omega V5 Production Environment
+# Docker Compose for OMEGA-FINALLY-RICH
 #
-# This file defines the multi-service architecture for a production deployment.
-# It replaces the need for local pm2/batch scripts by using Docker as the
-# process and environment manager.
+# This file defines the services based on the new TypeScript monorepo.
 #
 # Usage:
-#   1. Ensure your .env file is configured with your secrets.
-#   2. Build the services: docker-compose build
-#   3. Start the system:   docker-compose up -d
-#   4. Monitor logs:       docker-compose logs -f <service_name>
-#   5. Stop the system:    docker-compose down
+#   docker compose up -d --build
 # ==============================================================================
 
 version: '3.8'
 
 services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm --filter api start
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm --filter worker start
+    env_file:
+      - .env
+    depends_on:
+      - redis
+      - api
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pnpm --filter web start
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: omega-redis
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  dodo-provider:
-    build: .
-    container_name: omega-dodo-provider
-    command: ["pnpm", "--dir", "vendor/web3-rpc-provider", "start:prod"]
-    ports:
-      - "3001:3001"
-    env_file: .env
-    environment:
-      - PORT=3001
-    restart: unless-stopped
-
-  anvil:
-    build: .
-    container_name: omega-anvil-fork
-    command: >
-      anvil --host 0.0.0.0 --fork-url ${FORK_UPSTREAM_RPC_URL}
-    ports:
-      - "8545:8545"
-    env_file: .env
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "cast", "chain-id", "--rpc-url", "http://localhost:8545"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-  # Base service for all Python applications
-  app:
-    build: .
-    env_file: .env
-    depends_on:
-      redis:
-        condition: service_healthy
-      anvil:
-        condition: service_healthy
-      dodo-provider:
-        condition: service_started
-    restart: unless-stopped
-    # For production, the code is baked into the image.
-    # For development, uncomment the volume mount below to sync local code changes.
-    # volumes:
-    #   - .:/app
-
-  api:
-    extends: app
-    container_name: omega-api
-    command: >
-      uvicorn omega_v5.api:app --host 0.0.0.0 --port 8080
-    ports:
-      - "8080:8080"
-
-  engine:
-    extends: app
-    container_name: omega-engine
-    command: python -m omega_v5.main
-
-  liquidation-watcher:
-    extends: app
-    container_name: omega-liquidation-watcher
-    command: python -m omega_v5.liquidation_watcher
-
-  telegram-bot:
-    extends: app
-    container_name: omega-telegram-bot
-    command: python -m omega_v5.telegram_bot
 
 volumes:
   redis_data: {}

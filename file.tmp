@@ -206,20 +206,6 @@ pm2 list
 pm2 logs omega-engine
 ```
 
-### Remote Control via Telegram
-
-Once configured, the Telegram bot provides a powerful interface for remote management.
-
-**Available Commands:**
-
-- `/status`: Get the current runtime mode and settings.
-- `/pnl`: View a summary of live and dry-run profits.
-- `/pm2`: Get a live status overview of all `pm2` managed processes.
-- `/mode`: Change the runtime mode (`live`, `dry_run`, `canary`, `shadow`).
-- `/sweep`: Execute a profit sweep to your configured receiver wallet.
-- `/arbitrage_on`, `/arbitrage_off`: Start or stop the arbitrage engine.
-- `/liquidation_on`, `/liquidation_off`: Start or stop the liquidation watcher.
-
 ## Activation Sequence for Mainnet
 
 To achieve true mainnet readiness, the system must be activated in stages. **Do not skip these critical safety steps.**
@@ -229,55 +215,22 @@ The system starts in this mode. It discovers and simulates opportunities but **d
 
 ### 2. Shadow Mode
 In this mode, the system builds the exact transaction calldata and simulates it using `eth_call` against a live mainnet fork. This is the final verification step before live execution and proves that the generated payloads are valid.
-- **Set via API/UI:** `/api/runtime/mode` -> `shadow`
 
 ### 3. Canary Mode
 The first live execution mode. The system will broadcast **at most one** transaction per cycle with a **small, bounded principal**. This is a critical safety check to validate the entire execution path with minimal risk.
-- **Set via API/UI:** `/api/runtime/mode` -> `canary`
 
 ### 4. Live Mode
 Full autonomous operation with the principal and execution limits defined in your configuration. Only activate this after successful and profitable canary runs.
-- **Set via API/UI:** `/api/runtime/mode` -> `live`
 
----
-
-## Final Pre-Broadcast Verification
-
-Before activating `canary` or `live` mode, you must run the `mainnet_finalizer` proof. This script aggregates all system proofs and provides a definitive verdict.
-
-```powershell
-# From your local machine or inside the VM
-python -m omega_v5.mainnet_finalizer --probe
-```
-
-Review the output artifact at `out/mainnet_finalizer_latest.json`.
-
-| Verdict | Meaning | Action |
-| :--- | :--- | :--- |
-| **`SHADOW_READY`** | The system is configured correctly for simulation, but a live-executable opportunity has **not** been found. | Continue running in `dry_run` or `shadow` mode. **Do not proceed to live.** |
-| **`CANARY_READY`** | All systems are go. A profitable, `eth_call`-verified opportunity has been found and a valid payload was constructed. | **Safe to activate `canary` mode.** |
-| **`BLOCKED`** | A critical misconfiguration or failure was detected (e.g., RPC failure, invalid private key). | Review the `failures` and `detail` sections of the report. **Do not proceed.** |
-
-**You must see a `CANARY_READY` verdict before any live activation.**
-
----
 
 ## Security Model: The Execution Guard Wall
 
 The system is built on a "fail-closed" principle. The following guards form a wall that a transaction payload must pass before it can be signed and broadcast. If any check fails, execution is blocked.
 
-- **No `eth_call` Pass, No Broadcast**: The transaction must succeed in a final `eth_call` simulation against the live chain state.
-- **No Verified Adapter, No Payload**: The selected flash loan source (e.g., Balancer) must have a deployed and verified adapter contract configured in the executor.
-- **No Route Kind Coverage, No Route**: Every pool in the route must belong to a supported protocol family (e.g., `V3_CLMM`) for which a swap implementation exists.
-- **No Executor Bytecode, No Execution**: The target executor contract address must have valid bytecode on-chain.
-- **No Valid Private Key, No Signing**: The `EXECUTOR_PRIVATE_KEY` must be valid and correspond to the `EXECUTOR_WALLET`.
-- **No Writable Lane, No Broadcast**: A healthy, explicitly configured `BROADCAST_RPC_URL` must be available. Read-only RPCs are never used for submission.
-- **No Fork/`eth_call` Agreement, No Broadcast**: If fork simulation is enabled, its result must match the `eth_call` simulation.
-- **WaaS/Session Signer Isolation**: Delegated signing paths (like Web3-as-a-Service) are kept outside the primary arbitrage hot path for maximum security.
+- **User-Signed Transactions**: The platform prepares transaction calldata but does not have access to user private keys. The user must sign and broadcast all transactions through their own wallet, providing the ultimate security guarantee.
 
-These rules are enforced programmatically by `omega_v5/execution_truth.py` and `omega_v5/mainnet_finalizer.py`.
+These rules are enforced programmatically by the `worker` and `api` services.
 
----
 
 ## Development & Testing
 
@@ -287,70 +240,27 @@ These rules are enforced programmatically by `omega_v5/execution_truth.py` and `
     pytest
     ```
 
-- **Run 25-Cycle Dry Run Simulation**: This script runs a full simulation and generates a detailed economic report for every profitable opportunity, logged to `out/dry_run_full_log.jsonl`.
-
-    ```bash
-    python tests/dry_run_25_cycles.py
-    ```
-
-- **Run Payload Structure Proof**: This script generates a proof artifact demonstrating the correct calldata structure for C1, C2, and Liquidation transactions. It is the definitive reference for the on-chain executor's expected input.
-
-    ```bash
-    python -m omega_v5.payload_structure_proof
-    ```
-    The output is saved to `out/payload_structure_proof_latest.json`.
-
-agree with the deployed executor contracts.
-
-## Current Production Shape
-
-```text
-Polygon RPC/WSS providers
-        |
-        v
-32-lane Redis-backed transport layer
-        |
-        +--> live discovery and pool state
-        +--> exact-call truth lane
-        +--> Anvil/Foundry fork simulation lane
-        +--> isolated writable broadcast lane
-        |
-        v
-Python scanner/ranker + mandatory Rust graph engine
-        |
-        v
-truth-backed executable route queue
-        |
-        v
-C1 / C2 / Liquidation payload envelopes
-        |
-        v
-deployed executor + source adapters + receipt/PnL trace loop
-```
-
-The hot path is intentionally narrow:
-
-- Discovery may be broad.
-- Ranking may be speculative at first pass.
-- Execution must be exact-call backed.
-- Broadcast must use a writable lane only.
-- Smart Sessions/WaaS are optional delegated UX proof lanes, not arbitrage truth.
-
 ## Repository Map
 
 ```text
-omega_v5/               Python runtime package
-rust_engine/            Mandatory Rust graph-cycle engine
-contracts/              Solidity executors and source adapters
-scripts/pm2/            Redis, Anvil, DODO provider, API, engine boot scripts
-scripts/network/        RPC probe and benchmark tools
-scripts/rust/           Rust build/preflight helpers
-vendor/web3-rpc-provider/ DODOEX endpoint metadata provider
-docs/                   Architecture and operator notes
-infra/compose/          Optional indexer/Kafka/Redpanda compose assets
-out/                    Runtime proof artifacts and generated state
-cache/                  Local caches
-logs/                   PM2/runtime logs
+OMEGA-FINALLY-RICH/
+├── apps/
+│   ├── web/                 # Next.js execution terminal
+│   ├── api/                 # FastAPI backend
+│   └── worker/              # Discovery + simulation workers
+├── packages/
+│   ├── adapters/            # DEX adapters
+│   ├── execution/           # Transaction builders & deployment scripts
+│   ├── simulation/          # Profit/gas/slippage engine
+│   ├── mev/                 # MEV analysis
+│   ├── ranking/             # Opportunity scoring
+│   ├── shared/              # Shared types/utils
+│   └── ui/                  # Shared UI components
+├── infrastructure/
+│   ├── docker/
+│   ├── kubernetes/
+│   └── monitoring/
+└── docs/
 ```
 
 Root runtime files:

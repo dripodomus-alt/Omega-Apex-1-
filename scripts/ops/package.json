@@ -1,0 +1,18 @@
+{
+  "name": "@omega/execution",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "deploy": "ts-node src/deploy-adapters.ts"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ethers": "^6.11.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}

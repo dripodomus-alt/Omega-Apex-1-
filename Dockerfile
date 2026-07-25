@@ -1,90 +1,53 @@
 # ==============================================================================
-# Dockerfile for Omega V5
+# Dockerfile for OMEGA-FINALLY-RICH Monorepo
 #
-# This builds a production-ready image with all necessary dependencies:
-# - Python 3.10
-# - Rust toolchain
-# - Foundry (for Anvil)
-# - Node.js & pnpm (for the DODO RPC provider)
+# This is a multi-stage build optimized for pnpm workspaces.
+# It creates a lean production image by separating build dependencies
+# from the final runtime environment.
 # ==============================================================================
 
-# ==============================================================================
-# Builder Stage: Installs all tools and builds all artifacts.
-# ==============================================================================
-FROM python:3.10-slim AS builder
+# --- 1. Base Stage ---
+# Use a specific Node.js version for reproducibility.
+FROM node:20-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
-# Set environment variables for non-interactive installation
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install system dependencies: curl, git, build-essentials for Rust/Python packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    git \
-    build-essential \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Rust
-ENV RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-
-# Install Foundry (for Anvil)
-RUN curl -L https://foundry.paradigm.xyz | bash && \
-    /root/.foundry/bin/foundryup
-ENV PATH="/root/.foundry/bin:${PATH}"
-
-# Install Node.js (LTS) and pnpm
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs && \
-    npm install -g pnpm && \
-    npm install -g pm2
-
-# Set up the application directory
+# --- 2. Dependencies Stage ---
+# Install all dependencies, including devDependencies, needed for the build.
+FROM base AS deps
 WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+COPY apps/worker/package.json ./apps/worker/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/shared/package.json ./packages/shared/
+# Add other packages as needed
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 
-# Copy dependency manifests
-COPY requirements.txt ./
-COPY rust_engine/Cargo.toml ./rust_engine/Cargo.toml
-COPY rust_engine/Cargo.lock ./rust_engine/Cargo.lock
-COPY vendor/web3-rpc-provider/package.json ./vendor/web3-rpc-provider/
-COPY vendor/web3-rpc-provider/pnpm-lock.yaml ./vendor/web3-rpc-provider/
-
-# Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-RUN cd vendor/web3-rpc-provider && pnpm install --frozen-lockfile
-
-# Copy the rest of the application source code
+# --- 3. Builder Stage ---
+# Build all the applications in the monorepo.
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN pnpm build
 
-# Build the Rust engine
-RUN cd rust_engine && cargo build --release
-
-# ==============================================================================
-# Final Stage: Creates a lean production image.
-# ==============================================================================
-FROM python:3.10-slim
-
-ENV DEBIAN_FRONTEND=noninteractive
-
-# Install only runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Foundry (for Anvil)
-RUN curl -L https://foundry.paradigm.xyz | bash && \
-    /root/.foundry/bin/foundryup
-ENV PATH="/root/.foundry/bin:${PATH}"
-
+# --- 4. Runner Stage ---
+# Create the final, lean image for production.
+FROM base AS runner
 WORKDIR /app
 
-COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-COPY --from=builder /app .
-
-# The ecosystem.config.cjs file defines all the services to be run by pm2.
-# pm2-runtime is the correct command for running pm2 in a container,
-# as it handles signals properly for graceful shutdown.
-CMD ["pm2-runtime", "start", "ecosystem.config.cjs"]
+# Copy only the necessary production dependencies
+COPY --from=deps /app/node_modules ./node_modules
+# Copy the built application code
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
+COPY --from=builder /app/apps/web/.next ./apps/web/.next
+COPY --from=builder /app/apps/web/public ./apps/web/public
+COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
+# Expose the ports for the services
+EXPOSE 3000
+EXPOSE 8000
