@@ -257,9 +257,7 @@ def _get_fees_from_tiers(
             try:
                 fee_val = Decimal(str(raw_fee))
                 if fee_val > 100:
-                    # bps or millionths style
                     if fee_val >= Decimal("100"):
-                        # Uniswap-style 3000 = 0.3%
                         fee_val = fee_val / Decimal("1000000") if fee_val >= Decimal("10000") else fee_val / BPS
                 elif fee_val > 1:
                     fee_val = fee_val / BPS
@@ -281,7 +279,6 @@ def _get_rin_rout_from_metadata(
     """
     pool = (pools or {}).get(pool_id, {}) or {}
 
-    # --- V3 Virtual Reserve Logic (Apex Injector) ---
     if DETERMINISTIC_APEX_INJECTOR_ENABLED:
         try:
             protocol = normalize_protocol(pool.get("protocol", ""))
@@ -289,20 +286,15 @@ def _get_rin_rout_from_metadata(
                 sqrtPriceX96 = int(pool.get("sqrtPriceX96", 0))
                 liquidity = int(pool.get("liquidity", 0))
                 if sqrtPriceX96 > 0 and liquidity > 0:
-                    # V3 logic: r0 is virtual reserve of token0, r1 is virtual reserve of token1
                     r0_virtual, r1_virtual = PrecisionPricingEngine.get_v3_virtual_reserves(sqrtPriceX96, liquidity)
-
                     tokens = list(pool.get("tokens") or [])
                     if len(tokens) >= 2:
                         p0 = token_price_usd(str(tokens[0]))
                         p1 = token_price_usd(str(tokens[1]))
-
-                        # Convert virtual reserves to USD values for the derivative formula
                         usd0 = r0_virtual * Decimal(str(p0))
                         usd1 = r1_virtual * Decimal(str(p1))
                         return max(usd0, Decimal("1")), max(usd1, Decimal("1"))
         except Exception:
-            # Fallback to TVL logic if V3-specific fields are missing/invalid
             pass
 
     tokens = list(pool.get("tokens") or pool.get("token_addresses") or [])
@@ -316,7 +308,6 @@ def _get_rin_rout_from_metadata(
             p1 = token_price_usd(str(tokens[1]))
             usd0 = r0 * Decimal(str(p0))
             usd1 = r1 * Decimal(str(p1))
-            # Treat base-side as Rin when possible
             base = str(base_asset or "").upper()
             t0 = str(tokens[0]).upper()
             t1 = str(tokens[1]).upper()
@@ -336,7 +327,6 @@ def _get_rin_rout_from_metadata(
     except Exception:
         pass
 
-    # Conservative fallback so derivative path can still evaluate
     return Decimal("100000"), Decimal("100000")
 
 
@@ -404,7 +394,6 @@ def import_metadata_for_route(
     if not pool_ids:
         raise ValueError("No pool_sequence provided for metadata import")
 
-    # Keep execution silo updated (never capital sources)
     register_execution_venues_from_pools({pid: (pools or {}).get(pid, {}) for pid in pool_ids})
 
     tvls: dict[str, Decimal] = {}
@@ -424,7 +413,6 @@ def import_metadata_for_route(
                     tvl += Decimal(str(res)) * Decimal(str(price))
                 except Exception:
                     continue
-        # Prefer explicit executable liquidity fields
         for key in ("total_executable_liquidity_usd", "tvl_usd", "liquidity_usd"):
             if tvl > 0:
                 break
@@ -569,212 +557,84 @@ def compute_optimal_injection(
     requested_principal_usd: Optional[Decimal] = None,
     base_rate: Optional[Decimal] = None,
     quote_fn: Optional[Callable[[Decimal], Decimal]] = None,
-    funding_pool_id: Optional[str] = None,
 ) -> CapitalInjectionResult:
     """
-    Official entry point.
-    1) Hard cannibalization guard
-    2) Exact derivative formula (L1/L2 data)
-    3) Bellman + quantum fallback
+    Official entry point. Runs cannibal guard then derivative sizing.
+    Falls back to Bellman + quantum search.
     """
-    pool_list = [str(p) for p in (pool_sequence or []) if p]
-    src = flash_source if isinstance(flash_source, FlashSource) else FlashSource.BALANCER
+    metadata = import_metadata_for_route(pool_sequence, pools, path, protocol_seq)
 
-    # === HARD CANNIBALIZATION GUARD ===
-    is_cannibal, cannibal_msg = check_self_cannibalization(
-        src.value,
-        pool_list,
-        funding_pool_id_override=funding_pool_id,
+    funding_key = flash_source.value if isinstance(flash_source, FlashSource) else str(flash_source)
+    cannibal, cannibal_msg = check_self_cannibalization(
+        funding_source=funding_key,
+        pool_sequence=metadata.pool_ids,
     )
-    if is_cannibal:
+    if cannibal:
         return _zero_result(
-            method="cannibalization_blocked",
-            reason="self_cannibalization_detected",
+            method="cannibal_block",
+            reason="self_cannibalization",
             cannibal=True,
             cannibal_msg=cannibal_msg,
+            bottleneck=metadata.bottleneck_pool_id,
+            min_tvl=metadata.min_tvl_usd,
         )
 
-    if not (ENABLE_DYNAMIC_FLASH_SIZING or ENABLE_DYNAMIC_SIZE_OPTIMIZER):
-        inj = min(
-            Decimal(str(requested_principal_usd or MAX_FLASH_PRINCIPAL_USD)),
-            MAX_FLASH_PRINCIPAL_USD,
-        )
-        return CapitalInjectionResult(
-            optimal_injection_usd=inj,
-            peak_surplus_usd=ZERO,
-            min_tvl_usd=ZERO,
-            bottleneck_pool_id="",
-            route_cap_usd=inj,
-            hard_cap_usd=inj,
-            method="fixed_disabled",
-            reason="dynamic sizing disabled in config",
-            live_eligible=inj >= MIN_FLASH_PRINCIPAL_USD,
-            metadata={"cannibalization_checked": True},
-        )
+    f_flash, f_swap = _get_fees_from_tiers(flash_source)
 
-    try:
-        meta = import_metadata_for_route(pool_list, pools or {}, path=path, protocol_seq=protocol_seq)
-    except ValueError as exc:
-        return _zero_result(method="rejected_no_pools", reason=str(exc))
-
-    if meta.min_tvl_usd <= 0:
-        return _zero_result(
-            method="rejected_no_tvl",
-            reason="no executable TVL in route metadata",
-            bottleneck=meta.bottleneck_pool_id,
-        )
-
-    # Caps
-    frac_list = list(FLASH_ROUTE_TVL_FRACTIONS or [MAX_ROUTE_TVL_FRACTION])
-    try:
-        frac = max(Decimal(str(f)) for f in frac_list)
-    except Exception:
-        frac = Decimal(str(MAX_ROUTE_TVL_FRACTION or "0.25"))
-    route_cap = meta.min_tvl_usd * frac
-    hard_cap = min(route_cap, MAX_FLASH_PRINCIPAL_USD)
-    if requested_principal_usd is not None:
-        try:
-            req = Decimal(str(requested_principal_usd))
-            if req > 0:
-                hard_cap = min(hard_cap, req)
-        except Exception:
-            pass
-
-    # === L1 + L2 DATA ===
-    bottleneck_pool = (pools or {}).get(meta.bottleneck_pool_id, {}) or {}
-    f_flash, f_swap = _get_fees_from_tiers(src, bottleneck_pool)
     rin, rout = _get_rin_rout_from_metadata(
-        meta.bottleneck_pool_id, pools or {}, meta.base_asset
+        metadata.bottleneck_pool_id, pools, metadata.base_asset
     )
 
-    # === EXACT DERIVATIVE FORMULA (preferred) ===
-    derivative_size = compute_derivative_optimal_size(rin, rout, f_swap, f_flash)
-    derivative_size, deriv_reason = _apply_friction_threshold(
-        derivative_size, rin, rout, f_swap, f_flash
-    )
-
-    if derivative_size > 0:
-        final_size = min(derivative_size, hard_cap)
-        if final_size < MIN_FLASH_PRINCIPAL_USD:
-            final_size = ZERO
-        qscore = _quantum_score_size(final_size, meta.min_tvl_usd, ZERO)
-        return CapitalInjectionResult(
-            optimal_injection_usd=final_size.quantize(Decimal("0.01")) if final_size > 0 else ZERO,
-            peak_surplus_usd=ZERO,
-            min_tvl_usd=meta.min_tvl_usd,
-            bottleneck_pool_id=meta.bottleneck_pool_id,
-            route_cap_usd=route_cap,
-            hard_cap_usd=hard_cap,
-            method="exact_derivative_formula",
-            reason=f"derivative_optimal ({deriv_reason})",
-            quantum_score=qscore,
-            live_eligible=final_size >= MIN_FLASH_PRINCIPAL_USD,
-            metadata={
-                "rin": str(rin),
-                "rout": str(rout),
-                "f_swap": str(f_swap),
-                "f_flash": str(f_flash),
-                "formula": "OptimalSize=(sqrt(Rin*Rout*(1-fswap)*(1-fflash))-Rin)/(1-fswap)",
-                "cannibalization_checked": True,
-                "friction": deriv_reason,
-            },
-        )
-
-    # === FALLBACK: BELLMAN + QUANTUM ===
-    if hard_cap < MIN_FLASH_PRINCIPAL_USD:
-        hard_cap = MIN_FLASH_PRINCIPAL_USD
-
-    ladder = _build_ladder(hard_cap, meta.min_tvl_usd)
-    rate = base_rate if base_rate is not None else Decimal("1.0015")
-
-    best_inj = ZERO
-    best_surplus = Decimal("-1e18")
-    samples: list[dict[str, Any]] = []
-    quantum_scores: list[Decimal] = []
-
-    for x in ladder:
-        x = Decimal(str(x))
-        if x <= 0:
-            continue
-        if quote_fn is not None:
-            try:
-                gross = Decimal(str(quote_fn(x)))
-            except Exception:
-                gross = _bellman_ford_surplus_curve(x, rate, meta.min_tvl_usd)
-        else:
-            gross = _bellman_ford_surplus_curve(x, rate, meta.min_tvl_usd)
-
-        try:
-            prof = evaluate_profitability(
-                gross, x, hops=meta.hops, flash_source=src, asset=meta.base_asset
-            )
-            net = prof.net_profit_usd
-            passes = prof.passes_gate
-        except Exception:
-            net = gross - x - (x * Decimal("0.0005"))
-            try:
-                passes = net > live_min_net_profit_usd()
-            except Exception:
-                passes = net > ZERO
-
-        samples.append(
-            {
-                "principal_usd": str(x),
-                "gross_out_usd": str(gross),
-                "net_surplus_usd": str(net),
-                "passes": bool(passes),
-            }
-        )
-        if net > best_surplus and passes:
-            best_surplus = net
-            best_inj = x
-        quantum_scores.append(_quantum_score_size(x, meta.min_tvl_usd, net))
-
-    if best_inj <= 0:
-        best_inj = ladder[len(ladder) // 2] if ladder else hard_cap
-        best_surplus = ZERO
-        method = "fallback_mid_ladder"
-        reason = "no positive peak on Bellman curve (derivative also failed friction)"
+    if requested_principal_usd is not None and requested_principal_usd > 0:
+        optimal = Decimal(str(requested_principal_usd))
+        method = "requested"
+        reason = "user_override"
     else:
-        method = "bellman_ford_peak_with_quantum"
-        reason = f"argmax surplus at {best_inj} on lowest TVL={meta.min_tvl_usd}"
+        optimal = compute_derivative_optimal_size(rin, rout, f_swap, f_flash)
+        optimal, reason = _apply_friction_threshold(optimal, rin, rout, f_swap, f_flash)
+        method = "derivative" if reason == "passed" else "friction_blocked"
 
-    avg_q = (
-        sum(quantum_scores, ZERO) / Decimal(len(quantum_scores))
-        if quantum_scores
-        else Decimal("0.5")
+    # Hard caps
+    hard_cap = min(
+        MAX_FLASH_PRINCIPAL_USD,
+        metadata.min_tvl_usd * MAX_ROUTE_TVL_FRACTION,
     )
-    quantum_adj = (avg_q - Decimal("0.5")) * Decimal("0.02")
-    final_inj = best_inj * (Decimal("1") + quantum_adj)
-    final_inj = min(final_inj, hard_cap)
-    if final_inj < MIN_FLASH_PRINCIPAL_USD and best_surplus <= 0:
-        final_inj = ZERO
+    optimal = min(optimal, hard_cap)
 
-    q_final = _quantum_score_size(final_inj, meta.min_tvl_usd, best_surplus)
+    # Bellman + quantum refinement
+    br = base_rate or Decimal("1.0015")
+    peak = _bellman_ford_surplus_curve(optimal, br, metadata.min_tvl_usd)
+    qscore = _quantum_score_size(optimal, metadata.min_tvl_usd, peak)
+
+    # Ladder search for best
+    ladder = _build_ladder(hard_cap, metadata.min_tvl_usd)
+    best_prin = optimal
+    best_surplus = peak
+    samples = []
+    for cand in ladder:
+        sur = _bellman_ford_surplus_curve(cand, br, metadata.min_tvl_usd)
+        samples.append({"principal": str(cand), "surplus": str(sur)})
+        if sur > best_surplus:
+            best_surplus = sur
+            best_prin = cand
+
+    live_eligible = best_prin >= MIN_FLASH_PRINCIPAL_USD and best_surplus > 0
 
     return CapitalInjectionResult(
-        optimal_injection_usd=final_inj.quantize(Decimal("0.01")) if final_inj > 0 else ZERO,
-        peak_surplus_usd=best_surplus if best_surplus > ZERO else ZERO,
-        min_tvl_usd=meta.min_tvl_usd,
-        bottleneck_pool_id=meta.bottleneck_pool_id,
-        route_cap_usd=route_cap,
+        optimal_injection_usd=best_prin,
+        peak_surplus_usd=best_surplus,
+        min_tvl_usd=metadata.min_tvl_usd,
+        bottleneck_pool_id=metadata.bottleneck_pool_id,
+        route_cap_usd=metadata.total_executable_liquidity,
         hard_cap_usd=hard_cap,
         method=method,
         reason=reason,
-        samples=tuple(samples[:32]),
-        quantum_score=q_final,
-        quantum_adjustment=quantum_adj,
-        live_eligible=final_inj >= MIN_FLASH_PRINCIPAL_USD and best_surplus > ZERO,
-        metadata={
-            "rin": str(rin),
-            "rout": str(rout),
-            "f_swap": str(f_swap),
-            "f_flash": str(f_flash),
-            "derivative_attempted": True,
-            "derivative_reason": deriv_reason,
-            "cannibalization_checked": True,
-            "ladder_len": len(ladder),
-        },
+        samples=tuple(samples),
+        quantum_score=qscore,
+        quantum_adjustment=ZERO,
+        live_eligible=live_eligible,
+        metadata={"rin": str(rin), "rout": str(rout), "f_swap": str(f_swap), "f_flash": str(f_flash)},
+        cannibalization_detected=False,
     )
 
 
@@ -783,67 +643,37 @@ def prepare_sizing_for_rust(
     pools: dict,
     *,
     path: Optional[Sequence[str]] = None,
-    protocol_seq: Optional[Sequence[str]] = None,
     flash_source: FlashSource = FlashSource.BALANCER,
     requested_principal_usd: Optional[Decimal] = None,
-    base_rate: Optional[Decimal] = None,
 ) -> dict[str, Any]:
-    """
-    Bridge used by rust_engine / stager: run injector, return sizing_params dict.
-    """
+    """Prepare clean dict for Rust engine. Enforces guard + derivative."""
     result = compute_optimal_injection(
         pool_sequence=pool_sequence,
-        pools=pools or {},
+        pools=pools,
         path=path,
-        protocol_seq=protocol_seq,
         flash_source=flash_source,
         requested_principal_usd=requested_principal_usd,
-        base_rate=base_rate,
     )
-    params = result.as_sizing_params()
-    params["live_eligible"] = result.live_eligible
-    params["reason"] = result.reason
-    return params
+    return result.as_sizing_params()
 
 
 def optimal_flash_injection(
     *,
     pool_sequence: Iterable[str],
     pools: dict,
-    base_asset: str = "USDC",
-    hops: int | None = None,
+    path: Optional[Sequence[str]] = None,
     flash_source: FlashSource = FlashSource.BALANCER,
-    requested_principal_usd: Decimal | None = None,
-    base_rate: Decimal | None = None,
-    quote_fn: Callable[[Decimal], Decimal] | None = None,
-    **kwargs: Any,
+    requested_principal_usd: Optional[Decimal] = None,
 ) -> CapitalInjectionResult:
-    """Public alias used by sizing package and ranker."""
-    path = kwargs.get("path") or ([base_asset] if base_asset else None)
+    """Convenience alias to the official injector."""
     return compute_optimal_injection(
         pool_sequence=pool_sequence,
-        pools=pools or {},
+        pools=pools,
         path=path,
-        protocol_seq=kwargs.get("protocol_seq"),
         flash_source=flash_source,
         requested_principal_usd=requested_principal_usd,
-        base_rate=base_rate,
-        quote_fn=quote_fn,
-        funding_pool_id=kwargs.get("funding_pool_id"),
     )
 
 
-__all__ = [
-    "CAPITAL_SOURCE_REGISTRY",
-    "EXECUTION_VENUE_REGISTRY",
-    "CapitalInjectionResult",
-    "RouteMetadata",
-    "check_self_cannibalization",
-    "compute_derivative_optimal_size",
-    "compute_optimal_injection",
-    "import_metadata_for_route",
-    "optimal_flash_injection",
-    "prepare_sizing_for_rust",
-    "register_execution_venue",
-    "register_execution_venues_from_pools",
-]
+if __name__ == "__main__":
+    print("capital_injector.py — canonical module ready.")

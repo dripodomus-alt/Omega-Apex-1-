@@ -9,6 +9,14 @@
 - **Test:** `pytest`
 - **Benchmark + Readiness:** `.\scripts\run_full_benchmark_and_readiness.ps1`
 
+## Canonical Modules (Finalized)
+- **Capital Injector**: `omega_v5/capital_injector.py` is the OFFICIAL and ONLY path for flash loan sizing.
+  - Segregated CAPITAL_SOURCE_REGISTRY vs EXECUTION_VENUE_REGISTRY
+  - Hard self-cannibalization guard (blocks before any math)
+  - Exact derivative formula: OptimalSize = (sqrt(Rin * Rout * (1-f_swap)*(1-f_flash)) - Rin) / (1 - f_swap)
+  - Must be called via `compute_optimal_injection` / `prepare_sizing_for_rust` / `optimal_flash_injection` before Rust engine or stager sizing.
+- All sizing in opportunity_ranker, route_execution_stager, and notebooks MUST go through it.
+
 ## How Grok should work here
 1. Prefer **read_file / write_file** over shell for source changes.
 2. Write **complete files** (no partial patches unless asked).
@@ -23,6 +31,7 @@
 - `scripts/` — PowerShell orchestration (ops, pm2, reporting)
 - `tests/` — pytest suite
 - `docs/` — architecture and runbooks
+- `notebooks/` — Jupyter matrix setups (asset + capital injector)
 
 ## Quality bar
 - Clear names, small functions, typed public APIs when the language supports it.
@@ -57,3 +66,8 @@ Always prefer this over manually calling individual scripts.
 ## Commands Grok may use
 - Build/test/package via allowlisted terminal tools only
 - Prefer the master benchmark script for evaluation tasks
+
+## Finalized Build Notes
+- Capital injector + cannibal guard + derivative formula are now the single source of truth for sizing.
+- Notebook matrix setup includes asset registry + injector simulation.
+- Validate with: python scripts/ops/validate_config.py and python scripts/ops/simulate_capital_injector.py

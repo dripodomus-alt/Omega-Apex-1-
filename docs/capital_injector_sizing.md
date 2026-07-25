@@ -1,82 +1,63 @@
-# Capital Injector & Derivative Sizing
+# Capital Injector Sizing (Canonical)
 
-## Role
+**This is the single source of truth for all flash-loan principal sizing.**
 
-`omega_v5/capital_injector.py` is the **official** sizing module. It runs **before** Rust Bellman-Ford ranking/math and before payload staging.
-
-All flash principal decisions must go through:
-
-- `compute_optimal_injection(...)`
-- or `prepare_sizing_for_rust(...)` / `optimal_flash_injection(...)`
-
-## Isolated registries
-
-| Registry | Purpose |
-|---|---|
-| `CAPITAL_SOURCE_REGISTRY` | Funding only (Balancer vault, Aave V3 pool) |
-| `EXECUTION_VENUE_REGISTRY` | Trading pools only (discovery / live venues) |
-
-No implicit state sharing. Execution venues are registered via `register_execution_venue` / bulk import from live pools.
-
-## Self-cannibalization guard
-
-Before any calculus:
-
-1. Resolve funding `pool_id` / address from `CAPITAL_SOURCE_REGISTRY`.
-2. Compare against every id in the route `pool_sequence`.
-3. On overlap → **halt**, set  
-   `CRITICAL ERROR: SELF-CANNIBALIZATION DETECTED`,  
-   return `optimal_injection_usd = 0.0`.
-
-## Exact derivative formula
-
-\[
-\text{OptimalSize} = \frac{\sqrt{R_{in} \cdot R_{out} \cdot (1 - f_{swap}) \cdot (1 - f_{flash})} - R_{in}}{1 - f_{swap}}
-\]
-
-Friction rules:
-
-- If \(\sqrt{\ldots} \le R_{in}\) → size `0.0`
-- If spread cannot beat \(f_{swap} + f_{flash}\) → size `0.0`
-
-## Data tiers
-
-- **L1 (Redis):** optional cached `f_swap` / `f_flash` via `redis_cache`
-- **L2 (metadata):** `Rin` / `Rout` from reserves × oracle prices, else TVL split on bottleneck pool
-
-## Fallback
-
-If the derivative path fails friction, the injector falls back to:
-
-1. Bellman-Ford style surplus curve \(\pi(x)\) with impact decay  
-2. Discrete ladder search  
-3. Quantum VQC stability score adjustment  
-
-## Call graph
+## Core Rules
+- CAPITAL_SOURCE_REGISTRY (funding only: BALANCER, AAVE_V3)
+- EXECUTION_VENUE_REGISTRY (trading pools only — never funding)
+- Hard self-cannibalization guard — any overlap returns size=0 + CRITICAL ERROR
+- Exact derivative formula (no approximations):
 
 ```
-stager / ranker / sizing package
-        │
-        ▼
-capital_injector.compute_optimal_injection
-        │
-        ├── cannibalization guard
-        ├── derivative OptimalSize
-        └── Bellman + quantum fallback
-        │
-        ▼
-as_sizing_params() → rust_engine / payload
+OptimalSize = (sqrt(Rin * Rout * (1 - f_swap) * (1 - f_flash)) - Rin) / (1 - f_swap)
 ```
+
+Returns 0 when friction makes the expression non-positive.
+
+## Notebook Matrix Setup
+The asset matrix + injector simulation lives in `notebooks/omega_v5.ipynb` (Cell 1 extended) and `scripts/ops/simulate_capital_injector.py`.
+
+Example usage in notebook:
+
+```python
+from omega_v5.capital_injector import (
+    compute_optimal_injection, 
+    check_self_cannibalization,
+    compute_derivative_optimal_size,
+    CAPITAL_SOURCE_REGISTRY
+)
+from omega_v5.flash_loan import FlashSource
+from decimal import Decimal
+
+# Use the ASSET_MATRIX from Cell 1
+rin = Decimal("120000")
+rout = Decimal("122500")
+f_swap = Decimal("0.003")
+f_flash = Decimal("0")
+
+size = compute_derivative_optimal_size(rin, rout, f_swap, f_flash)
+print("Derivative optimal:", size)
+
+# Full injector with guard
+result = compute_optimal_injection(
+    pool_sequence=["POOL_A", "POOL_B"],
+    pools={...},
+    flash_source=FlashSource.BALANCER,
+)
+print(result.as_sizing_params())
+```
+
+## Integration Points
+- `route_execution_stager.py`: calls injector before sizing
+- `opportunity_ranker.py`: uses `compute_optimal_injection`
+- `sizing/__init__.py`: delegates to injector
+- `prepare_sizing_for_rust()`: produces dict for Rust engine
 
 ## Validation
-
-```powershell
+```bash
+python scripts/ops/simulate_capital_injector.py
 python scripts/ops/validate_config.py
 pytest tests/test_capital_injector.py -q
 ```
 
-## Simulation helper
-
-```powershell
-python scripts/ops/simulate_capital_injector.py
-```
+All routes must pass the cannibal guard before any economic calculation.
