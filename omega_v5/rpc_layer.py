@@ -141,12 +141,11 @@ class RPCQuotaManager:
         self.request_times: deque = deque()
         self.total_units: int = 0
         self.total_requests: int = 0
-        self._lock = asyncio.Lock() if asyncio.get_event_loop_policy().get_event_loop().is_running() else None
         self.plan_name = RPC_PLAN_NAME
         print(f"[RPCQuota] Initialized for plan='{self.plan_name}' RPS={self.rps_limit} units_limit={self.units_limit}")
 
     def _get_unit_cost(self, method: str) -> int:
-        return RPC_UNIT_COSTS.get(method.lower(), RPC_UNIT_COSTS.get("default", 1))
+        return RPC_UNIT_COSTS.get(str(method or "default").lower(), RPC_UNIT_COSTS.get("default", 1))
 
     def can_make_request(self, method: str = "default", estimated_units: int = None) -> bool:
         if not RPC_QUOTA_ENFORCEMENT:
@@ -325,5 +324,145 @@ def reset_quota_stats() -> None:
 def get_w3() -> Optional[Web3]:
     return w3
 
+
+
+# ── Runtime token and pool registries ─────────────────────────────────────────
+TOKEN_ADDRESSES: Dict[str, str] = {
+    "WPOL": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "WMATIC": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+    "USDC": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+    "USDC.e": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    "USDT": "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+    "DAI": "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+    "WETH": "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+    "WBTC": "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+    "LINK": "0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39",
+    "AAVE": "0xd6df932a45c0f255f85145f286ea0b292b21c90b",
+    "CRV": "0x172370d5cd63279efa6d502dab29171933a610af",
+    "BAL": "0x9a71012b13ca4d3d0cdc72a177df3ef03b0e76a3",
+    "UNI": "0xb33eaad8d922b1083446dc23f610c2567fb5180f",
+    "SUSHI": "0x0b3f868e0be5597d5db7feb59e1cadbb0fdda50a",
+    "QUICK": "0xb5c064f955d8e7f38fe0460c556a72987494ee17",
+}
+
+TOKEN_DECIMALS: Dict[str, int] = {
+    "WPOL": 18,
+    "WMATIC": 18,
+    "USDC": 6,
+    "USDC.e": 6,
+    "USDT": 6,
+    "DAI": 18,
+    "WETH": 18,
+    "WBTC": 8,
+    "LINK": 18,
+    "AAVE": 18,
+    "CRV": 18,
+    "BAL": 18,
+    "UNI": 18,
+    "SUSHI": 18,
+    "QUICK": 18,
+    "A": 18,
+    "B": 18,
+}
+
+ADDRESS_TO_SYMBOL: Dict[str, str] = {
+    address.lower(): symbol for symbol, address in TOKEN_ADDRESSES.items() if address
+}
+
+
+def _protocol_name(raw: Any) -> str:
+    if isinstance(raw, int):
+        return {1: "UniswapV3", 2: "UniswapV2", 3: "Balancer", 4: "QuickSwapV3"}.get(raw, str(raw))
+    value = str(raw or "")
+    lowered = value.lower()
+    if "quick" in lowered and "v2" in lowered:
+        return "UniswapV2"
+    if "quick" in lowered and "v3" in lowered:
+        return "QuickSwapV3"
+    if "uniswap" in lowered and "v3" in lowered:
+        return "UniswapV3"
+    if "balancer" in lowered:
+        return "Balancer"
+    return value or "UniswapV2"
+
+
+def canonical_liquidity_key(pool_id: str, pool: dict | None = None) -> str:
+    pool = pool or {}
+    explicit = pool.get("liquidity_key") or pool.get("address") or pool.get("pool_address") or pool.get("pair_address")
+    if explicit:
+        return str(explicit).lower()
+    tokens = ":".join(str(token) for token in pool.get("tokens", []) if token)
+    return f"{pool.get('protocol', 'unknown')}:{tokens}:{pool_id}"
+
+
+def _dynamic_pool_registry() -> Dict[str, dict]:
+    path = PROJECT_ROOT / "omega_v5" / "data" / "pools_dynamic.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"Warning: could not load dynamic pools: {exc}", file=sys.stderr)
+        return {}
+    registry: Dict[str, dict] = {}
+    for idx, item in enumerate(payload.get("pools", [])):
+        address = item.get("pair_address") or item.get("address") or item.get("pool_address")
+        token0 = item.get("token0_symbol") or item.get("token0")
+        token1 = item.get("token1_symbol") or item.get("token1")
+        if not address or not token0 or not token1:
+            continue
+        token0 = "WPOL" if token0 == "WMATIC" else str(token0)
+        token1 = "WPOL" if token1 == "WMATIC" else str(token1)
+        pool_id = item.get("pool_id") or f"{_protocol_name(item.get('protocol') or item.get('dex_name'))}_{token0}_{token1}_{idx}"
+        meta = {
+            "protocol": _protocol_name(item.get("protocol") or item.get("dex_name")),
+            "token0": token0,
+            "token1": token1,
+            "tokens": [token0, token1],
+            "address": address,
+            "pool_address": address,
+            "fee_bps": int(item.get("fee_bps") or 30),
+            "token0_decimals": int(item.get("token0_decimals") or TOKEN_DECIMALS.get(token0, 18)),
+            "token1_decimals": int(item.get("token1_decimals") or TOKEN_DECIMALS.get(token1, 18)),
+            "route_class": "NATIVE_POOL_ROUTE",
+            "liquidity_key": str(address).lower(),
+        }
+        registry[str(pool_id)] = meta
+        if item.get("token0_address"):
+            TOKEN_ADDRESSES.setdefault(token0, str(item["token0_address"]))
+            TOKEN_DECIMALS.setdefault(token0, meta["token0_decimals"])
+        if item.get("token1_address"):
+            TOKEN_ADDRESSES.setdefault(token1, str(item["token1_address"]))
+            TOKEN_DECIMALS.setdefault(token1, meta["token1_decimals"])
+    ADDRESS_TO_SYMBOL.update({address.lower(): symbol for symbol, address in TOKEN_ADDRESSES.items() if address})
+    return registry
+
+
+DEEP_POOL_REGISTRY: Dict[str, dict] = _dynamic_pool_registry()
+
+
+def load_live_pool_state(pool_id: str, meta: dict | None = None) -> dict | None:
+    meta = dict(meta or DEEP_POOL_REGISTRY.get(pool_id, {}))
+    if not meta:
+        return None
+    meta.setdefault("pool_id", pool_id)
+    meta.setdefault("liquidity_key", canonical_liquidity_key(pool_id, meta))
+    return meta
+
+
+def load_all_live_pools(registry: Dict[str, dict] | None = None) -> Dict[str, dict]:
+    source = registry or DEEP_POOL_REGISTRY
+    return {
+        pool_id: state
+        for pool_id, meta in source.items()
+        for state in [load_live_pool_state(pool_id, meta)]
+        if state
+    }
+
+
+def discover_factory_pool_registry(base_registry: Dict[str, dict] | None = None) -> Dict[str, dict]:
+    merged = dict(base_registry or {})
+    merged.update(DEEP_POOL_REGISTRY)
+    return merged
 
 print("[rpc_layer] Quota-aware RPC layer loaded. Enforcement=", RPC_QUOTA_ENFORCEMENT)

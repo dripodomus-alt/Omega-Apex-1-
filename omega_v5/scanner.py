@@ -1,14 +1,21 @@
 # ==============================================================================
 # scanner.py  —  Real-time dual-frequency pool-state ingestion loop
-# Extracted from Cell 3 of notebooks/omega_v5.ipynb
-#
-# DynamicAQSMatrixScanner runs two concurrent async tasks:
-#   live_state_refresher  — ingests current on-chain pool state over RPC
-#   macro_black_scan_loop — evaluates the full cache every macro_interval seconds
-#
-# The refresher is intentionally read-only. Broadcast and signing are handled
-# only by the guarded execution module.
 # ==============================================================================
+"""
+The DynamicAQSMatrixScanner is the primary data ingestion point for the arbitrage
+pipeline. It runs two concurrent asynchronous tasks to maintain a fresh,
+in-memory representation of on-chain liquidity pool states.
+
+Core Components:
+1.  **live_state_refresher**: This task continuously polls the blockchain via RPC
+    to fetch the latest state (e.g., reserves, liquidity, sqrtPrice) for a
+    pre-defined list of pools. It is a read-only process.
+
+2.  **macro_black_scan_loop**: This task consumes pool state updates from a Redis
+    stream, which are published by the refresher. On a regular "macro" interval,
+    it evaluates these updates, computes initial quotes, and serves as the
+    entry point for the discovery phase.
+"""
 
 import asyncio
 import time

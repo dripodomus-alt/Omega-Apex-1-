@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 """
-omega_v5.main — Primary entry point for the arbitrage engine.
+omega_v5.main — Primary entry point for the arbitrage engine pipeline.
 
-The precision pricing engine is now wired into the core pipeline.
-All new opportunity economics and execution math should go through
-PrecisionPricingEngine for 18-decimal integer correctness.
+This module serves as the main entry point for a single, discrete run of the
+arbitrage discovery and execution pipeline. It is designed to be called by
+higher-level orchestrators, such as the `engine_daemon.py` for continuous
+operation or `recursive_ml_orchestrator.py` for ML training loops.
+
+Pipeline Stages Triggered:
+1.  **Discovery**: Calls `run_arbitrage_discovery` to get opportunities from the
+    Rust engine.
+2.  **Pricing**: Initializes and uses the `PrecisionPricingEngine` for all
+    economic calculations, ensuring dimensional correctness with 18-decimal
+    fixed-point arithmetic.
 """
 
 from __future__ import annotations

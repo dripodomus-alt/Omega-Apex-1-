@@ -89,6 +89,7 @@ class ExpenseBreakdown:
 @dataclass(frozen=True)
 class Profitability:
     gross_amount_out: Decimal
+    gross_amount_out_min: Decimal
     flashloan: FlashLoanParams
     gas_cost_usd: Decimal
     relay_tip_usd: Decimal
@@ -164,6 +165,7 @@ def evaluate_profitability(
     }
     return Profitability(
         gross_amount_out=gross,
+        gross_amount_out_min=gross, # Placeholder for legacy calls
         flashloan=flash,
         gas_cost_usd=gas,
         relay_tip_usd=relay,

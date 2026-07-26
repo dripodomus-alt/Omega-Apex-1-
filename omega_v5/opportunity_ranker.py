@@ -1,9 +1,23 @@
 #!/usr/bin/env python3
 # ==============================================================================
 # opportunity_ranker.py  —  Net-profit gated opportunity scoring pipeline
-#
-# Now uses OFFICIAL capital_injector for sizing before Rust.
 # ==============================================================================
+"""
+This module is a core component of the arbitrage pipeline, responsible for
+taking raw arbitrage opportunities (spreads and cycles) and evaluating their
+economic viability. It acts as a filter, promoting only those opportunities
+that are likely to be profitable after accounting for all associated costs.
+
+Key Responsibilities:
+1.  **Sizing**: Integrates with the `capital_injector` to determine the optimal
+    flash loan principal for a given route, balancing potential profit against
+    price impact.
+2.  **Profitability Calculation**: Uses `evaluate_profitability` to calculate the
+    net profit by subtracting all known costs (flash loan fees, gas, slippage)
+    from the gross profit.
+3.  **Ranking**: Scores and sorts opportunities based on their final net profit,
+    preparing them for the subsequent execution stages.
+"""
 
 from __future__ import annotations
 
@@ -38,6 +52,7 @@ from .executable_quotes import quote_route_for_executor
 from .flash_loan import ( # type: ignore
     FlashSource,
     Profitability,
+    FlashLoanParams,
     calculate_route_economics,
     evaluate_profitability,
     live_min_net_profit_usd,
@@ -45,6 +60,7 @@ from .flash_loan import ( # type: ignore
 )
 from .oracle_layer import PriceUnavailable, token_price_usd
 from .pool_quality import route_quality_metadata, route_quality_passed
+from .gas_oracle import profitability_gas_price_gwei
 from .ranker import CrossPoolSpread
 from .sizing import RouteSizing, optimal_flash_for_route, apply_injection_to_route_dict, estimate_route_tvl_usd
 from .stable_strategies import PeggedStableSpread
@@ -105,7 +121,13 @@ class RoutePriceStep:
 
 @dataclass(frozen=True)
 class LiveOpportunity:
-    """Executable opportunity with full provenance for truth + execution."""
+    """
+    Represents a fully evaluated, economically viable arbitrage opportunity.
+
+    This dataclass contains all the necessary information for the final stages
+    of the pipeline, including the execution path, profitability breakdown,
+    and associated metadata for provenance and truth-gating.
+    """
 
     path: tuple[str, ...]
     pool_sequence: tuple[str, ...]
@@ -154,6 +176,90 @@ class LiveOpportunity:
         }
 
 
+def _calculate_profitability(
+    gross_out: Decimal,
+    principal: Decimal,
+    base_asset: str,
+    hops: int,
+    flash_source: FlashSource,
+) -> Profitability:
+    """
+    Calculates the complete, explicit profitability of a trade.
+
+    This function takes the gross output from a simulated trade and subtracts all
+    known and estimated costs to determine the final net profit.
+
+    The net profit formula is:
+        net_profit = (gross_out_min - principal) - flash_fee - gas_cost - other_buffers
+
+    Where:
+    -   gross_out_min: The gross output in USD, adjusted for slippage tolerance.
+    -   principal: The initial flash loan amount in USD.
+    -   flash_fee: The fee charged by the flash loan provider.
+    -   gas_cost: The estimated cost of the transaction in USD.
+    -   other_buffers: Additional configurable costs for MEV tips and risk.
+
+    Args:
+        gross_out: The gross USD value returned from the trade simulation.
+        principal: The initial flash loan principal in USD.
+        base_asset: The symbol of the flash loan asset (e.g., "USDC").
+        hops: The number of swaps in the trade route.
+        flash_source: The source of the flash loan (e.g., BALANCER, AAVE).
+
+    Returns:
+        A Profitability dataclass instance containing a full breakdown of costs and profits.
+    """
+    # --- EXPENSE CALCULATION (Explicit Math) ---
+    # Raw surplus from the trade before any costs.
+    raw_delta_usd = gross_out - principal
+
+    # 1. Flash Loan Fee
+    from .flash_loan import AAVE_FLASH_FEE_BPS, BALANCER_FLASH_FEE_BPS
+    fee_bps = BALANCER_FLASH_FEE_BPS if flash_source == FlashSource.BALANCER else AAVE_FLASH_FEE_BPS
+    flash_fee_usd = principal * (fee_bps / Decimal("10000"))
+
+    # 2. Gas Cost
+    from .flash_loan import route_tx_gas_limit, current_pol_price_usd
+    gas_units = route_tx_gas_limit(hops)
+    gas_price_gwei, gas_price_source = profitability_gas_price_gwei()
+    native_price_usd, native_price_source = current_pol_price_usd()
+    gas_cost_usd = gas_units * gas_price_gwei * Decimal("1e-9") * native_price_usd
+
+    # 3. Slippage-Adjusted Gross Output
+    slippage_bps = _default_slippage_bps()
+    min_out_factor = Decimal("1") - (slippage_bps / Decimal("10000"))
+    gross_out_min = gross_out * min_out_factor
+
+    # 4. Net Profit Calculation
+    from .flash_loan import live_relay_tip_usd, live_risk_buffer_usd
+    relay_tip_usd = live_relay_tip_usd()
+    risk_buffer_usd = live_risk_buffer_usd()
+    net_profit_usd = (gross_out_min - principal) - flash_fee_usd - gas_cost_usd - relay_tip_usd - risk_buffer_usd
+
+    return Profitability(
+        gross_amount_out=gross_out,
+        gross_amount_out_min=gross_out_min,
+        flashloan=FlashLoanParams(flash_source, base_asset, principal, fee_bps, flash_fee_usd, principal + flash_fee_usd),
+        gas_cost_usd=gas_cost_usd,
+        relay_tip_usd=relay_tip_usd,
+        risk_buffer_usd=risk_buffer_usd,
+        net_profit_usd=net_profit_usd,
+        profit_to_gas=(net_profit_usd / gas_cost_usd) if gas_cost_usd > 0 else Decimal("999"),
+        passes_gate=net_profit_usd >= live_min_net_profit_usd(),
+        raw_delta_usd=raw_delta_usd,
+        expense_breakdown={
+            "raw_delta_usd": str(raw_delta_usd),
+            "flash_fee_usd": str(flash_fee_usd),
+            "gas_cost_usd": str(gas_cost_usd), "gas_price_source": gas_price_source, "native_price_source": native_price_source,
+            "slippage_cost_usd": str(gross_out - gross_out_min),
+            "relay_tip_usd": str(relay_tip_usd),
+            "risk_buffer_usd": str(risk_buffer_usd),
+            "total_expenses_usd": str(flash_fee_usd + gas_cost_usd + (gross_out - gross_out_min) + relay_tip_usd + risk_buffer_usd),
+            "net_after_expenses_usd": str(net_profit_usd),
+        }
+    )
+
+
 def rank_live_opportunity(
     path: tuple[str, ...],
     pool_sequence: tuple[str, ...],
@@ -162,9 +268,13 @@ def rank_live_opportunity(
     *,
     flash_source: FlashSource = FlashSource.BALANCER,
 ) -> LiveOpportunity | None:
-    """
-    Rank a live opportunity. Uses official capital_injector for injection size.
-    """
+    """Rank a live opportunity. Uses official capital_injector for injection size."""
+    # ==============================================================================
+    # STEP 1: DETERMINE OPTIMAL TRADE SIZE (PRINCIPAL)
+    # ==============================================================================
+    # We use the capital_injector to find the optimal flash loan amount in USD.
+    # This amount balances the trade-off between higher potential profit and
+    # increased price impact/slippage from a larger trade.
     # === OFFICIAL INJECTOR CALL (pre-Rust) ===
     try:
         inj = compute_optimal_injection(
@@ -181,23 +291,54 @@ def rank_live_opportunity(
     if principal <= 0:
         return None
 
-    # Replace placeholder math with a call to the executable quoter to align
-    # ranking with the truth gate.
+    # ==============================================================================
+    # STEP 2: CALCULATE GROSS PROFIT FROM THE TRADE ROUTE
+    # ==============================================================================
+    # Using the optimal principal, we now calculate the expected output of the trade.
     try:
         base_asset = path[0]
         price = Decimal(str(token_price_usd(base_asset)))
         if price <= 0:
             return None
+
+        # MATH: Convert the USD-denominated principal into the native amount of the
+        #       flash loan asset (e.g., WETH, USDC).
+        # Formula: amount_in = principal_usd / price_of_asset_in_usd
         amount_in = principal / price
 
+        # This function simulates the series of swaps through the specified pools
+        # to determine the final amount of `base_asset` we get back.
         quote = quote_route_for_executor(path, pool_sequence, pools, amount_in)
+
         # For CLMM routes, we require an on-chain quote proof to avoid ranking based on
         # inaccurate invariant math. Non-CLMM routes can proceed with math-based quotes.
         if not quote.clmm_proven and any(p in {"V3_CLMM", "QS_V3_ALGEBRA"} for p in protocol_seq):
              return None
 
+        # MATH: Calculate the gross profit in USD. This is the raw financial gain
+        #       before any costs are deducted.
+        # Formula: gross_out_usd = amount_out_from_route * price_of_asset_in_usd
         gross_out = quote.amount_out * price
-        prof = evaluate_profitability(gross_out, principal, hops=len(pool_sequence), flash_source=flash_source, asset=base_asset)
+
+        # ==========================================================================
+        # STEP 3: CALCULATE NET PROFIT (THE "REAL" PROFIT)
+        # ==========================================================================
+        # This is the most critical calculation. It subtracts all known costs from
+        # the gross profit to determine if the opportunity is actually profitable.
+        #
+        # Formula:
+        #   net_profit_usd = (gross_out_usd - principal_usd) - flash_loan_fee_usd - gas_cost_usd
+        #
+        # - (gross_out_usd - principal_usd) is the raw surplus from the trade.
+        # - flash_loan_fee_usd is the fee charged by the flash loan provider (e.g., Balancer).
+        # - gas_cost_usd is the estimated cost of the Ethereum transaction.
+        prof = _calculate_profitability(
+            gross_out=gross_out,
+            principal=principal,
+            base_asset=base_asset,
+            hops=len(pool_sequence),
+            flash_source=flash_source,
+        )
     except (PriceUnavailable, ValueError, Exception):
         return None
 

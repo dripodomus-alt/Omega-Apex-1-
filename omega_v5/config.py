@@ -138,6 +138,7 @@ PROTOCOL_REGISTRY: Dict[str, Dict[str, Any]] = {
 # This map provides a bridge from common (and sometimes inconsistent) names
 # found in external data sources to our canonical internal protocol keys.
 PROTOCOL_ALIAS_MAP: Dict[str, str] = {
+    "UniswapV2": "V2_CPMM",
     "UniswapV3": "V3_CLMM",
     "QuickSwapV2": "QS_V2_CPMM",
     "QuickSwapV3": "QS_V3_ALGEBRA",
@@ -146,6 +147,27 @@ PROTOCOL_ALIAS_MAP: Dict[str, str] = {
     "Balancer": "BAL_WEIGHTED",
 }
 
+FULLY_EXECUTABLE_PROTOCOLS = {
+    key for key, meta in PROTOCOL_REGISTRY.items()
+    if str(meta.get("status", "")).lower() == "fully_executable"
+}
+
+
+def normalize_protocol(protocol: str) -> str:
+    """Return the canonical internal protocol key used by execution code."""
+    raw = str(protocol or "").strip()
+    if raw in PROTOCOL_REGISTRY:
+        return raw
+    if raw in PROTOCOL_ALIAS_MAP:
+        return PROTOCOL_ALIAS_MAP[raw]
+    lowered = raw.lower()
+    for alias, canonical in PROTOCOL_ALIAS_MAP.items():
+        if alias.lower() == lowered:
+            return canonical
+    for canonical in PROTOCOL_REGISTRY:
+        if canonical.lower() == lowered:
+            return canonical
+    raise ValueError(f"unsupported protocol: {protocol}")
 
 # ==============================================================================
 # ENVIRONMENT HELPERS
@@ -202,53 +224,347 @@ HTTP_URL: str = _first_env(
 )
 
 BROADCAST_RPC_URL: str = _first_env(
-    "BROADCAS
+    "BROADCAST_RPC_URL",
+    "WRITABLE_RPC_URL",
+    "POLYGON_WRITABLE_RPC_URL",
+)
+BROADCAST_WSS_URL: str = _first_env(
+    "BROADCAST_WSS_URL",
+    "WRITABLE_WSS_URL",
+    "POLYGON_WRITABLE_WSS_URL",
+)
+
+EXACT_CALL_RPC_URL: str = _first_env(
+    "EXACT_CALL_RPC_URL",
+    "PRIMARY_READ_RPC_URL",
+    "DISCOVERY_RPC_URL",
+    "POLYGON_RPC_URL",
+    "RPC_URL",
+    default=HTTP_URL,
+)
+
+# ── Forking & Simulation RPCs ─────────────────────────────────────────────────
+FORK_UPSTREAM_RPC_URL: str = _env("FORK_UPSTREAM_RPC_URL", HTTP_URL)
+FORK_RPC_URL: str = _env("FORK_RPC_URL", "http://127.0.0.1:8545")
+FORK_SIM_RPC_URL: str = _env("FORK_SIM_RPC_URL", "http://127.0.0.1:8545")
+
+# ── Vendor-Specific & Fallback RPCs ───────────────────────────────────────────
+GETBLOCK_POLYGON_RPC_HTTP: str = _first_env("GETBLOCK_POLYGON_RPC_HTTP", "GETBLOCK_HTTP", "POLYGON_RPC_GETBLOCK")
+GETBLOCK_POLYGON_RPC_WSS: str = _first_env("GETBLOCK_POLYGON_RPC_WSS", "GETBLOCK_WSS", "POLYGON_WSS_GETBLOCK")
+INFURA_HTTP: str = _first_env("INFURA_HTTP", "INFURA_POLYGON_RPC_HTTP")
+INFURA_WSS: str = _first_env("INFURA_WSS", "INFURA_WSS_URL", "INFURA_POLYGON_RPC_WS")
+DRPC_LB_HTTP_URL: str = _first_env("DRPC_LB_HTTP_URL", "DRPC_POLYGON_LB_HTTP", "DRPC_POLYGON_HTTP")
+DRPC_LB_WSS_URL: str = _first_env("DRPC_LB_WSS_URL", "DRPC_POLYGON_LB_WSS", "DRPC_POLYGON_WSS")
+ENABLE_NODECORE: bool = _env("ENABLE_NODECORE", "false").lower() in {"1", "true", "yes", "on"}
+NODECORE_HTTP_URL: str = _env("NODECORE_HTTP_URL") # For RPC rotation
+NODECORE_WSS_URL: str = _env("NODECORE_WSS_URL")   # For RPC rotation
+HTTP_URL_2: str = _env("POLYGON_RPC2") # Generic secondary RPC
+CHAINSTACK_URL: str  = _env("CHAINSTACK_URL", "https://polygon-mainnet.chainstackapis.com")
+
+# ── API Keys & External Services ──────────────────────────────────────────────
+ONEINCH_API_KEY: str = _env("ONEINCH_API_KEY")
+COINGECKO_KEY: str   = _env("COINGECKO_API_KEY")
+POLYGONSCAN_API_KEY: str = _env("POLYGONSCAN_API_KEY")
+ETHERSCAN_API_KEY: str = _first_env("ETHERSCAN_API_KEY", "POLYGONSCAN_API_KEY")
+ETHERSCAN_API_URL: str = _env("ETHERSCAN_API_URL", "https://api.etherscan.io/v2/api")
+MORALIS_API: str = _env("MORALIS_API", "https://deep-index.moralis.io/api/v2.2")
+MORALIS_API_KEY: str = _env("MORALIS_API_KEY")
+BALANCER_API_URL: str = _env("BALANCER_API_URL", "https://api-v3.balancer.fi/")
+
+# ── Local API Server ──────────────────────────────────────────────────────────
+API_HOST: str = _env("API_HOST", "127.0.0.1")
+API_PORT: int = int(_env("API_PORT", "8080") or "8080")
+API_PROXY_TARGET: str = _env("API_PROXY_TARGET", f"http://localhost:{API_PORT}")
+API_TOKEN: str = _env("API_TOKEN")
+API_CORS_ORIGINS: List[str] = _csv_env(
+    "API_CORS_ORIGINS",
+    ",".join(
+        [
+            "http://127.0.0.1:8080",
+            "http://localhost:8080",
+            "http://127.0.0.1:5173",
+            "http://localhost:5173",
+            "https://ai.studio",
+        ]
+    ),
+)
+API_FRONTEND_TOKEN_REQUIRED: bool = _bool_env("API_FRONTEND_TOKEN_REQUIRED", "false")
+
+# ── RPC Rotation & Fallbacks ──────────────────────────────────────────────────
+BROADCAST_RPC_FALLBACK_URLS: List[str] = _csv_env(
+    "BROADCAST_RPC_FALLBACK_URLS",
+    ",".join(
+        [
+            GETBLOCK_POLYGON_RPC_HTTP,
+            INFURA_HTTP,
+            "https://polygon.drpc.org",
+            "https://polygon-bor-rpc.publicnode.com",
+            "https://polygon.publicnode.com",
+            "https://1rpc.io/matic",
+        ]
+    ),
+)
+BROADCAST_WSS_FALLBACK_URLS: List[str] = _csv_env(
+    "BROADCAST_WSS_FALLBACK_URLS",
+    ",".join([GETBLOCK_POLYGON_RPC_WSS, INFURA_WSS, "wss://polygon.drpc.org", "wss://polygon-bor-rpc.publicnode.com"]),
+)
+RPC_ROTATION_HTTP_URLS: List[str] = _csv_env(
+    "RPC_ROTATION_HTTP_URLS",
+    ",".join(
+        [
+            NODECORE_HTTP_URL,
+            DRPC_LB_HTTP_URL,
+            "https://polygon.drpc.org",
+            "https://tenderly.rpc.polygon.community",
+            "https://polygon-bor-rpc.publicnode.com",
+            "https://polygon.publicnode.com",
+            "https://polygon-mainnet.gateway.tatum.io",
+            "https://polygon-public.nodies.app",
+            "https://1rpc.io/matic",
+            "https://rpc-mainnet.matic.quiknode.pro",
+            "https://polygon.api.onfinality.io/public",
+            GETBLOCK_POLYGON_RPC_HTTP,
+            INFURA_HTTP,
+        ]
+    ),
+)
+RPC_ROTATION_WSS_URLS: List[str] = _csv_env(
+    "RPC_ROTATION_WSS_URLS",
+    ",".join([NODECORE_WSS_URL, DRPC_LB_WSS_URL, "wss://polygon.drpc.org", "wss://polygon-bor-rpc.publicnode.com", GETBLOCK_POLYGON_RPC_WSS, INFURA_WSS]),
+)
+
+# ── MEV Relays / Builders ─────────────────────────────────────────────────────
+FLASHBOTS_RELAY_URL: str = _env("FLASHBOTS_RELAY_URL", "https://relay.flashbots.net")
+TITAN_MEV_US_WEST: str = _env("TITAN_MEV_US_WEST", "https://rpc.titanbuilder.xyz/")
+BEAVER_BUILD_URL: str = _env("BEAVER_BUILD_URL", "https://rpc.beaverbuild.org/")
+RSYNC_BUILDER_URL: str = _env("RSYNC_BUILDER_URL", "https://rsync-builder.xyz/")
+
+# ── DODO RPC Proxy (if used) ──────────────────────────────────────────────────
+DODO_RPC_PROVIDER_URL: str = _env("DODO_RPC_PROVIDER_URL")
+DODO_RPC_PROXY_URL: str = _env("DODO_RPC_PROXY_URL")
+DODO_RPC_SOURCES: str = _env("DODO_RPC_SOURCES", "ChainList")
+DODO_RPC_EXTRA_HTTP_URLS: List[str] = _csv_env("DODO_RPC_EXTRA_HTTP_URLS", ",".join(RPC_ROTATION_HTTP_URLS))
+
+# ── Telemetry RPC ─────────────────────────────────────────────────────────────
+TELEMETRY_RPC_URL: str = _first_env(
+    "TELEMETRY_RPC_URL",
+    "POLYGON_RPC2",
+    "DODO_RPC_PROXY_URL",
+    "POLYGON_RPC_URL",
+    default=HTTP_URL_2 or HTTP_URL,
+)
 
 # ==============================================================================
-# RPC PLAN QUOTA MANAGEMENT (Developer Plan Support)
+# WALLET & EXECUTION
 # ==============================================================================
+BOT_ADDRESS: str = _env("BOT_ADDRESS")
+EXECUTOR_WALLET: str = _env("EXECUTOR_WALLET")
+OWNER_ADDRESS: str = _first_env("OWNER_ADDRESS", "EXECUTOR_WALLET", "BOT_ADDRESS")
+SOLC_VERSION: str = _env("SOLC_VERSION", "0.8.24")
+CANONICAL_HFT_EXECUTOR_ADDRESS: str = "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+HFT_EXECUTOR_ADDRESS: str = _first_env(
+    "HFT_EXECUTOR_ADDRESS",
+    "HFT_DEFAULT_TARGET",
+    "CANONICAL_ON_CHAIN_MUSCLE",
+    "C1_PAYLOAD_TARGET",
+    "EXECUTOR_CONTRACT_ADDR",
+    default=CANONICAL_HFT_EXECUTOR_ADDRESS,
+)
+EXECUTOR_CONTRACT: str = _first_env(
+    "EXECUTOR_CONTRACT",
+    "EXECUTOR_CONTRACT_ADDR",
+    "C1_PAYLOAD_TARGET",
+    "CANONICAL_ON_CHAIN_MUSCLE",
+    "HFT_DEFAULT_TARGET",
+    default=HFT_EXECUTOR_ADDRESS,
+)
+C1_PAYLOAD_TARGET: str = _first_env(
+    "C1_PAYLOAD_TARGET",
+    "C1_TARGET",
+    "C1_ARB_EXECUTOR_ADDRESS",
+    "EXECUTOR_CONTRACT_ADDR",
+    default=EXECUTOR_CONTRACT,
+)
+C2_PAYLOAD_TARGET: str = _first_env(
+    "C2_PAYLOAD_TARGET",
+    "C2_TARGET",
+    "C2_ARB_EXECUTOR_ADDRESS",
+    default=C1_PAYLOAD_TARGET,
+)
+ADAPTER_CONFIGURATION_TARGET: str = _env("ADAPTER_CONFIGURATION_TARGET", C1_PAYLOAD_TARGET)
+CANONICAL_ON_CHAIN_MUSCLE: str = _first_env("CANONICAL_ON_CHAIN_MUSCLE", "HFT_DEFAULT_TARGET", "EXECUTOR_CONTRACT_ADDR", default=EXECUTOR_CONTRACT)
+LIQUIDATION_EXECUTOR_ADDRESS: str = _env("LIQUIDATION_EXECUTOR_ADDRESS")
+PRIVATE_KEY: str = _first_env("PRIVATE_KEY", "EXECUTOR_PRIVATE_KEY")
+EXEC_MODE: str = _first_env("EXECUTION_MODE", "EXEC_MODE", default="dry_run").lower()
+LIVE_FLAG: str = _first_env("LIVE_TRADING", "LIVE_FLAG", default="0")
+REQUIRED_CONFIRM: str = "YES_I_UNDERSTAND_THIS_USES_REAL_FUNDS"
+CONFIRM_FLAG: str = _env("CONFIRM_MAINNET_EXECUTION")
+MEV_ENABLED: bool = _bool_env("MEV_ENABLED", "false")
+MEV_PUBLIC_FALLBACK_ENABLED: bool = _bool_env("MEV_PUBLIC_FALLBACK_ENABLED", "false")
 
-# Current plan details (from provider dashboard)
+# ==============================================================================
+# CACHING
+# ==============================================================================
+REDIS_URL: str = _env("REDIS_URL", "redis://127.0.0.1:6379/0")
+REDIS_ENABLED: str = _env("REDIS_ENABLED", "true")
+REDIS_KEY_PREFIX: str = _env("REDIS_KEY_PREFIX", "omega_v5")
+REDIS_RPC_CACHE_TTL_SECONDS: int = int(_env("REDIS_RPC_CACHE_TTL_SECONDS", "60") or "60")
+TRANSPORT_LANES_ENABLED: bool = (
+    _env("TRANSPORT_LANES_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+)
+REQUIRE_EXECUTABLE_ROUTE_STREAM: bool = (
+    _env("REQUIRE_EXECUTABLE_ROUTE_STREAM", "false").lower() in {"1", "true", "yes", "on"}
+)
+EXECUTION_ROUTE_TARGET_MODE: str = _env("EXECUTION_ROUTE_TARGET_MODE", "capital_source_adapters").lower()
+ALLOW_POOL_TARGETS_FOR_SCHEMA_CHECK: bool = (
+    _env("ALLOW_POOL_TARGETS_FOR_SCHEMA_CHECK", "true").lower() in {"1", "true", "yes", "on"}
+)
+
+# ==============================================================================
+# RPC TRANSPORT & HEALTH
+# ==============================================================================
+RPC_HEALTH_TTL_SECONDS: int = int(_env("RPC_HEALTH_TTL_SECONDS", "15") or "15")
+RPC_FAILED_TTL_SECONDS: int = int(_env("RPC_FAILED_TTL_SECONDS", "60") or "60")
+RPC_ENDPOINT_TTL_SECONDS: int = int(_env("RPC_ENDPOINT_TTL_SECONDS", "60") or "60")
+RPC_MAX_RPS_PER_LANE: int = int(_env("RPC_MAX_RPS_PER_LANE", "8") or "8")
+RPC_EXACT_CALL_MAX_RPS: int = int(_env("RPC_EXACT_CALL_MAX_RPS", "3") or "3")
+RPC_BROADCAST_MAX_RPS: int = int(_env("RPC_BROADCAST_MAX_RPS", "2") or "2")
+RPC_REQUEST_TIMEOUT_SECONDS: int = int(_env("RPC_REQUEST_TIMEOUT_SECONDS", "6") or "6")
+# ==============================================================================
+# RPC PLAN QUOTA MANAGEMENT
+# ==============================================================================
 RPC_PLAN_NAME: str = _env("RPC_PLAN_NAME", "developer")
-RPC_REQUEST_UNITS_LIMIT: int = int(_env("RPC_REQUEST_UNITS_LIMIT", "3000000"))
-RPC_COMPUTED_UNITS_EST: int = int(_env("RPC_COMPUTED_UNITS_EST", "60000000"))
-RPC_API_CREDITS: int = int(_env("RPC_API_CREDITS", "78000000"))
-RPC_RPS_LIMIT: int = int(_env("RPC_RPS_LIMIT", "25"))
-RPC_NODES: int = int(_env("RPC_NODES", "1"))
+RPC_REQUEST_UNITS_LIMIT: int = int(_env("RPC_REQUEST_UNITS_LIMIT", "3000000") or "3000000")
+RPC_COMPUTED_UNITS_EST: int = int(_env("RPC_COMPUTED_UNITS_EST", "60000000") or "60000000")
+RPC_API_CREDITS: int = int(_env("RPC_API_CREDITS", "78000000") or "78000000")
+RPC_RPS_LIMIT: int = int(_env("RPC_RPS_LIMIT", "25") or "25")
+RPC_NODES: int = int(_env("RPC_NODES", "1") or "1")
 RPC_WARP_TRANSACTIONS_ENABLED: bool = _bool_env("RPC_WARP_TRANSACTIONS_ENABLED", "false")
-
-# Request unit cost estimates per method (approximate, tune per provider)
+RPC_QUOTA_ENFORCEMENT: bool = _bool_env("RPC_QUOTA_ENFORCEMENT", "true")
+RPC_QUOTA_WARN_THRESHOLD: float = float(_env("RPC_QUOTA_WARN_THRESHOLD", "0.8") or "0.8")
 RPC_UNIT_COSTS: Dict[str, int] = {
     "eth_call": 1,
-    "eth_getBalance": 1,
-    "eth_getBlockByNumber": 1,
-    "eth_getLogs": 5,
-    "eth_getTransactionReceipt": 2,
-    "debug_traceTransaction": 50,  # heavy
-    "eth_sendRawTransaction": 10,
+    "eth_getbalance": 1,
+    "eth_getblockbynumber": 1,
+    "eth_getcode": 1,
+    "eth_getlogs": 5,
+    "eth_gettransactionreceipt": 2,
+    "eth_sendrawtransaction": 10,
+    "debug_tracetransaction": 50,
     "default": 1,
 }
 
-# Enable quota enforcement and tracking
-RPC_QUOTA_ENFORCEMENT: bool = _bool_env("RPC_QUOTA_ENFORCEMENT", "true")
-RPC_QUOTA_WARN_THRESHOLD: float = float(_env("RPC_QUOTA_WARN_THRESHOLD", "0.8"))  # 80%
+# ==============================================================================
+# SMART SESSIONS (Waas)
+# ==============================================================================
+ENABLE_SMART_SESSIONS: bool = _bool_env("ENABLE_SMART_SESSIONS", "false")
+SESSION_SIGNER_ENABLED: bool = _bool_env("SESSION_SIGNER_ENABLED", "false")
+SESSION_SIGNER_MODE: str = _env("SESSION_SIGNER_MODE", "dry_run").lower()
+WAAS_BROADCAST_ADAPTER_ENABLED: bool = _bool_env("WAAS_BROADCAST_ADAPTER_ENABLED", "false")
+WAAS_BROADCAST_ADAPTER_MODE: str = _env("WAAS_BROADCAST_ADAPTER_MODE", "dry_run").lower()
+SMART_SESSIONS_WAAS_API_URL: str = _env("SMART_SESSIONS_WAAS_API_URL")
+SMART_SESSIONS_CREDENTIAL_ID: str = _env("SMART_SESSIONS_CREDENTIAL_ID")
+SMART_SESSIONS_WALLET_ID: str = _env("SMART_SESSIONS_WALLET_ID")
+SMART_SESSIONS_MAX_VALUE_WEI: str = _env("SMART_SESSIONS_MAX_VALUE_WEI", "0")
+SMART_SESSIONS_ALLOWED_TARGETS: List[str] = _csv_env("SMART_SESSIONS_ALLOWED_TARGETS")
+SMART_SESSIONS_ALLOWED_SELECTORS: List[str] = _csv_env("SMART_SESSIONS_ALLOWED_SELECTORS")
+SESSION_PROOF_SAMPLES: int = int(_env("SESSION_PROOF_SAMPLES", "5") or "5")
 
-# ── Other RPC related (from original) ─────────────────────────────────────────
-DODO_RPC_PROVIDER_URL: str = _env("DODO_RPC_PROVIDER_URL", "http://127.0.0.1:3001")
-DODO_RPC_SOURCES: str = _env("DODO_RPC_SOURCES", "ChainList")
-DODO_RPC_EXTRA_HTTP_URLS: List[str] = _csv_env("DODO_RPC_EXTRA_HTTP_URLS", "")
+# ==============================================================================
+# STRATEGY PARAMETERS
+# ==============================================================================
 
-REDIS_RPC_CACHE_TTL_SECONDS: int = int(_env("REDIS_RPC_CACHE_TTL_SECONDS", "300"))
-REDIS_KEY_PREFIX: str = _env("REDIS_KEY_PREFIX", "omega_v5")
+# ── Stable Swap Strategy ──────────────────────────────────────────────────────
+ENABLE_STABLE_SWAP_STRATEGIES: bool = (
+    _env("ENABLE_STABLE_SWAP_STRATEGIES", "true").lower() in {"1", "true", "yes", "on"}
+)
+STABLE_SWAP_MIN_PROFIT_BPS: Decimal = Decimal(_env("STABLE_SWAP_MIN_PROFIT_BPS", "0") or "0")
+STABLE_SWAP_MAX_PEG_DEVIATION_BPS: Decimal = Decimal(
+    _env("STABLE_SWAP_MAX_PEG_DEVIATION_BPS", "250") or "250"
+)
+STABLE_MIN_NET_PROFIT_USD: Decimal = Decimal(_env("STABLE_MIN_NET_PROFIT_USD", "1") or "1")
+STABLE_RISK_BUFFER_USD: Decimal = Decimal(_env("STABLE_RISK_BUFFER_USD", "0.5") or "0.5")
 
-# Execution and other configs (truncated for brevity in this edit, preserve rest)
-EXECUTION_MODE: str = _env("EXECUTION_MODE", "dry_run")
-OMEGA_RUNTIME_MODE: str = _env("OMEGA_RUNTIME_MODE", "dry_run")
+# ── Liquidation Strategy ──────────────────────────────────────────────────────
+ENABLE_LIQUIDATION_PIPELINE: bool = (
+    _env("ENABLE_LIQUIDATION_PIPELINE", "true").lower() in {"1", "true", "yes", "on"}
+)
+LIQUIDATION_SCAN_BLOCKS: int = int(_env("LIQUIDATION_SCAN_BLOCKS", "2500") or "2500")
+LIQUIDATION_MAX_BORROWERS: int = int(_env("LIQUIDATION_MAX_BORROWERS", "200") or "200")
+LIQUIDATION_MIN_NET_PROFIT_USD: Decimal = Decimal(_env("LIQUIDATION_MIN_NET_PROFIT_USD", "5") or "5")
+LIQUIDATION_GAS_UNITS_1HOP: int = int(_env("LIQUIDATION_GAS_UNITS_1HOP", "650000"))
+LIQUIDATION_GAS_UNITS_2HOP: int = int(_env("LIQUIDATION_GAS_UNITS_2HOP", "900000"))
+AAVE_V3_POOL_ADDRESSES_PROVIDER: str = _env(
+    "AAVE_V3_POOL_ADDRESSES_PROVIDER",
+    "0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb",
+)
+AAVE_V3_PROTOCOL_DATA_PROVIDER: str = _env("AAVE_V3_PROTOCOL_DATA_PROVIDER")
+AAVE_BORROWER_SEED_ADDRESSES: List[str] = _csv_env("AAVE_BORROWER_SEED_ADDRESSES")
 
-# Contract addresses (from .env.example)
-EXECUTOR_CONTRACT: str = _env("EXECUTOR_CONTRACT", "0x409ece3Fd71DFBd8f692B600f36A89301cb37346")
-LIQUIDATION_EXECUTOR_ADDRESS: str = _env("LIQUIDATION_EXECUTOR_ADDRESS", "")
-CANONICAL_ON_CHAIN_MUSCLE: str = _env("CANONICAL_ON_CHAIN_MUSCLE", EXECUTOR_CONTRACT)
+# ==============================================================================
+# SIZING, GUARDRAILS & PROFITABILITY
+# ==============================================================================
 
-# Add more as needed from full original file...
-# (In real edit, full original content would be preserved; here focused on quota addition)
+# ── Flash Loan Sizing ─────────────────────────────────────────────────────────
+FLASH_BASE_ASSETS: List[str] = [
+    item.strip()
+    for item in _env("FLASH_BASE_ASSETS", "USDC,USDC.e,USDT,DAI,WPOL,WETH,WBTC").split(",")
+    if item.strip()
+]
+PREFERRED_FLASH_SOURCE: str = _env("PREFERRED_FLASH_SOURCE", "BALANCER").upper()
+ENABLE_DYNAMIC_FLASH_SIZING: bool = (
+    _env("ENABLE_DYNAMIC_FLASH_SIZING", "true").lower() in {"1", "true", "yes", "on"}
+)
+ENABLE_DYNAMIC_SIZE_OPTIMIZER: bool = (
+    _env("ENABLE_DYNAMIC_SIZE_OPTIMIZER", "true").lower() in {"1", "true", "yes", "on"}
+)
+MIN_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MIN_FLASH_PRINCIPAL_USD", "5000"))
+MAX_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MAX_FLASH_PRINCIPAL_USD", "250000"))
+MAX_ROUTE_TVL_FRACTION: Decimal = Decimal(_env("MAX_ROUTE_TVL_FRACTION", "0.50"))
+MAX_ROUTE_IMPACT: Decimal = Decimal(_env("MAX_ROUTE_IMPACT", "0.01"))
+FLASH_ROUTE_TVL_FRACTIONS: List[Decimal] = _csv_env_decimal("FLASH_ROUTE_TVL_FRACTIONS", "0.15,0.25,0.50")
+FLASH_SIZE_LADDER_BPS: List[Decimal] = _csv_env_decimal("FLASH_SIZE_LADDER_BPS", "1000,1500")
+DYNAMIC_SIZE_IMPACT_PENALTY_BPS: Decimal = Decimal(_env("DYNAMIC_SIZE_IMPACT_PENALTY_BPS", "120"))
+DYNAMIC_SIZE_MAX_SEARCH_STEPS: int = int(_env("DYNAMIC_SIZE_MAX_SEARCH_STEPS", "18"))
+DYNAMIC_SIZE_OPT_BINS_USD: List[Decimal] = _csv_env_decimal("DYNAMIC_SIZE_OPT_BINS_USD", "100,500,1000,2500,5000,10000,25000,50000")
+
+# ── General Guardrails & Profitability ────────────────────────────────────────
+MIN_PRINCIPAL_USD: Decimal = Decimal(_env("MIN_PRINCIPAL_USD", "10.0"))
+MAX_PRINCIPAL_USD: Decimal = Decimal(_env("MAX_PRINCIPAL_USD", "100000.0"))
+MIN_PROFIT_THRESHOLD_USD: Decimal = Decimal(_env("MIN_PROFIT_THRESHOLD_USD", "0.50"))
+MAX_SLIPPAGE_BPS: int = int(_env("MAX_SLIPPAGE_BPS", "300"))
+MIN_NET_PROFIT_USD: Decimal = Decimal(_env("MIN_NET_PROFIT_USD", "0.5"))
+PROTOCOL_OVERHEAD_USD: Decimal = Decimal(_env("PROTOCOL_OVERHEAD_USD", "0.01"))
+
+# ==============================================================================
+# ML & QUANTUM SIZING
+# ==============================================================================
+# ── Official Capital Injector / Bellman + Quantum constants (new) ─────────────
+BELLMAN_CURVE_DECAY_FACTOR: Decimal = Decimal(_env("BELLMAN_CURVE_DECAY_FACTOR", "0.85"))
+BELLMAN_QUADRATIC_IMPACT: Decimal = Decimal(_env("BELLMAN_QUADRATIC_IMPACT", "0.5"))
+ENABLE_QUANTUM_SIZING: bool = _bool_env("ENABLE_QUANTUM_SIZING", "true")
+QUANTUM_SIZING_SHOTS: int = int(_env("QUANTUM_SIZING_SHOTS", "64"))
+QUANTUM_ADJUSTMENT_SCALE: Decimal = Decimal(_env("QUANTUM_ADJUSTMENT_SCALE", "0.02"))
+
+# ── ML Alpha Settings ─────────────────────────────────────────────────────────
+ML_RANKING_ENABLED: bool = _bool_env("ML_RANKING_ENABLED", "true")
+CURRENT_RANKER_MODEL: str = _env("CURRENT_RANKER_MODEL", "vqc_surplus_ranker_v1.1.0")
+
+# --- Apex Injector, Balancer V3 & Advanced ML ---
+DETERMINISTIC_APEX_INJECTOR_ENABLED: bool = _bool_env("OMEGA_INJECTOR_DETERMINISTIC_MODE", "true")
+APEX_INJECTOR_PRECISION_DECIMALS: int = int(_env("OMEGA_INJECTOR_PRECISION_DECIMALS", "18"))
+APEX_INJECTOR_MAX_TVL_IMPACT_BPS: int = int(_env("OMEGA_INJECTOR_MAX_TVL_IMPACT_BPS", "500"))
+
+BALANCER_V3_VAULT: str = _env("BALANCER_V3_VAULT", "0xBA12222222228d8Ba445958a75a0704d566BF2C8")
+ENABLE_TRANSIENT_STORAGE_FLASH: bool = _bool_env("ENABLE_TRANSIENT_STORAGE_FLASH", "true")
+
+RESERVE_DRIFT_THRESHOLD_MS: int = int(_env("OMEGA_RESERVE_DRIFT_THRESHOLD_MS", "200"))
+ML_LIQUIDITY_VOLATILITY_THRESHOLD: float = float(_env("OMEGA_ML_LIQUIDITY_VOLATILITY_THRESHOLD", "0.85"))
+
+# ==============================================================================
+# DISCOVERY PARAMETERS
+# ==============================================================================
+ENABLE_FACTORY_POOL_DISCOVERY: bool = _bool_env("ENABLE_FACTORY_POOL_DISCOVERY", "true")
+DISCOVERY_MAX_TOKEN_PAIRS: int = int(_env("DISCOVERY_MAX_TOKEN_PAIRS", "160") or "160")
+DISCOVERY_MAX_PROMOTED_POOLS: int = int(_env("DISCOVERY_MAX_PROMOTED_POOLS", "192") or "192")
+POOL_LOAD_SLEEP_SECONDS: Decimal = Decimal(_env("POOL_LOAD_SLEEP_SECONDS", "0.02") or "0.02")

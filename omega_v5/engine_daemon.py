@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 # ==============================================================================
 # engine_daemon.py -- long-running PM2 wrapper around omega_v5.main.
-#
-# Updated for full pipeline:
-# - Lifespan (n+4) alignment across all stages.
-# - Dry-run cycles on startup / ticks.
-# - Full logging of stage/execute/expire + PNL tracking.
-# - PATH consistency enforced.
+# ==============================================================================
+"""
+The Engine Daemon provides a persistent, long-running process for the Omega V5
+arbitrage engine. It wraps the core pipeline logic from `omega_v5.main` in an
+asynchronous loop, allowing for continuous market scanning and execution based
+on runtime settings.
+
+Core Responsibilities:
+-   **Continuous Operation**: Runs the main arbitrage pipeline in an infinite loop.
+-   **Dynamic Configuration**: Fetches runtime settings (e.g., principal size,
+    canary mode) on each iteration, allowing for on-the-fly adjustments without
+    restarting the process.
+-   **Observability**: Logs key pipeline metrics after each cycle, such as the
+    number of opportunities staged, executed, and expired, providing a high-level
+    overview of the engine's performance.
+"""
 # ==============================================================================
 
 from __future__ import annotations
