@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS simulation_audit (
 ) PARTITION BY RANGE (recorded_at);
 
 -- GIN index for fast queries on metadata (e.g., finding all simulations with a certain token).
+CREATE INDEX IF NOT EXISTS idx_simulation_audit_opp_id ON simulation_audit USING GIN ((metadata_jsonb ->> 'opp_id'));
 CREATE INDEX IF NOT EXISTS idx_simulation_audit_metadata ON simulation_audit USING GIN(metadata_jsonb);
 
 -- Example: Create partitions for the next few months. In production, this would be automated.

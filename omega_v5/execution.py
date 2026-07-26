@@ -2,17 +2,24 @@
 # ==============================================================================
 # execution.py  —  EIP-1559 transaction builder + guarded execution loop
 # ==============================================================================
-#
-# Constructs flash-arb calldata, verifies wallet balances, and submits to
-# Polygon mainnet only when the runtime control plane is set to live and the
-# required wallet/RPC/executor checks pass.
-#
-# Pipeline updates for this task:
-# - Enforces n+4 lifespan on every submission path.
-# - Full logging of stage/execute/expire.
-# - Records to pnl_tracker for successful submissions, staging, PNL.
-# - PATH alignment: only closed paths reach broadcast.
-# - Dry-run cycle support via simulate path.
+"""
+This module is the final stage of the arbitrage pipeline, responsible for
+taking a validated opportunity and executing it on the blockchain. It handles
+transaction construction, simulation, and broadcasting with a strong emphasis
+on safety and profitability.
+
+Core Responsibilities:
+-   **Transaction Building**: Constructs the raw EIP-1559 transaction, including
+    the calldata for the `executeFlashArb` function on the executor contract.
+-   **Final Simulation**: Performs a dry-run `eth_call` to ensure the transaction
+    is likely to succeed on-chain before signing and broadcasting.
+-   **Guarded Execution**: Submits transactions to the network only when all
+    safety guards (e.g., runtime mode is 'live', wallet checks pass) are met.
+-   **Broadcasting**: Manages submission to both private (MEV) and public RPC
+    endpoints, with logic for fallbacks.
+-   **Receipt Handling**: Waits for transaction confirmation and records the
+    outcome, including realized PnL.
+"""
 # ==============================================================================
 
 from decimal import Decimal

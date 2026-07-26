@@ -160,7 +160,7 @@ Use this before any live deployment or capital allocation.
 
 ## Top-To-Bottom Pipeline Walkthrough
 
-See `docs/explicit_execution_flow.md` and `docs/production_pipeline_overview.md`.
+Start with `docs/pipeline_walkthrough.md`, then use `docs/explicit_execution_flow.md` for block-lifespan timing and `docs/production_pipeline_overview.md` for production coverage.
 
 ## Profitability Model
 
