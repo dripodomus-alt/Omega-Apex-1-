@@ -21,6 +21,8 @@ from .config import (
     C1_PAYLOAD_TARGET,
     CHAIN_ID,
     PRIVATE_KEY,
+    PROTOCOL_REGISTRY,
+    normalize_protocol,
 )
 from .contract_deployments import deployment_address
 from .execution import wallet_address
@@ -74,14 +76,10 @@ ROUTE_POOL_KIND_ABI = [
 ]
 
 ROUTE_POOL_KIND = {
-    "UniswapV2": 1,
-    "UniswapV3": 2,
-    "QuickSwapV3": 3,
-    "Algebra": 3,
-    "Curve": 4,
-    "Balancer": 5,
+    key: int(meta["pool_kind"])
+    for key, meta in PROTOCOL_REGISTRY.items()
+    if meta.get("pool_kind") is not None
 }
-
 
 def _load_artifact(path: Path = BALANCER_ARTIFACT) -> tuple[list, str]:
     if not path.exists():
@@ -135,8 +133,12 @@ def _pool_kind_rows(*, live_registry: bool) -> list[tuple[str, int, str, str]]:
         registry = rpc_layer.load_all_live_pools(DEEP_POOL_REGISTRY)
     rows: list[tuple[str, int, str, str]] = []
     for pool_id, pool in registry.items():
-        protocol = str(pool.get("protocol") or "")
+        raw_protocol = str(pool.get("protocol") or "")
         address = str(pool.get("address") or "")
+        try:
+            protocol = normalize_protocol(raw_protocol)
+        except Exception:
+            protocol = raw_protocol
         kind = ROUTE_POOL_KIND.get(protocol)
         if kind and Web3.is_address(address):
             rows.append((Web3.to_checksum_address(address), kind, str(pool_id), protocol))
@@ -375,3 +377,4 @@ def sign_bundle(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(sign_bundle())
+

@@ -29,18 +29,28 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Omega V5 Arbitrage Engine")
     parser.add_argument("--precision", action="store_true",
                         help="Force use of the canonical precision pricing engine")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Run discovery/readiness without live submission")
+    parser.add_argument("--cycles", type=int, default=1,
+                        help="Number of pipeline cycles requested by readiness wrappers")
     args = parser.parse_args()
 
-    print(f"Omega V5 starting (precision pricing available, SCALE={PRICE_SCALE})")
+    print(f"Omega V5 starting (precision pricing available, SCALE={PRICE_SCALE}, dry_run={args.dry_run}, cycles={args.cycles})")
 
     if args.precision:
         # Example of constructing the engine (real usage supplies live sources)
         print("Precision pricing mode enabled — using PrecisionPricingEngine contract")
         # engine = create_default_engine(...)  # wire real tokens/policies/sources
 
-    opps = run_arbitrage_discovery(use_precision_pricing=True)
-    print(f"Discovered {len(opps)} opportunities (pricing via precision layer)")
+    total_opps = 0
+    cycles = max(1, int(args.cycles or 1))
+    for cycle in range(cycles):
+        opps = run_arbitrage_discovery(use_precision_pricing=True)
+        total_opps += len(opps)
+        print(f"Cycle {cycle + 1}/{cycles}: discovered {len(opps)} opportunities (pricing via precision layer)")
+    print(f"Discovered {total_opps} total opportunities across {cycles} cycle(s)")
 
 
 if __name__ == "__main__":
     main()
+

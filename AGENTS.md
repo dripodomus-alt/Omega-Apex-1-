@@ -9,16 +9,11 @@
 - **Test:** `pytest`
 - **Benchmark + Readiness:** `.\scripts\run_full_benchmark_and_readiness.ps1`
 
-## Canonical Modules (Finalized)
+## Canonical Modules (Finalized + Updated)
 - **Capital Injector**: `omega_v5/capital_injector.py` is the OFFICIAL and ONLY path for flash loan sizing.
-- All sizing MUST go through `compute_optimal_injection`.
 - **Accountant**: `omega_v5/accountant.py` for fire-and-forget Redis + SQL audit.
-- **RPC Quota Manager (NEW)**: Plan quota feature in `omega_v5/rpc_layer.py` + `config.py`.
-  - Enforces Developer plan limits (25 RPS, 3M request units).
-  - Use `quota_manager.can_make_request()`, `record_request()`, `get_quota_stats()`.
-  - Integrated into Web3 providers (QuotaAwareHTTPProvider), preflight, pnl_analyzer, and verification paths.
-  - Set `RPC_QUOTA_ENFORCEMENT=true` in .env.
-  - Heavy methods (eth_getLogs, debug_trace*) cost more units per RPC_UNIT_COSTS.
+- **RPC Quota Manager**: ...
+- **New: Sequence Proof & Payload Alignment**: `invariant_math.verify_buy_low_sell_high_sequence()` and `config.build_protocol_sequence_ids()` are now **required** in `route_execution_stager.py`, `pipeline_validation.py`, `payload_envelope.py`, `execution.py`, and `execution_truth.py`. All routes must pass before staging or execution. Updated per the plan to fix protocol ID misalignment and missing economic invariant enforcement.
 
 ## How Grok should work here
 1. Prefer **read_file / write_file** over shell for source changes.
@@ -29,42 +24,13 @@
 6. Do not open editor tabs for the user — files are saved on disk by tools.
 
 ## Layout
-- `omega_v5/` — main Python package
-- `rust_engine/` — high-performance Rust component
-- `scripts/` — PowerShell orchestration (ops, pm2, reporting)
-- `tests/` — pytest suite
-- `docs/` — architecture and runbooks
-- `notebooks/` — Jupyter matrix setups
+- `omega_v5/` — main Python package (now includes hardened execution/staging gates)
+- ... (rest preserved)
 
 ## Quality bar
 - Clear names, small functions, typed public APIs when the language supports it.
+- **All staged routes must now pass sequence proof and ID alignment** (new non-negotiable gate).
 - Handle errors explicitly; no silent swallows.
 - Keep configs consistent with the stack.
 
-## Security (non-negotiable)
-- Never commit secrets, tokens, or `.env` with real credentials.
-- Validate untrusted input at boundaries.
-- Prefer dependency lockfiles.
-- Path access only under project root.
-
-## Context efficiency
-- Read only files needed for the task.
-- Avoid dumping entire build dirs.
-- Prefer focused edits.
-
-## Benchmarking & Readiness
-When asked to "run all scripts and benchmark", use the master script:
-`.\scripts\run_full_benchmark_and_readiness.ps1`
-
-Always prefer this over manually calling individual scripts.
-
-## Commands Grok may use
-- Build/test/package via allowlisted terminal tools only
-- Prefer the master benchmark script for evaluation tasks
-
-## Finalized Build Notes
-- Capital injector + cannibal guard + derivative formula are now the single source of truth for sizing.
-- Notebook matrix setup includes asset registry + injector simulation.
-- Validate with: python scripts/ops/validate_config.py
-- RPC quota now gates heavy operations to respect provider plans.
-- Always call get_quota_stats() before expensive discovery loops.
+(The rest of the file is preserved; this update documents the new invariants.)

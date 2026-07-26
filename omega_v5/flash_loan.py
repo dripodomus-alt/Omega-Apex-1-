@@ -36,17 +36,30 @@ AAVE_FLASH_FEE_BPS = Decimal("5")  # 0.05 %
 BALANCER_FLASH_FEE_BPS = Decimal("0")  # 0 % on Polygon
 
 # ── Gas parameters (Polygon micro-fee recalibration) ──────────────────────────
-GAS_PRICE_GWEI = Decimal("10")
-GAS_UNITS_SIMPLE_ARB = Decimal("350000")
-GAS_UNITS_THREE_HOP_ARB = Decimal("500000")
-GAS_UNITS_FOUR_HOP_ARB = Decimal("650000")
-POL_USD_PRICE = Decimal("0.076")
+GAS_PRICE_GWEI = Decimal("5")
+GAS_UNITS_SIMPLE_ARB = Decimal("35000")
+GAS_UNITS_THREE_HOP_ARB = Decimal("50000")
+GAS_UNITS_FOUR_HOP_ARB = Decimal("65000")
+POL_USD_PRICE = Decimal("0.0766")
 
 MIN_NET_PROFIT_USD = Decimal("0.001")
 MIN_PROFIT_TO_GAS_RATIO = Decimal("0")
 RELAY_TIP_USD = Decimal("0.001")
 RISK_BUFFER_USD = Decimal("0.005")
 FEE_CACHE_TTL_SECONDS = 30
+
+
+def route_tx_gas_limit(hops: int) -> int:
+    """Conservative gas limit by route hop count for Polygon execution payloads."""
+    try:
+        hop_count = max(1, int(hops))
+    except Exception:
+        hop_count = 2
+    if hop_count <= 2:
+        return int(GAS_UNITS_SIMPLE_ARB)
+    if hop_count == 3:
+        return int(GAS_UNITS_THREE_HOP_ARB)
+    return int(GAS_UNITS_FOUR_HOP_ARB)
 
 
 def current_gas_price_gwei() -> tuple[Decimal, str]:
@@ -207,3 +220,4 @@ live_risk_buffer_usd = lambda: RISK_BUFFER_USD
 
 def build_executable_route_economics(*args, **kwargs):
     return calculate_route_economics(*args, **kwargs)
+

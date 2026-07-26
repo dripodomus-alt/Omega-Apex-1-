@@ -17,13 +17,16 @@ except ImportError as e:
     sys.exit(1)
 
 KNOWN_PROTOCOLS = {
-    "V3_CLMM",
+    "V2_CPMM",
     "QS_V2_CPMM",
-    "BAL_WEIGHTED",
-    "QS_V3_ALGEBRA",
     "SUSHI_V2_CPMM",
+    "DFYN_V2_CPMM",
+    "MESH_V2_CPMM",
+    "V3_CLMM",
+    "QS_V3_ALGEBRA",
+    "CURVE_STABLE",
+    "BAL_WEIGHTED",
 }
-
 
 def check_protocol_map() -> bool:
     print("Verifying PROTOCOL_ID_MAP integrity...")
@@ -175,3 +178,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

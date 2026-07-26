@@ -248,6 +248,44 @@ class PrecisionPricingEngine:
         )
 
 
+def create_default_engine(symbols: list[str] | None = None) -> PrecisionPricingEngine:
+    """
+    Build a usable default PrecisionPricingEngine from the runtime token registry.
+
+    This keeps omega_v5.main import-safe while preserving the integer-only engine
+    interface. Live source quality still comes from oracle_layer; callers that
+    need stricter policies can construct PrecisionPricingEngine directly.
+    """
+    from .. import rpc_layer
+    from ..oracle_layer import LegacyOracleSource, build_default_policy
+
+    selected_symbols = symbols or sorted(rpc_layer.TOKEN_ADDRESSES)
+    tokens: list[TokenMetadata] = []
+    policies: list[TokenOraclePolicy] = []
+    seen_addresses: set[str] = set()
+
+    for symbol in selected_symbols:
+        address = rpc_layer.TOKEN_ADDRESSES.get(symbol, "")
+        if not address:
+            continue
+        address_key = address.lower()
+        if address_key in seen_addresses:
+            continue
+        seen_addresses.add(address_key)
+        token = TokenMetadata(
+            chain_id=rpc_layer.CHAIN_ID,
+            address=address,
+            symbol=symbol,
+            decimals=int(rpc_layer.TOKEN_DECIMALS.get(symbol, 18)),
+        )
+        tokens.append(token)
+        policies.append(build_default_policy(address))
+
+    return PrecisionPricingEngine(
+        tokens=tokens,
+        policies=policies,
+        sources=[LegacyOracleSource("legacy_oracle")],
+    )
 def get_price_usd_x18(symbol: str, engine: PrecisionPricingEngine | None = None) -> int:
     """
     Convenience bridge to get a price scaled to 1e18 using the precision engine.
@@ -283,3 +321,4 @@ def get_price_usd_x18(symbol: str, engine: PrecisionPricingEngine | None = None)
         return int(price_dec * PRICE_SCALE)
     except Exception:
         return 0
+

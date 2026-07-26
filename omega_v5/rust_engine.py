@@ -139,6 +139,25 @@ def rust_find_and_rank_opportunities(
     return result.get("opportunities", [])
 
 
+def discover_opportunities(
+    *,
+    chain_id: int = 137,
+    rates: dict | None = None,
+    timeout_seconds: int = 30,
+) -> list[dict]:
+    """
+    Compatibility entrypoint for omega_v5.arbitrage.
+
+    The Rust binary consumes a directed edge/rate graph. The readiness wrapper can
+    call this without a hydrated graph; in that case return no opportunities
+    instead of fabricating trades or crashing the pipeline.
+    """
+    if int(chain_id) != 137:
+        raise ValueError(f"unsupported chain_id for Polygon engine: {chain_id}")
+    if not rates:
+        return []
+    return rust_bellman_ford_cycles(rates, timeout_seconds=timeout_seconds)
 def rust_pre_rank_routes(*args, **kwargs):
     """Legacy shim - prefer Python stager + capital_injector before calling Rust."""
     return rust_find_and_rank_opportunities(*args, **kwargs)
+

@@ -36,17 +36,17 @@ from .config import (
     CHAIN_ID, PRIVATE_KEY, EXECUTOR_CONTRACT, BROADCAST_RPC_URL, BROADCAST_RPC_FALLBACK_URLS, OWNER_ADDRESS,
     C1_PAYLOAD_TARGET, REQUIRED_CONFIRM, CONFIRM_FLAG, LIVE_FLAG, EXEC_MODE,
     MEV_ENABLED, FLASHBOTS_RELAY_URL,
-    MEV_PUBLIC_FALLBACK_ENABLED,
+    MEV_PUBLIC_FALLBACK_ENABLED, PROTOCOL_ID_MAP, normalize_protocol,
 )
 from .opportunity_ranker import LiveOpportunity
-from .rpc_layer import BLOCK as CURRENT_BLOCK, w3, TOKEN_ADDRESSES
+from .rpc_layer import BLOCK as CURRENT_BLOCK, w3, TOKEN_ADDRESSES, TOKEN_DECIMALS
 from .pricing.net_delta import route_within_lifespan
 from .pnl_tracker import (
     record_lifespan_event, record_stage_event, record_successful_submission, record_pnl_event
 )
 from .payload_envelope import PayloadEnvelope, build_payload_envelope
 from .execution_trace import compute_trace_hash
-from .units import to_raw_units, TOKEN_DECIMALS
+from .units import to_raw_units
 from .gas_oracle import eip1559_fee_params
 from .flash_loan import route_tx_gas_limit
 from .transport_lanes import web3_for_lane, LANE_EXACT_C1_ETH_CALL
@@ -88,10 +88,6 @@ class StagedForSubmission:
 def build_tx_payload(op: LiveOpportunity, pools: dict, nonce: int = 0, base_fee_gwei: Decimal = Decimal("30")) -> dict:
     """Builds the EIP-1559 transaction payload for a flash arbitrage opportunity.
     This constructs the calldata for the executor contract based on the opportunity details."""
-    protocol_map = {
-        "UniswapV2": 1, "UniswapV3": 2, "QuickSwapV2": 1, "QuickSwapV3": 3,
-        "Algebra": 3, "Balancer": 4, "Curve": 5
-    }
     flash_asset_symbol = op.path[0]
     flash_asset_address = TOKEN_ADDRESSES.get(flash_asset_symbol)
     if not flash_asset_address:
@@ -111,7 +107,13 @@ def build_tx_payload(op: LiveOpportunity, pools: dict, nonce: int = 0, base_fee_
             raise ValueError(f"Pool metadata not found for pool_id: {pool_id}")
         pool_addr = pool_meta.get("address")
 
-        protocol_id = protocol_map.get(op.protocol_seq[i], 0)
+        try:
+            protocol_key = normalize_protocol(op.protocol_seq[i])
+        except Exception as exc:
+            raise ValueError(f"Unsupported protocol in route step {i}: {op.protocol_seq[i]}") from exc
+        protocol_id = PROTOCOL_ID_MAP.get(protocol_key)
+        if protocol_id is None:
+            raise ValueError(f"Protocol {protocol_key} is not executable by OmegaRouteSwapAdapter")
         if not from_token_addr or not to_token_addr or not pool_addr:
             raise ValueError(f"Missing address in route step {i}: from={from_token_addr} to={to_token_addr} pool={pool_addr}")
         
@@ -298,6 +300,31 @@ def _check_lifespan(op: LiveOpportunity) -> bool:
     return True
 
 
+def _final_buy_low_sell_high_gate(op: LiveOpportunity) -> tuple[bool, str]:
+    """
+    Last execution-boundary proof for closed two-leg routes.
+
+    Pre-ranking already chooses the lowest executable buy price. Before payload
+    construction we still require the staged proof to pass when present and, for
+    A -> B -> A routes, require gross return above 1.0 when gross_rate is known.
+    """
+    metadata = getattr(op, "metadata", {}) or {}
+    proof = metadata.get("execution_sequence") or metadata.get("profitable_execution_staging")
+    if isinstance(proof, dict) and proof.get("applies", True) and not bool(proof.get("passes", False)):
+        return False, str(proof.get("reason") or "buy_low_sell_high_proof_failed")
+
+    path = tuple(getattr(op, "path", ()) or ())
+    if len(path) == 3 and path[0] == path[-1]:
+        gross_rate = getattr(op, "gross_rate", None)
+        if gross_rate is not None:
+            try:
+                if Decimal(str(gross_rate)) <= Decimal("1"):
+                    return False, "gross_rate_not_above_round_trip_principal"
+            except Exception:
+                return False, "gross_rate_unparseable"
+
+    return True, "buy_low_sell_high_gate_passed"
+
 def stage_for_submission(
     op: LiveOpportunity,
     live_pools: dict,
@@ -316,6 +343,20 @@ def stage_for_submission(
         ))
         return None
 
+    sequence_ok, sequence_reason = _final_buy_low_sell_high_gate(op)
+    if not sequence_ok:
+        record_stage_event(
+            stage="STAGING",
+            status="BUY_LOW_SELL_HIGH_FAILED",
+            route=list(op.path),
+            block=current_block,
+            metadata={"reason": sequence_reason},
+        )
+        asyncio.create_task(dispatch_webhook(
+            "opportunity_staging_failed",
+            {"opp_id": str(id(op)), "path": list(op.path), "reason": sequence_reason, "block": current_block}
+        ))
+        return None
     # The opportunity is already truth-ranked, so we proceed to build and simulate.
     record_stage_event(stage="STAGING", status="ATTEMPT", route=list(op.path), block=current_block)
 
@@ -389,6 +430,12 @@ async def _try_submit_mev(staged: StagedForSubmission, w3: Web3, endpoint: dict)
             # Generic private transaction
             tx_hash_bytes = mev_provider.eth.send_private_transaction({"tx": signed_tx.rawTransaction.hex()})
             logger.info(f"PRIVATE TX submitted to {endpoint['url']}")
+            return tx_hash_bytes.hex()
+        
+        elif endpoint.get("mev_capability") == "Titan":
+            # Titan uses a similar private transaction endpoint
+            tx_hash_bytes = mev_provider.eth.send_raw_transaction(signed_tx.rawTransaction)
+            logger.info(f"TITAN PRIVATE TX submitted to {endpoint['url']}")
             return tx_hash_bytes.hex()
 
     except Exception as e:

@@ -30,7 +30,7 @@ from omega_v5 import (
 )
 
 
-def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
+def walk_system_pipeline(principal_usd: Decimal, max_to_test: int, profile: str) -> dict:
     """Runs a single pass of the discovery and validation pipeline."""
 
     report = {
@@ -38,6 +38,7 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         "params": {"principal_usd": str(principal_usd), "max_to_test": max_to_test},
         "context": {
             "python_version": sys.version,
+            "script_name": "walk_pipeline.py",
             "script_path": __file__,
         },
         "steps": {},
@@ -48,14 +49,14 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
 
     try:
         print("--- [Step 1: Connect and Load State] ---")
-        step_start = time.monotonic()
+        step_1_start = time.monotonic()
         rpc_url = get_config_value("PRIMARY_READ_RPC_URL")
         if not rpc_layer.connect(http_urls=[rpc_url], prefer_wss=False):
             raise ConnectionError("Could not connect to RPC.")
 
         print(f"✅ Connected to RPC. Current block: {rpc_layer.BLOCK}")
         live_pools = rpc_layer.load_all_live_pools(DEEP_POOL_REGISTRY)
-        print(f"✅ Loaded {len(live_pools)} live pools from the registry.")
+        print(f"✅ Loaded {len(live_pools)} live pools from the registry.") # This can be a bottleneck if registry is huge
         rpc_layer.refresh_token_prices(force=True)
         print("✅ Refreshed token prices from oracle.")
         report["steps"]["load_state"] = {
@@ -81,7 +82,32 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         }
 
         print("\n--- [Step 2: Unified Discovery & Ranking via Rust Engine] ---")
-        step_start = time.monotonic()
+        step_2_start = time.monotonic()
+
+        # Define discovery profiles
+        profiles = {
+            "fast": {
+                "stager_max_token_paths": 500,
+                "stager_max_pre_ranked": 100,
+                "stager_max_quote_options_per_pair": 2,            "canary": {
+                "stager_max_token_paths": 100,
+                "stager_max_pre_ranked": 20,
+                "stager_max_quote_options_per_pair": 1,
+            },
+            "canary": {
+                "stager_max_token_paths": 100,
+                "stager_max_pre_ranked": 20,
+                "stager_max_quote_options_per_pair": 1,
+            },
+            "deep": {
+                "stager_max_token_paths": 0, # Unbounded
+                "stager_max_pre_ranked": 0, # Unbounded
+                "stager_max_quote_options_per_pair": 0, # Unbounded
+            },
+        }
+        discovery_params = profiles.get(profile, profiles["fast"])
+        print(f"✅ Using discovery profile: '{profile}'")
+
         arb_engine = ArbitrageGraphEngine(live_pools, prices)
         sizing_params = {
             "min_principal_usd": str(MIN_FLASH_PRINCIPAL_USD),
@@ -92,15 +118,13 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         ranked_opps, discovery_report = arb_engine.find_and_rank_opportunities(
             sizing_params=sizing_params,
             flash_source=FlashSource.BALANCER,
-            stager_max_token_paths=500,
-            stager_max_pre_ranked=100,
-            stager_max_quote_options_per_pair=2,
+            **discovery_params,
         )
         print(f"✅ Rust engine returned {len(ranked_opps)} ranked opportunities.")
         print(f"✅ Discovery report: {discovery_report}")
 
         report["steps"]["discovery"] = {
-            "duration_seconds": time.monotonic() - step_start,
+            "duration_seconds": time.monotonic() - step_2_start,
             "ranked_count": len(ranked_opps),
             "discovery_report": discovery_report,
         }
@@ -109,7 +133,7 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         # This step is now part of the unified Rust engine call. We just display the results.
         print(f"✅ Displaying {len(ranked_opps)} opportunities scored by the Rust engine.")
         print("Top 50 theoretical opportunities (before on-chain verification):")
-        print_live_opportunities(ranked_opps, max_count=50)
+        print_live_opportunities(ranked_opps, max_count=20) # Reduced for brevity
         report["steps"]["ranking"] = {
             "duration_seconds": time.monotonic() - step_start,
             "total_ranked": len(ranked_opps),
@@ -119,7 +143,7 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         }
 
         print(f"\n--- [Step 4: Execution Truth Gate (Top {max_to_test} Candidates)] ---")
-        step_start = time.monotonic()
+        step_4_start = time.monotonic()
         base_fee, source = _base_fee_gwei()
         print(f"✅ Fetched current gas price: {base_fee:.2f} Gwei (source: {source})")
 
@@ -133,7 +157,7 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
         print(f"✅ Ran {summary['inspected']} candidates through the truth gate ({summary['exact_calls']} total eth_calls).")
         print(f"🔴 Rejections: {summary['rejection_classes']}")
         report["steps"]["truth_gate"] = {
-            "duration_seconds": time.monotonic() - step_start,
+            "duration_seconds": time.monotonic() - step_4_start,
             "base_fee_gwei": f"{base_fee:.2f}",
             "summary": summary,
         }
@@ -164,19 +188,38 @@ def walk_system_pipeline(principal_usd: Decimal, max_to_test: int) -> dict:
     finally:
         total_duration = time.monotonic() - start_time
         report["total_duration_seconds"] = total_duration
+
+        # Performance Analysis
+        perf_analysis = {}
+        for step_name, step_data in report["steps"].items():
+            duration = step_data.get("duration_seconds", 0)
+            if total_duration > 0:
+                perf_analysis[step_name] = {
+                    "duration_seconds": duration,
+                    "percentage_of_total": (duration / total_duration) * 100
+                }
+        
+        if perf_analysis:
+            bottleneck = max(perf_analysis, key=lambda k: perf_analysis[k]["duration_seconds"])
+            report["performance_analysis"] = {
+                "total_cycle_time_seconds": total_duration,
+                "bottleneck_stage": bottleneck,
+                "stage_breakdown": perf_analysis
+            }
         print(f"\n--- Pipeline walk complete in {total_duration:.2f} seconds. ---")
         return report
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Walk the Omega V5 pipeline and print results.")
     parser.add_argument("--principal", type=float, default=50000, help="Flash loan principal in USD to simulate with.")
+    parser.add_argument("--profile", choices=["fast", "canary", "deep"], default="fast", help="Discovery profile for speed vs. coverage.")
     parser.add_argument("--test-top", type=int, default=25, help="Number of top theoretical opportunities to run through the truth gate.")
     args = parser.parse_args()
 
     print(f"--- Starting Omega V5 Pipeline Walkthrough ---")
-    print(f"Simulating with ${args.principal:,.2f} principal. Testing top {args.test_top} routes on-chain.\n")
+    print(f"Simulating with ${args.principal:,.2f} principal. Profile: '{args.profile}'. Testing top {args.test_top} routes on-chain.\n")
     
-    report_data = walk_system_pipeline(Decimal(str(args.principal)), args.test_top)
+    report_data = walk_system_pipeline(Decimal(str(args.principal)), args.test_top, args.profile)
 
     # Save the report
     report_path = os.path.join("out", "pipeline_walk_latest.json")

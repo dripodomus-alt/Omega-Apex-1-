@@ -23,6 +23,8 @@ from .config import (
     LIVE_FLAG,
     PRIVATE_KEY,
     REQUIRED_CONFIRM,
+    PROTOCOL_REGISTRY,
+    normalize_protocol,
     _env,
 )
 from .execution import wallet_address
@@ -39,14 +41,10 @@ from .transport_lanes import (
 ZERO = "0x" + "00" * 20
 
 ROUTE_POOL_KIND = {
-    "UniswapV2": 1,
-    "UniswapV3": 2,
-    "QuickSwapV3": 3,
-    "Algebra": 3,
-    "Curve": 4,
-    "Balancer": 5,
+    key: int(meta["pool_kind"])
+    for key, meta in PROTOCOL_REGISTRY.items()
+    if meta.get("pool_kind") is not None
 }
-
 ADAPTER_ENV_KEYS = {
     "aave": "AAVE_V3_CAPITAL_ADAPTER",
     "balancer": "BALANCER_VAULT_CAPITAL_ADAPTER",
@@ -202,8 +200,12 @@ def _pool_kind_rows(live: bool) -> list[tuple[str, int, str, str]]:
     registry = rpc_layer.discover_factory_pool_registry(DEEP_POOL_REGISTRY) if live else DEEP_POOL_REGISTRY
     rows: list[tuple[str, int, str, str]] = []
     for pool_id, pool in registry.items():
-        protocol = str(pool.get("protocol") or "")
+        raw_protocol = str(pool.get("protocol") or "")
         address = str(pool.get("address") or "")
+        try:
+            protocol = normalize_protocol(raw_protocol)
+        except Exception:
+            protocol = raw_protocol
         kind = ROUTE_POOL_KIND.get(protocol)
         if kind and Web3.is_address(address):
             rows.append((Web3.to_checksum_address(address), kind, pool_id, protocol))
@@ -497,3 +499,4 @@ def configure(argv: Iterable[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(configure())
+

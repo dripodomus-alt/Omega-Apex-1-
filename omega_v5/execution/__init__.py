@@ -36,8 +36,6 @@ def _load_from_sibling_execution():
 
 
 # Always use the explicit loader to avoid package/module name collision.
-# The try/except provides a last-resort fallback to prevent total import
-# failure if execution.py has a syntax error or is otherwise unloadable.
 try:
     _exec_mod = _load_from_sibling_execution()
     _PATCHABLE_EXECUTION_SYMBOLS = (
@@ -75,32 +73,8 @@ try:
     _receipt_dict = _exec_mod._receipt_dict
     _broadcast_w3 = _exec_mod._broadcast_w3
     wallet_address = _exec_mod.wallet_address
-except Exception:
-    # Last resort placeholders to avoid total import failure
-    import asyncio
-
-    TOKEN_ADDRESSES = {}
-    TOKEN_DECIMALS = {}
-    C1_PAYLOAD_TARGET = ""
-    CHAIN_ID = 137
-    to_raw_units = lambda symbol, amount: 0
-    eip1559_fee_params = lambda *a, **k: (0, 0, "execution_import_failed")
-    route_tx_gas_limit = lambda hops: 0
-    build_tx_payload = lambda *a, **k: {}
-    simulate_tx_payload = lambda *a, **k: (True, "")
-    simulation_from_address = lambda: "0x0"
-    run_dry_run_cycles = lambda *a, **k: {}
-    run_execution_loop = lambda *a, **k: asyncio.sleep(0)
-    _await_next_block = lambda: asyncio.sleep(0)
-    execution_armed = lambda: False
-    execution_guard_status = lambda: {}
-    executor_owner = lambda: ""
-    _receipt_dict = lambda receipt: {}
-    wallet_address = lambda: ""
-    executor_code_status = lambda: (False, "execution_import_failed")
-    _broadcast_w3 = lambda: None
-    AdapterSemanticError = RuntimeError
-    EXECUTE_FLASH_ARB_SELECTOR = "0x626482a3"
+except Exception as exc:
+    raise ImportError("omega_v5.execution failed to load top-level execution.py; refusing unsafe fallback stubs") from exc
 
 __all__ = [
     "select_best_flash_source",

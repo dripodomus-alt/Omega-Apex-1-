@@ -111,9 +111,38 @@ def spread_ratio(gross_out: int, gross_in: int) -> int:
 
 
 def raw_execution_gate_passes(
-    net_surplus_raw: int, min_profit_raw: int
+    net_surplus_raw: int | None = None,
+    min_profit_raw: int | None = None,
+    *,
+    sell_amount_out_raw: int | None = None,
+    flash_principal_raw: int = 0,
+    flash_fee_raw: int = 0,
+    gas_cost_raw: int = 0,
+    relay_cost_raw: int = 0,
+    risk_buffer_raw: int = 0,
+    minimum_profit_raw: int | None = None,
 ) -> bool:
-    return net_surplus_raw >= min_profit_raw
+    """
+    Canonical raw execution gate.
+
+    Legacy two-argument mode treats the first value as already-net surplus.
+    Named-component mode proves the round trip returns strictly more base asset
+    than principal + flash fee + gas + relay + risk buffer + minimum profit.
+    """
+    if sell_amount_out_raw is None:
+        if net_surplus_raw is None or min_profit_raw is None:
+            return False
+        return int(net_surplus_raw) >= int(min_profit_raw)
+
+    threshold = (
+        int(flash_principal_raw)
+        + int(flash_fee_raw)
+        + int(gas_cost_raw)
+        + int(relay_cost_raw)
+        + int(risk_buffer_raw)
+        + int(minimum_profit_raw if minimum_profit_raw is not None else (min_profit_raw or 0))
+    )
+    return int(sell_amount_out_raw) > threshold
 
 
 def simulate_route_with_real_min_out(route: Dict[str, Any]) -> Dict[str, Any]:
@@ -132,13 +161,19 @@ def build_executable_route_economics(
     # ... (rest of original logic can stay; we only demonstrate the import path)
     return evaluate_profitability(flash_params, expenses)
 
-def route_within_lifespan(discovery_block: int, current_block: int, max_lifespan_blocks: int = 4) -> bool:
+def route_within_lifespan(
+    discovery_block: int | None,
+    current_block: int | None,
+    max_lifespan_blocks: int = 4,
+    *,
+    max_blocks: int | None = None,
+) -> bool:
     try:
         discovered = int(discovery_block or 0)
         current = int(current_block or 0)
-        lifespan = int(max_lifespan_blocks or 0)
+        lifespan = int(max_blocks if max_blocks is not None else max_lifespan_blocks)
     except Exception:
         return False
-    if discovered <= 0 or current <= 0:
-        return True
-    return current - discovered <= lifespan
+    if discovered <= 0 or current <= 0 or lifespan < 0:
+        return False
+    return 0 <= current - discovered <= lifespan
