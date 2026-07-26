@@ -562,13 +562,20 @@ def compute_optimal_injection(
     Official entry point. Runs cannibal guard then derivative sizing.
     Falls back to Bellman + quantum search.
     """
+    # ==========================================================================
+    # STEP 1: GATHER ROUTE METADATA & RUN SAFETY CHECKS
+    # ==========================================================================
     metadata = import_metadata_for_route(pool_sequence, pools, path, protocol_seq)
 
+    # --- SELF-CANNIBALIZATION GUARD ---
+    # This is a critical safety check to ensure the flash loan source pool is
+    # not also part of the arbitrage trading route.
     funding_key = flash_source.value if isinstance(flash_source, FlashSource) else str(flash_source)
     cannibal, cannibal_msg = check_self_cannibalization(
         funding_source=funding_key,
         pool_sequence=metadata.pool_ids,
     )
+    # If the route is self-cannibalizing, we must stop and return a zero-size result.
     if cannibal:
         return _zero_result(
             method="cannibal_block",
@@ -579,29 +586,58 @@ def compute_optimal_injection(
             min_tvl=metadata.min_tvl_usd,
         )
 
-    f_flash, f_swap = _get_fees_from_tiers(flash_source)
+    # ==========================================================================
+    # STEP 2: CALCULATE OPTIMAL INJECTION SIZE USING DERIVATIVE FORMULA
+    # ==========================================================================
+    # This is the core mathematical model for finding the optimal trade size.
+    # It's derived from the calculus of the constant product formula to find
+    # the point of maximum profit, balancing trade size against price impact.
 
+    # First, get the necessary inputs: fees and virtual reserves.
+    f_flash, f_swap = _get_fees_from_tiers(flash_source)
     rin, rout = _get_rin_rout_from_metadata(
         metadata.bottleneck_pool_id, pools, metadata.base_asset
     )
 
+    # If a specific principal is requested, use it. Otherwise, calculate.
     if requested_principal_usd is not None and requested_principal_usd > 0:
         optimal = Decimal(str(requested_principal_usd))
         method = "requested"
         reason = "user_override"
     else:
+        # MATH: This is the exact derivative sizing formula.
+        # It finds the injection amount 'x' that maximizes the profit function
+        # P(x) for a two-pool arbitrage (buy on pool 1, sell on pool 2).
+        #
+        #   OptimalSize = (sqrt(Rin * Rout * (1-f_swap)*(1-f_flash)) - Rin) / (1-f_swap)
+        #
+        # Where:
+        # - Rin:   Effective reserve of the token being bought (in USD).
+        # - Rout:  Effective reserve of the token being sold (in USD).
+        # - f_swap:  The swap fee of the AMM pool (e.g., 0.003 for 0.3%).
+        # - f_flash: The flash loan fee (e.g., 0 for Balancer, 0.0005 for Aave).
         optimal = compute_derivative_optimal_size(rin, rout, f_swap, f_flash)
         optimal, reason = _apply_friction_threshold(optimal, rin, rout, f_swap, f_flash)
         method = "derivative" if reason == "passed" else "friction_blocked"
 
-    # Hard caps
+    # ==========================================================================
+    # STEP 3: APPLY HARD CAPS AND REFINE WITH LADDER SEARCH
+    # ==========================================================================
+    # The theoretical optimal size is constrained by real-world limits.
+
+    # MATH: Apply hard caps based on configuration and a fraction of the
+    #       route's bottleneck TVL to avoid excessive price impact.
     hard_cap = min(
         MAX_FLASH_PRINCIPAL_USD,
         metadata.min_tvl_usd * MAX_ROUTE_TVL_FRACTION,
     )
     optimal = min(optimal, hard_cap)
 
-    # Bellman + quantum refinement
+    # --- Bellman-Ford & Quantum Refinement ---
+    # The derivative formula is a perfect model for a simple two-pool case.
+    # For more complex routes or to account for other market dynamics, we
+    # refine this initial 'optimal' guess by searching a "ladder" of discrete
+    # trade sizes around it to find the true peak of the profit curve.
     br = base_rate or Decimal("1.0015")
     peak = _bellman_ford_surplus_curve(optimal, br, metadata.min_tvl_usd)
     qscore = _quantum_score_size(optimal, metadata.min_tvl_usd, peak)
@@ -611,6 +647,8 @@ def compute_optimal_injection(
     best_prin = optimal
     best_surplus = peak
     samples = []
+    # This loop simulates the profit at various trade sizes to find the
+    # empirical maximum, which becomes our final `optimal_injection_usd`.
     for cand in ladder:
         sur = _bellman_ford_surplus_curve(cand, br, metadata.min_tvl_usd)
         samples.append({"principal": str(cand), "surplus": str(sur)})

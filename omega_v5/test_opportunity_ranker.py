@@ -122,6 +122,54 @@ class TestProfitabilityCalculation(unittest.TestCase):
         self.assertAlmostEqual(result.net_profit_usd, Decimal("-73.86"))
         self.assertFalse(result.passes_gate)
 
+    @patch("omega_v5.opportunity_ranker.profitability_gas_price_gwei")
+    @patch("omega_v5.opportunity_ranker.current_pol_price_usd")
+    @patch("omega_v5.opportunity_ranker.live_relay_tip_usd")
+    @patch("omega_v5.opportunity_ranker.live_risk_buffer_usd")
+    @patch("omega_v5.opportunity_ranker._default_slippage_bps")
+    @patch("omega_v5.opportunity_ranker.live_min_net_profit_usd")
+    def test_profitable_4_hop_route(
+        self,
+        mock_min_profit,
+        mock_slippage,
+        mock_risk_buffer,
+        mock_relay_tip,
+        mock_pol_price,
+        mock_gas_price,
+    ):
+        """
+        Tests a profitable 4-hop route to verify gas cost calculation for longer routes.
+        """
+        # --- Arrange: Mock all external dependencies ---
+        mock_gas_price.return_value = (Decimal("120"), "mock")
+        mock_pol_price.return_value = (Decimal("0.70"), "mock")
+        mock_relay_tip.return_value = Decimal("0.02")
+        mock_risk_buffer.return_value = Decimal("0.10")
+        mock_slippage.return_value = Decimal("15")  # 0.15%
+        mock_min_profit.return_value = Decimal("1.00")
+
+        # --- Act: Call the function with test data ---
+        result = _calculate_profitability(
+            gross_out=Decimal("20200"),
+            principal=Decimal("20000"),
+            base_asset="USDC",
+            hops=4,
+            flash_source=FlashSource.BALANCER,
+        )
+
+        # --- Assert: Verify the calculations ---
+        self.assertIsInstance(result, MagicMock)
+
+        # Expected gas cost: 800,000 units * 120 Gwei * 1e-9 * $0.70/POL = $67.20
+        self.assertAlmostEqual(result.gas_cost_usd, Decimal("67.2"))
+
+        # Expected net profit:
+        # raw_delta = 20200 - 20000 = 200
+        # slippage_adjusted_delta = (20200 * 0.9985) - 20000 = 169.7
+        # net_profit = 169.7 - 0 (flash) - 67.2 (gas) - 0.02 (relay) - 0.10 (risk) = 102.38
+        self.assertAlmostEqual(result.net_profit_usd, Decimal("102.38"))
+        self.assertTrue(result.passes_gate)
+
 
 if __name__ == "__main__":
     unittest.main()
