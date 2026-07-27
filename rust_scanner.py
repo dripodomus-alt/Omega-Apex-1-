@@ -1,109 +1,198 @@
 #!/usr/bin/env python3
 # ==============================================================================
-# rust_scanner.py -- Python wrapper for the high-performance Rust scanner engine.
-#
-# This module serves as the integration point between the Python host and the
-# compiled Rust `scanner_core` library. It handles data preparation, invocation,
-a# and result transformation.
+# rust_scanner.py — Python wrapper for Apex-Omega Rust scanner core (PyO3)
 # ==============================================================================
+"""
+Canonical Python interface to the locked Rust scanner.
+
+Matches the locked canon:
+- PRICE = ranking authority (executable price only)
+- DNA = proof, validation, audit, downstream context (metadata preserved)
+- Strict gates enforced in Rust
+- Separate V3 / Algebra paths
+- No asset blacklist, no protocol priority
+
+Usage (after `maturin develop` or cargo build --release):
+    from rust_scanner import RustScanner, Candidate
+"""
 
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass, asdict
 from decimal import Decimal
-from typing import Any, List
-import logging
+from typing import List, Optional, Tuple, Dict, Any
 
-from .ranker import compute_all_pool_rates
-from .opportunity_ranker import LiveOpportunity, _score_closed_path
-from .flash_loan import FlashSource
-from .config import MIN_TVL_USD
-
-logger = logging.getLogger(__name__)
-
-# Attempt to import the compiled Rust module
 try:
-    from scanner_core import GateConfig, scan_opportunities as rust_scan
+    from scanner_core import GateConfig, scan_opportunities as rust_scan, Candidate as RustCandidate
     RUST_SCANNER_AVAILABLE = True
-    logger.info("Rust scanner engine (`scanner_core`) loaded successfully.")
 except ImportError:
     RUST_SCANNER_AVAILABLE = False
+    RustCandidate = None
     rust_scan = None
-    GateConfig = None
-    logger.warning("Rust scanner engine (`scanner_core`) not found. Falling back to Python implementation.")
+
+from omega_v5.config import MIN_TVL_USD
 
 
-def _prepare_pools_for_rust(pools: dict[str, Any], rates: dict[tuple[str, str], list[dict]]) -> str:
+@dataclass
+class ScannedLeg:
+    """Python representation of a price-chosen leg."""
+    pool_address: str
+    protocol: str
+    executable_price: Decimal
+    tvl_usd: Decimal
+
+
+@dataclass
+class RustScanResult:
+    """Result from the Rust scanner."""
+    token_in: str
+    token_mid: str
+    buy_leg: ScannedLeg
+    sell_leg: ScannedLeg
+    net_spread: Decimal
+
+
+class RustScanner:
     """
-    Enriches the pool data with the executable price and serializes it to JSON
-    for the Rust engine.
+    High-performance price-driven scanner backed by Rust (when available).
+    Falls back to pure Python if the extension is not built.
     """
-    pools_with_price = {}
-    
-    # Create a lookup for rates by pool_id
-    rate_lookup = {}
-    for pair_rates in rates.values():
-        for rate_info in pair_rates:
-            rate_lookup[rate_info['pool_id']] = rate_info.get('rate', '0')
 
-    for pool_id, pool_data in pools.items():
-        # The Rust engine expects a flat structure with the executable price.
-        # We use the pre-computed rate as the definitive price.
-        enriched_pool = {
-            "protocol": pool_data.get("protocol", "Unknown"),
-            "address": pool_data.get("address", "0x" + "0" * 40),
-            "tokens": pool_data.get("tokens", []),
-            "total_executable_liquidity_usd": str(pool_data.get("total_executable_liquidity_usd", "0")),
-            "executable_price": str(rate_lookup.get(pool_id, "0")),
-        }
-        pools_with_price[pool_id] = enriched_pool
-        
-    return json.dumps(pools_with_price)
+    def __init__(self, min_tvl_usd: str = str(MIN_TVL_USD), chain_id: int = 137):
+        self.min_tvl_usd = min_tvl_usd
+        self.chain_id = chain_id
+        self.gate_config = None
+        if RUST_SCANNER_AVAILABLE:
+            self.gate_config = GateConfig(min_tvl_usd=min_tvl_usd, chain_id=chain_id)
+
+    def is_available(self) -> bool:
+        return RUST_SCANNER_AVAILABLE
+
+    def scan(self, pools: Dict[str, Dict[str, Any]]) -> List[RustScanResult]:
+        """
+        Run the price-driven scan.
+        pools: dict of pool_id -> pool dict with 'protocol', 'address', 'tokens', 'total_executable_liquidity_usd', 'executable_price'
+        """
+        if not RUST_SCANNER_AVAILABLE or self.gate_config is None:
+            return self._python_fallback_scan(pools)
+
+        # Convert to the format expected by Rust
+        pools_for_rust = {}
+        for pid, p in pools.items():
+            if len(p.get("tokens", [])) != 2:
+                continue
+            pools_for_rust[pid] = {
+                "protocol": p.get("protocol", "Unknown"),
+                "address": p.get("address", ""),
+                "tokens": p["tokens"],
+                "total_executable_liquidity_usd": str(p.get("total_executable_liquidity_usd", "0")),
+                "executable_price": str(p.get("executable_price", "0")),
+            }
+
+        pools_json = json.dumps(pools_for_rust)
+        try:
+            raw_candidates = rust_scan(pools_json, self.gate_config)
+        except Exception as e:
+            # Fall back on error
+            return self._python_fallback_scan(pools)
+
+        results = []
+        for cand in raw_candidates:
+            try:
+                buy_leg = ScannedLeg(
+                    pool_address=cand.buy_pool_address,
+                    protocol=cand.buy_pool_protocol,
+                    executable_price=Decimal(cand.executable_buy_price),
+                    tvl_usd=Decimal(cand.buy_pool_tvl_usd),
+                )
+                sell_leg = ScannedLeg(
+                    pool_address=cand.sell_pool_address,
+                    protocol=cand.sell_pool_protocol,
+                    executable_price=Decimal(cand.executable_sell_price),
+                    tvl_usd=Decimal("0"),
+                )
+                spread = Decimal(cand.executable_sell_price) - Decimal(cand.executable_buy_price)
+                results.append(RustScanResult(
+                    token_in=cand.token_in,
+                    token_mid=cand.token_mid,
+                    buy_leg=buy_leg,
+                    sell_leg=sell_leg,
+                    net_spread=spread,
+                ))
+            except Exception:
+                continue
+
+        return results
+
+    def _python_fallback_scan(self, pools: Dict[str, Dict[str, Any]]) -> List[RustScanResult]:
+        """Pure Python fallback that follows the exact same price-driven rules."""
+        from collections import defaultdict
+        pair_pools = defaultdict(list)
+        for pid, p in pools.items():
+            if len(p.get("tokens", [])) != 2:
+                continue
+            t0, t1 = p["tokens"]
+            pair_pools[(t0, t1)].append(p)
+
+        results = []
+        tokens = set()
+        for p in pools.values():
+            for t in p.get("tokens", []):
+                tokens.add(t)
+        tokens = list(tokens)
+
+        for ta in tokens:
+            for tb in tokens:
+                if ta == tb:
+                    continue
+                ab_pools = pair_pools.get((ta, tb), [])
+                ba_pools = pair_pools.get((tb, ta), [])
+
+                if not ab_pools or not ba_pools:
+                    continue
+
+                best_buy = min(ab_pools, key=lambda p: Decimal(str(p.get("executable_price", "0"))))
+                best_sell = max(ba_pools, key=lambda p: Decimal(str(p.get("executable_price", "0"))))
+
+                buy_price = Decimal(str(best_buy.get("executable_price", "0")))
+                sell_price = Decimal(str(best_sell.get("executable_price", "0")))
+
+                if buy_price >= sell_price:
+                    continue
+
+                buy_tvl = Decimal(str(best_buy.get("total_executable_liquidity_usd", "0")))
+                if buy_tvl < Decimal(self.min_tvl_usd):
+                    continue
+
+                if best_buy.get("address") == best_sell.get("address"):
+                    continue
+
+                buy_leg = ScannedLeg(
+                    pool_address=best_buy.get("address", ""),
+                    protocol=best_buy.get("protocol", ""),
+                    executable_price=buy_price,
+                    tvl_usd=buy_tvl,
+                )
+                sell_leg = ScannedLeg(
+                    pool_address=best_sell.get("address", ""),
+                    protocol=best_sell.get("protocol", ""),
+                    executable_price=sell_price,
+                    tvl_usd=Decimal(str(best_sell.get("total_executable_liquidity_usd", "0"))),
+                )
+
+                results.append(RustScanResult(
+                    token_in=ta,
+                    token_mid=tb,
+                    buy_leg=buy_leg,
+                    sell_leg=sell_leg,
+                    net_spread=sell_price - buy_price,
+                ))
+
+        return results
 
 
-def find_opportunities_with_rust(
-    live_pools: dict[str, Any],
-    principal_usd: Decimal,
-    slippage_bps: Decimal,
-) -> list[LiveOpportunity]:
-    """
-    Discovers arbitrage opportunities using the high-performance Rust scanner.
-
-    This function orchestrates the process:
-    1. Computes initial rates in Python.
-    2. Prepares and passes the data to the Rust `scan_opportunities` function.
-    3. The Rust engine finds profitable, validated candidates.
-    4. This function transforms the Rust candidates back into Python `LiveOpportunity` objects.
-    """
-    if not RUST_SCANNER_AVAILABLE or not rust_scan or not GateConfig:
-        return []
-
-    # 1. Compute rates in Python, as it has the complex pricing models.
-    rates = compute_all_pool_rates(live_pools)
-
-    # 2. Prepare data for Rust.
-    pools_json = _prepare_pools_for_rust(live_pools, rates)
-    gate_config = GateConfig(min_tvl_usd=str(MIN_TVL_USD))
-
-    # 3. Invoke the Rust scanner.
-    rust_candidates = rust_scan(pools_json, gate_config)
-
-    # 4. Transform Rust candidates into full-fledged LiveOpportunity objects.
-    # This step is simplified for now. A full implementation would re-run the
-    # profitability calculation (`_score_closed_path`) on the candidates
-    # found by Rust to generate the complete profitability breakdown.
-    opportunities = []
-    for candidate in rust_candidates:
-        # This is a placeholder transformation. We create a minimal LiveOpportunity.
-        # The full profitability object would be built here.
-        mock_opp = LiveOpportunity(
-            path=(candidate.token_in_address, candidate.token_mid_address, candidate.token_in_address),
-            pool_sequence=(candidate.buy_pool_address, candidate.sell_pool_address),
-            protocol_seq=(candidate.buy_pool_protocol, candidate.sell_pool_protocol),
-            profitability=None, # In a full implementation, this would be calculated.
-            metadata={"source": "rust_scanner", "rust_candidate": candidate.__dict__}
-        )
-        opportunities.append(mock_opp)
-
-    logger.info(f"Rust scanner found {len(opportunities)} opportunities.")
-    return opportunities
+# Convenience function
+def find_best_legs_with_rust(pools: Dict[str, Dict[str, Any]], min_tvl: str = str(MIN_TVL_USD)) -> List[RustScanResult]:
+    scanner = RustScanner(min_tvl_usd=min_tvl)
+    return scanner.scan(pools)

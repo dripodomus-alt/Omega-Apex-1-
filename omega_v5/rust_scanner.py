@@ -24,143 +24,177 @@ from decimal import Decimal
 from typing import List, Optional, Tuple, Dict, Any
 
 try:
-    import omega_scanner  # The compiled PyO3 module
+    from scanner_core import GateConfig, scan_opportunities as rust_scan, Candidate as RustCandidate
+    RUST_SCANNER_AVAILABLE = True
 except ImportError:
-    omega_scanner = None
-    print("WARNING: omega_scanner Rust extension not found. Falling back to pure Python stub.")
+    RUST_SCANNER_AVAILABLE = False
+    RustCandidate = None
+    rust_scan = None
 
-CHAIN_ID = 137
-MIN_POOL_TVL_USD = Decimal("50000")
+from .config import MIN_TVL_USD
 
 
 @dataclass
-class Candidate:
-    """Python mirror of Rust Candidate. DNA/metadata preserved but never selects legs."""
-    chain_id: int
-    pool_id: str
-    protocol: str
-    buy_price_executable_usd_per_base: Decimal
-    sell_price_executable_usd_per_base: Decimal
-    pool_tvl_usd: Decimal
-    has_live_quote: bool
-    destination: str
+class ScannedLeg:
+    """Python representation of a price-chosen leg."""
     pool_address: str
-    metadata: Dict[str, Any] = None  # DNA
+    protocol: str
+    executable_price: Decimal
+    tvl_usd: Decimal
 
-    def __post_init__(self):
-        if self.metadata is None:
-            self.metadata = {}
 
-    @classmethod
-    def from_dict(cls, d: dict) -> "Candidate":
-        return cls(
-            chain_id=d.get("chain_id", CHAIN_ID),
-            pool_id=d["pool_id"],
-            protocol=d["protocol"],
-            buy_price_executable_usd_per_base=Decimal(str(d["buy_price_executable_usd_per_base"])),
-            sell_price_executable_usd_per_base=Decimal(str(d["sell_price_executable_usd_per_base"])),
-            pool_tvl_usd=Decimal(str(d.get("pool_tvl_usd", 0))),
-            has_live_quote=bool(d.get("has_live_quote", True)),
-            destination=d.get("destination", ""),
-            pool_address=d.get("pool_address", ""),
-            metadata=d.get("metadata", {}),
-        )
+@dataclass
+class RustScanResult:
+    """Result from the Rust scanner."""
+    token_in: str
+    token_mid: str
+    buy_leg: ScannedLeg
+    sell_leg: ScannedLeg
+    net_spread: Decimal
 
 
 class RustScanner:
-    """Wrapper around the Rust scanner_core."""
+    """
+    High-performance price-driven scanner backed by Rust (when available).
+    Falls back to pure Python if the extension is not built.
+    """
 
-    def __init__(self):
-        self._rust = omega_scanner if omega_scanner else None
-        self._use_rust = self._rust is not None
+    def __init__(self, min_tvl_usd: str = str(MIN_TVL_USD), chain_id: int = 137):
+        self.min_tvl_usd = min_tvl_usd
+        self.chain_id = chain_id
+        self.gate_config = None
+        if RUST_SCANNER_AVAILABLE:
+            self.gate_config = GateConfig(min_tvl_usd=min_tvl_usd, chain_id=chain_id)
 
-    def validate(self, cand: Candidate) -> Tuple[bool, str]:
-        if self._use_rust:
-            v = self._rust.validate_candidate(
-                cand.chain_id,
-                cand.pool_id,
-                cand.protocol,
-                float(cand.buy_price_executable_usd_per_base),
-                float(cand.sell_price_executable_usd_per_base),
-                float(cand.pool_tvl_usd),
-                cand.has_live_quote,
-                cand.destination,
-                cand.pool_address,
-            )
-            # Note: in real PyO3 the call would return the ValidatedCandidate object
-            return v.passes, v.reason
-        # Pure Python fallback (for Colab/dev)
-        if cand.chain_id != CHAIN_ID:
-            return False, "chain_id_must_be_137"
-        if cand.pool_tvl_usd < MIN_POOL_TVL_USD:
-            return False, "tvl_below_50000"
-        if not cand.has_live_quote:
-            return False, "no_live_executable_quote"
-        return True, "gate_passed"
+    def is_available(self) -> bool:
+        return RUST_SCANNER_AVAILABLE
 
-    def find_best_legs(self, candidates: List[Candidate]) -> Tuple[Optional[Candidate], Optional[Candidate]]:
-        """Final scanner selection law (locked):
-        best_buy = min by executable buy price
-        best_sell = max by executable sell price
+    def scan(self, pools: Dict[str, Dict[str, Any]]) -> List[RustScanResult]:
         """
-        if self._use_rust:
-            # Convert and call Rust
-            rust_cands = []
-            for c in candidates:
-                rust_cands.append((
-                    c.chain_id, c.pool_id, c.protocol,
-                    float(c.buy_price_executable_usd_per_base),
-                    float(c.sell_price_executable_usd_per_base),
-                    float(c.pool_tvl_usd),
-                    c.has_live_quote, c.destination, c.pool_address
+        Run the price-driven scan.
+        pools: dict of pool_id -> pool dict with 'protocol', 'address', 'tokens', 'total_executable_liquidity_usd', 'executable_price'
+        """
+        if not RUST_SCANNER_AVAILABLE or self.gate_config is None:
+            return self._python_fallback_scan(pools)
+
+        # Convert to the format expected by Rust
+        pools_for_rust = {}
+        for pid, p in pools.items():
+            if len(p.get("tokens", [])) != 2:
+                continue
+            pools_for_rust[pid] = {
+                "protocol": p.get("protocol", "Unknown"),
+                "address": p.get("address", ""),
+                "tokens": p["tokens"],
+                "total_executable_liquidity_usd": str(p.get("total_executable_liquidity_usd", "0")),
+                "executable_price": str(p.get("executable_price", "0")),
+            }
+
+        pools_json = json.dumps(pools_for_rust)
+        try:
+            raw_candidates = rust_scan(pools_json, self.gate_config)
+        except Exception as e:
+            # Fall back on error
+            return self._python_fallback_scan(pools)
+
+        results = []
+        for cand in raw_candidates:
+            try:
+                buy_leg = ScannedLeg(
+                    pool_address=cand.buy_pool_address,
+                    protocol=cand.buy_pool_protocol,
+                    executable_price=Decimal(cand.executable_buy_price),
+                    tvl_usd=Decimal(cand.buy_pool_tvl_usd),
+                )
+                sell_leg = ScannedLeg(
+                    pool_address=cand.sell_pool_address,
+                    protocol=cand.sell_pool_protocol,
+                    executable_price=Decimal(cand.executable_sell_price),
+                    tvl_usd=Decimal("0"),  # sell tvl not always populated
+                )
+                spread = Decimal(cand.executable_sell_price) - Decimal(cand.executable_buy_price)
+                results.append(RustScanResult(
+                    token_in=cand.token_in,
+                    token_mid=cand.token_mid,
+                    buy_leg=buy_leg,
+                    sell_leg=sell_leg,
+                    net_spread=spread,
                 ))
-            buy, sell = self._rust.find_best_legs(rust_cands)
-            if buy is None or sell is None:
-                return None, None
-            return Candidate.from_dict(buy), Candidate.from_dict(sell)
+            except Exception:
+                continue
 
-        # Python reference implementation (must match Rust exactly)
-        valid = [c for c in candidates if self.validate(c)[0]]
-        if len(valid) < 2:
-            return None, None
+        return results
 
-        # Executable price ONLY chooses the leg
-        best_buy = min(valid, key=lambda r: r.buy_price_executable_usd_per_base)
-        best_sell = max(valid, key=lambda r: r.sell_price_executable_usd_per_base)
+    def _python_fallback_scan(self, pools: Dict[str, Dict[str, Any]]) -> List[RustScanResult]:
+        """Pure Python fallback that follows the exact same price-driven rules."""
+        # Simplified fallback: group and pick min/max
+        from collections import defaultdict
+        pair_pools = defaultdict(list)
+        for pid, p in pools.items():
+            if len(p.get("tokens", [])) != 2:
+                continue
+            t0, t1 = p["tokens"]
+            pair_pools[(t0, t1)].append(p)
 
-        if best_buy.destination == best_sell.destination or best_buy.pool_address == best_sell.pool_address:
-            return None, None
-        if best_buy.buy_price_executable_usd_per_base >= best_sell.sell_price_executable_usd_per_base:
-            return None, None
+        results = []
+        tokens = set()
+        for p in pools.values():
+            for t in p.get("tokens", []):
+                tokens.add(t)
+        tokens = list(tokens)
 
-        return best_buy, best_sell
+        for ta in tokens:
+            for tb in tokens:
+                if ta == tb:
+                    continue
+                ab_pools = pair_pools.get((ta, tb), [])
+                ba_pools = pair_pools.get((tb, ta), [])
 
-    def quote_v3(self, pool_data: dict) -> Decimal:
-        if self._use_rust:
-            return Decimal(str(self._rust.quote_uniswap_v3(pool_data)))
-        # stub
-        return Decimal(str(pool_data.get("sqrt_price_x96", 1))) / Decimal("1e18")
+                if not ab_pools or not ba_pools:
+                    continue
 
-    def quote_algebra(self, pool_data: dict) -> Decimal:
-        if self._use_rust:
-            return Decimal(str(self._rust.quote_algebra(pool_data)))
-        return Decimal(str(pool_data.get("global_state", 1))) / Decimal("1e18")
+                # min price for buy
+                best_buy = min(ab_pools, key=lambda p: Decimal(str(p.get("executable_price", "0"))))
+                best_sell = max(ba_pools, key=lambda p: Decimal(str(p.get("executable_price", "0"))))
 
-    def fixed_point(self, price: float) -> str:
-        if self._use_rust:
-            return self._rust.fixed_point_price(price)
-        return str(Decimal(str(price)))
+                buy_price = Decimal(str(best_buy.get("executable_price", "0")))
+                sell_price = Decimal(str(best_sell.get("executable_price", "0")))
+
+                if buy_price >= sell_price:
+                    continue
+
+                buy_tvl = Decimal(str(best_buy.get("total_executable_liquidity_usd", "0")))
+                if buy_tvl < Decimal(self.min_tvl_usd):
+                    continue
+
+                if best_buy.get("address") == best_sell.get("address"):
+                    continue
+
+                buy_leg = ScannedLeg(
+                    pool_address=best_buy.get("address", ""),
+                    protocol=best_buy.get("protocol", ""),
+                    executable_price=buy_price,
+                    tvl_usd=buy_tvl,
+                )
+                sell_leg = ScannedLeg(
+                    pool_address=best_sell.get("address", ""),
+                    protocol=best_sell.get("protocol", ""),
+                    executable_price=sell_price,
+                    tvl_usd=Decimal(str(best_sell.get("total_executable_liquidity_usd", "0"))),
+                )
+
+                results.append(RustScanResult(
+                    token_in=ta,
+                    token_mid=tb,
+                    buy_leg=buy_leg,
+                    sell_leg=sell_leg,
+                    net_spread=sell_price - buy_price,
+                ))
+
+        return results
 
 
-# Convenience for notebooks / Colab
-def build_candidate_from_row(row: dict) -> Candidate:
-    return Candidate.from_dict(row)
-
-
-if __name__ == "__main__":
-    # Quick self-test
-    scanner = RustScanner()
-    c1 = Candidate(137, "POOL1", "UniswapV3", Decimal("1.0"), Decimal("1.05"), Decimal("60000"), True, "USDC", "0xabc")
-    c2 = Candidate(137, "POOL2", "Algebra", Decimal("0.99"), Decimal("1.06"), Decimal("70000"), True, "USDT", "0xdef")
-    print(scanner.find_best_legs([c1, c2]))
-    print("Rust scanner wrapper ready.")
+# Convenience function
+def find_best_legs_with_rust(pools: Dict[str, Dict[str, Any]], min_tvl: str = str(MIN_TVL_USD)) -> List[RustScanResult]:
+    scanner = RustScanner(min_tvl_usd=min_tvl)
+    return scanner.scan(pools)

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["maturin>=1.5,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "scanner_core"
+version = "0.1.0"
+description = "Rust core for Omega V5 price-driven scanner (PyO3)"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Proprietary"}
+authors = [
+    {name = "Omega V5 Team"}
+]
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "scanner_core"
+python-source = "."
+
+[tool.maturin.sdist]
+include = ["src/**/*", "Cargo.toml", "Cargo.lock", "pyproject.toml", "README.md"]

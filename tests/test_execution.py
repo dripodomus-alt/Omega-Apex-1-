@@ -23,6 +23,7 @@ class MockLiveOpportunity:
     profitability: MockProfitability
     block_detected: int = 0
     metadata: dict = None
+    family: str = "C1"
 
     def __post_init__(self):
         if self.metadata is None:
@@ -76,7 +77,6 @@ class TestBuildTxPayload(unittest.TestCase):
         self.assertTrue(tx["data"].startswith("0x" + "0xafa5f482"[2:])) # Selector for executeFlashArb
         
         # Verify calldata structure (simplified check)
-        # The actual encoding is complex, but we can check for expected components
         self.assertIn("0x3c499c542cef5e3811e1192ce70d8cc03d5c3359"[2:].lower(), tx["data"].lower()) # USDC address
         self.assertIn("0x7ceb23fd6bc0add59e62ac25578270cff1b9f619"[2:].lower(), tx["data"].lower()) # WETH address
         self.assertIn("0x1111111111111111111111111111111111111111"[2:].lower(), tx["data"].lower())
@@ -259,6 +259,45 @@ class TestBuildTxPayload(unittest.TestCase):
         self.assertEqual(tx["maxFeePerGas"], int((base_fee_gwei + Decimal("30")) * Decimal("1e9")))
         self.assertEqual(tx["maxPriorityFeePerGas"], int(Decimal("30") * Decimal("1e9")))
         self.assertEqual(tx["gasFeeSource"], "legacy_base_plus_30_gwei")
+
+
+class TestRevalidateAtBroadcast(unittest.TestCase):
+    """Tests for re-profitability check before broadcast (simultaneous C1/C2/Liq)."""
+
+    def test_revalidate_profitability_at_broadcast_accepts_still_profitable(self):
+        from omega_v5.execution import revalidate_profitability_at_broadcast
+        op = MockLiveOpportunity(
+            path=("USDC", "WETH", "USDC"),
+            pool_sequence=("p1", "p2"),
+            protocol_seq=("UniswapV2", "UniswapV2"),
+            profitability=MockProfitability(net_profit_usd=Decimal("25.0")),
+            family="C1"
+        )
+        pools = {"p1": {}, "p2": {}}
+        self.assertTrue(revalidate_profitability_at_broadcast(op, pools))
+
+    def test_revalidate_profitability_at_broadcast_rejects_negative(self):
+        from omega_v5.execution import revalidate_profitability_at_broadcast
+        op = MockLiveOpportunity(
+            path=("USDC", "WETH", "USDC"),
+            pool_sequence=("p1", "p2"),
+            protocol_seq=("UniswapV2", "UniswapV2"),
+            profitability=MockProfitability(net_profit_usd=Decimal("-3.0")),
+            family="C2"
+        )
+        pools = {"p1": {}, "p2": {}}
+        self.assertFalse(revalidate_profitability_at_broadcast(op, pools))
+
+    def test_supports_liquidation_family(self):
+        from omega_v5.execution import revalidate_profitability_at_broadcast
+        op = MockLiveOpportunity(
+            path=("USDC",),
+            pool_sequence=(),
+            protocol_seq=(),
+            profitability=MockProfitability(net_profit_usd=Decimal("180.0")),
+            family="LIQUIDATION"
+        )
+        self.assertTrue(revalidate_profitability_at_broadcast(op, {}))
 
 
 if __name__ == '__main__':

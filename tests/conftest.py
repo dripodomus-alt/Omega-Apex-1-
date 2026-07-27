@@ -19,6 +19,9 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "requires_redis: tests requiring Redis (skipped if no REDIS config)"
     )
+    config.addinivalue_line(
+        "markers", "live_integration: tests using live RPC or real pool data (skipped unless OMEGA_LIVE_TEST=1 or LIVE_TEST_RPC_URL set)"
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -33,6 +36,21 @@ def _auto_skip_service_dependent_tests(request):
         redis_url = os.getenv("REDIS_URL", "") or os.getenv("REDIS_HOST", "")
         if not redis_url:
             pytest.skip("requires_redis: No Redis configured (set REDIS_URL or REDIS_HOST)")
+
+    if "live_integration" in request.node.keywords:
+        live_flag = os.getenv("OMEGA_LIVE_TEST", "") or os.getenv("LIVE_TEST_RPC_URL", "")
+        if not live_flag:
+            pytest.skip("live_integration: Set OMEGA_LIVE_TEST=1 or LIVE_TEST_RPC_URL to run live data tests")
+
+
+@pytest.fixture
+def live_rpc():
+    """Provides a live or fork Web3 instance when live tests are enabled."""
+    from omega_v5.rpc_layer import w3
+    live_flag = os.getenv("OMEGA_LIVE_TEST", "") or os.getenv("LIVE_TEST_RPC_URL", "")
+    if not live_flag:
+        pytest.skip("live_rpc fixture requires OMEGA_LIVE_TEST=1 or LIVE_TEST_RPC_URL")
+    return w3
 
 
 def pytest_collection_modifyitems(config, items):
