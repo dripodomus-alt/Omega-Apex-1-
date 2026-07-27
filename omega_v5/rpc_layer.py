@@ -16,6 +16,7 @@ import time
 import asyncio
 from collections import deque
 from pathlib import Path
+from decimal import Decimal
 from typing import Optional, Any, Dict, List, Callable
 from web3 import Web3
 from web3.providers.rpc import HTTPProvider
@@ -441,12 +442,90 @@ def _dynamic_pool_registry() -> Dict[str, dict]:
 DEEP_POOL_REGISTRY: Dict[str, dict] = _dynamic_pool_registry()
 
 
+_V2_PAIR_ABI = [
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "token0",
+        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+        "payable": False,
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "token1",
+        "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+        "payable": False,
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "constant": True,
+        "inputs": [],
+        "name": "getReserves",
+        "outputs": [
+            {"internalType": "uint112", "name": "_reserve0", "type": "uint112"},
+            {"internalType": "uint112", "name": "_reserve1", "type": "uint112"},
+            {"internalType": "uint32", "name": "_blockTimestampLast", "type": "uint32"},
+        ],
+        "payable": False,
+        "stateMutability": "view",
+        "type": "function",
+    },
+]
+
+
+def _decimal_units(raw_amount: int, decimals: int) -> Decimal:
+    return Decimal(int(raw_amount)) / (Decimal(10) ** int(decimals))
+
+
+def _hydrate_v2_reserves(pool_id: str, meta: dict) -> None:
+    if meta.get("reserves"):
+        return
+    if str(meta.get("protocol") or "") != "UniswapV2":
+        return
+    address = meta.get("address") or meta.get("pool_address") or meta.get("pair_address")
+    if not address or w3 is None or not Web3.is_address(str(address)):
+        return
+    try:
+        contract = w3.eth.contract(address=Web3.to_checksum_address(str(address)), abi=_V2_PAIR_ABI)
+        token0_addr = str(contract.functions.token0().call()).lower()
+        token1_addr = str(contract.functions.token1().call()).lower()
+        token0_symbol = ADDRESS_TO_SYMBOL.get(token0_addr)
+        token1_symbol = ADDRESS_TO_SYMBOL.get(token1_addr)
+        if not token0_symbol or not token1_symbol:
+            return
+        reserve0, reserve1, _ = contract.functions.getReserves().call(block_identifier="latest")
+        dec0 = int(TOKEN_DECIMALS.get(token0_symbol, 18))
+        dec1 = int(TOKEN_DECIMALS.get(token1_symbol, 18))
+        reserves = [_decimal_units(reserve0, dec0), _decimal_units(reserve1, dec1)]
+        if reserves[0] <= 0 or reserves[1] <= 0:
+            return
+        meta["token0"] = token0_symbol
+        meta["token1"] = token1_symbol
+        meta["token0_address"] = Web3.to_checksum_address(token0_addr)
+        meta["token1_address"] = Web3.to_checksum_address(token1_addr)
+        meta["token0_decimals"] = dec0
+        meta["token1_decimals"] = dec1
+        meta["tokens"] = [token0_symbol, token1_symbol]
+        meta["reserves"] = reserves
+        fee_bps = Decimal(str(meta.get("fee_bps", 30) or 30))
+        meta.setdefault("fee", fee_bps / Decimal("10000"))
+        meta.setdefault("reserve_block", BLOCK)
+        meta["reserve_source"] = "live_getReserves_token0_token1_aligned"
+    except Exception:
+        return
+
+
 def load_live_pool_state(pool_id: str, meta: dict | None = None) -> dict | None:
     meta = dict(meta or DEEP_POOL_REGISTRY.get(pool_id, {}))
     if not meta:
         return None
     meta.setdefault("pool_id", pool_id)
     meta.setdefault("liquidity_key", canonical_liquidity_key(pool_id, meta))
+    _hydrate_v2_reserves(pool_id, meta)
     return meta
 
 
@@ -466,3 +545,5 @@ def discover_factory_pool_registry(base_registry: Dict[str, dict] | None = None)
     return merged
 
 print("[rpc_layer] Quota-aware RPC layer loaded. Enforcement=", RPC_QUOTA_ENFORCEMENT)
+
+

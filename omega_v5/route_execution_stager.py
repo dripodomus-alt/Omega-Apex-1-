@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import itertools
+import argparse
 import json
 import logging
+import os
 from collections import Counter
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -27,6 +29,10 @@ LATEST_STAGE_REPORT = output_path("route_execution_stage_latest.json")
 HISTORY_STAGE_REPORT = output_path("route_execution_stage_history.jsonl")
 SUPPORTED_HOPS = (2, 3, 4)
 N_PLUS_4_LIFESPAN = 4
+READY_FOR_EXACT_CALL_STATUS = "ready_for_exact_call"
+LEGACY_READY_STATUS = "staged_for_executor_truth"
+DEFAULT_MAX_QUOTE_OPTIONS_PER_PAIR = 3
+DEFAULT_MAX_HOP_VALUE_MULTIPLIER = Decimal("5")
 
 
 def _decimal(value: Any) -> Decimal:
@@ -35,6 +41,15 @@ def _decimal(value: Any) -> Decimal:
     except Exception:
         return Decimal("0")
 
+
+
+
+def _row_ready_for_exact_call(row: dict[str, Any]) -> bool:
+    return row.get("status") in {READY_FOR_EXACT_CALL_STATUS, LEGACY_READY_STATUS}
+
+
+def _max_hop_value_multiplier() -> Decimal:
+    return max(Decimal("1"), _decimal(os.environ.get("OMEGA_MAX_HOP_VALUE_MULTIPLIER", DEFAULT_MAX_HOP_VALUE_MULTIPLIER)))
 
 def _json_ready(value: Any) -> Any:
     if isinstance(value, Decimal):
@@ -292,6 +307,47 @@ def build_route_identity(
     }
 
 
+def _hop_value_sanity(
+    route: PreRankedRoute,
+    pools: dict[str, dict],
+    base_amount_in: Decimal,
+) -> tuple[bool, str, list[dict[str, str]]]:
+    amount = _decimal(base_amount_in)
+    rows: list[dict[str, str]] = []
+    multiplier = _max_hop_value_multiplier()
+    for hop_idx, pool_id in enumerate(route.pool_sequence):
+        if hop_idx + 1 >= len(route.path):
+            return False, "path_pool_length_mismatch", rows
+        token_in = route.path[hop_idx]
+        token_out = route.path[hop_idx + 1]
+        try:
+            px_in = Decimal(str(token_price_usd(token_in)))
+            px_out = Decimal(str(token_price_usd(token_out)))
+            quote = quote_route_for_executor([token_in, token_out], [pool_id], pools, amount)
+        except Exception as exc:
+            return False, f"hop_quote_or_price_unavailable:{type(exc).__name__}", rows
+        out_amount = _decimal(getattr(quote, "amount_out", 0))
+        in_value = amount * px_in
+        out_value = out_amount * px_out
+        ratio = (out_value / in_value) if in_value > 0 else Decimal("0")
+        rows.append({
+            "hop": str(hop_idx + 1),
+            "pool_id": str(pool_id),
+            "token_in": str(token_in),
+            "token_out": str(token_out),
+            "amount_in": str(amount),
+            "amount_out": str(out_amount),
+            "input_value_usd": str(in_value),
+            "output_value_usd": str(out_value),
+            "value_ratio": str(ratio),
+        })
+        if out_amount <= 0 or in_value <= 0 or out_value <= 0:
+            return False, "non_positive_hop_quote_or_value", rows
+        if ratio > multiplier:
+            return False, f"hop_value_ratio_exceeds_{multiplier}", rows
+        amount = out_amount
+    return True, "hop_value_sanity_passed", rows
+
 def _execution_sequence(route: PreRankedRoute, base_amount_in: Decimal, amount_out: Decimal, amount_out_min: Decimal) -> dict[str, Any]:
     applies = len(route.path) == 3 and len(route.edge_entries) >= 2
     if not applies:
@@ -396,6 +452,7 @@ def stage_pre_ranked_route(
     extra_slippage_buffer_usd = out_usd - out_usd_min
     hop_breakdown, hop_fees_total = _estimate_hop_fees_usd(route.edge_entries, base_amount_in=base_amount_in, base_token=base_token, pools=pools, pool_sequence=route.pool_sequence)
     execution_sequence = _execution_sequence(route, base_amount_in, amount_out, amount_out_min)
+    hop_sanity_passes, hop_sanity_reason, hop_sanity_rows = _hop_value_sanity(route, pools, base_amount_in)
 
     flashloan_fee_usd = Decimal("0")
     gas_cost_usd = Decimal("0")
@@ -403,8 +460,8 @@ def stage_pre_ranked_route(
     risk_buffer_usd = Decimal("0")
     raw_delta_usd = out_usd - selected_principal
     net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd - relay_fee_usd - risk_buffer_usd - extra_slippage_buffer_usd
-    passes = net_gain_usd > MIN_NET_PROFIT_USD and bool(execution_sequence.get("passes", True))
-    status = "staged_for_executor_truth" if passes else "rejected"
+    passes = net_gain_usd > MIN_NET_PROFIT_USD and bool(execution_sequence.get("passes", True)) and hop_sanity_passes
+    status = READY_FOR_EXACT_CALL_STATUS if passes else "rejected"
     identity = build_route_identity(route, initial_amount_raw=initial_raw, initial_amount_raw_source=initial_source)
     opp_id = f"OPP-{identity['quote_snapshot_id'][2:18]}"
     fee_components = {
@@ -447,7 +504,7 @@ def stage_pre_ranked_route(
         "raw_gate_eligible": route.approximate_gross_rate > Decimal("1"),
         "status": status,
         "stage": status,
-        "reason": "profitability_gate_passed" if passes else execution_sequence.get("reason", "profitability_gate_failed"),
+        "reason": "ready_for_exact_call_profitability_gate_passed" if passes else execution_sequence.get("reason", "profitability_gate_failed"),
         "discovery_block": route.discovery_block,
         "current_block": current_block,
         "hop_fees_usd": str(hop_fees_total),
@@ -459,6 +516,9 @@ def stage_pre_ranked_route(
         "raw_delta_usd": raw_delta_usd,
         "net_gain_usd": net_gain_usd,
         "extra_slippage_buffer_usd": str(extra_slippage_buffer_usd),
+        "hop_value_sanity": {"passes": hop_sanity_passes, "reason": hop_sanity_reason, "max_value_ratio": str(_max_hop_value_multiplier()), "hops": hop_sanity_rows},
+        "truth_gate": {"exact_call_required": True, "exact_call_passed": False, "live_submit_allowed": False, "reason": "awaiting_exact_call_truth"},
+        "legacy_status": LEGACY_READY_STATUS if passes else "rejected",
         "execution_sequence": execution_sequence,
         "profitable_execution_staging": execution_sequence,
         "net_formula": formula,
@@ -492,14 +552,14 @@ def build_stage_report(
             rates = compute_all_pool_rates(pools)
         except Exception:
             rates = {}
-    routes, stats = pre_rank_routes(rates, pools, principal_usd=principal_usd, hops=hops, base_tokens=base_tokens, max_pre_ranked=stage_limit)
+    routes, stats = pre_rank_routes(rates, pools, principal_usd=principal_usd, hops=hops, base_tokens=base_tokens, max_quote_options_per_pair=max_quote_options_per_pair, max_token_paths=max_token_paths, max_pre_ranked=stage_limit)
     rows = [stage_pre_ranked_route(route, pools, requested_principal_usd=principal_usd) for route in routes[:stage_limit]]
     return {
         "schema_version": "omega_v5.route_execution_stage_report.v1",
         "execution_policy": "buy_lowest_executable_base_per_mid_then_sell_higher_back_to_base",
         "stats": stats,
         "rows": rows,
-        "stage": {"attempted": len(rows), "staged_for_executor_truth": sum(1 for r in rows if r.get("status") == "staged_for_executor_truth")},
+        "stage": {"attempted": len(rows), "ready_for_exact_call": sum(1 for r in rows if _row_ready_for_exact_call(r)), "staged_for_executor_truth": sum(1 for r in rows if _row_ready_for_exact_call(r))},
     }
 
 
@@ -513,4 +573,87 @@ def _parse_hops(value: str | Iterable[int] | None = None) -> tuple[int, ...]:
 
 def run_once(*args: Any, **kwargs: Any) -> dict[str, Any]:
     return build_stage_report(*args, **kwargs)
+
+def main(argv: Iterable[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Run Omega route execution staging once.")
+    parser.add_argument("--rpc-url", default="", help="Optional Polygon HTTP RPC override.")
+    parser.add_argument("--principal", default="10000", help="Requested principal in USD.")
+    parser.add_argument("--hops", default="2,3,4", help="Comma-separated hop counts to scan.")
+    parser.add_argument("--base-token", action="append", default=None, help="Restrict scan to a base token; repeatable.")
+    parser.add_argument("--stage-limit", type=int, default=100, help="Maximum pre-ranked routes to stage.")
+    parser.add_argument("--max-token-paths", type=int, default=0, help="Maximum token paths to enumerate; 0 means uncapped.")
+    parser.add_argument("--max-quote-options-per-pair", type=int, default=DEFAULT_MAX_QUOTE_OPTIONS_PER_PAIR, help="Maximum quote options per directional pair.")
+    parser.add_argument("--print-top", type=int, default=10, help="Number of staged/rejected rows to print.")
+    args = parser.parse_args(list(argv) if argv is not None else None)
+
+    if args.rpc_url:
+        rpc_layer.w3 = Web3(Web3.HTTPProvider(args.rpc_url))
+        rpc_layer.RPC_LIVE = rpc_layer.w3.is_connected()
+        rpc_layer.BLOCK = rpc_layer.w3.eth.block_number if rpc_layer.RPC_LIVE else 0
+    if not getattr(rpc_layer, "RPC_LIVE", False):
+        print("route_execution_stage=FAIL reason=rpc_connect_false", flush=True)
+        return 1
+
+    pools = rpc_layer.load_all_live_pools(rpc_layer.DEEP_POOL_REGISTRY)
+    if not pools:
+        print(f"route_execution_stage=BLOCKED block={rpc_layer.BLOCK} reason=no_live_pools_loaded", flush=True)
+        return 2
+
+    try:
+        from .ranker import compute_all_pool_rates
+
+        rates = compute_all_pool_rates(pools)
+    except Exception as exc:
+        print(f"route_execution_stage=FAIL reason=rate_build_failed detail={type(exc).__name__}:{exc}", flush=True)
+        return 1
+
+    report = build_stage_report(
+        pools=pools,
+        rates=rates,
+        principal_usd=_decimal(args.principal),
+        hops=_parse_hops(args.hops),
+        base_tokens=args.base_token,
+        stage_limit=max(1, int(args.stage_limit)),
+    )
+    LATEST_STAGE_REPORT.parent.mkdir(parents=True, exist_ok=True)
+    LATEST_STAGE_REPORT.write_text(json.dumps(_json_ready(report), indent=2, sort_keys=True), encoding="utf-8")
+    with HISTORY_STAGE_REPORT.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(_json_ready(report), sort_keys=True) + "\n")
+
+    rows = list(report.get("rows") or [])
+    staged = [row for row in rows if _row_ready_for_exact_call(row)]
+    print(
+        "route_execution_stage=OK "
+        f"block={rpc_layer.BLOCK} "
+        f"pools={len(pools)} "
+        f"rate_pairs={len(rates)} "
+        f"candidates={report.get('stats', {}).get('candidates_generated', 0)} "
+        f"attempted={report.get('stage', {}).get('attempted', 0)} "
+        f"ready_for_exact_call={len(staged)} "
+        f"path={LATEST_STAGE_REPORT}",
+        flush=True,
+    )
+
+    for idx, row in enumerate(rows[: max(0, int(args.print_top))], 1):
+        seq = row.get("execution_sequence") or {}
+        buy = ((seq.get("buy_leg") or {}).get("executable_buy_price_base_per_mid"))
+        sell_min = ((seq.get("sell_leg") or {}).get("executable_sell_price_min_base_per_mid"))
+        print(
+            f"route_{idx} status={row.get('status')} "
+            f"path={'->'.join(row.get('path') or [])} "
+            f"net_usd={row.get('net_gain_usd')} "
+            f"buy={buy} sell_min={sell_min} "
+            f"reason={row.get('reason')} sanity={(row.get('hop_value_sanity') or {}).get('reason', '')}",
+            flush=True,
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+
+
+
 

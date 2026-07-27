@@ -92,7 +92,7 @@ $deployArgs = @(
     # should run on the secure VM.
     "--command", "pm2-runtime",
     "--args", "start", "--args", "ecosystem.config.cjs",
-    "--args", "--only", "--args", "omega-api,omega-telegram-bot"
+    "--args", "--only", "--args", "omega-api,omega-telegram-bot" # This was pointing to the wrong file
 )
 
 & gcloud @deployArgs

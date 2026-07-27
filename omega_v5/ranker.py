@@ -89,11 +89,12 @@ def compute_all_pool_rates(pools: dict) -> dict:
     rates: dict = defaultdict(list)
 
     for pool_id, pool in pools.items():
-        proto  = pool["protocol"]
-        tokens = pool["tokens"]
-        n      = len(tokens)
+        try:
+            quotes = quote_pool(pool, QUOTE_AMOUNT)
+        except (KeyError, ValueError, ArithmeticError, TypeError):
+            continue
 
-        for quote in quote_pool(pool, QUOTE_AMOUNT):
+        for quote in quotes:
             if quote.amount_out > 0:
                 entry = _quote_entry(
                     pool_id,
@@ -256,4 +257,5 @@ def print_cross_pool_spreads(spreads: list[CrossPoolSpread], top_n: int = 10) ->
     if len(spreads) > top_n:
         print(f"\n  ... and {len(spreads) - top_n} additional two-leg spreads.")
     print("=" * 90)
+
 

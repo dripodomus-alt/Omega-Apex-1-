@@ -152,7 +152,7 @@ def test_stage_report_uses_exact_net_gain_formula(monkeypatch):
     assert "net_gain_usd" in formula
     assert formula["net_gain_usd"] > MIN_NET_PROFIT_USD
 
-    assert row["status"] in {"staged_for_executor_truth", "rejected"}
+    assert row["status"] in {"ready_for_exact_call", "rejected"}
     assert row["sizing"]
     assert row["opp_id"] == f"OPP-{row['quote_snapshot_id'][2:18]}"
     assert row["opp_id"] != route.opp_id
@@ -303,3 +303,4 @@ def test_typed_route_identity_is_block_direction_and_size_safe():
     assert identity_ab_size_1["initial_amount_raw"] == "1000000000"
     assert identity_ab_size_1["initial_amount_raw_status"] == "resolved"
     assert identity_ab_size_1["invariants"]["leg1_destination_differs_from_leg2_destination"] is True
+

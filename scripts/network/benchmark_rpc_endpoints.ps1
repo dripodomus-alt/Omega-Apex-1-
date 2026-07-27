@@ -125,6 +125,29 @@ $testBlock = {
             }
         }
 
+        # Test for MEV capabilities
+        try {
+            # Flashbots: eth_sendBundle
+            $flashbotsTestBody = '{"jsonrpc":"2.0","id":1,"method":"eth_sendBundle","params":[{}]}'
+            Invoke-RestMethod -Uri $url -Method Post -Body $flashbotsTestBody -ContentType "application/json" -TimeoutSec $timeout -ErrorAction SilentlyContinue
+            if ($LASTEXITCODE -eq 0 -or ($_.Exception.Response.Content -match "invalid params")) {
+                $mevCapability = "Flashbots"
+            }
+        } catch {}
+
+        if ($mevCapability -eq "None") {
+            try {
+                # Generic PrivateTx: eth_sendPrivateTransaction
+                $privateTxTestBody = '{"jsonrpc":"2.0","id":1,"method":"eth_sendPrivateTransaction","params":[{"tx":"0x0"}]}'
+                Invoke-RestMethod -Uri $url -Method Post -Body $privateTxTestBody -ContentType "application/json" -TimeoutSec $timeout -ErrorAction SilentlyContinue
+                if ($LASTEXITCODE -eq 0 -or ($_.Exception.Response.Content -match "invalid params")) {
+                    $mevCapability = "PrivateTx"
+                }
+            } catch {}
+        }
+
+        if ($url -match "titanbuilder") { $mevCapability = "Titan" }
+
         # Test for debug_traceTransaction support
         # We trace a known, historical transaction (genesis block on Polygon)
         # We don't care if the trace succeeds, only that the method is not rejected.

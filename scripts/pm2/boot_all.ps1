@@ -30,7 +30,7 @@ Write-Host "INFO: Using local PM2_HOME: $env:PM2_HOME"
 if (-not (Get-Command pm2 -ErrorAction SilentlyContinue)) {
     throw "pm2 is not available on your PATH. Please install it globally with 'npm install -g pm2'."
 }
-if (-not (Test-Path "ecosystem.config.js")) {
+if (-not (Test-Path "ecosystem.config.js")) { # Explicitly check for the .js file
     throw "ecosystem.config.js not found in the project root. This file is required to boot the services."
 }
 
@@ -47,7 +47,7 @@ if ($Reset) {
 
 # --- Start & Save Services ---
 Write-Host "Starting all services from ecosystem.config.js..."
-pm2 start ecosystem.config.js
+pm2 start ecosystem.config.js # Explicitly start the .js file
 if ($LASTEXITCODE -ne 0) {
     throw "Failed to start services with PM2. Check the logs above for errors."
 }
