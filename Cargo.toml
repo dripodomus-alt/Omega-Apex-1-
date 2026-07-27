@@ -1,6 +1,19 @@
 [package]
-name = "app"
+name = "scanner_core"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "scanner_core"
+crate-type = ["cdylib"]
+
 [dependencies]
+pyo3 = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+rust_decimal = { workspace = true }
+rust_decimal_macros = { workspace = true }
+alloy-primitives = { workspace = true }
+
+[build-dependencies]
+pyo3-build-config = "0.21.2"

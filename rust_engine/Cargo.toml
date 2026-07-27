@@ -1,16 +1,20 @@
 [package]
-name = "omega_rust_engine"
+name = "omega_scanner"
 version = "0.1.0"
 edition = "2021"
-description = "High-performance arbitrage discovery and ranking engine for Omega V5."
+description = "Apex-Omega Chain 137 pure price-driven scanner core (Rust + PyO3)"
+
+[lib]
+name = "omega_scanner"
+crate-type = ["cdylib"]
 
 [dependencies]
-clap = { version = "4.4", features = ["derive"] }
-md5 = "0.7"
+pyo3 = { version = "0.20", features = ["extension-module"] }
 rust_decimal = { version = "1.34", features = ["maths", "serde-float", "std"] }
 rust_decimal_macros = "1.34"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-alloy-primitives = { version = "0.7.0", features = ["serde"] }
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["json", "env-filter"] }
+
+[features]
+default = []
+extension-module = ["pyo3/extension-module"]

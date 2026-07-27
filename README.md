@@ -35,6 +35,11 @@
 
 The system is a high-performance hybrid Python/Rust application, orchestrated with PowerShell scripts.
 
+*   **Independent Nature**: The Python host and Rust engine have distinct roles. Python is the orchestrator, handling complex data loading, state, and pricing. Rust is the specialized core, focused on high-speed, rule-based scanning.
+*   **Synchronized Infrastructure**: The two components are not optional. They are designed as an inseparable hybrid; the system is incomplete and will not function if either part is missing.
+
+This design provides both high-level flexibility and low-level performance.
+
 1.  **`omega_v5/`**: The core Python package containing all business logic for discovery, ranking, simulation, execution, and data analysis.
 
 2.  **`rust_engine/`**: A high-performance Rust binary that handles computationally intensive tasks, such as graph-based arbitrage detection. This is a critical component for maximizing performance.
