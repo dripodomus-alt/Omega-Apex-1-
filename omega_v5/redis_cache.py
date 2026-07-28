@@ -199,3 +199,17 @@ def delete_by_pattern(pattern: str) -> int:
     if not keys_to_delete:
         return 0
     return c.delete(*keys_to_delete)
+
+
+def delete_by_pattern(pattern: str) -> int:
+    """
+    Deletes keys matching a given pattern. Use with caution.
+    Aligns with data governance for explicit data removal.
+    """
+    c = client()
+    if c is None:
+        return 0
+    keys_to_delete = [key for key in c.scan_iter(match=pattern)]
+    if not keys_to_delete:
+        return 0
+    return c.delete(*keys_to_delete)

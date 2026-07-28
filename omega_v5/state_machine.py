@@ -36,7 +36,7 @@ from typing import Dict, List, Optional
 from .math_engine import DeFiEngineMath
 from .flash_loan import evaluate_profitability, FlashSource
 from .oracle_layer import PriceUnavailable, token_price_usd
-from . import rpc_layer
+from . import rpc_layer, pipeline_validation
 from .opportunity_ranker import LiveOpportunity
 from .rpc_layer import DEEP_POOL_REGISTRY, load_live_pool_state
 from .cycle_ids import state_hash as make_state_hash
@@ -480,6 +480,26 @@ def create_c1_cycle(
     )
     if pools is not None:
         c1.capture_pre_state(pools, block)
+
+    # Run initial validation gates. If they fail, the cycle is rejected immediately.
+    if oid:
+        # The validation functions expect a dictionary-like route object.
+        route_dict = opportunity.as_dict() if hasattr(opportunity, "as_dict") else vars(opportunity)
+
+        pricing_ok = pipeline_validation.validate_route_pricing(
+            route=route_dict, opportunity_id=oid, cycle_id=c1.c1_id
+        )
+        sequence_ok = pipeline_validation.validate_payload_ids_and_sequence(
+            route=route_dict, opportunity_id=oid, cycle_id=c1.c1_id
+        )
+
+        if not (pricing_ok and sequence_ok):
+            reasons = []
+            if not pricing_ok:
+                reasons.append("pricing_validation_failed")
+            if not sequence_ok:
+                reasons.append("payload_sequence_validation_failed")
+            c1.mark_failed(reason=";".join(reasons))
     return c1
 
 
