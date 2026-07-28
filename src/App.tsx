@@ -259,8 +259,15 @@ export default function App() {
         const uniqueSuffix = Math.random().toString(36).substring(2, 7);
         const newRouteId = `route_poly_${numStr}_${uniqueSuffix}`;
 
-        const dexList = ['QuickSwap V3', 'Uniswap V3', 'Balancer V3 Vault', 'Curve 3Pool', 'SushiSwap V3', 'Dodo V2', 'KyberSwap Elastic'];
-        const tokenList = ['WMATIC', 'USDC.e', 'USDT', 'WETH', 'WBTC', 'DAI', 'GHST', 'AAVE', 'LINK', 'stMATIC'];
+        const dexList = [
+          'UniswapV3', 'QuickSwapV2', 'QuickSwapV3', 'BalancerV3Vault', 'BalancerV2Weighted',
+          'CurvePolygon', 'SushiSwapV2', 'SushiSwapV3Trident', 'AaveV3', 'DodoV2',
+          'KyberSwapElastic', 'MeshSwapV2', 'PearlV3', 'RetroV3',
+        ];
+        const tokenList = [
+          'WMATIC', 'POL', 'USDC.e', 'USDC', 'USDT', 'WETH', 'WBTC', 'DAI',
+          'QUICK', 'LINK', 'AAVE', 'GHST', 'stMATIC', 'MaticX',
+        ];
 
         const t1 = tokenList[Math.floor(Math.random() * tokenList.length)];
         let t2 = tokenList[Math.floor(Math.random() * tokenList.length)];
