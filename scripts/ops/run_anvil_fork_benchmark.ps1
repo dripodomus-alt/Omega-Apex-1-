@@ -34,8 +34,15 @@ $ErrorActionPreference = "Stop"
 $repoRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
 Set-Location $repoRoot
 
-# --- Helper Functions (aligned with project standards) ---
-function Write-Phase { param([string]$Message) Write-Host "`n" + ("=" * 80) + "`n" + " PHASE: $Message" + "`n" + ("=" * 80) -ForegroundColor Cyan }
+# --- Helper Functions ---
+function Write-Phase {
+    param([string]$Title, [string]$Subtitle)
+    $timestamp = Get-Date -Format "HH:mm:ss"
+    Write-Host "`n" + ("-" * 80)
+    Write-Host "[$timestamp] $Title" -ForegroundColor Cyan
+    if (-not [string]::IsNullOrEmpty($Subtitle)) { Write-Host "  $Subtitle" -ForegroundColor Gray }
+    Write-Host ("-" * 80)
+}
 function Assert-Ok { param([bool]$Condition, [string]$Message) if (-not $Condition) { throw $Message } }
 function Assert-Command { param([string]$Name, [string]$InstallHint) if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw "$Name is not available on PATH. $InstallHint" } }
 function Parse-EnvFile {
@@ -61,7 +68,7 @@ function Parse-EnvFile {
 }
 
 # --- PRE-FLIGHT CHECKS ---
-Write-Phase "Pre-flight System & Sanity Checks"
+Write-Phase -Title "Step 1: Pre-flight System & Sanity Checks" -Subtitle "Verifying toolchain and Anvil fork connectivity..."
 
 Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on PATH."
 Assert-Command -Name "cast" -InstallHint "Install Foundry (which includes 'cast') and ensure it is on PATH."
@@ -83,11 +90,9 @@ try {
     throw "Could not connect to Anvil fork at '$forkRpcUrl'. Is Anvil running in a separate terminal? Error: $($_.Exception.Message)"
 }
 
-Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host " Anvil Fork Benchmark (SDK-Driven)" -ForegroundColor Cyan
-Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host "This script will now invoke the high-performance Python benchmark runner."
-Write-Host "All core logic has been migrated to 'scripts/ops/run_benchmark.py' for efficiency."
+Write-Phase -Title "Step 2: Invoking Anvil Fork Benchmark" -Subtitle "Handing off to the high-performance Python SDK runner..."
+Write-Host "This script will now execute the benchmark against the local Anvil fork."
+Write-Host "All core logic resides in 'scripts/ops/run_benchmark.py' for maximum efficiency."
 
 # Build the arguments to pass to the Python script
 $pythonArgs = @(

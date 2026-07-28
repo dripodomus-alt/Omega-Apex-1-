@@ -6,14 +6,17 @@
 # Rust scanning engine against its pure Python equivalent. It validates that
 # both implementations produce identical results while quantifying the
 # performance gain from the Rust implementation.
+# Now supports --json-output for bottleneck discovery and template generation.
 # ==============================================================================
 
+import argparse
 import json
 import random
 import sys
 import time
 from decimal import Decimal
 from pathlib import Path
+from typing import Dict
 
 # Ensure the project root is in the Python path
 ROOT = Path(__file__).resolve().parents[2]
@@ -61,20 +64,28 @@ def generate_pools(num_tokens: int, pools_per_pair: int) -> dict:
     return pools_data
 
 
-def main():
+def main() -> int:
     """Main benchmark execution function."""
+    parser = argparse.ArgumentParser(description="Benchmark Rust vs. Python opportunity scanners.")
+    parser.add_argument("--tokens", type=int, default=25, help="Number of synthetic tokens to generate.")
+    parser.add_argument("--pools-per-pair", type=int, default=5, help="Number of pools to generate for each token pair.")
+    parser.add_argument("--json-output", type=str, default=None, help="Path to write structured JSON results for bottleneck analysis.")
+    parser.add_argument("--min-tvl-usd", type=str, default="50000", help="Minimum TVL filter passed to RustScanner.")
+    args = parser.parse_args()
+
     print("=" * 80)
     print(" Rust vs. Python Scanner Performance Benchmark")
     print("=" * 80)
+    print(f"Configuration: --tokens {args.tokens} --pools-per-pair {args.pools_per_pair} --min-tvl-usd {args.min_tvl_usd}")
 
-    scanner = RustScanner(min_tvl_usd="50000")
+    scanner = RustScanner(min_tvl_usd=args.min_tvl_usd)
 
     if not scanner.is_available():
         print("\n❌ Rust scanner not available. Run 'maturin develop' first.")
         print("Cannot perform a meaningful comparison.")
         return 1
 
-    pools = generate_pools(num_tokens=25, pools_per_pair=5)
+    pools = generate_pools(num_tokens=args.tokens, pools_per_pair=args.pools_per_pair)
 
     # --- Benchmark Rust Implementation ---
     print("\nBenchmarking Rust scanner...")
@@ -88,7 +99,6 @@ def main():
     # --- Benchmark Python Fallback Implementation ---
     print("\nBenchmarking Python fallback scanner...")
     start_time_py = time.perf_counter()
-    # We call the private method directly for this benchmark
     python_results = scanner._python_fallback_scan(pools)
     end_time_py = time.perf_counter()
     py_duration = (end_time_py - start_time_py) * 1000  # to ms
@@ -102,14 +112,46 @@ def main():
 
     if len(rust_results) != len(python_results):
         print(f"⚠️  Result mismatch! Rust found {len(rust_results)} but Python found {len(python_results)}.")
+        match_ok = False
     else:
         print("✅  Result count matches between Rust and Python implementations.")
+        match_ok = True
 
-    if rust_duration > 0:
-        performance_multiplier = py_duration / rust_duration
-        print(f"\n🚀 Performance Gain: Rust is {performance_multiplier:.2f}x faster than Python.")
+    performance_multiplier = (py_duration / rust_duration) if rust_duration > 0 else 0.0
+    print(f"\n🚀 Performance Gain: Rust is {performance_multiplier:.2f}x faster than Python.")
 
-    return 0
+    # Structured results for bottleneck discovery
+    results = {
+        "config": {
+            "tokens": args.tokens,
+            "pools_per_pair": args.pools_per_pair,
+            "min_tvl_usd": int(args.min_tvl_usd),
+            "total_pools": len(pools)
+        },
+        "performance": {
+            "rust_ms": round(rust_duration, 2),
+            "python_ms": round(py_duration, 2),
+            "multiplier": round(performance_multiplier, 2),
+            "opportunities_rust": len(rust_results),
+            "opportunities_python": len(python_results)
+        },
+        "status": {
+            "match_ok": match_ok,
+            "rust_available": True
+        }
+    }
+
+    print(json.dumps(results, indent=2))
+
+    if args.json_output:
+        output_path = Path(args.json_output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(output_path, "w") as f:
+            json.dump(results, f, indent=2)
+        print(f"Results written to {output_path}")
+
+    return 0 if match_ok else 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

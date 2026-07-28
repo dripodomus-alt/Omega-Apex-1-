@@ -18,7 +18,9 @@
 param(
     [int]$AnvilCycles = 2,
     [switch]$SkipAnvil,
-    [switch]$ReadinessOnly
+    [switch]$ReadinessOnly,
+    [int]$ScannerTokens = 25,
+    [int]$ScannerPoolsPerPair = 5
 )
 
 $ErrorActionPreference = "Stop"
@@ -84,8 +86,8 @@ try {
 
     # --- Phase 3: Scanner Performance Benchmark (Rust vs. Python) ---
     Write-Phase "Scanner Performance Benchmark"
-    # Note: The path to the benchmark script might be benchmarks/compare_scanners.py
-    python benchmarks/compare_scanners.py
+    Write-Host "Running with --tokens $ScannerTokens --pools-per-pair $ScannerPoolsPerPair to stress-test the discovery pipeline."
+    python benchmarks/compare_scanners.py --tokens $ScannerTokens --pools-per-pair $ScannerPoolsPerPair
     Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Scanner performance benchmark (compare_scanners.py) failed."
     $results.scanner_benchmark = $true
 
@@ -109,10 +111,8 @@ try {
         if (-not $anvilIsRunning) {
             Write-Host "Anvil not detected on port $anvilPort. Attempting to start it automatically..." -ForegroundColor Yellow
             $envConfig = Parse-EnvFile -FilePath ".env"
-            $forkUrl = $envConfig.FORK_UPSTREAM_RPC_URL
-            if ([string]::IsNullOrEmpty($forkUrl)) {
-                $forkUrl = $envConfig.FORK_RPC_URL
-            }
+            # Prefer FORK_RPC_URL for local benchmarks, as it's the primary Anvil config.
+            $forkUrl = $envConfig.FORK_RPC_URL
             Assert-Ok -Condition (-not [string]::IsNullOrEmpty($forkUrl)) -Message "Could not find FORK_UPSTREAM_RPC_URL or FORK_RPC_URL in .env file to start Anvil."
 
             # Start Anvil as a background job in PowerShell
@@ -158,8 +158,32 @@ try {
     elseif ($readiness_score -gt 70) { $statusColor = "Yellow" }
 
     Write-Host "Readiness Score: $readiness_score / 100" -ForegroundColor $statusColor
-    $results | ConvertTo-Json | Out-File -FilePath "out/readiness_report.json" -Encoding utf8
-    Write-Host "Full report saved to out/readiness_report.json"
+
+    # Save to a timestamped file for historical tracking
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $reportDir = "out/readiness_reports"
+    New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
+    $reportPath = Join-Path $reportDir "readiness_report_$timestamp.json"
+    $results | ConvertTo-Json -Depth 5 | Out-File -FilePath $reportPath -Encoding utf8
+    Write-Host "Full report saved to $reportPath"
+    # Create/update a 'latest' file for easy access
+    Set-Content -Path "out/readiness_report_latest.json" -Value (Get-Content $reportPath -Raw)
+
+    # Display a final summary table
+    Write-Host "`n" + ("=" * 45)
+    Write-Host "         Readiness Summary"
+    Write-Host ("=" * 45)
+    Write-Host ("{0,-25} {1,-15}" -f "PHASE", "STATUS")
+    Write-Host ("{0,-25} {1,-15}" -f "-----", "------")
+    $results.GetEnumerator() | Sort-Object Name | ForEach-Object {
+        if ($_.Name -ne "readiness_score") {
+            $statusText = if ($_.Value) { "PASSED" } else { "FAILED" }
+            $statusEmoji = if ($_.Value) { "✅" } else { "❌" }
+            $statusColor = if ($_.Value) { "Green" } else { "Red" }
+            Write-Host ("{0,-25} {1,-2} {2,-12}" -f $_.Name.ToUpper(), $statusEmoji, $statusText) -ForegroundColor $statusColor
+        }
+    }
+    Write-Host ("=" * 45)
 
     if ($readiness_score -lt 100) {
         Write-Host "One or more readiness checks failed." -ForegroundColor Yellow

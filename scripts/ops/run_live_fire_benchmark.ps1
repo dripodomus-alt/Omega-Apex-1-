@@ -42,8 +42,14 @@ $repoRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
 Set-Location $repoRoot
 
 # --- Helper Functions (aligned with project standards) ---
-function Write-Phase { param([string]$Message) Write-Host "`n" + ("=" * 80) + "`n" + " PHASE: $Message" + "`n" + ("=" * 80) -ForegroundColor Cyan }
-function Write-Substep { param([string]$Message) Write-Host "`n -> $Message" }
+function Write-Phase {
+    param([string]$Title, [string]$Subtitle)
+    $timestamp = Get-Date -Format "HH:mm:ss"
+    Write-Host "`n" + ("-" * 80)
+    Write-Host "[$timestamp] $Title" -ForegroundColor Cyan
+    if (-not [string]::IsNullOrEmpty($Subtitle)) { Write-Host "  $Subtitle" -ForegroundColor Gray }
+    Write-Host ("-" * 80)
+}
 function Assert-Ok { param([bool]$Condition, [string]$Message) if (-not $Condition) { throw $Message } }
 function Assert-Command { param([string]$Name, [string]$InstallHint) if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) { throw "$Name is not available on PATH. $InstallHint" } }
 function Parse-EnvFile {
@@ -71,7 +77,7 @@ function Parse-EnvFile {
 }
 
 # --- PRE-FLIGHT CHECKS ---
-Write-Phase "Pre-flight System & Sanity Checks"
+Write-Phase -Title "Step 1: Live-Fire Pre-flight & Safety Checks" -Subtitle "Verifying configuration, chain sync, and wallet integrity..."
 
 if (-not $ConfirmLiveFire) {
     throw "This is a high-risk script. You must explicitly acknowledge the risk by adding the '-ConfirmLiveFire' parameter."
@@ -80,7 +86,7 @@ if (-not $ConfirmLiveFire) {
 Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on PATH."
 Assert-Command -Name "cast" -InstallHint "Install Foundry (which includes 'cast') and ensure it is on PATH."
 
-Write-Substep "Verifying environment and wallet configuration..."
+Write-Host "Verifying environment and wallet configuration..."
 Assert-Ok -Condition (Test-Path ".env") -Message ".env file not found. Cannot proceed."
 
 # Use a robust parser that handles duplicate keys by taking the last value.
@@ -100,7 +106,7 @@ $executorContractAddress = (& python -m omega_v5.executor_address 2>$null | Wher
 Assert-Ok -Condition (-not [string]::IsNullOrEmpty($executorContractAddress)) -Message "Could not resolve the main EXECUTOR_CONTRACT from config.py. Check .env variables like C1_PAYLOAD_TARGET, EXECUTOR_CONTRACT_ADDR, etc."
 Assert-Ok -Condition ($executorContractAddress.Length -eq 42 -and $executorContractAddress.StartsWith("0x")) -Message "Resolved EXECUTOR_CONTRACT '$executorContractAddress' is not a valid Ethereum address."
 
-Write-Substep "Verifying chain synchronization..."
+Write-Host "Verifying chain synchronization..."
 try {
     $primaryBlock = cast block-number --rpc-url $rpcUrl
     $publicBlock = cast block-number --rpc-url $publicRpc
@@ -113,7 +119,7 @@ try {
 
 $chainId = cast chain-id
 
-Write-Substep "Sanity-checking executor wallet..."
+Write-Host "Sanity-checking executor wallet..."
 $privateKey = $envConfig.EXECUTOR_PRIVATE_KEY
 Assert-Ok -Condition (-not ([string]::IsNullOrEmpty($privateKey) -or $privateKey.Contains("..."))) -Message "EXECUTOR_PRIVATE_KEY is not set in .env for a PrivateKey-signed test."
 $derivedAddress = (cast wallet address $privateKey).Trim()
@@ -121,13 +127,14 @@ $configuredAddress = $envConfig.EXECUTOR_WALLET
 Assert-Ok -Condition ($derivedAddress.ToLower() -eq $configuredAddress.ToLower()) -Message "FATAL: Address derived from EXECUTOR_PRIVATE_KEY ($derivedAddress) does not match EXECUTOR_WALLET ($configuredAddress) in .env file. Check for typos."
 Write-Host "Wallet sanity checks passed." -ForegroundColor Green
 
+Write-Phase -Title "Step 2: Final Confirmation" -Subtitle "Review details before authorizing live transactions."
+
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
 Write-Host "  SIGNER TYPE     : PrivateKey (SDK Mode)" -ForegroundColor Yellow
 Write-Host "  EXECUTOR WALLET : $envConfig.EXECUTOR_WALLET" -ForegroundColor Yellow
 Write-Host "  NETWORK (ChainID) : $chainId" -ForegroundColor Yellow
 Write-Host "  RPC ENDPOINT    : $rpcUrl" -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
-
 $initialBalanceWei = cast balance $envConfig.EXECUTOR_WALLET
 $initialBalanceNative = cast from-wei $initialBalanceWei
 Write-Host "Initial wallet balance: $initialBalanceNative POL" -ForegroundColor Green
@@ -137,11 +144,9 @@ if ($confirmation.ToLower() -ne 'y') {
     throw "Live-fire benchmark cancelled by user."
 }
 
-Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host " Live-Fire Benchmark (SDK-Driven)" -ForegroundColor Cyan
-Write-Host "====================================================================" -ForegroundColor Cyan
-Write-Host "This script will now invoke the high-performance Python benchmark runner."
-Write-Host "All core logic has been migrated to 'scripts/ops/run_benchmark.py' for efficiency."
+Write-Phase -Title "Step 3: Invoking Live-Fire Benchmark" -Subtitle "Handing off to the high-performance Python SDK runner..."
+Write-Host "This script will now execute the live-fire benchmark."
+Write-Host "All core logic resides in 'scripts/ops/run_benchmark.py' for maximum efficiency."
 
 # Build the arguments to pass to the Python script
 $pythonArgs = @(
