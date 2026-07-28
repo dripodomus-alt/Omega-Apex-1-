@@ -8,6 +8,7 @@ export interface WalletState {
   c1ArbTarget: string;
   liquidationTarget: string;
   nativePolBalance: number;
+  polValueUSD: number;
   usdcBalance: number;
   gasSpentUSD: number;
   nonceCount: number;
@@ -37,6 +38,7 @@ export const DEFAULT_WALLET_STATE: WalletState = {
   c1ArbTarget: POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress,
   liquidationTarget: POLYGON_CHAIN_CONFIG.liquidationExecutorAddress,
   nativePolBalance: 26.77, // Polygonscan Ground Truth for 0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+  polValueUSD: 1.95, // 26.77 POL * ~$0.073/POL
   usdcBalance: 0.00, // Liquid hot wallet ERC20 ($18k-$250k arbitrage is Balancer V3 zero-capital Flash Loan sourced)
   gasSpentUSD: 8.42,
   nonceCount: 179, // Polygonscan Verified Ground Truth (179 transactions sent)
