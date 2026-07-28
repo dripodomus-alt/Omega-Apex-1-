@@ -1,5 +1,5 @@
 import React from 'react';
-import { Network, Calculator, Server, Cpu, Database, Terminal, Sparkles, BookOpen, Radio, HardDrive, ShieldCheck, Volume2, Blocks, Layers, TrendingUp, Send, Zap, Flame } from 'lucide-react';
+import { Network, Calculator, Server, Cpu, Database, Terminal, Sparkles, BookOpen, Radio, HardDrive, ShieldCheck, Volume2, Blocks, Layers, TrendingUp, Send, Zap, Flame, History } from 'lucide-react';
 
 export type TabType =
   | 'top50_execution'
@@ -19,7 +19,8 @@ export type TabType =
   | 'google_drive'
   | 'benchmark'
   | 'ai_assistant'
-  | 'live_mainnet';
+  | 'live_mainnet'
+  | 'history_90d';
 
 interface NavigationProps {
   activeTab: TabType;
@@ -35,6 +36,7 @@ export const Navigation: React.FC<NavigationProps> = ({
   const tabs = [
     // TIER 1: DIRECT EXECUTION & YIELD GENERATION
     { id: 'top50_execution', label: 'Top 50 Routes (12s Cycle)', icon: TrendingUp, tier: 'TIER 1 (YIELD)', badge: '50 Routes / 12s', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },
+    { id: 'history_90d', label: '90-Day Simulation', icon: History, tier: 'TIER 1 (YIELD)', badge: 'Alchemy Anchored', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },
     { id: 'pipeline', label: 'Live Pipeline', icon: Network, tier: 'TIER 1 (YIELD)', badge: 'Direct Alpha', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },
     { id: 'c1c2_logging', label: 'C1 × C2 Engine & Log', icon: Zap, tier: 'TIER 1 (YIELD)', badge: '4-Block Parity', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },
     { id: 'apex_optimization', label: 'EIP-1153 & Latency Studio', icon: Flame, tier: 'TIER 1 (YIELD)', badge: 'Low-Latency', badgeColor: 'bg-amber-950 text-amber-300 border border-amber-800' },

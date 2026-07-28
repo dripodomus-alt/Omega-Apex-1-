@@ -21,6 +21,7 @@ import { TransactionPayloadBuilderStudio } from './components/TransactionPayload
 import { C1C2CycleLoggingStudio } from './components/C1C2CycleLoggingStudio';
 import { ApexOptimizationStudio } from './components/ApexOptimizationStudio';
 import { Top50ExecutionStudio } from './components/Top50ExecutionStudio';
+import { NinetyDaySimulationStudio } from './components/NinetyDaySimulationStudio';
 
 import {
   INITIAL_POOLS,
@@ -409,6 +410,10 @@ export default function App() {
 
         {activeTab === 'top50_execution' && (
           <Top50ExecutionStudio />
+        )}
+
+        {activeTab === 'history_90d' && (
+          <NinetyDaySimulationStudio />
         )}
 
         {activeTab === 'pipeline' && (
