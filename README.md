@@ -108,22 +108,28 @@ See the detailed steps in `docs/deployment_checklist.md` and the Local Developme
 
 ## Development & Testing
 
-Run the full safe benchmark + readiness assessment:
+The primary script for development, testing, and performance analysis is the **SDK-driven benchmark orchestrator**. It can run in different modes to suit your needs.
 
+### Anvil Fork Testing (Recommended)
+This is the safest and fastest way to test the full end-to-end execution pipeline.
+1.  Start an Anvil fork in a separate terminal: `anvil --fork-url <YOUR_POLYGON_RPC_URL>`
+2.  Run the Anvil benchmark script:
+    ```powershell
+    .\scripts\ops\run_anvil_fork_benchmark.ps1 -Cycles 5
+    ```
+This will discover opportunities, stage them, and submit real transactions to your local Anvil fork, providing a complete simulation of a live run.
+
+### System-Wide Readiness Assessment
+To verify the entire system, including Rust components, unit tests, and data integrity, use the master readiness script. This script orchestrates all checks and provides a comprehensive health score.
 ```powershell
-.\scripts\run_full_benchmark_and_readiness.ps1
+.\benchmarks\run_full_benchmark_and_readiness.ps1
 ```
 
-This runs:
-- Prerequisite checks
-- Unit tests (pytest)
-- Preflight
-- Pipeline validation
-- Safe Anvil fork benchmark (2 cycles by default)
-- Synthetic dry-run simulator
-- Aggregates results and prints a readiness score (0-100)
+## Data Governance and Compliance
 
-See `docs/deployment_checklist.md` for more options (`-Cycles`, `-SkipAnvil`, `-ReadinessOnly`).
+The project operates under a strict data governance policy to ensure the integrity, security, and quality of all data used in discovery, simulation, and execution. This framework covers data ownership, lifecycle management, and security protocols.
+
+For complete details, see the **Data Governance Policy**.
 
 **Safety**: The master script deliberately excludes live-fire / mainnet execution scripts.
 

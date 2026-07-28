@@ -62,6 +62,7 @@ RPC_RPS_LIMIT=15
 - Always re-run the readiness script after swapping .env files.
 - For visualization, see `notebooks/` or `docs/plot_pipeline_performance.py`.
 - Update this guide when new templates are reverse-engineered from fresh benchmarks.
+- Benchmark results form a key part of the continuous improvement and review process outlined in the project's Data Governance policy.
 
 This turns the readiness script into an active optimization tool. Combine with ML alpha ranker and pipeline_validation for production readiness.
 

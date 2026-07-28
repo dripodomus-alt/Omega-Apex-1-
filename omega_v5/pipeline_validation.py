@@ -4,6 +4,7 @@ Updated to include validate_payload_ids_and_sequence that checks registry alignm
 """
 
 from __future__ import annotations
+import logging
 
 from typing import Any, Dict
 
@@ -11,6 +12,8 @@ from .invariant_math import verify_buy_low_sell_high_sequence
 from .config import build_protocol_sequence_ids
 from .pricing import PrecisionPricingEngine, PricingError, PRICE_SCALE
 from .pricing.precision_pricing import get_price_usd_x18
+
+logger = logging.getLogger(__name__)
 
 
 def validate_route_pricing(route: Dict[str, Any]) -> bool:
@@ -34,16 +37,16 @@ def validate_payload_ids_and_sequence(route: Dict[str, Any]) -> bool:
     """
     try:
         # Use the canonical builder (aligns with payload encoding)
+        opp_id = route.get("opp_id", "unknown")
+        logger.debug(f"[{opp_id}] Validating payload IDs and sequence.")
         ids = build_protocol_sequence_ids(route)
         if len(ids) == 0 or len(ids) != len(route.get("protocol_seq", [])):
+            logger.warning(f"[{opp_id}] Protocol ID sequence length mismatch.")
             return False
         if not verify_buy_low_sell_high_sequence(route):
+            logger.warning(f"[{opp_id}] Economic invariant (buy-low-sell-high) failed.")
             return False
         return True
     except Exception as e:
-        logger = logging.getLogger(__name__)
         logger.warning(f"Payload validation failed: {e}")
         return False
-
-
-import logging  # added for the function

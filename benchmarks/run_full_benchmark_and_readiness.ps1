@@ -59,6 +59,7 @@ $results = @{
     scanner_benchmark = $false
     pipeline_validation = $false
     anvil_benchmark   = $false
+    data_integrity    = $false
     readiness_score   = 0
 }
 
@@ -128,6 +129,23 @@ try {
         $results.anvil_benchmark = $true
     }
 
+    # --- Phase 6: Data Integrity & Governance Gate ---
+    Write-Phase "Data Integrity & Governance Gate"
+    $envConfig = Parse-EnvFile -FilePath ".env"
+    $dataIntegrityEnabled = $envConfig.DATA_INTEGRITY_CHECK_ENABLED
+    if ($dataIntegrityEnabled -eq "false") {
+        Write-Host "Data integrity check is disabled via DATA_INTEGRITY_CHECK_ENABLED=false in .env. Skipping." -ForegroundColor Yellow
+        $results.data_integrity = $true
+    }
+    else {
+        Write-Host "Verifying health of persistent data stores (Redis, SQLite Indexer)..."
+        python -m omega_v5.data_integrity_check
+        Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Data integrity check failed. See logs for details."
+        Write-Host "Data stores are healthy and responsive." -ForegroundColor Green
+        $results.data_integrity = $true
+    }
+
+
 }
 catch {
     Write-Host "`n" + ("!" * 80) -ForegroundColor Red
@@ -141,7 +159,7 @@ finally {
 }
 
 try {
-    # --- Phase 6: Readiness Score ---
+    # --- Final Phase: Readiness Score ---
     Write-Phase "Final Readiness Score"
     $passed_checks = 0
     foreach ($key in $results.Keys) {

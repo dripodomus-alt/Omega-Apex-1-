@@ -67,16 +67,16 @@ def generate_pools(num_tokens: int, pools_per_pair: int) -> dict:
 def main() -> int:
     """Main benchmark execution function."""
     parser = argparse.ArgumentParser(description="Benchmark Rust vs. Python opportunity scanners.")
-    parser.add_argument("--tokens", type=int, default=25, help="Number of synthetic tokens to generate.")
-    parser.add_argument("--pools-per-pair", type=int, default=5, help="Number of pools to generate for each token pair.")
+    parser.add_argument("--tokens", type=int, default=25, help="Number of synthetic tokens to generate (if not using --pools-json).")
+    parser.add_argument("--pools-per-pair", type=int, default=5, help="Number of pools to generate for each token pair (if not using --pools-json).")
     parser.add_argument("--json-output", type=str, default=None, help="Path to write structured JSON results for bottleneck analysis.")
     parser.add_argument("--min-tvl-usd", type=str, default="50000", help="Minimum TVL filter passed to RustScanner.")
+    parser.add_argument("--pools-json", type=str, default=None, help="Path to a JSON file containing a registry of pools to use for the benchmark.")
     args = parser.parse_args()
 
     print("=" * 80)
     print(" Rust vs. Python Scanner Performance Benchmark")
     print("=" * 80)
-    print(f"Configuration: --tokens {args.tokens} --pools-per-pair {args.pools_per_pair} --min-tvl-usd {args.min_tvl_usd}")
 
     scanner = RustScanner(min_tvl_usd=args.min_tvl_usd)
 
@@ -85,7 +85,18 @@ def main() -> int:
         print("Cannot perform a meaningful comparison.")
         return 1
 
-    pools = generate_pools(num_tokens=args.tokens, pools_per_pair=args.pools_per_pair)
+    pools = {}
+    if args.pools_json:
+        pools_path = Path(args.pools_json)
+        if not pools_path.exists():
+            print(f"❌ Error: Pools JSON file not found at '{pools_path}'")
+            return 1
+        print(f"Loading pools from registry: {pools_path}")
+        with open(pools_path, "r") as f:
+            pools = json.load(f)
+    else:
+        print(f"Configuration: --tokens {args.tokens} --pools-per-pair {args.pools_per_pair} --min-tvl-usd {args.min_tvl_usd}")
+        pools = generate_pools(num_tokens=args.tokens, pools_per_pair=args.pools_per_pair)
 
     # --- Benchmark Rust Implementation ---
     print("\nBenchmarking Rust scanner...")

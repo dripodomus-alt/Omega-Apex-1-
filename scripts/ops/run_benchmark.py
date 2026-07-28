@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 """
-run_benchmark.py -- stage-only profitable execution benchmark.
-
-The benchmark intentionally stops at staging/truth-prep. It does not sign or
-broadcast transactions. Its scoring invariant is explicit: buy the mid token at
-the lowest executable base-per-mid price first, then sell back to the base asset
-only when the executable sell price is higher.
+run_benchmark.py - High-performance SDK-driven execution benchmark orchestrator.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 import os
 import sys
 import time
@@ -23,10 +19,20 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from omega_v5 import config  # noqa: E402
 from omega_v5 import route_execution_stager as stager  # noqa: E402
+from omega_v5.execution import sdk_core  # noqa: E402
 from omega_v5.paths import output_path  # noqa: E402
 from omega_v5.ranker import compute_all_pool_rates  # noqa: E402
 from omega_v5.route_execution_stager import build_stage_report  # noqa: E402
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+
+logger = logging.getLogger(__name__)
 
 
 TOKEN_PRICES = {
@@ -37,6 +43,11 @@ TOKEN_PRICES = {
     "WBTC": Decimal("67500"),
 }
 
+def _get_env_or_fail(key: str) -> str:
+    value = os.environ.get(key)
+    if not value:
+        raise ValueError(f"Required environment variable '{key}' is not set.")
+    return value
 
 def _json_ready(value: Any) -> Any:
     if isinstance(value, Decimal):
@@ -87,12 +98,14 @@ def _token_price_usd(symbol: str) -> Decimal:
     return TOKEN_PRICES.get(str(symbol), Decimal("1"))
 
 
-def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
+def run_orchestrator(args: argparse.Namespace) -> dict[str, Any]:
+    """Main orchestrator for discovery, staging, and execution."""
     pools = _load_pools(args.pools_json)
     stager.token_price_usd = _token_price_usd
     rates = compute_all_pool_rates(pools)
     cycles: list[dict[str, Any]] = []
-    for cycle in range(1, args.cycles + 1):
+
+    for cycle_num in range(1, args.cycles + 1):
         report = build_stage_report(
             pools=pools,
             rates=rates,
@@ -105,25 +118,62 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
             slippage_bps=Decimal(str(args.slippage_bps)),
         )
         routes = report.get("routes", [])
-        eligible = [row for row in routes if row.get("status") == "staged_for_executor_truth"]
-        cycles.append({
-            "cycle": cycle,
+        staged_routes = [
+            row for row in routes if row.get("status") == "staged_for_executor_truth"
+        ]
+
+        cycle_result = {
+            "cycle": cycle_num,
             "stage": report.get("stage", {}),
             "pre_rank": report.get("pre_rank", {}),
-            "eligible_routes": len(eligible),
-            "top_routes": routes[: args.print_top],
-        })
+            "staged_routes_count": len(staged_routes),
+            "top_staged_routes": staged_routes[: args.print_top],
+            "submissions": [],
+            "receipts": [],
+        }
+
+        if args.mode in ("live", "anvil") and staged_routes:
+            logger.info(f"Cycle {cycle_num}: Found {len(staged_routes)} routes to execute.")
+            rpc_url = (
+                config.BROADCAST_RPC_URL if args.mode == "live" else config.FORK_RPC_URL
+            )
+            private_key = _get_env_or_fail("EXECUTOR_PRIVATE_KEY")
+            executor_address = config.C1_PAYLOAD_TARGET
+
+            w3 = sdk_core.get_web3_instance(rpc_url)
+            chain_id = w3.eth.chain_id
+
+            submissions = sdk_core.submit_staged_routes(
+                staged_routes, w3, private_key, chain_id, executor_address
+            )
+            cycle_result["submissions"] = submissions
+
+            if submissions:
+                receipt_results = sdk_core.wait_for_receipts(
+                    w3, submissions, args.timeout
+                )
+                cycle_result["receipts"] = receipt_results
+        else:
+            logger.info(
+                f"Cycle {cycle_num}: Mode is '{args.mode}'. "
+                f"Found {len(staged_routes)} staged routes. No execution will be performed."
+            )
+
+        cycles.append(cycle_result)
 
     result = {
-        "schema_version": "omega_v5.benchmark.profitable_execution.v1",
+        "schema_version": "omega_v5.benchmark.sdk_orchestrator.v1",
         "mode": args.mode,
-        "submission_policy": "stage_only_no_signing_no_broadcast",
-        "execution_policy": "buy_lowest_executable_base_per_mid_then_sell_higher_back_to_base",
+        "submission_policy": (
+            "sdk_sign_and_broadcast"
+            if args.mode in ("live", "anvil")
+            else "stage_only_no_broadcast"
+        ),
         "cycles_requested": args.cycles,
         "generated_at_ns": time.time_ns(),
         "cycles": cycles,
     }
-    output = output_path("benchmark_profitable_execution_latest.json")
+    output = output_path("sdk_benchmark_latest.json")
     output.write_text(json.dumps(_json_ready(result), indent=2), encoding="utf-8")
     result["output_path"] = str(output)
     return result
@@ -131,11 +181,11 @@ def run_benchmark(args: argparse.Namespace) -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run the profitable execution staging benchmark.")
-    parser.add_argument("--mode", choices=("anvil", "live", "dry-run"), default="dry-run")
+    parser.add_argument("--mode", choices=("anvil", "live", "dry_run"), default="dry_run")
     parser.add_argument("--cycles", type=int, default=10, help="Number of benchmark cycles to run.")
     parser.add_argument("--max-parallel-tx", type=int, default=16, help="Maximum number of non-conflicting routes to stage per cycle.")
-    parser.add_argument("--min-profit-usd", type=Decimal, default=Decimal("0.001"))
-    parser.add_argument("--timeout", type=int, default=30)
+    parser.add_argument("--min-profit-usd", type=float, default=0.01)
+    parser.add_argument("--timeout", type=int, default=30, help="Timeout in seconds for waiting for transaction receipts.")
     parser.add_argument("--confirm-live-fire", action="store_true")
     parser.add_argument("--principal-usd", type=Decimal, default=Decimal("10000"))
     parser.add_argument("--slippage-bps", type=Decimal, default=Decimal("10"))
@@ -145,19 +195,24 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.mode == "live" and not args.confirm_live_fire:
-        print("live mode requires --confirm-live-fire")
+        logger.error("FATAL: Live mode requires the '--confirm-live-fire' flag.")
         return 2
     if args.cycles <= 0:
-        print("cycles must be positive")
+        logger.error("FATAL: --cycles must be a positive integer.")
         return 2
 
-    result = run_benchmark(args)
-    total_eligible = sum(int(cycle.get("eligible_routes", 0)) for cycle in result["cycles"])
-    print("Omega V5 profitable execution staging benchmark")
-    print(f"mode={result['mode']} cycles={result['cycles_requested']} eligible_routes={total_eligible}")
-    print(f"policy={result['execution_policy']}")
-    print(f"submission_policy={result['submission_policy']}")
-    print(f"report={result['output_path']}")
+    result = run_orchestrator(args)
+    total_staged = sum(int(cycle.get("staged_routes_count", 0)) for cycle in result["cycles"])
+    total_submitted = sum(len(cycle.get("submissions", [])) for cycle in result["cycles"])
+    total_receipts = sum(len(cycle.get("receipts", [])) for cycle in result["cycles"])
+
+    logger.info("=" * 50)
+    logger.info("SDK Benchmark Orchestrator Summary")
+    logger.info(f"Mode: {result['mode']}, Cycles: {result['cycles_requested']}")
+    logger.info(f"Total Staged: {total_staged}, Total Submitted: {total_submitted}, Total Receipts: {total_receipts}")
+    logger.info(f"Submission Policy: {result['submission_policy']}")
+    logger.info(f"Full report saved to: {result['output_path']}")
+    logger.info("=" * 50)
     return 0
 
 

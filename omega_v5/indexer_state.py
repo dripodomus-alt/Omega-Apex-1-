@@ -182,3 +182,30 @@ def indexer_status(path: str = INDEXER_SQLITE_PATH) -> dict[str, Any]:
         "pool_event_rows": int(event_count or 0),
         "latest_pool_state_block": int(latest_block or 0),
     }
+
+
+def prune_all_stale_data(
+    *,
+    current_block: int,
+    max_age_blocks: int = INDEXER_STATE_MAX_AGE_BLOCKS,
+    path: str = INDEXER_SQLITE_PATH,
+) -> dict[str, int]:
+    """
+    Prunes stale records from all tables based on block height.
+    This aligns with the data governance policy for lifecycle management.
+    """
+    cutoff_block = current_block - max_age_blocks
+    deleted_counts = {"pool_state": 0, "pool_events": 0}
+    if max_age_blocks < 0:
+        return deleted_counts
+
+    with _connect(path) as conn:
+        # Prune pool_state
+        cursor = conn.execute("DELETE FROM pool_state WHERE block_number < ?", (cutoff_block,))
+        deleted_counts["pool_state"] = cursor.rowcount
+
+        # Prune pool_events
+        cursor = conn.execute("DELETE FROM pool_events WHERE block_number < ?", (cutoff_block,))
+        deleted_counts["pool_events"] = cursor.rowcount
+
+    return deleted_counts
