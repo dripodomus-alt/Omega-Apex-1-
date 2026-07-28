@@ -1,0 +1,6 @@
+{
+  "name": "OMEGA V5: Polygon Engine & VQC Control Center",
+  "description": "High-frequency Polygon PoS arbitrage and liquidation engine control center featuring deterministic capital injection, V3 virtual reserve math, VQC quantum ranker, and low-latency audit streams.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

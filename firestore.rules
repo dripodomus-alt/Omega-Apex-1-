@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Routes collection
+    match /routes/{routeId} {
+      function isValidRoute(data) {
+        return data.keys().hasAll(['id', 'pathString', 'netProfitUSD', 'stage', 'timestamp']) &&
+               data.id is string && data.id.size() <= 128 &&
+               data.pathString is string && data.pathString.size() <= 1024 &&
+               data.netProfitUSD is number &&
+               data.stage is string && data.stage.size() <= 64 &&
+               data.timestamp is string && data.timestamp.size() <= 64 &&
+               (!('userId' in data) || (data.userId is string && data.userId == request.auth.uid));
+      }
+
+      allow get: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow create: if isSignedIn() && isValidId(routeId) && isValidRoute(incoming());
+      allow update: if isSignedIn() && isValidId(routeId) && isValidRoute(incoming()) && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow delete: if isSignedIn() && isValidId(routeId) && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
+    }
+
+    // Audit Logs collection
+    match /auditLogs/{logId} {
+      function isValidAuditLog(data) {
+        return data.keys().hasAll(['id', 'routeId', 'netProfitUSD', 'status', 'timestamp']) &&
+               data.id is string && data.id.size() <= 128 &&
+               data.routeId is string && data.routeId.size() <= 128 &&
+               data.netProfitUSD is number &&
+               data.status is string && data.status.size() <= 64 &&
+               data.timestamp is string && data.timestamp.size() <= 64 &&
+               (!('userId' in data) || (data.userId is string && data.userId == request.auth.uid));
+      }
+
+      allow get: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow list: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow create: if isSignedIn() && isValidId(logId) && isValidAuditLog(incoming());
+      allow update: if isSignedIn() && isValidId(logId) && isValidAuditLog(incoming()) && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
+      allow delete: if isSignedIn() && isValidId(logId) && (resource.data.userId == request.auth.uid || !('userId' in resource.data));
+    }
+  }
+}

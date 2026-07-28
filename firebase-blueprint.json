@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "ArbitrageRoute": {
+      "title": "Arbitrage Route",
+      "description": "MEV arbitrage opportunity route and execution stage",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Route ID" },
+        "pathString": { "type": "string", "description": "Path token route" },
+        "length": { "type": "number", "description": "Hop length" },
+        "expectedYieldUSD": { "type": "number", "description": "Expected yield in USD" },
+        "vqcAlphaScore": { "type": "number", "description": "Quantum ML alpha score" },
+        "vqcWinProbability": { "type": "number", "description": "Quantum ML win probability" },
+        "optimalInputUSD": { "type": "number", "description": "Optimal input capital in USD" },
+        "optimalInputWei": { "type": "string", "description": "Optimal input in Wei" },
+        "grossProfitUSD": { "type": "number", "description": "Gross profit USD" },
+        "estimatedGasUSD": { "type": "number", "description": "Gas estimate in USD" },
+        "netProfitUSD": { "type": "number", "description": "Net profit USD" },
+        "stage": { "type": "string", "description": "Pipeline stage" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" },
+        "txHash": { "type": "string", "description": "Transaction hash" },
+        "slippageToleranceBps": { "type": "number", "description": "Slippage tolerance in bps" },
+        "isSelfFundingRisk": { "type": "boolean", "description": "Self funding risk flag" },
+        "notes": { "type": "string", "description": "Audit notes" },
+        "userId": { "type": "string", "description": "User UID who owns or staged this route" }
+      },
+      "required": ["id", "pathString", "netProfitUSD", "stage", "timestamp"]
+    },
+    "SimulationAuditLog": {
+      "title": "Simulation Audit Log",
+      "description": "Logged simulation output for accounting",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Log ID" },
+        "simulationId": { "type": "string", "description": "Simulation ID" },
+        "routeId": { "type": "string", "description": "Route ID" },
+        "pathString": { "type": "string", "description": "Path string" },
+        "optimalInputUSD": { "type": "number", "description": "Optimal input USD" },
+        "expectedGrossProfitUSD": { "type": "number", "description": "Gross profit USD" },
+        "netProfitUSD": { "type": "number", "description": "Net profit USD" },
+        "status": { "type": "string", "description": "Simulation status" },
+        "gasUsedGwei": { "type": "number", "description": "Gas used in Gwei" },
+        "redisStreamKey": { "type": "string", "description": "Redis stream key" },
+        "sqlSynced": { "type": "boolean", "description": "Cloud SQL sync status" },
+        "timestamp": { "type": "string", "description": "ISO timestamp" },
+        "userId": { "type": "string", "description": "User UID who ran the simulation" }
+      },
+      "required": ["id", "routeId", "netProfitUSD", "status", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/routes/{routeId}": {
+      "schema": "ArbitrageRoute",
+      "description": "Collection of staged and executed arbitrage routes"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "SimulationAuditLog",
+      "description": "Collection of simulation audit logs"
+    }
+  }
+}
