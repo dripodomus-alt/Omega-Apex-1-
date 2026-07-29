@@ -1,4 +1,5 @@
-import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
+import { POLYGON_CHAIN_CONFIG, POL_PRICE_USD } from '../config/chainConfig';
+import { POLYGON_TOKENS } from '../data/mockEngineData';
 import { ArbitrageRoute, SimulationAuditLog } from '../types';
 
 export interface WalletState {
@@ -103,7 +104,7 @@ export async function fetchExecutorRealTimeBalance(customWallet?: string): Promi
           jsonrpc: '2.0',
           id: 3,
           method: 'eth_call',
-          params: [{ to: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', data: usdcCalldata }, 'latest'],
+          params: [{ to: POLYGON_TOKENS.USDC.address, data: usdcCalldata }, 'latest'],
         }),
       }),
     ]);
@@ -209,7 +210,7 @@ export async function fetchLivePolygonOnChainState(walletAddress: string): Promi
           nonceCount: nonceVal,
           isLiveRpcSuccess: true,
           rpcProviderUsed: new URL(endpoint).hostname,
-          polValueUSD: Number((polVal * 0.073).toFixed(2)),
+          polValueUSD: Number((polVal * POL_PRICE_USD).toFixed(2)),
         };
       }
     } catch (err) {

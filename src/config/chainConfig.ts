@@ -58,3 +58,6 @@ export const POLYGON_CHAIN_CONFIG = {
   flashbotsRelayUrl: 'https://relay-polygon.flashbots.net',
   titanMevUsWest: 'https://us.rpc.titanbuilder.xyz',
 };
+
+/** Current POL/USD spot price used for USD-denominated balance display. */
+export const POL_PRICE_USD = 0.073;

@@ -29,6 +29,8 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_BENCHMARK,
   VQC_METADATA,
+  POLYGON_TOKEN_SYMBOLS,
+  POLYGON_DEX_IDENTIFIERS,
 } from './data/mockEngineData';
 import { ArbitrageRoute, SimulationAuditLog } from './types';
 import { validateRouteAssetRegistry } from './utils/mathEngine';
@@ -41,6 +43,7 @@ import {
   WalletState,
   DEFAULT_WALLET_STATE,
 } from './utils/persistentState';
+import { POL_PRICE_USD } from './config/chainConfig';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('top50_execution');
@@ -139,7 +142,7 @@ export default function App() {
           nativePolBalance: liveBalances.nativePolBalance,
           usdcBalance: liveBalances.usdcBalance,
           nonceCount: liveBalances.nonceCount > 0 ? liveBalances.nonceCount : prev.nonceCount,
-          polValueUSD: Number((liveBalances.nativePolBalance * 0.073).toFixed(2)),
+          polValueUSD: Number((liveBalances.nativePolBalance * POL_PRICE_USD).toFixed(2)),
           validatedAt: new Date().toISOString(),
         }));
       }
@@ -259,25 +262,15 @@ export default function App() {
         const uniqueSuffix = Math.random().toString(36).substring(2, 7);
         const newRouteId = `route_poly_${numStr}_${uniqueSuffix}`;
 
-        const dexList = [
-          'UniswapV3', 'QuickSwapV2', 'QuickSwapV3', 'BalancerV3Vault', 'BalancerV2Weighted',
-          'CurvePolygon', 'SushiSwapV2', 'SushiSwapV3Trident', 'AaveV3', 'DodoV2',
-          'KyberSwapElastic', 'MeshSwapV2', 'PearlV3', 'RetroV3',
-        ];
-        const tokenList = [
-          'WMATIC', 'POL', 'USDC.e', 'USDC', 'USDT', 'WETH', 'WBTC', 'DAI',
-          'QUICK', 'LINK', 'AAVE', 'GHST', 'stMATIC', 'MaticX',
-        ];
+        const t1 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+        let t2 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+        while (t2 === t1) t2 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+        let t3 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+        while (t3 === t1 || t3 === t2) t3 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
 
-        const t1 = tokenList[Math.floor(Math.random() * tokenList.length)];
-        let t2 = tokenList[Math.floor(Math.random() * tokenList.length)];
-        while (t2 === t1) t2 = tokenList[Math.floor(Math.random() * tokenList.length)];
-        let t3 = tokenList[Math.floor(Math.random() * tokenList.length)];
-        while (t3 === t1 || t3 === t2) t3 = tokenList[Math.floor(Math.random() * tokenList.length)];
-
-        const dex1 = dexList[Math.floor(Math.random() * dexList.length)];
-        const dex2 = dexList[Math.floor(Math.random() * dexList.length)];
-        const dex3 = dexList[Math.floor(Math.random() * dexList.length)];
+        const dex1 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
+        const dex2 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
+        const dex3 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
 
         const pathString = `${t1} -> ${dex1} -> ${t2} -> ${dex2} -> ${t3} -> ${dex3} -> ${t1}`;
 

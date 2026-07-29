@@ -22,6 +22,25 @@ export const POLYGON_TOKENS = {
 };
 
 /**
+ * Canonical list of all 14 Polygon Mainnet (#137) token symbols used in route path strings.
+ * Derived from POLYGON_TOKENS for consistency.
+ */
+export const POLYGON_TOKEN_SYMBOLS: string[] = [
+  'WMATIC', 'POL', 'USDC.e', 'USDC', 'USDT', 'WETH', 'WBTC', 'DAI',
+  'QUICK', 'LINK', 'AAVE', 'GHST', 'stMATIC', 'MaticX',
+];
+
+/**
+ * Canonical list of all 14 active DEX protocol identifiers on Polygon Mainnet (#137).
+ * Used in route path string generation across the pipeline.
+ */
+export const POLYGON_DEX_IDENTIFIERS: string[] = [
+  'UniswapV3', 'QuickSwapV2', 'QuickSwapV3', 'BalancerV3Vault', 'BalancerV2Weighted',
+  'CurvePolygon', 'SushiSwapV2', 'SushiSwapV3Trident', 'AaveV3', 'DodoV2',
+  'KyberSwapElastic', 'MeshSwapV2', 'PearlV3', 'RetroV3',
+];
+
+/**
  * POLYGON MAINNET (#137) LIVE PRODUCTION GRAPH METRICS — MAXIMUM DISCOVERY MODE
  * All 14 DEX protocols × 14 token assets fully indexed. discoverableIsExecutableUponGating active.
  */

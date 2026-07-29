@@ -30,6 +30,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
+import { POLYGON_TOKEN_SYMBOLS, POLYGON_DEX_IDENTIFIERS } from '../data/mockEngineData';
 
 export interface StagingMathMetadata {
   rawSpreadBps: number;
@@ -119,16 +120,9 @@ export const Top50ExecutionStudio: React.FC = () => {
   // Uses full Polygon Mainnet (#137) token universe and all 14 active DEX protocols for maximum discovery
   const generateTop50Routes = (blockNum: number, cycleNum: number = 428): RouteItem[] => {
     // Full chain #137 token universe (14 assets)
-    const assets = [
-      'WMATIC', 'POL', 'USDC.e', 'USDC', 'USDT', 'WETH', 'WBTC', 'DAI',
-      'QUICK', 'LINK', 'AAVE', 'GHST', 'stMATIC', 'MaticX',
-    ];
+    const assets = POLYGON_TOKEN_SYMBOLS;
     // All 14 active DEX protocols on Polygon Mainnet #137
-    const dexs = [
-      'UniswapV3', 'QuickSwapV2', 'QuickSwapV3', 'BalancerV3', 'BalancerV2',
-      'CurvePolygon', 'SushiSwapV2', 'SushiSwapV3', 'AaveV3', 'DodoV2',
-      'KyberSwap', 'MeshSwap', 'PearlV3', 'RetroV3',
-    ];
+    const dexs = POLYGON_DEX_IDENTIFIERS;
 
     return Array.from({ length: 50 }, (_, i) => {
       const rank = i + 1;

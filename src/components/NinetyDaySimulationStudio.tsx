@@ -35,7 +35,8 @@ import {
   Database,
   Radio,
 } from 'lucide-react';
-import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
+import { POLYGON_CHAIN_CONFIG, POL_PRICE_USD } from '../config/chainConfig';
+import { POLYGON_TOKENS } from '../data/mockEngineData';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -216,7 +217,7 @@ function gasForDay(trades: number, rng: () => number): number {
 async function fetchAlchemyAnchor(): Promise<AlchemyAnchor> {
   const rpc = POLYGON_CHAIN_CONFIG.rpcEndpoints.primaryAlchemyHttp;
   const wallet = POLYGON_CHAIN_CONFIG.executorWallet;
-  const usdcAddress = '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'; // USDC.e on Polygon
+  const usdcAddress = POLYGON_TOKENS.USDC.address; // USDC.e on Polygon
 
   const formattedAddr = wallet.toLowerCase().replace('0x', '').padStart(64, '0');
   const usdcCalldata = '0x70a08231' + formattedAddr;
@@ -461,7 +462,7 @@ export const NinetyDaySimulationStudio: React.FC = () => {
               {anchor.nativePolBalance.toFixed(2)} POL
             </div>
             <div className="text-[10px] text-slate-500 mt-0.5 font-mono">
-              ~${(anchor.nativePolBalance * 0.073).toFixed(2)} USD gas fuel
+              ~${(anchor.nativePolBalance * POL_PRICE_USD).toFixed(2)} USD gas fuel
             </div>
           </div>
 
