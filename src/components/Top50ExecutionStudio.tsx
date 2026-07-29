@@ -72,6 +72,10 @@ export interface RouteItem {
   stagingMath: StagingMathMetadata;
 }
 
+const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+const MIN_ROUTE_ROI_BPS = -500; // Clamp to ±5% for stable comparative ranking in a single 12s cycle snapshot
+const MAX_ROUTE_ROI_BPS = 500;
+
 export const Top50ExecutionStudio: React.FC = () => {
   // 12-second Cycle State
   const CYCLE_INTERVAL_MS = 12000;
@@ -143,10 +147,8 @@ export const Top50ExecutionStudio: React.FC = () => {
       const opportunityObjectId = `OPP-C${cycleNum}-R${rankStr}-${routeHash}`;
       const cycleParity = `CYCLE-#${cycleNum} | BLOCK-#${blockNum}`;
 
-      const grossUSD = Number((48.5 - i * 0.85 + Math.random() * 2.5).toFixed(2));
-      const gasUSD = Number((0.28 + (i % 3) * 0.08 + Math.random() * 0.05).toFixed(3));
-      const netUSD = Number((grossUSD - gasUSD).toFixed(2));
-      const roi = Math.round((netUSD / 1000) * 10000);
+      const grossUSD = clamp(Number((48.5 - i * 0.85 + Math.random() * 2.5).toFixed(2)), 2, 120);
+      const gasUSD = clamp(Number((0.28 + (i % 3) * 0.08 + Math.random() * 0.05).toFixed(3)), 0.1, 3);
 
       const pool1 = `#0x${(100000 + i * 7).toString(16)}...${(999 - i).toString(16)}`;
       const pool2 = `#0x${(200000 + i * 11).toString(16)}...${(888 - i).toString(16)}`;
@@ -160,7 +162,8 @@ export const Top50ExecutionStudio: React.FC = () => {
       const postSlippageBps = Number((1.2 + (i % 4) * 0.4).toFixed(1));
 
       const tipUSD = Number((grossUSD * 0.15).toFixed(2));
-      const netYield = Number((grossUSD - gasUSD - tipUSD).toFixed(2));
+      const netYield = clamp(Number((grossUSD - gasUSD - tipUSD).toFixed(2)), -grossUSD, grossUSD);
+      const roi = Math.round((netYield / optimalFlashUSD) * 10000);
 
       const pool1Before = `2,450,000 ${assetA} / 1,820,000 ${assetB}`;
       const pool1After = `2,452,500 ${assetA} / 1,818,120 ${assetB}`;
@@ -180,12 +183,12 @@ export const Top50ExecutionStudio: React.FC = () => {
         borrowAmountUSD: optimalFlashUSD,
         expectedGrossProfitUSD: Math.max(1.2, grossUSD),
         estimatedGasUSD: gasUSD,
-        netProfitUSD: Math.max(0.8, netYield),
-        roiBps: Math.max(10, roi),
+        netProfitUSD: netYield,
+        roiBps: clamp(roi, MIN_ROUTE_ROI_BPS, MAX_ROUTE_ROI_BPS),
         vqcScore,
         // discoverableIsExecutableUponGating: EXECUTABLE if VQC ≥ 85 and net profit positive
         status: (() => {
-          if (vqcScore >= 85 && Math.max(0.8, netYield) > 0) return 'EXECUTABLE';
+          if (vqcScore >= 85 && netYield > 0) return 'EXECUTABLE';
           if (vqcScore >= 72) return 'WATCHING';
           return 'SIMULATED';
         })(),
@@ -206,7 +209,7 @@ export const Top50ExecutionStudio: React.FC = () => {
           pool2ReservesAfter: pool2After,
           grossYieldUSD: Math.max(1.2, grossUSD),
           fastlaneBuilderTipUSD: tipUSD,
-          netYieldUSD: Math.max(0.8, netYield),
+          netYieldUSD: netYield,
           transientLockSlot: `#TRANSIENT_SLOT_0x01 (EIP-1153 TSTORE 100 Gas)`,
           zeroCopyCalldata: `#0x90213752${routeHashRaw}000000000000000000000000${(i + 1).toString(16).padStart(4, '0')}`,
         },
@@ -246,7 +249,7 @@ export const Top50ExecutionStudio: React.FC = () => {
           const delta = (Math.random() - 0.5) * 0.8;
           updated[randomIndex] = {
             ...updated[randomIndex],
-            priceDeltaBps: Number((updated[randomIndex].priceDeltaBps + delta).toFixed(1)),
+            priceDeltaBps: clamp(Number((updated[randomIndex].priceDeltaBps + delta).toFixed(1)), -12, 12),
             lastActivityTime: `${new Date().toLocaleTimeString().split(' ')[0]}`,
           };
 

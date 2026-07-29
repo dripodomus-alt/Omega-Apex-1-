@@ -29,6 +29,8 @@ interface MonthlyProfitProjectionChartProps {
   logs: SimulationAuditLog[];
 }
 
+const MAX_DAILY_COMPOUND_BPS = 50; // 0.50% daily cap (~16% 30-day growth) to avoid unrealistic compounding blowouts
+
 export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChartProps> = ({ logs }) => {
   // Derive historical metrics from logs
   const successfulLogs = logs.filter((l) => l.status === 'SUCCESS');
@@ -54,13 +56,14 @@ export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChart
 
     const expectedWins = dailyTradesCount * (winRatePercent / 100);
     const expectedLosses = dailyTradesCount * (1 - winRatePercent / 100);
+    const normalizedDailyCompoundRate = Math.max(0, Math.min(MAX_DAILY_COMPOUND_BPS, dailyCompoundRateBps)) / 10000;
 
     // Base daily profit calculation
     let baseDailyProfit = expectedWins * avgProfitPerTrade - expectedLosses * (avgProfitPerTrade * 0.4);
 
     if (isCompounding) {
-      const compoundFactor = Math.pow(1 + dailyCompoundRateBps / 10000, idx);
-      baseDailyProfit = baseDailyProfit * compoundFactor;
+      const compoundFactor = Math.pow(1 + normalizedDailyCompoundRate, idx);
+      baseDailyProfit = Number.isFinite(compoundFactor) ? baseDailyProfit * compoundFactor : baseDailyProfit;
     }
 
     // Cumulative sum
@@ -71,7 +74,8 @@ export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChart
     for (let d = 1; d <= dayNum; d++) {
       let dProfit = expectedWins * avgProfitPerTrade - expectedLosses * (avgProfitPerTrade * 0.4);
       if (isCompounding) {
-        dProfit *= Math.pow(1 + dailyCompoundRateBps / 10000, d - 1);
+        const dayCompoundFactor = Math.pow(1 + normalizedDailyCompoundRate, d - 1);
+        dProfit = Number.isFinite(dayCompoundFactor) ? dProfit * dayCompoundFactor : dProfit;
       }
       cumulativeBase += dProfit;
       cumulativeUpper += dProfit * 1.18; // +18% optimistic alpha variance
