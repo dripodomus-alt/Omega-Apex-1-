@@ -29,7 +29,7 @@ interface MonthlyProfitProjectionChartProps {
   logs: SimulationAuditLog[];
 }
 
-const MAX_DAILY_COMPOUND_BPS = 50; // 0.50% daily cap to avoid unrealistic compounding blowouts in the 30-day view
+const MAX_DAILY_COMPOUND_BPS = 50; // 0.50% daily cap (~16% 30-day growth) to avoid unrealistic compounding blowouts
 
 export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChartProps> = ({ logs }) => {
   // Derive historical metrics from logs

@@ -28,7 +28,6 @@ export interface ProfitApexResult {
 }
 
 const MIN_SQRT_PRICE = 1e-6;
-const MAX_VIRTUAL_RESERVE = 1e12;
 const MAX_VIRTUAL_PRICE = 1e6;
 
 /**
@@ -65,8 +64,18 @@ export function convertSqrtPriceX96ToVirtualReserves(
     const price = sqrtP * sqrtP;
     const rawR0Virtual = L / sqrtP;
     const rawR1Virtual = L * sqrtP;
-    const r0Virtual = Number.isFinite(rawR0Virtual) ? Math.max(1, rawR0Virtual) : MAX_VIRTUAL_RESERVE;
-    const r1Virtual = Number.isFinite(rawR1Virtual) ? Math.max(1, rawR1Virtual) : MAX_VIRTUAL_RESERVE;
+    if (!Number.isFinite(rawR0Virtual) || !Number.isFinite(rawR1Virtual) || !Number.isFinite(price)) {
+      return {
+        r0Virtual: 1000000,
+        r1Virtual: 1000000,
+        virtualPrice0in1: 1.0,
+        virtualPrice1in0: 1.0,
+        sqrtPriceX96Num: Number(sqrtPriceX96),
+        liquidityNum: L,
+      };
+    }
+    const r0Virtual = Math.max(1, rawR0Virtual);
+    const r1Virtual = Math.max(1, rawR1Virtual);
     const virtualPrice0in1 = Math.min(MAX_VIRTUAL_PRICE, Math.max(0, price));
 
     return {

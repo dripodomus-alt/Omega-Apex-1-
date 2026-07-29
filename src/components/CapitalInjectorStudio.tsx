@@ -395,10 +395,12 @@ const BatchApexSolverMatrix: React.FC = () => {
             BATCH_DEFAULT_FLASH_FEE_BPS,
             BATCH_DEFAULT_GAS_USD
           );
+          const safeOptimalInput = Number.isFinite(calibratedApex.optimalInputUSD) ? calibratedApex.optimalInputUSD : 0;
+          const safeNetProfit = Number.isFinite(calibratedApex.maxNetProfitUSD) ? calibratedApex.maxNetProfitUSD : 0;
           return {
             ...r,
-            optimalInputUSD: Math.round(calibratedApex.optimalInputUSD),
-            maxProfitUSD: Number(calibratedApex.maxNetProfitUSD.toFixed(2)),
+            optimalInputUSD: Math.round(safeOptimalInput),
+            maxProfitUSD: Number(safeNetProfit.toFixed(2)),
             status: 'SOLVED (0.12ms)',
           };
         })

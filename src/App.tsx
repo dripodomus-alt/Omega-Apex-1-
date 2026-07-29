@@ -123,6 +123,7 @@ export default function App() {
           // Fluctuate gross profit slightly between -0.8% and +1.2%
           const pctChange = (Math.random() * 0.02) - 0.008;
           const grossCandidate = Number((r.grossProfitUSD * (1 + pctChange)).toFixed(2));
+          // Keep a hard safety floor while limiting per-tick upside to prevent sudden chart blowouts.
           const newGross = Math.max(MIN_TICKER_GROSS_USD, Math.min(r.grossProfitUSD * MAX_TICKER_GROSS_MULTIPLIER, grossCandidate));
           const gasAdjustment = Math.max(MIN_TICKER_GAS_USD, Math.min(MAX_TICKER_GAS_USD, Number((0.45 + Math.random() * 0.25).toFixed(2))));
           const newNet = Math.max(0, Number((newGross - gasAdjustment).toFixed(2)));

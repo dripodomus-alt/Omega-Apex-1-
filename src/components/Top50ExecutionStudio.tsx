@@ -73,6 +73,8 @@ export interface RouteItem {
 }
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+const MIN_ROUTE_ROI_BPS = -500; // Clamp to ±5% for stable comparative ranking in a single 12s cycle snapshot
+const MAX_ROUTE_ROI_BPS = 500;
 
 export const Top50ExecutionStudio: React.FC = () => {
   // 12-second Cycle State
@@ -182,7 +184,7 @@ export const Top50ExecutionStudio: React.FC = () => {
         expectedGrossProfitUSD: Math.max(1.2, grossUSD),
         estimatedGasUSD: gasUSD,
         netProfitUSD: netYield,
-        roiBps: clamp(roi, -500, 500),
+        roiBps: clamp(roi, MIN_ROUTE_ROI_BPS, MAX_ROUTE_ROI_BPS),
         vqcScore,
         // discoverableIsExecutableUponGating: EXECUTABLE if VQC ≥ 85 and net profit positive
         status: (() => {
