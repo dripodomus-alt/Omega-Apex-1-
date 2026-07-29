@@ -69,3 +69,29 @@ export const POL_PRICE_USD = 0.073;
  * Units: USD
  */
 export const TRANSIENT_EPSILON_USD_MAX = 0.01;
+
+/**
+ * Aave V3 liquidation parameters (Polygon mainnet defaults).
+ * Move these values if different deployments require different rates.
+ */
+export const AAVE_LIQUIDATION_FEE_RATE = 0.0009;    // 9 bps Aave protocol fee
+export const AAVE_LIQUIDATION_BONUS = 0.075;         // 7.5% collateral bonus
+
+/**
+ * Reserve multipliers applied per execution leg to estimate worst-case
+ * gas, MEV tip, risk buffer, and model-derived adverse-cost contributions.
+ * Values are fractions of the leg's gross output (amountOut).
+ */
+export const RESERVE_RATES = {
+  // Standard SWAP legs
+  gasReserve: 0.0012,
+  tip: 0.0004,
+  risk: 0.0008,
+  model: 0.0006,
+
+  // AAVE_LIQUIDATION legs (slightly higher gas + risk)
+  liquidationGasReserve: 0.0018,
+  liquidationTip: 0.0004,
+  liquidationRisk: 0.0012,
+  liquidationModel: 0.0008,
+} as const;

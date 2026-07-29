@@ -60,6 +60,15 @@ const EXEC_TYPE_COLORS: Record<ExecutionType, string> = {
   LIQUIDATION: 'text-rose-300 bg-rose-950 border-rose-700',
 };
 
+// ── Formatting helpers ────────────────────────────────────────────────────────
+
+/** Formats a USD value to 2 decimal places with locale-aware thousands separator. */
+const fmtUSD = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/** Formats a USD fee or cost to 4 significant decimal places. */
+const fmtFee = (v: number) => `$${v.toFixed(4)}`;
+/** Formats a per-leg residual ε to 6 decimal places. */
+const fmtResidual = (v: number) => `$${v.toFixed(6)}`;
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export const TransientAccountingStudio: React.FC<TransientAccountingStudioProps> = ({
@@ -270,11 +279,11 @@ export const TransientAccountingStudio: React.FC<TransientAccountingStudioProps>
                         <td className="p-3 text-white font-semibold">
                           {leg.tokenIn} → {leg.tokenOut}
                         </td>
-                        <td className="p-3 text-slate-300">${leg.amountIn.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                        <td className="p-3 text-emerald-400 font-bold">${leg.amountOut.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
-                        <td className="p-3 text-slate-400">${leg.feeUSD.toFixed(4)}</td>
+                        <td className="p-3 text-slate-300">{fmtUSD(leg.amountIn)}</td>
+                        <td className="p-3 text-emerald-400 font-bold">{fmtUSD(leg.amountOut)}</td>
+                        <td className="p-3 text-slate-400">{fmtFee(leg.feeUSD)}</td>
                         <td className={`p-3 font-bold ${leg.residualUSD <= TRANSIENT_EPSILON_USD_MAX ? 'text-emerald-400' : 'text-rose-400'}`}>
-                          ${leg.residualUSD.toFixed(6)}
+                          {fmtResidual(leg.residualUSD)}
                         </td>
                         <td className="p-3">
                           {leg.passed ? (

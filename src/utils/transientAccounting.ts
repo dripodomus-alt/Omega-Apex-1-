@@ -30,7 +30,12 @@ import {
   TransientLeg,
   TransientLegPhase,
 } from '../types';
-import { TRANSIENT_EPSILON_USD_MAX } from '../config/chainConfig';
+import {
+  AAVE_LIQUIDATION_BONUS,
+  AAVE_LIQUIDATION_FEE_RATE,
+  RESERVE_RATES,
+  TRANSIENT_EPSILON_USD_MAX,
+} from '../config/chainConfig';
 
 // ---------------------------------------------------------------------------
 // Integrity hash (deterministic, synchronous — no external deps)
@@ -50,6 +55,10 @@ import { TRANSIENT_EPSILON_USD_MAX } from '../config/chainConfig';
 /**
  * Core primitive: djb2 polynomial hash over 8 independent words.
  * Returns a 0x-prefixed 64-character hex string (256 bits).
+ *
+ * ⚠ NOT cryptographically secure — do NOT use for access control or key
+ * derivation.  This is a deterministic route fingerprint for accounting
+ * integrity checks only (collision resistance is intentionally not required).
  */
 export function djb2HashHex(canonical: string): string {
   const words = new Uint32Array(8);
@@ -176,10 +185,8 @@ function computeLiquidationOutput(inventory: number): {
   feeUSD: number;
   bonusUSD: number;
 } {
-  const aaveFeeRate = 0.0009;      // 9 bps Aave protocol fee
-  const liquidationBonus = 0.075;  // 7.5% collateral bonus
-  const feeUSD = inventory * aaveFeeRate;
-  const bonusUSD = inventory * liquidationBonus;
+  const feeUSD = inventory * AAVE_LIQUIDATION_FEE_RATE;
+  const bonusUSD = inventory * AAVE_LIQUIDATION_BONUS;
   const amountOut = inventory - feeUSD + bonusUSD;
   return { amountOut, feeUSD, bonusUSD };
 }
@@ -272,10 +279,10 @@ export function computeLegLedger(
       const liq = computeLiquidationOutput(inventory);
       amountOut = liq.amountOut;
       feeUSD = liq.feeUSD;
-      gasReserveUSD = amountOut * 0.0018; // liquidation gas is slightly higher
-      tipUSD = amountOut * 0.0004;
-      riskReserveUSD = amountOut * 0.0012;
-      modelReserveUSD = amountOut * 0.0008;
+      gasReserveUSD = amountOut * RESERVE_RATES.liquidationGasReserve;
+      tipUSD = amountOut * RESERVE_RATES.liquidationTip;
+      riskReserveUSD = amountOut * RESERVE_RATES.liquidationRisk;
+      modelReserveUSD = amountOut * RESERVE_RATES.liquidationModel;
       // deltaMarket is signed as a **cost** (positive = value lost to AMM).
       // The Aave liquidation bonus is a net value inflow, so it must be stored as a
       // negative deltaMarket value — this offsets the cost in the conservation check,
@@ -285,10 +292,10 @@ export function computeLegLedger(
       // ── Standard SWAP leg (CPMM / CLMM / Algebra / Curve / Balancer pool) ─
       amountOut = computeSwapOutput(inventory, pool);
       feeUSD = inventory * (pool.feeBps / 10_000);
-      gasReserveUSD = amountOut * 0.0012;
-      tipUSD = amountOut * 0.0004;
-      riskReserveUSD = amountOut * 0.0008;
-      modelReserveUSD = amountOut * 0.0006;
+      gasReserveUSD = amountOut * RESERVE_RATES.gasReserve;
+      tipUSD = amountOut * RESERVE_RATES.tip;
+      riskReserveUSD = amountOut * RESERVE_RATES.risk;
+      modelReserveUSD = amountOut * RESERVE_RATES.model;
       // deltaMarket: price-impact slippage = ideal output minus actual output.
       // idealOut is approximated as (inventory - feeUSD), i.e. a 1:1 unit-price
       // conversion after protocol fee.  This is a CPMM first-order approximation;

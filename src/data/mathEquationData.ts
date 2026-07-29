@@ -321,7 +321,7 @@ export const INDEXED_MATH_EQUATIONS: MathEquation[] = [
       { symbol: 'H_j', name: 'Integrity Hash', routeSourceKey: 'transientTrace.integrityHash', exampleVal: '0x3f2a...b8c1', unit: 'bytes32', description: 'TSTORE commitment over route path, pools, and amounts.' },
     ],
     derivationSteps: [
-      'Step 1: Balancer Vault UNLOCK — TSTORE(DEBT_SLOT, D₀ = borrowedAmount × (1+fee)).',
+      'Step 1: Balancer Vault UNLOCK — TSTORE(DEBT_SLOT, D₀ = borrowedAmount × (1 + fee)).',
       'Step 2: For each leg j: execute Phi_j (swap or liquidation), update B_j and F_j.',
       'Step 3: TSTORE(INTEGRITY_SLOT, H_j = keccak(routeId | pools | amounts)).',
       'Step 4: Balancer Vault SETTLE — TLOAD(DEBT_SLOT), verify B_final ≥ D₀, TSTORE(DEBT_SLOT, 0).',

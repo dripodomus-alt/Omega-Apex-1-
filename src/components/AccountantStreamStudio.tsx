@@ -78,10 +78,11 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
 
   // Transient Accounting Drawer
   const [drawerRouteId, setDrawerRouteId] = useState<string | null>(null);
-  const drawerRoutes: ArbitrageRoute[] = useMemo(
-    () => (drawerRouteId ? routes.filter((r) => r.id === drawerRouteId) : []),
-    [drawerRouteId, routes]
-  );
+  const drawerRoutes: ArbitrageRoute[] = useMemo(() => {
+    if (!drawerRouteId) return [];
+    const found = routes.find((r) => r.id === drawerRouteId);
+    return found ? [found] : [];
+  }, [drawerRouteId, routes]);
   const toggleDrawer = (routeId: string) =>
     setDrawerRouteId((prev) => (prev === routeId ? null : routeId));
 
