@@ -46,7 +46,7 @@ import {
   subscribeAuditLogsFromFirestore,
   syncRouteToFirestore,
   syncAuditLogToFirestore,
-} from './lib/firestoreService';
+} from './lib/firebase';
 import { runLiveBenchmark, StepUpdateCallback, PENDING_BENCHMARK_REPORT } from './utils/liveBenchmark';
 
 export default function App() {
@@ -338,19 +338,28 @@ export default function App() {
     }, 600);
   };
 
-  // Handler: Run Benchmark Suite
+  // Handler: Run Live Benchmark — all data sourced from live pipeline + RPC
   const handleRunBenchmark = () => {
-    setIsRunningBenchmark(true);
-    setTimeout(() => {
+    (async () => {
+      setIsRunningBenchmark(true);
+
+      // Reset every step to PENDING before starting
       setBenchmarkReport((prev) => ({
         ...prev,
-        overallScore: 98.2,
-        pipelineLatencyMs: 1.38,
-        testedRoutes: prev.testedRoutes + 50,
-        validRoutes: prev.validRoutes + 48,
+        steps: prev.steps.map((s) => ({ ...s, status: 'PENDING' as const, output: 'Waiting for benchmark run.' })),
       }));
+
+      const onStepUpdate: StepUpdateCallback = (stepId, update) => {
+        setBenchmarkReport((prev) => ({
+          ...prev,
+          steps: prev.steps.map((s) => (s.id === stepId ? { ...s, ...update } : s)),
+        }));
+      };
+
+      const result = await runLiveBenchmark(onStepUpdate, routes, pools, VQC_METADATA);
+      setBenchmarkReport(result);
       setIsRunningBenchmark(false);
-    }, 1200);
+    })();
   };
 
   // Handler: Advance Route Pipeline Stage

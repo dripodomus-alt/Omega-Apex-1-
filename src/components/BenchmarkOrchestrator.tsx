@@ -1,11 +1,25 @@
 import React, { useState } from 'react';
 import { BenchmarkReport, BenchmarkStep } from '../types';
-import { Terminal, Play, CheckCircle2, ShieldCheck, Zap, AlertTriangle, RefreshCw, Cpu, Database } from 'lucide-react';
+import { Terminal, Play, CheckCircle2, ShieldCheck, Zap, AlertTriangle, RefreshCw, Cpu, Database, Clock, Loader } from 'lucide-react';
 
 interface BenchmarkOrchestratorProps {
   report: BenchmarkReport;
   onRunBenchmark: () => void;
   isRunningBenchmark: boolean;
+}
+
+function StepStatusIcon({ status }: { status: BenchmarkStep['status'] }) {
+  if (status === 'SUCCESS') return <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />;
+  if (status === 'FAILED')  return <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />;
+  if (status === 'RUNNING') return <Loader className="w-4 h-4 text-indigo-400 shrink-0 animate-spin" />;
+  return <Clock className="w-4 h-4 text-slate-500 shrink-0" />;
+}
+
+function stepStatusColor(status: BenchmarkStep['status']): string {
+  if (status === 'SUCCESS') return 'text-emerald-400';
+  if (status === 'FAILED')  return 'text-red-400';
+  if (status === 'RUNNING') return 'text-indigo-400';
+  return 'text-slate-500';
 }
 
 export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
@@ -30,7 +44,7 @@ export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl">
-              Script: <code className="text-indigo-300 font-mono">.\scripts\run_full_benchmark_and_readiness.ps1</code> • Chain: Polygon #137
+              Live data only — Polygon RPC + pipeline routes/pools · Chain: Polygon #137
             </p>
           </div>
 
@@ -40,7 +54,7 @@ export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-lg transition-all active:scale-95 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
           >
             <Play className={`w-4 h-4 ${isRunningBenchmark ? 'animate-spin' : ''}`} />
-            <span>{isRunningBenchmark ? 'Running Diagnostic Suite...' : 'Run Readiness Benchmark'}</span>
+            <span>{isRunningBenchmark ? 'Running Live Benchmark...' : 'Run Live Benchmark'}</span>
           </button>
         </div>
       </div>
@@ -49,34 +63,36 @@ export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
           <div className="text-[10px] uppercase font-mono text-slate-400">Overall Readiness</div>
-          <div className="text-2xl font-extrabold text-emerald-400 font-mono mt-1">
-            {report.overallScore.toFixed(1)}%
+          <div className={`text-2xl font-extrabold font-mono mt-1 ${report.overallScore >= 80 ? 'text-emerald-400' : report.overallScore > 0 ? 'text-yellow-400' : 'text-slate-500'}`}>
+            {report.overallScore > 0 ? `${report.overallScore.toFixed(1)}%` : '—'}
           </div>
           <div className="text-[10px] text-slate-500 font-mono mt-0.5">MEV Production Grade</div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
           <div className="text-[10px] uppercase font-mono text-slate-400">Pipeline Latency</div>
-          <div className="text-2xl font-extrabold text-purple-400 font-mono mt-1">
-            {report.pipelineLatencyMs}ms
+          <div className={`text-2xl font-extrabold font-mono mt-1 ${report.pipelineLatencyMs > 0 ? 'text-purple-400' : 'text-slate-500'}`}>
+            {report.pipelineLatencyMs > 0 ? `${report.pipelineLatencyMs}ms` : '—'}
           </div>
-          <div className="text-[10px] text-slate-500 font-mono mt-0.5">End-to-end execution</div>
+          <div className="text-[10px] text-slate-500 font-mono mt-0.5">Per-op math engine</div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
           <div className="text-[10px] uppercase font-mono text-slate-400">Max Throughput</div>
-          <div className="text-2xl font-extrabold text-cyan-400 font-mono mt-1">
-            {report.maxThroughputRps.toLocaleString()} /s
+          <div className={`text-2xl font-extrabold font-mono mt-1 ${report.maxThroughputRps > 0 ? 'text-cyan-400' : 'text-slate-500'}`}>
+            {report.maxThroughputRps > 0 ? `${report.maxThroughputRps.toLocaleString()} /s` : '—'}
           </div>
-          <div className="text-[10px] text-slate-500 font-mono mt-0.5">Redis stream ingestion</div>
+          <div className="text-[10px] text-slate-500 font-mono mt-0.5">VQC scoring ops/sec</div>
         </div>
 
         <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-lg">
-          <div className="text-[10px] uppercase font-mono text-slate-400">Rust Core Binary</div>
-          <div className="text-xl font-extrabold text-emerald-400 font-mono mt-1 flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4" /> COMPILED
+          <div className="text-[10px] uppercase font-mono text-slate-400">RPC Connected</div>
+          <div className={`text-xl font-extrabold font-mono mt-1 flex items-center gap-1 ${report.redisConnected ? 'text-emerald-400' : 'text-slate-500'}`}>
+            {report.redisConnected
+              ? <><CheckCircle2 className="w-4 h-4" /> LIVE</>
+              : <><Clock className="w-4 h-4" /> PENDING</>}
           </div>
-          <div className="text-[10px] text-slate-500 font-mono mt-0.5">cargo release optimized</div>
+          <div className="text-[10px] text-slate-500 font-mono mt-0.5">Polygon Mainnet #137</div>
         </div>
       </div>
 
@@ -108,11 +124,11 @@ export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
                       </span>
                       <span>{step.title}</span>
                     </span>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <StepStatusIcon status={step.status} />
                   </div>
                   <div className="text-[10px] font-mono text-slate-400 mt-2 flex justify-between">
-                    <span>Duration: {step.durationMs}ms</span>
-                    <span className="text-emerald-400 uppercase font-bold">{step.status}</span>
+                    <span>{step.durationMs > 0 ? `Duration: ${step.durationMs}ms` : 'Not run'}</span>
+                    <span className={`uppercase font-bold ${stepStatusColor(step.status)}`}>{step.status}</span>
                   </div>
                 </button>
               );
@@ -133,13 +149,28 @@ export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
               <code className="text-indigo-300 font-semibold">{activeStep.command}</code>
             </div>
 
-            <div className="text-emerald-400/90 whitespace-pre-wrap leading-relaxed">
-              {activeStep.output}
+            <div className={`whitespace-pre-wrap leading-relaxed ${
+              activeStep.status === 'FAILED'
+                ? 'text-red-400/90'
+                : activeStep.status === 'RUNNING'
+                ? 'text-indigo-400/90'
+                : activeStep.status === 'PENDING'
+                ? 'text-slate-500'
+                : 'text-emerald-400/90'
+            }`}>
+              {activeStep.status === 'RUNNING'
+                ? '⟳ Running...\n' + activeStep.output
+                : activeStep.output}
             </div>
 
             <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-              <span>Exit Code: 0 (OK)</span>
-              <span>Execution Time: {activeStep.durationMs}ms</span>
+              <span className={stepStatusColor(activeStep.status)}>
+                {activeStep.status === 'SUCCESS' && 'Exit Code: 0 (OK)'}
+                {activeStep.status === 'FAILED'  && 'Exit Code: 1 (FAILED)'}
+                {activeStep.status === 'RUNNING' && 'Running...'}
+                {activeStep.status === 'PENDING' && 'Pending'}
+              </span>
+              <span>{activeStep.durationMs > 0 ? `Execution Time: ${activeStep.durationMs}ms` : '—'}</span>
             </div>
           </div>
         </div>
@@ -147,3 +178,4 @@ export const BenchmarkOrchestrator: React.FC<BenchmarkOrchestratorProps> = ({
     </div>
   );
 };
+
