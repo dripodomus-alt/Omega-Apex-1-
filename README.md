@@ -20,19 +20,19 @@ This codebase includes both **live integrations** and **deterministic simulated/
 
 ### Live or integration-backed surfaces
 
-- Polygon RPC balance and nonce fetches in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/utils/persistentState.ts`
-- 90-day history anchoring against live RPC state in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/components/NinetyDaySimulationStudio.tsx`
-- Gemini route analysis API in `/home/runner/work/arbitrage-omega/arbitrage-omega/server.ts`
-- Firebase Auth / Firestore helpers in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/lib`
-- Google Drive export helpers in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/lib/googleDriveService.ts`
+- Polygon RPC balance and nonce fetches in `src/utils/persistentState.ts`
+- 90-day history anchoring against live RPC state in `src/components/NinetyDaySimulationStudio.tsx`
+- Gemini route analysis API in `server.ts`
+- Firebase Auth / Firestore helpers in `src/lib`
+- Google Drive export helpers in `src/lib/googleDriveService.ts`
 
 ### Simulated, seeded, or presentation-layer proof surfaces
 
-- benchmark results in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/data/mockEngineData.ts`
-- initial routes, pools, and audit logs in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/data/mockEngineData.ts`
-- Top 50 execution cycle generation in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/components/Top50ExecutionStudio.tsx`
-- full automation event loop behavior in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/components/FullAutomationLiveEngine.tsx`
-- live-mainnet activation console and sample confirmations in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/components/LiveMainnetGuide.tsx`
+- benchmark results in `src/data/mockEngineData.ts`
+- initial routes, pools, and audit logs in `src/data/mockEngineData.ts`
+- Top 50 execution cycle generation in `src/components/Top50ExecutionStudio.tsx`
+- full automation event loop behavior in `src/components/FullAutomationLiveEngine.tsx`
+- live-mainnet activation console and sample confirmations in `src/components/LiveMainnetGuide.tsx`
 
 Accordingly, this README documents the system **as implemented in this repository today**: a strong operator console and simulation/proof surface with selected live connectivity, not a fully self-contained audited production trading stack.
 
@@ -50,7 +50,7 @@ The repository models a Polygon mainnet discovery graph with:
 - **17 Chainlink feeds**
 - **0.88 ms average full graph sweep** in the supplied metrics model
 
-These values are defined in `FULL_CHAIN_137_METRICS` inside `/home/runner/work/arbitrage-omega/arbitrage-omega/src/data/mockEngineData.ts`.
+These values are defined in `FULL_CHAIN_137_METRICS` inside `src/data/mockEngineData.ts`.
 
 The `Top50ExecutionStudio` also runs a 12-second cycle model that:
 
@@ -62,7 +62,7 @@ The `Top50ExecutionStudio` also runs a 12-second cycle model that:
 
 ### 2. Route Ranking
 
-Ranking is driven by the VQC metadata model defined in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/data/mockEngineData.ts` and visualized in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/components/VqcRankerStudio.tsx`.
+Ranking is driven by the VQC metadata model defined in `src/data/mockEngineData.ts` and visualized in `src/components/VqcRankerStudio.tsx`.
 
 Documented model metrics:
 
@@ -86,11 +86,11 @@ The UI also exposes a live inference panel that converts route conditions into a
 
 ### 3. Pipeline Staging
 
-The route lifecycle is explicitly modeled in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/types.ts`:
+The route lifecycle is explicitly modeled in `src/types.ts`:
 
 `DISCOVERED → RANKED → SIMULATED → PREPARED → EXECUTED → ACCOUNTED`
 
-That lifecycle is exercised in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/App.tsx`, where routes can be:
+That lifecycle is exercised in `src/App.tsx`, where routes can be:
 
 - discovered,
 - promoted through stages,
@@ -279,7 +279,7 @@ The benchmark data currently asserts:
 
 #### B. Security Specification
 
-`/home/runner/work/arbitrage-omega/arbitrage-omega/security_spec.md` documents a Firestore rules test matrix covering:
+`security_spec.md` documents a Firestore rules test matrix covering:
 
 - anonymous writes,
 - missing required fields,
@@ -314,11 +314,11 @@ At the application level, the code validates:
 - Recharts
 - Lucide icons
 
-Primary orchestration lives in `/home/runner/work/arbitrage-omega/arbitrage-omega/src/App.tsx`.
+Primary orchestration lives in `src/App.tsx`.
 
 ### Back End
 
-- Express server in `/home/runner/work/arbitrage-omega/arbitrage-omega/server.ts`
+- Express server in `server.ts`
 - health endpoint at `/api/health`
 - Gemini route-analysis endpoint at `/api/gemini/analyze-route`
 
