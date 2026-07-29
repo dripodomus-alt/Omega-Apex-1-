@@ -1,6 +1,5 @@
 import { POLYGON_CHAIN_CONFIG, POL_PRICE_USD } from '../config/chainConfig';
 import { POLYGON_TOKENS } from '../data/mockEngineData';
-import { ArbitrageRoute, SimulationAuditLog } from '../types';
 
 export interface WalletState {
   address: string;
@@ -26,8 +25,6 @@ export interface SystemAccountMemoryState {
   wallet: WalletState;
   handsFreeActive: boolean;
   gasGwei: number;
-  routes: ArbitrageRoute[];
-  auditLogs: SimulationAuditLog[];
 }
 
 const STORAGE_KEY = 'OMEGA_V5_SYSTEM_ACCOUNT_MEMORY_V1';
@@ -263,17 +260,14 @@ export function validateWalletConfiguration(currentWalletState: WalletState): Wa
 }
 
 /**
- * Get Stored System Memory on Boot Up
+ * Get persisted operator settings (wallet config, gas, hands-free toggle) from
+ * localStorage on boot.  Routes and audit logs are intentionally NOT seeded here —
+ * they must come from Firestore or the live pipeline.
  */
-export function loadSystemMemory(
-  defaultRoutes: ArbitrageRoute[],
-  defaultAuditLogs: SimulationAuditLog[]
-): {
+export function loadSystemMemory(): {
   wallet: WalletState;
   handsFreeActive: boolean;
   gasGwei: number;
-  routes: ArbitrageRoute[];
-  auditLogs: SimulationAuditLog[];
   lastSyncedAt: string;
 } {
   try {
@@ -283,8 +277,6 @@ export function loadSystemMemory(
         wallet: DEFAULT_WALLET_STATE,
         handsFreeActive: true,
         gasGwei: 38,
-        routes: defaultRoutes,
-        auditLogs: defaultAuditLogs,
         lastSyncedAt: new Date().toISOString(),
       };
     }
@@ -294,8 +286,6 @@ export function loadSystemMemory(
       wallet: parsed.wallet || DEFAULT_WALLET_STATE,
       handsFreeActive: typeof parsed.handsFreeActive === 'boolean' ? parsed.handsFreeActive : true,
       gasGwei: parsed.gasGwei || 38,
-      routes: Array.isArray(parsed.routes) && parsed.routes.length > 0 ? parsed.routes : defaultRoutes,
-      auditLogs: Array.isArray(parsed.auditLogs) && parsed.auditLogs.length > 0 ? parsed.auditLogs : defaultAuditLogs,
       lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
     };
   } catch (err) {
@@ -304,8 +294,6 @@ export function loadSystemMemory(
       wallet: DEFAULT_WALLET_STATE,
       handsFreeActive: true,
       gasGwei: 38,
-      routes: defaultRoutes,
-      auditLogs: defaultAuditLogs,
       lastSyncedAt: new Date().toISOString(),
     };
   }
@@ -314,12 +302,14 @@ export function loadSystemMemory(
 /**
  * Save System & Account Memory State to Storage
  */
+/**
+ * Save operator settings (wallet config, gas, hands-free toggle) to localStorage.
+ * Routes and audit logs are persisted exclusively to Firestore — not stored here.
+ */
 export function saveSystemMemory(data: {
   wallet: WalletState;
   handsFreeActive: boolean;
   gasGwei: number;
-  routes: ArbitrageRoute[];
-  auditLogs: SimulationAuditLog[];
 }): string {
   const timestamp = new Date().toISOString();
   try {
@@ -329,8 +319,6 @@ export function saveSystemMemory(data: {
       wallet: data.wallet,
       handsFreeActive: data.handsFreeActive,
       gasGwei: data.gasGwei,
-      routes: data.routes,
-      auditLogs: data.auditLogs,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     return timestamp;
