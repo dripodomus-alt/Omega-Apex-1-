@@ -68,6 +68,11 @@ export const TransientAccountingStudio: React.FC<TransientAccountingStudioProps>
   const [selectedRouteId, setSelectedRouteId] = useState<string>(routes[0]?.id ?? '');
   const [expandedLegIndex, setExpandedLegIndex] = useState<number | null>(null);
 
+  const handleRouteSelect = (routeId: string) => {
+    setSelectedRouteId(routeId);
+    setExpandedLegIndex(null);
+  };
+
   const selectedRoute = routes.find((r) => r.id === selectedRouteId) ?? routes[0];
 
   // Compute or reuse existing trace
@@ -143,7 +148,7 @@ export const TransientAccountingStudio: React.FC<TransientAccountingStudioProps>
         </label>
         <select
           value={selectedRouteId}
-          onChange={(e) => { setSelectedRouteId(e.target.value); setExpandedLegIndex(null); }}
+          onChange={(e) => handleRouteSelect(e.target.value)}
           className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-purple-500"
         >
           {routes.map((r) => (

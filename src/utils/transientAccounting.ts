@@ -255,7 +255,7 @@ export function computeLegLedger(
   for (const pool of executionPools) {
     const phase = resolvePhase(pool.category, executionType);
     const tokenIn =
-      legIndex > 0 ? legs[legIndex - 1].tokenOut : borrowedToken;
+      legIndex > 0 ? (legs[legIndex - 1]?.tokenOut ?? borrowedToken) : borrowedToken;
     const tokenOut = pool.token1.symbol;
 
     let amountOut: number;
@@ -289,7 +289,13 @@ export function computeLegLedger(
       tipUSD = amountOut * 0.0004;
       riskReserveUSD = amountOut * 0.0008;
       modelReserveUSD = amountOut * 0.0006;
-      // deltaMarket: price-impact slippage (ideal minus actual, excluding protocol fee)
+      // deltaMarket: price-impact slippage = ideal output minus actual output.
+      // idealOut is approximated as (inventory - feeUSD), i.e. a 1:1 unit-price
+      // conversion after protocol fee.  This is a CPMM first-order approximation;
+      // for CLMM / weighted / StableSwap pools the true ideal would use the specific
+      // invariant, but the off-chain ledger uses this simplified form for all pool
+      // types because the primary purpose is detecting gross accounting errors, not
+      // exact price modelling (see spec §3, ε_allowed = $0.01 USD).
       const idealOut = inventory - feeUSD;
       deltaMarket = idealOut - amountOut; // positive = slippage cost
     }

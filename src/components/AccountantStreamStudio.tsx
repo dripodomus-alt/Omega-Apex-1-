@@ -82,6 +82,8 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
     () => (drawerRouteId ? routes.filter((r) => r.id === drawerRouteId) : []),
     [drawerRouteId, routes]
   );
+  const toggleDrawer = (routeId: string) =>
+    setDrawerRouteId((prev) => (prev === routeId ? null : routeId));
 
   // Auto-Flush Configuration State (>50 entries rule)
   const [isAutoFlushEnabled, setIsAutoFlushEnabled] = useState<boolean>(true);
@@ -635,7 +637,7 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
                     <td className="p-3">
                       {routes.some((r) => r.id === log.routeId) ? (
                         <button
-                          onClick={() => setDrawerRouteId(drawerRouteId === log.routeId ? null : log.routeId)}
+                          onClick={() => toggleDrawer(log.routeId)}
                           className="flex items-center gap-1 text-purple-400 hover:text-purple-200 transition-colors text-[10px] font-bold"
                           title="View Transient Accounting Trace"
                         >
