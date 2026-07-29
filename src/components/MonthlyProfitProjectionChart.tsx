@@ -42,7 +42,6 @@ export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChart
   const [avgProfitPerTrade, setAvgProfitPerTrade] = useState<number>(Math.round(historicalAvgProfit));
   const [isCompounding, setIsCompounding] = useState<boolean>(true);
   const [dailyCompoundRateBps, setDailyCompoundRateBps] = useState<number>(15); // 0.15% daily reinvestment yield
-  const normalizedDailyCompoundRate = Math.max(0, Math.min(50, dailyCompoundRateBps)) / 10000;
 
   // Generate 30-day projection data
   const today = new Date();
@@ -55,6 +54,7 @@ export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChart
 
     const expectedWins = dailyTradesCount * (winRatePercent / 100);
     const expectedLosses = dailyTradesCount * (1 - winRatePercent / 100);
+    const normalizedDailyCompoundRate = Math.max(0, Math.min(50, dailyCompoundRateBps)) / 10000;
 
     // Base daily profit calculation
     let baseDailyProfit = expectedWins * avgProfitPerTrade - expectedLosses * (avgProfitPerTrade * 0.4);

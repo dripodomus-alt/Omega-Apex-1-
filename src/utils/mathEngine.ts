@@ -27,6 +27,10 @@ export interface ProfitApexResult {
   derivativeAtZero: number;
 }
 
+const MIN_SQRT_PRICE = 1e-6;
+const MAX_VIRTUAL_RESERVE = 1e15;
+const MAX_VIRTUAL_PRICE = 1e6;
+
 /**
  * Converts Uniswap V3 concentrated liquidity parameters into virtual constant-product reserves.
  * P = (sqrtPriceX96 / 2^96)^2
@@ -43,12 +47,10 @@ export function convertSqrtPriceX96ToVirtualReserves(
     const liquidity = BigInt(liquidityStr);
 
     // Number conversion for UI visualization
-    const sqrtPRaw = Number(sqrtPriceX96) / Number(Q96);
-    const sqrtP = Number.isFinite(sqrtPRaw) ? Math.max(1e-6, sqrtPRaw) : 0;
-    const price = sqrtP * sqrtP;
     const L = Number(liquidity);
+    const sqrtPRaw = Number(sqrtPriceX96) / Number(Q96);
 
-    if (!Number.isFinite(sqrtP) || !Number.isFinite(sqrtPRaw) || !Number.isFinite(L) || sqrtPRaw <= 0 || L <= 0) {
+    if (!Number.isFinite(sqrtPRaw) || !Number.isFinite(L) || sqrtPRaw <= 0 || L <= 0) {
       return {
         r0Virtual: 1000000,
         r1Virtual: 1000000,
@@ -59,17 +61,19 @@ export function convertSqrtPriceX96ToVirtualReserves(
       };
     }
 
+    const sqrtP = Math.max(MIN_SQRT_PRICE, sqrtPRaw);
+    const price = sqrtP * sqrtP;
     const rawR0Virtual = L / sqrtP;
     const rawR1Virtual = L * sqrtP;
-    const r0Virtual = Number.isFinite(rawR0Virtual) ? Math.max(1, rawR0Virtual) : 1e15;
-    const r1Virtual = Number.isFinite(rawR1Virtual) ? Math.max(1, rawR1Virtual) : 1e15;
-    const virtualPrice0in1 = Math.min(1e6, Math.max(0, price));
+    const r0Virtual = Number.isFinite(rawR0Virtual) ? Math.max(1, rawR0Virtual) : MAX_VIRTUAL_RESERVE;
+    const r1Virtual = Number.isFinite(rawR1Virtual) ? Math.max(1, rawR1Virtual) : MAX_VIRTUAL_RESERVE;
+    const virtualPrice0in1 = Math.min(MAX_VIRTUAL_PRICE, Math.max(0, price));
 
     return {
       r0Virtual,
       r1Virtual,
       virtualPrice0in1,
-      virtualPrice1in0: virtualPrice0in1 > 0 ? Math.min(1e6, 1 / virtualPrice0in1) : 0,
+      virtualPrice1in0: virtualPrice0in1 > 0 ? Math.min(MAX_VIRTUAL_PRICE, 1 / virtualPrice0in1) : 0,
       sqrtPriceX96Num: Number(sqrtPriceX96),
       liquidityNum: L,
     };

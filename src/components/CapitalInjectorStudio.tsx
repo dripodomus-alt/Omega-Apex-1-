@@ -340,6 +340,9 @@ export const CapitalInjectorStudio: React.FC<CapitalInjectorStudioProps> = ({ se
 
 // Sub-component for Batch Calculus Apex Solver
 const BatchApexSolverMatrix: React.FC = () => {
+  const BATCH_DEFAULT_SWAP_FEE_BPS = 30;
+  const BATCH_DEFAULT_FLASH_FEE_BPS = 5;
+  const BATCH_DEFAULT_GAS_USD = 0.45;
   const [isSolvingBatch, setIsSolvingBatch] = useState(false);
   const [batchApexRoutes, setBatchApexRoutes] = useState([
     {
@@ -385,7 +388,13 @@ const BatchApexSolverMatrix: React.FC = () => {
     setTimeout(() => {
       setBatchApexRoutes((prev) =>
         prev.map((r) => {
-          const calibratedApex = solveProfitApex(r.rInUSD, r.rOutUSD, 30, 5, 0.45);
+          const calibratedApex = solveProfitApex(
+            r.rInUSD,
+            r.rOutUSD,
+            BATCH_DEFAULT_SWAP_FEE_BPS,
+            BATCH_DEFAULT_FLASH_FEE_BPS,
+            BATCH_DEFAULT_GAS_USD
+          );
           return {
             ...r,
             optimalInputUSD: Math.round(calibratedApex.optimalInputUSD),
