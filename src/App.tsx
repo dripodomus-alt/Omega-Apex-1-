@@ -31,6 +31,7 @@ import {
 } from './data/mockEngineData';
 import { ArbitrageRoute, SimulationAuditLog } from './types';
 import { validateRouteAssetRegistry } from './utils/mathEngine';
+import { computeLegLedger } from './utils/transientAccounting';
 import {
   loadSystemMemory,
   saveSystemMemory,

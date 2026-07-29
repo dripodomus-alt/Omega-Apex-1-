@@ -61,3 +61,11 @@ export const POLYGON_CHAIN_CONFIG = {
 
 /** Current POL/USD spot price used for USD-denominated balance display. */
 export const POL_PRICE_USD = 0.073;
+
+/**
+ * Maximum allowed per-leg accounting residual (ε_allowed) for the off-chain
+ * transient storage conservation check.  Any leg whose |ε_j| exceeds this
+ * threshold is flagged as TRANSIENT_LEG_ACCOUNTING_MISMATCH.
+ * Units: USD
+ */
+export const TRANSIENT_EPSILON_USD_MAX = 0.01;

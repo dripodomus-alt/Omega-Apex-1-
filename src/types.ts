@@ -52,6 +52,7 @@ export interface ArbitrageRoute {
   isSelfFundingRisk: boolean;
   vqcAlphaHistory?: number[];
   notes?: string;
+  transientTrace?: TransientAccountingTrace;
 }
 
 export interface VqcModelMetadata {
@@ -123,12 +124,37 @@ export interface MathVariableMap {
 export interface MathEquation {
   id: string;
   title: string;
-  category: 'V3_VIRTUALIZATION' | 'CPMM_DERIVATIVE' | 'APEX_SOLVER' | 'VQC_QUANTUM' | 'ISOLATION_PROOFS' | 'BELLMAN_FORD';
+  category: 'V3_VIRTUALIZATION' | 'CPMM_DERIVATIVE' | 'APEX_SOLVER' | 'VQC_QUANTUM' | 'ISOLATION_PROOFS' | 'BELLMAN_FORD' | 'TRANSIENT_ACCOUNTING';
   latexFormula: string;
   plainFormula: string;
   summary: string;
   variableMap: MathVariableMap[];
   derivationSteps: string[];
+}
+
+export interface TransientLeg {
+  legIndex: number;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: number;
+  amountOut: number;
+  feeUSD: number;
+  gasReserveUSD: number;
+  tipUSD: number;
+  riskReserveUSD: number;
+  modelReserveUSD: number;
+  residualUSD: number;
+  passed: boolean;
+}
+
+export interface TransientAccountingTrace {
+  routeId: string;
+  borrowedToken: string;
+  borrowedAmount: number;
+  debtWithFee: number;
+  legs: TransientLeg[];
+  integrityHash: string;
+  finalRepaymentPassed: boolean;
 }
 
 export interface LiveTradeLog {
