@@ -48,7 +48,7 @@ export function convertSqrtPriceX96ToVirtualReserves(
     const price = sqrtP * sqrtP;
     const L = Number(liquidity);
 
-    if (!Number.isFinite(sqrtP) || !Number.isFinite(L) || sqrtP <= 0 || L <= 0) {
+    if (!Number.isFinite(sqrtP) || !Number.isFinite(sqrtPRaw) || !Number.isFinite(L) || sqrtPRaw <= 0 || L <= 0) {
       return {
         r0Virtual: 1000000,
         r1Virtual: 1000000,
@@ -59,8 +59,10 @@ export function convertSqrtPriceX96ToVirtualReserves(
       };
     }
 
-    const r0Virtual = Math.min(1e15, Math.max(1, L / sqrtP));
-    const r1Virtual = Math.min(1e15, Math.max(1, L * sqrtP));
+    const rawR0Virtual = L / sqrtP;
+    const rawR1Virtual = L * sqrtP;
+    const r0Virtual = Number.isFinite(rawR0Virtual) ? Math.max(1, rawR0Virtual) : 1e15;
+    const r1Virtual = Number.isFinite(rawR1Virtual) ? Math.max(1, rawR1Virtual) : 1e15;
     const virtualPrice0in1 = Math.min(1e6, Math.max(0, price));
 
     return {
