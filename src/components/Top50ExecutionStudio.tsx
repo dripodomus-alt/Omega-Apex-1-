@@ -160,7 +160,7 @@ export const Top50ExecutionStudio: React.FC = () => {
       const postSlippageBps = Number((1.2 + (i % 4) * 0.4).toFixed(1));
 
       const tipUSD = Number((grossUSD * 0.15).toFixed(2));
-      const netYield = clamp(Number((grossUSD - gasUSD - tipUSD).toFixed(2)), 0.5, grossUSD);
+      const netYield = clamp(Number((grossUSD - gasUSD - tipUSD).toFixed(2)), -grossUSD, grossUSD);
       const roi = Math.round((netYield / optimalFlashUSD) * 10000);
 
       const pool1Before = `2,450,000 ${assetA} / 1,820,000 ${assetB}`;
@@ -182,7 +182,7 @@ export const Top50ExecutionStudio: React.FC = () => {
         expectedGrossProfitUSD: Math.max(1.2, grossUSD),
         estimatedGasUSD: gasUSD,
         netProfitUSD: netYield,
-        roiBps: Math.max(10, roi),
+        roiBps: clamp(roi, -500, 500),
         vqcScore,
         // discoverableIsExecutableUponGating: EXECUTABLE if VQC ≥ 85 and net profit positive
         status: (() => {

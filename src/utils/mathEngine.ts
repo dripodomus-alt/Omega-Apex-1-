@@ -28,7 +28,7 @@ export interface ProfitApexResult {
 }
 
 const MIN_SQRT_PRICE = 1e-6;
-const MAX_VIRTUAL_RESERVE = 1e15;
+const MAX_VIRTUAL_RESERVE = 1e12;
 const MAX_VIRTUAL_PRICE = 1e6;
 
 /**

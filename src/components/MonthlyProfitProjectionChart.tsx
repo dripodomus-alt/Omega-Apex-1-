@@ -29,6 +29,8 @@ interface MonthlyProfitProjectionChartProps {
   logs: SimulationAuditLog[];
 }
 
+const MAX_DAILY_COMPOUND_BPS = 50; // 0.50% daily cap to avoid unrealistic compounding blowouts in the 30-day view
+
 export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChartProps> = ({ logs }) => {
   // Derive historical metrics from logs
   const successfulLogs = logs.filter((l) => l.status === 'SUCCESS');
@@ -54,7 +56,7 @@ export const MonthlyProfitProjectionChart: React.FC<MonthlyProfitProjectionChart
 
     const expectedWins = dailyTradesCount * (winRatePercent / 100);
     const expectedLosses = dailyTradesCount * (1 - winRatePercent / 100);
-    const normalizedDailyCompoundRate = Math.max(0, Math.min(50, dailyCompoundRateBps)) / 10000;
+    const normalizedDailyCompoundRate = Math.max(0, Math.min(MAX_DAILY_COMPOUND_BPS, dailyCompoundRateBps)) / 10000;
 
     // Base daily profit calculation
     let baseDailyProfit = expectedWins * avgProfitPerTrade - expectedLosses * (avgProfitPerTrade * 0.4);
