@@ -9,7 +9,7 @@ import logging
 from typing import Any, Dict
 
 from .invariant_math import verify_buy_low_sell_high_sequence
-from .config import build_protocol_sequence_ids
+from .config import build_protocol_sequence_ids, MIN_CALldata_LENGTH, MAX_CALldata_LENGTH
 from .pricing import PricingError
 from .pricing.precision_pricing import get_price_usd_x18
 from .cycle_logger import cycle_logger, CycleEventType, CycleType
@@ -93,6 +93,37 @@ def validate_payload_ids_and_sequence(
         return False
 
 
+def validate_calldata_integrity(
+    calldata: str, opportunity_id: str, cycle_id: str
+) -> bool:
+    """
+    Validates the basic integrity of the generated calldata.
+    Checks for 0x prefix, even hex length, and reasonable length bounds.
+    """
+    if not calldata.startswith("0x"):
+        msg = "Calldata missing '0x' prefix."
+        logger.warning(f"[{opportunity_id}] {msg}")
+        cycle_logger.log_event(opportunity_id, cycle_id, CycleType.C1, CycleEventType.VALIDATION_FAILED, msg)
+        return False
+    
+    hex_body = calldata[2:]
+    if len(hex_body) % 2 != 0:
+        msg = "Calldata hex body has an odd number of characters."
+        logger.warning(f"[{opportunity_id}] {msg}")
+        cycle_logger.log_event(opportunity_id, cycle_id, CycleType.C1, CycleEventType.VALIDATION_FAILED, msg)
+        return False
+
+    if not (MIN_CALldata_LENGTH <= len(hex_body) <= MAX_CALldata_LENGTH):
+        msg = f"Calldata length ({len(hex_body)}) is outside expected bounds ({MIN_CALldata_LENGTH}-{MAX_CALldata_LENGTH})."
+        logger.warning(f"[{opportunity_id}] {msg}")
+        cycle_logger.log_event(opportunity_id, cycle_id, CycleType.C1, CycleEventType.VALIDATION_FAILED, msg)
+        return False
+
+    # Further checks like bytes.fromhex round-trip can be added if needed, but are more expensive.
+    logger.debug(f"[{opportunity_id}] Calldata integrity check passed.")
+    return True
+
+
 if __name__ == "__main__":
     # Example of running the validation checks with the new logging integration
     # This is for demonstration; real integration happens in the state machine.
@@ -103,6 +134,7 @@ if __name__ == "__main__":
         "principal_token": "USDC",
         "profitability": {"buy_price_usd": "3000", "sell_price_usd": "3001"},
     }
+    mock_calldata = "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890" # Example valid length
     mock_opp_id = "opp_mock_1"
     mock_c1_id = "c1_mock_1"
 
@@ -111,8 +143,11 @@ if __name__ == "__main__":
 
     payload_ok = validate_payload_ids_and_sequence(mock_route, mock_opp_id, mock_c1_id)
     print(f"Payload validation passed: {payload_ok}")
+    
+    calldata_ok = validate_calldata_integrity(mock_calldata, mock_opp_id, mock_c1_id)
+    print(f"Calldata integrity validation passed: {calldata_ok}")
 
-    if pricing_ok and payload_ok:
+    if pricing_ok and payload_ok and calldata_ok:
         print("\nAll validation proofs passed.")
     else:
         print("\nOne or more validation proofs failed. Check cycle_events.jsonl for details.")

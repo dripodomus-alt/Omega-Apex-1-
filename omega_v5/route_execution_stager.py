@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 """Compact route execution staging layer with buy-low/sell-high proof."""
 
 from __future__ import annotations
@@ -32,6 +33,10 @@ N_PLUS_4_LIFESPAN = 4
 READY_FOR_EXACT_CALL_STATUS = "ready_for_exact_call"
 LEGACY_READY_STATUS = "staged_for_executor_truth"
 DEFAULT_MAX_QUOTE_OPTIONS_PER_PAIR = 3
+
+# --- Constants and Configuration ---
+# Maximum number of hops supported for arbitrage routes.
+SUPPORTED_HOPS = (2, 3, 4)
 DEFAULT_MAX_HOP_VALUE_MULTIPLIER = Decimal("5")
 
 
@@ -76,6 +81,105 @@ class PreRankedRoute:
     discovery_block: int = 0
     discovery_block_hash: str = ""
 
+def _build_unified_route_envelope(
+    opportunity: Any,
+    sizing_result: Any,
+    calldata: str,
+    profitability: Any,
+) -> dict[str, Any]:
+    """
+    Builds the unified route envelope with a detailed cost breakdown.
+    This is the canonical data structure for a staged opportunity.
+    """
+    fl_params = profitability.flashloan
+    return {
+        "schema_version": UNIFIED_ROUTE_SCHEMA_VERSION,
+        "opp_id": opportunity.opp_id,
+        "route": {
+            "path": list(opportunity.path),
+            "pool_sequence": list(opportunity.pool_sequence),
+            "protocol_seq": list(opportunity.protocol_seq),
+        },
+        "flashloan": {
+            "source": fl_params.source.name,
+            "asset": fl_params.asset,
+            "principal_usd": fl_params.principal_usd,
+            "repayment_usd": fl_params.repayment_usd,
+        },
+        "math": {
+            "gross_surplus_usd": profitability.gross_surplus_usd,
+            "net_profit_usd": profitability.net_profit_usd,
+            "profit_to_gas_ratio": profitability.profit_to_gas,
+            "passes_min_profit_gate": profitability.passes_gate,
+        },
+        "fees": {
+            "slippage_cost_usd": profitability.slippage_cost_usd,
+            "flashloan_fee_usd": profitability.flashloan_fee_usd,
+            "gas_cost_usd": profitability.gas_cost_usd,
+            "relay_tip_usd": profitability.relay_tip_usd,
+            "builder_fee_usd": profitability.builder_fee_usd,
+            "risk_buffer_usd": profitability.risk_buffer_usd,
+            "total_costs_usd": profitability.total_costs_usd,
+        },
+        "execution": {
+            "calldata": calldata,
+            "calldata_hash": Web3.keccak(hexstr=calldata).hex() if calldata else "",
+            "gas_estimate": opportunity.gas_estimate,
+            "target_address": rpc_layer.get_executor_address(),
+            "chain_id": CHAIN_ID,
+        },
+        "metadata": {
+            "staged_at_ns": time.time_ns(),
+            "block_detected": opportunity.block_detected,
+            "source": "omega_v5_stager",
+        },
+    }
+
+
+def _stage_single_route(opportunity: Any, sizing_result: Any) -> dict[str, Any]:
+    """
+    Stages a single LiveOpportunity, building its calldata and final profitability.
+    """
+    # In a full implementation, this would call `build_tx_payload`
+    # For now, we'll use placeholder calldata.
+    tx_payload = {"data": "0x" + "a" * 128, "gas": 650000}
+
+    if not validate_calldata_integrity(tx_payload.get("data", ""), opportunity.opp_id, "stager_c1"):
+        raise ValueError("Calldata integrity check failed during staging.")
+
+    profitability = opportunity.profitability
+
+    return {
+        "opp_id": opportunity.opp_id,
+        "status": "staged_for_executor_truth",
+        "path": list(opportunity.path),
+        "pool_sequence": list(opportunity.pool_sequence),
+        "protocol_seq": list(opportunity.protocol_seq),
+        "calldata": tx_payload.get("data", ""),
+        "gas_estimate": tx_payload.get("gas", 0),
+        "profitability": {
+            "gross_surplus_usd": profitability.gross_surplus_usd,
+            "slippage_cost_usd": profitability.slippage_cost_usd,
+            "flashloan_fee_usd": profitability.flashloan_fee_usd,
+            "gas_cost_usd": profitability.gas_cost_usd,
+            "relay_tip_usd": profitability.relay_tip_usd,
+            "builder_fee_usd": profitability.builder_fee_usd,
+            "risk_buffer_usd": profitability.risk_buffer_usd,
+            "total_costs_usd": profitability.total_costs_usd,
+            "net_profit_usd": profitability.net_profit_usd,
+            "passes_gate": profitability.passes_gate,
+            "flashloan": {
+                "source": profitability.flashloan.source.name,
+                "asset": profitability.flashloan.asset,
+                "principal_usd": profitability.flashloan.principal_usd,
+            },
+        },
+        "sizing": sizing_result.as_dict(),
+        "unified_route_envelope": _build_unified_route_envelope(
+            opportunity, sizing_result, tx_payload.get("data", ""), profitability
+        ),
+    }
+
 
 def build_stage_report(
     pools: dict,
@@ -83,7 +187,7 @@ def build_stage_report(
     principal_usd: Decimal,
     base_tokens: list[str] = None,
     hops: tuple[int, ...] = SUPPORTED_HOPS,
-    max_routes: int = 50,
+    stage_limit: int = 50,
 ) -> dict:
     """
     Builds a stage report. Now tags routes with execution family for C1/C2/Liq support.
@@ -91,10 +195,10 @@ def build_stage_report(
     base_tokens = base_tokens or ["USDC", "WETH", "DAI"]
     routes = []
 
-    # Simplified discovery for test + real flow compatibility
-    for hop_count in hops:
-        # In full impl this would call scanner / arbitrage discovery
-        # Here we keep minimal structure so existing tests pass
+    # In a full implementation, this would call the discovery and ranking engine.
+    # For this update, we assume `ranked_opps` are passed in or generated.
+    # We will simulate a few to demonstrate staging.
+    for i in range(stage_limit):
         pass
 
     report = {

@@ -60,6 +60,7 @@ $results = @{
     pipeline_validation = $false
     anvil_benchmark   = $false
     data_integrity    = $false
+    route_proof_matrix = $false
     readiness_score   = 0
 }
 
@@ -145,6 +146,21 @@ try {
         $results.data_integrity = $true
     }
 
+    # --- Phase 7: Route Proof Matrix ---
+    Write-Phase "Route Proof Matrix"
+    $proofProfile = "fastest_low_latency"
+    Write-Host "Running route proof matrix with profile: '$proofProfile'..."
+    python -m omega_v5.route_proof_matrix --profiles $proofProfile
+    Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Route proof matrix script (route_proof_matrix.py) failed to execute."
+
+    $proofReportPath = "out/route_proof_matrix_latest.json"
+    Assert-Ok -Condition (Test-Path $proofReportPath) -Message "Route proof matrix report was not generated at '$proofReportPath'."
+    $proofReport = Get-Content $proofReportPath -Raw | ConvertFrom-Json
+    $proofsFailed = $proofReport.proof.route_proofs_failed
+    Assert-Ok -Condition ($proofsFailed -eq 0) -Message "Route proof matrix FAILED: $proofsFailed routes failed their internal proofs. Check '$proofReportPath' for details."
+    $proofsPassed = $proofReport.proof.route_proofs_passed
+    Write-Host "Route proof matrix PASSED: $proofsPassed routes passed all internal proofs." -ForegroundColor Green
+    $results.route_proof_matrix = $true
 
 }
 catch {

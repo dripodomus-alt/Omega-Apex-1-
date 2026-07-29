@@ -492,6 +492,10 @@ def create_c1_cycle(
         sequence_ok = pipeline_validation.validate_payload_ids_and_sequence(
             route=route_dict, opportunity_id=oid, cycle_id=c1.c1_id
         )
+        # Calldata integrity check (assuming calldata is available in route_dict after staging)
+        calldata_ok = pipeline_validation.validate_calldata_integrity(
+            calldata=route_dict.get("calldata", ""), opportunity_id=oid, cycle_id=c1.c1_id
+        )
 
         if not (pricing_ok and sequence_ok):
             reasons = []
@@ -499,6 +503,8 @@ def create_c1_cycle(
                 reasons.append("pricing_validation_failed")
             if not sequence_ok:
                 reasons.append("payload_sequence_validation_failed")
+            if not calldata_ok:
+                reasons.append("calldata_integrity_failed")
             c1.mark_failed(reason=";".join(reasons))
     return c1
 

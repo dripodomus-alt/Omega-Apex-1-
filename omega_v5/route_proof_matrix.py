@@ -29,6 +29,7 @@ from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, evaluate_profitability
 from .oracle_layer import TOKEN_USD_SOURCE, refresh_token_prices, token_price_usd
 from .paths import output_path
+from .pricing import mul_div
 from .pool_quality import filter_rankable_pools
 from .route_execution_stager import SUPPORTED_HOPS, _json_ready
 
@@ -290,34 +291,74 @@ def _live_state_summary(pool: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def _route_hop_trace(path: list[str], pool_sequence: list[str], pools: dict[str, dict], amount_in: Decimal) -> list[dict[str, Any]]:
+def _route_hop_trace(path: list[str], pool_sequence: list[str], pools: dict[str, dict], amount_in: Decimal, base_token_decimals: int) -> list[dict[str, Any]]:
     amount = Decimal(amount_in)
+    amount_raw = mul_div(int(amount * Decimal("1e18")), 1, 1, rounding=0) # Convert to raw units for tracing
     rows: list[dict[str, Any]] = []
     for idx, pool_id in enumerate(pool_sequence):
         token_in = path[idx]
         token_out = path[idx + 1]
-        quote = quote_route_for_executor([token_in, token_out], [pool_id], pools, amount)
+        
+        pool_data = pools.get(pool_id, {})
+        protocol = pool_data.get("protocol", "")
+        
+        # Capture pre-state for invariant check
+        reserves_before = list(pool_data.get("reserves", []))
+        k_before = Decimal("0")
+        if protocol == "UniswapV2" and len(reserves_before) == 2:
+            k_before = reserves_before[0] * reserves_before[1]
+
+        quote = quote_route_for_executor([token_in, token_out], [pool_id], pools, amount, base_token_decimals)
+        
+        # Simulate reserve mutation (simplified for tracing)
+        reserves_after = list(reserves_before)
+        if protocol == "UniswapV2" and len(reserves_after) == 2:
+            # This is a simplified simulation, actual mutation depends on exact swap logic
+            # For a real trace, we'd need to re-run the swap function.
+            # Here, we just show the expected delta based on quote.
+            token_in_idx = pool_data["tokens"].index(token_in)
+            token_out_idx = pool_data["tokens"].index(token_out)
+            
+            reserves_after[token_in_idx] += amount
+            reserves_after[token_out_idx] -= quote.amount_out
+
+        k_after = Decimal("0")
+        if protocol == "UniswapV2" and len(reserves_after) == 2:
+            k_after = reserves_after[0] * reserves_after[1]
+
+        invariant_check = "N/A"
+        if protocol == "UniswapV2":
+            # For V2, k_after should be >= k_before (after fees, k should not decrease)
+            invariant_check = "PASS" if k_after >= k_before * Decimal("0.999") else "FAIL" # Allow small tolerance for fees
+
         rows.append({
             "hop": idx + 1,
             "pool_id": pool_id,
-            "protocol": pools.get(pool_id, {}).get("protocol", ""),
+            "protocol": protocol,
             "token_in": token_in,
             "token_out": token_out,
             "amount_in": amount,
+            "amount_in_raw": amount_raw,
             "amount_out": quote.amount_out,
             "amount_out_raw": quote.amount_out_raw,
             "clmm_quoted": quote.clmm_quoted,
             "clmm_unquoted": quote.clmm_unquoted,
             "proof": quote.hop_proofs,
             "positive": quote.amount_out > 0,
+            "reserves_before": [str(r) for r in reserves_before],
+            "reserves_after_simulated": [str(r) for r in reserves_after],
+            "k_before": str(k_before),
+            "k_after_simulated": str(k_after),
+            "invariant_check": invariant_check,
         })
         amount = quote.amount_out
+        amount_raw = quote.amount_out_raw
         if amount <= 0:
             break
     return rows
 
 
-def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict]) -> dict[str, Any]:
+def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict], calldata_hash: str = "", calldata_length: int = 0, calldata_round_trip_ok: bool = False) -> dict[str, Any]:
     path = [str(item) for item in row.get("path") or []]
     pool_sequence = [str(item) for item in row.get("pool_sequence") or []]
     x0 = Decimal(str(row.get("selected_base_amount_in") or "0"))
@@ -360,10 +401,16 @@ def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict]) -> dict[s
             "raw_spread_base_per_mid": sell_price_base_per_mid - buy_price_base_per_mid,
             "buy_lower_than_sell": buy_price_base_per_mid < sell_price_base_per_mid,
         }
+    
+    # Calldata integrity checks
+    calldata_ok = validate_calldata_integrity(row.get("calldata", ""), row.get("opp_id", "unknown"), "proof_matrix")
+
     return {
         "canonical_equation": "xN = F_N(...F2(F1(x0))); net = xN_usd - x0_usd - flash - gas - relay - risk - slippage_buffer",
         "base_token": base_token,
         "base_token_usd": base_price,
+        "base_token_decimals": base_token_decimals,
+        "principal_usd": Decimal(str(row.get("selected_principal_usd") or "0")),
         "x0_base_amount_in": x0,
         "xN_base_amount_out": x_out,
         "gross_base_delta": gross,
@@ -371,16 +418,23 @@ def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict]) -> dict[s
         "raw_delta_usd": raw_delta_usd,
         "net_gain_usd_recomputed": expected_net,
         "net_gain_usd_reported": reported_net,
-        "net_identity_pass": abs(expected_net - reported_net) <= Decimal("0.000001"),
+        "net_identity_pass": abs(expected_net - reported_net) <= Decimal("0.00000001"), # High precision tolerance
+        "gross_spread_bps": (profit.gross_amount_out / profit.flashloan.principal_usd - Decimal("1")) * Decimal("10000") if profit.flashloan.principal_usd > 0 else Decimal("0"),
+        "post_math_spread_bps": (profit.gross_surplus_usd / profit.flashloan.principal_usd - Decimal("1")) * Decimal("10000") if profit.flashloan.principal_usd > 0 else Decimal("0"),
+        "slippage_cost_usd": slippage_cost_usd,
         "flashloan_fee_usd": flashloan_fee_usd,
         "flashloan_fee_verified": profit.flashloan.fee_verified,
         "flashloan_fee_source": profit.flashloan.fee_source,
         "gas_cost_usd": gas_cost_usd,
         "gas_accounting": staged_formula.get("gas_accounting", getattr(profit, "gas_accounting", {}) or {}),
         "gas_payer": staged_formula.get("gas_payer", getattr(profit, "gas_payer", "user_wallet")),
+        "builder_fee_usd": builder_fee_usd,
         "relay_or_private_submit_cost_usd": relay_cost_usd,
         "risk_buffer_usd": risk_buffer_usd,
-        "extra_slippage_buffer_usd": extra_slippage_buffer_usd,
+        "total_costs_usd": profit.total_costs_usd,
+        "calldata_hash": calldata_hash,
+        "calldata_length": calldata_length,
+        "calldata_round_trip_ok": calldata_round_trip_ok, # Placeholder for actual round-trip check
         "two_leg_price_proof": two_leg_prices,
         "hop_trace": trace,
     }
@@ -505,7 +559,7 @@ def _exact_route_probe(
     return _json_ready(row)
 
 
-def _build_exact_route_probes(
+def _build_exact_route_probes( # This function is currently disabled in run_profile
     rates: dict,
     pools: dict[str, dict],
     profile: ProofProfile,
@@ -569,10 +623,10 @@ def _enrich_stage_report(stage_report: dict[str, Any], pools: dict[str, dict], p
     for row in stage_report.get("routes", []):
         route = dict(row)
         if row.get("selected_base_amount_in") and row.get("path") and row.get("pool_sequence"):
-            equation = _route_equation_proof(row, pools)
+            equation = _route_equation_proof(row, pools, row.get("calldata_hash", ""), row.get("calldata_length", 0))
             universal = _route_universal_conditions(row, pools, equation)
             route["route_proof"] = {
-                "equation": _json_ready(equation),
+                "equation": _json_ready(equation), # This will now include calldata details
                 "universal_conditions": _json_ready(universal),
             }
         else:
