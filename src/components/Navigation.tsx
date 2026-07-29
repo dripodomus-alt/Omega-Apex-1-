@@ -12,6 +12,7 @@ export type TabType =
   | 'onchain_parity'
   | 'capital_injector'
   | 'accountant'
+  | 'transient_accounting'
   | 'protocols'
   | 'sonic_master'
   | 'rust_hybrid'
@@ -57,12 +58,13 @@ export const Navigation: React.FC<NavigationProps> = ({
       badge: unresolvedAuditsCount > 0 ? `${unresolvedAuditsCount} Unsynced` : 'Synced & Projected',
       badgeColor: unresolvedAuditsCount > 0 ? 'bg-amber-900/80 text-amber-300' : 'bg-slate-800 text-slate-400',
     },
+    { id: 'transient_accounting', label: 'Transient Accounting', icon: Layers, tier: 'TIER 3 (LEDGER)', badge: 'EIP-1153 Ledger', badgeColor: 'bg-purple-950 text-purple-300 border border-purple-800' },
     { id: 'protocols', label: 'Protocol Registry', icon: Server, tier: 'TIER 3 (LEDGER)', badge: 'Pots Isolated' },
 
     // TIER 4: HIGH-TECH INFRA & INVARIANTS
     { id: 'sonic_master', label: 'Sonic Master & Invariants', icon: Volume2, tier: 'TIER 4 (INFRA)', badge: '20Hz-20kHz DSP', badgeColor: 'bg-cyan-950 text-cyan-300 border border-cyan-800' },
     { id: 'rust_hybrid', label: 'Rust/Python Hybrid', icon: Cpu, tier: 'TIER 4 (INFRA)', badge: 'AAA Audited' },
-    { id: 'math_indexer', label: 'Math Equation Indexer', icon: BookOpen, tier: 'TIER 4 (INFRA)', badge: '7 Indexed' },
+    { id: 'math_indexer', label: 'Math Equation Indexer', icon: BookOpen, tier: 'TIER 4 (INFRA)', badge: '11 Indexed' },
     { id: 'google_drive', label: 'Google Drive Sync', icon: HardDrive, tier: 'TIER 4 (INFRA)', badge: 'Cloud Vault' },
     { id: 'benchmark', label: 'Benchmark Suite', icon: Terminal, tier: 'TIER 4 (INFRA)', badge: 'Readiness' },
     { id: 'ai_assistant', label: 'Gemini AI Assistant', icon: Sparkles, tier: 'TIER 4 (INFRA)', badge: 'Server-Side' },

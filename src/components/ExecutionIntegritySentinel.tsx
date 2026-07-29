@@ -15,8 +15,11 @@ import {
   Activity,
   Award,
   Layers,
+  Hash,
 } from 'lucide-react';
 import { ArbitrageRoute } from '../types';
+import { computeLegLedger } from '../utils/transientAccounting';
+import { TRANSIENT_EPSILON_USD_MAX } from '../config/chainConfig';
 
 interface ExecutionIntegritySentinelProps {
   routes: ArbitrageRoute[];
@@ -545,6 +548,7 @@ export const ExecutionIntegritySentinel: React.FC<ExecutionIntegritySentinelProp
                   <th className="p-3">Yield ($)</th>
                   <th className="p-3">Net Profit ($)</th>
                   <th className="p-3">Pre-Flight Audit</th>
+                  <th className="p-3">Transient Acct</th>
                   <th className="p-3">Relay Dispatch</th>
                 </tr>
               </thead>
@@ -560,6 +564,33 @@ export const ExecutionIntegritySentinel: React.FC<ExecutionIntegritySentinelProp
                         <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                         <span>VERIFIED (0 REVERT)</span>
                       </span>
+                    </td>
+                    <td className="p-3">
+                      {(() => {
+                        const trace = route.transientTrace ?? computeLegLedger(route);
+                        const allPass = trace.legs.every((l) => l.passed);
+                        const maxEps = Math.max(...trace.legs.map((l) => l.residualUSD));
+                        return (
+                          <div className="space-y-0.5">
+                            <span className={`flex items-center gap-1 text-[10px] font-bold ${allPass ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {allPass ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                              <span>{allPass ? 'PASS' : 'MISMATCH'}</span>
+                            </span>
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Activity className="w-2.5 h-2.5" />
+                              <span>ε_max ${maxEps.toFixed(4)}</span>
+                            </div>
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1">
+                              <Layers className="w-2.5 h-2.5" />
+                              <span>{trace.legs.length} legs</span>
+                            </div>
+                            <div className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
+                              <Hash className="w-2.5 h-2.5" />
+                              <span>{trace.integrityHash.slice(0, 10)}…</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className="p-3">
                       <button

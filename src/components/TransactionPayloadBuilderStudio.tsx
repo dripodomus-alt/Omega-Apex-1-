@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import { broadcastEthersOnChainTransaction } from '../utils/ethersBroadcaster';
+import { computeDebtSchedule, djb2HashHex } from '../utils/transientAccounting';
 import {
   Key,
   ShieldCheck,
@@ -10,6 +11,7 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
+  XCircle,
   AlertTriangle,
   FileCode,
   Layers,
@@ -404,7 +406,7 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
             </h2>
 
             <p className="text-xs text-slate-400 font-sans mt-1 max-w-3xl leading-relaxed">
-              Construct, verify reentrancy locks, test Balancer V3 vault allowances, and execute raw EIP-1559 transactions directly against pinned Polygon Mainnet targets <code className="text-cyan-300 font-mono">0x409e...7346</code> and <code className="text-rose-300 font-mono">0x8cD1...b951</code>.
+              Construct, verify reentrancy locks, test Balancer Vault allowances, and execute raw EIP-1559 transactions directly against pinned Polygon Mainnet targets <code className="text-cyan-300 font-mono">0x409e...7346</code> and <code className="text-rose-300 font-mono">0x8cD1...b951</code>.
             </p>
           </div>
 
@@ -561,7 +563,7 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Balancer V3 Vault Allowance:</span>
+                    <span className="text-slate-400">Balancer Vault Allowance:</span>
                     <span className="text-emerald-400 font-bold flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" />
                       <span>UNLIMITED</span>
@@ -720,6 +722,77 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
             </div>
           </div>
 
+          {/* Balancer Vault D₀ Debt & H Integrity Commitment Panel */}
+          {(() => {
+            const debtSchedule = computeDebtSchedule(amountInUSD, 0, amountInUSD + minProfitUSD);
+            // Payload integrity hash: same djb2 algorithm as buildIntegrityHash but
+            // over the payload-level canonical descriptor (target + calldata + amounts + nonce)
+            const stubCanonical = `${targetContractAddress}|${calldata.slice(0, 40)}|${amountInUSD}|${minProfitUSD}|${nonce}`;
+            const H = djb2HashHex(stubCanonical);
+            return (
+              <div className="bg-slate-900 border border-purple-800/60 rounded-2xl p-5 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Database className="w-4 h-4 text-purple-400" />
+                    <span>Balancer Vault Transient Commitment — D₀ Debt & H Integrity Hash</span>
+                  </h3>
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded bg-purple-950 text-purple-300 border border-purple-800">
+                    EIP-1153 TSTORE
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-purple-800/40 space-y-1">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">D₀ — Flashloan Debt Obligation</span>
+                    <span className="text-amber-300 font-bold text-base">${debtSchedule.D0.toLocaleString()} USD</span>
+                    <div className="text-[10px] text-slate-500">Balancer Vault: 0% flash fee (both V2/V3 compat)</div>
+                    <div className="text-[10px] text-emerald-400">
+                      TSTORE(DEBT_SLOT, {debtSchedule.D0.toFixed(2)})
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-purple-800/40 space-y-1">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">SETTLE Pass Condition</span>
+                    <span className={`font-bold flex items-center gap-1 ${debtSchedule.finalRepaymentPassed ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {debtSchedule.finalRepaymentPassed
+                        ? <><CheckCircle2 className="w-3.5 h-3.5" /> B_final ≥ D₀</>
+                        : <><XCircle className="w-3.5 h-3.5" /> B_final &lt; D₀</>}
+                    </span>
+                    <div className="text-[10px] text-slate-500">
+                      Expected profit: ${minProfitUSD.toLocaleString()} USD
+                    </div>
+                    <div className="text-[10px] text-slate-400">
+                      Target: {targetType === 'C1_C2_ARB' ? 'C1/C2 Arbitrage' : 'Liquidation'}
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-950 p-3.5 rounded-xl border border-purple-800/40 space-y-1">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">H — Payload Integrity Hash</span>
+                    <code className="text-indigo-300 text-[10px] break-all">{H.slice(0, 24)}…</code>
+                    <div className="text-[10px] text-slate-500">
+                      TSTORE(INTEGRITY_SLOT, H)
+                    </div>
+                    <button
+                      onClick={() => handleCopyText(H, 'integrity_hash')}
+                      className="text-[10px] text-indigo-400 hover:text-white font-bold flex items-center gap-1 mt-1"
+                    >
+                      {copySuccess === 'integrity_hash' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copySuccess === 'integrity_hash' ? 'Copied' : 'Copy Full Hash'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-400 font-sans">
+                  The Balancer Vault (dual V2/V3 compatible, single address{' '}
+                  <code className="text-purple-300">{POLYGON_CHAIN_CONFIG.balancerVaultAddress.slice(0, 10)}…</code>)
+                  writes D₀ to transient storage at UNLOCK and verifies repayment at SETTLE
+                  within the same flashloan callback. C1/C2 routes repay via swap profit;
+                  LIQUIDATION routes repay via collateral bonus proceeds.
+                </p>
+              </div>
+            );
+          })()}
+
           {/* Live eth_call Pre-Flight Simulation Audit Results */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -744,12 +817,12 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
               </div>
 
               <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 space-y-1">
-                <span className="text-slate-400 block text-[10px] uppercase font-bold">Balancer V3 Vault Allowance</span>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Balancer Vault Allowance</span>
                 <span className="text-emerald-400 font-bold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>Approved (0 Gas Cost)</span>
                 </span>
-                <div className="text-[10px] text-slate-500 truncate">Vault: 0xBA122222...2C8</div>
+                <div className="text-[10px] text-slate-500 truncate">Balancer Vault: 0xBA12222...2C8 (V2/V3 Dual Compat)</div>
               </div>
 
               <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 space-y-1">

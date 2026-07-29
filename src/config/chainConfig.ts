@@ -29,8 +29,8 @@ export const POLYGON_CHAIN_CONFIG = {
   algebraFactory: '0x411b0fAcC3489691f28ad58c47006AF5E3Ab3A28',
   algebraQuoter: '0xa15F0D7377B2A0C0c10db057f641beD21028FC89',
   algebraRouter: '0xf5b509bB0909a69B1c207E495f687a596C168E12',
-  balancerV2Vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-  balancerV3Vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+  balancerVaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+  // Single vault address provides dual V2/V3 compatibility for flashloan capital
   curveAddressProvider: '0x0000000022D53366457F9d5E68Ec105046FC4383',
 
   // Custom Omega Adapters
@@ -61,3 +61,37 @@ export const POLYGON_CHAIN_CONFIG = {
 
 /** Current POL/USD spot price used for USD-denominated balance display. */
 export const POL_PRICE_USD = 0.073;
+
+/**
+ * Maximum allowed per-leg accounting residual (ε_allowed) for the off-chain
+ * transient storage conservation check.  Any leg whose |ε_j| exceeds this
+ * threshold is flagged as TRANSIENT_LEG_ACCOUNTING_MISMATCH.
+ * Units: USD
+ */
+export const TRANSIENT_EPSILON_USD_MAX = 0.01;
+
+/**
+ * Aave V3 liquidation parameters (Polygon mainnet defaults).
+ * Move these values if different deployments require different rates.
+ */
+export const AAVE_LIQUIDATION_FEE_RATE = 0.0009;    // 9 bps Aave protocol fee
+export const AAVE_LIQUIDATION_BONUS = 0.075;         // 7.5% collateral bonus
+
+/**
+ * Reserve multipliers applied per execution leg to estimate worst-case
+ * gas, MEV tip, risk buffer, and model-derived adverse-cost contributions.
+ * Values are fractions of the leg's gross output (amountOut).
+ */
+export const RESERVE_RATES = {
+  // Standard SWAP legs
+  gasReserve: 0.0012,
+  tip: 0.0004,
+  risk: 0.0008,
+  model: 0.0006,
+
+  // AAVE_LIQUIDATION legs (slightly higher gas + risk)
+  liquidationGasReserve: 0.0018,
+  liquidationTip: 0.0004,
+  liquidationRisk: 0.0012,
+  liquidationModel: 0.0008,
+} as const;

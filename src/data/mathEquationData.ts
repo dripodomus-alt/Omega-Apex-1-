@@ -299,4 +299,109 @@ export const INDEXED_MATH_EQUATIONS: MathEquation[] = [
       'Step 3: Measure Z-basis observable to calculate VQC Alpha Ranker score.',
     ],
   },
+
+  // ── TRANSIENT ACCOUNTING EQUATIONS (EIP-1153 off-chain simulation) ──────
+
+  {
+    id: 'eq_transient_state_vector',
+    title: '8. Canonical Transient State Vector z_j (EIP-1153 Accounting)',
+    category: 'TRANSIENT_ACCOUNTING',
+    latexFormula:
+      '\\mathbf{z}_{j+1} = \\Phi_j\\!\\left(\\mathbf{z}_j,\\, \\mathbf{x}_j,\\, \\boldsymbol{\\theta}_j\\right)',
+    plainFormula: 'z[j+1] = Phi_j( z[j], x[j], theta[j] )',
+    summary:
+      'Each route leg j transforms the 8-slot transient state vector ' +
+      'z = [B, D, F, G, T, R, M, H] through the protocol-specific transition ' +
+      'function Phi_j, binding inventory value, debt, fees, gas, tip, risk ' +
+      'reserve, model reserve, and integrity hash.',
+    variableMap: [
+      { symbol: 'z_j', name: 'Transient State at Leg j', routeSourceKey: 'transientTrace.legs[j]', exampleVal: '[B=28500, D=28500, F=1.42, G=0.52, T=0.18, R=0.22, M=0.17, H=0x...]', unit: '8-slot vector', description: 'Full accounting state written to EIP-1153 transient storage slots.' },
+      { symbol: 'B_j', name: 'Inventory Value', routeSourceKey: 'leg.amountOut', exampleVal: '$28,642', unit: 'USD', description: 'Running token balance held by executor after leg j.' },
+      { symbol: 'D_j', name: 'Debt Obligation', routeSourceKey: 'transientTrace.debtWithFee', exampleVal: '$28,500', unit: 'USD', description: 'Flashloan principal + fee. Stays constant D₀ until SETTLE.' },
+      { symbol: 'H_j', name: 'Integrity Hash', routeSourceKey: 'transientTrace.integrityHash', exampleVal: '0x3f2a...b8c1', unit: 'bytes32', description: 'TSTORE commitment over route path, pools, and amounts.' },
+    ],
+    derivationSteps: [
+      'Step 1: Balancer Vault UNLOCK — TSTORE(DEBT_SLOT, D₀ = borrowedAmount × (1 + fee)).',
+      'Step 2: For each leg j: execute Phi_j (swap or liquidation), update B_j and F_j.',
+      'Step 3: TSTORE(INTEGRITY_SLOT, H_j = keccak(routeId | pools | amounts)).',
+      'Step 4: Balancer Vault SETTLE — TLOAD(DEBT_SLOT), verify B_final ≥ D₀, TSTORE(DEBT_SLOT, 0).',
+    ],
+  },
+
+  {
+    id: 'eq_transient_token_ledger',
+    title: '9. Token-Level Transient Ledger Update Rule L_j(a)',
+    category: 'TRANSIENT_ACCOUNTING',
+    latexFormula:
+      'L_j(a) = L_{j-1}(a) + I_j(a) - O_j(a) - C_j(a)',
+    plainFormula: 'L[j](a) = L[j-1](a) + inflow[j](a) - outflow[j](a) - cost[j](a)',
+    summary:
+      'Running transient balance of asset a after leg j. ' +
+      'Starts at L₀(b) = Q_borrowed for the flash-borrowed token, 0 for all others. ' +
+      'Each swap leg debits the input asset and credits the output asset.',
+    variableMap: [
+      { symbol: 'L_j(a)', name: 'Transient Balance of Asset a', routeSourceKey: 'Derived per leg', exampleVal: '$28,642', unit: 'USD', description: 'TLOAD / TSTORE per token address per leg.' },
+      { symbol: 'I_j(a)', name: 'Asset Received at Leg j', routeSourceKey: 'leg.amountOut', exampleVal: '$28,642', unit: 'USD', description: 'Amount of asset a received during leg j.' },
+      { symbol: 'O_j(a)', name: 'Asset Sent at Leg j', routeSourceKey: 'leg.amountIn', exampleVal: '$28,500', unit: 'USD', description: 'Amount of asset a transferred out during leg j.' },
+      { symbol: 'C_j(a)', name: 'Asset Cost at Leg j', routeSourceKey: 'leg.feeUSD', exampleVal: '$1.43', unit: 'USD', description: 'Protocol fee + gas reserve denominated in asset a.' },
+    ],
+    derivationSteps: [
+      'Step 1: At flash borrow: TSTORE(BALANCE_SLOT[borrowedToken], Q_borrowed).',
+      'Step 2: On each swap leg: TSTORE(BALANCE_SLOT[tokenIn], L[j-1](tokenIn) - amountIn).',
+      'Step 3: TSTORE(BALANCE_SLOT[tokenOut], L[j-1](tokenOut) + amountOut).',
+      'Step 4: At SETTLE: TLOAD all balance slots and verify net is sufficient to repay D₀.',
+    ],
+  },
+
+  {
+    id: 'eq_transient_conservation',
+    title: '10. Per-Leg Conservation Check (ε_j ≤ ε_allowed)',
+    category: 'TRANSIENT_ACCOUNTING',
+    latexFormula:
+      '\\epsilon_j = \\left|V_j^{\\text{before}} - V_j^{\\text{after}} - C_j - \\Delta_j^{\\text{market}}\\right| \\leq \\varepsilon_{\\text{allowed}}',
+    plainFormula: 'epsilon[j] = |valueBefore - valueAfter - cost - deltaMarket| <= epsilon_max',
+    summary:
+      "Mandatory per-leg conservation check. If any leg's residual |ε_j| exceeds " +
+      'ε_allowed, the contract must revert with TRANSIENT_LEG_ACCOUNTING_MISMATCH. ' +
+      'ε_allowed = $0.01 USD (configurable in chainConfig.ts).',
+    variableMap: [
+      { symbol: 'epsilon_j', name: 'Per-Leg Accounting Residual', routeSourceKey: 'leg.residualUSD', exampleVal: '$0.0000', unit: 'USD', description: 'Must be ≤ ε_allowed; otherwise revert.' },
+      { symbol: 'C_j', name: 'Disclosed Leg Cost', routeSourceKey: 'leg.feeUSD + leg.gasReserveUSD + ...', exampleVal: '$2.05', unit: 'USD', description: 'Sum of protocol fee, gas, tip, risk, model reserves.' },
+      { symbol: 'Delta_market', name: 'Price Impact / AMM Slippage', routeSourceKey: 'idealOut - actualOut', exampleVal: '$0.83', unit: 'USD', description: 'Value change from AMM curve execution (slippage).' },
+      { symbol: 'epsilon_allowed', name: 'Max Allowed Residual', routeSourceKey: 'TRANSIENT_EPSILON_USD_MAX', exampleVal: '$0.01', unit: 'USD', description: 'Configurable threshold in src/config/chainConfig.ts.' },
+    ],
+    derivationSteps: [
+      'Step 1: Before leg j, record V_before = TLOAD(INVENTORY_SLOT).',
+      'Step 2: Execute leg (swap or liquidation), record V_after and all cost components.',
+      'Step 3: Compute epsilon_j = |V_before - V_after - C_j - Delta_market|.',
+      'Step 4: If epsilon_j > epsilon_allowed → REVERT("TRANSIENT_LEG_ACCOUNTING_MISMATCH").',
+    ],
+  },
+
+  {
+    id: 'eq_transient_debt_schedule',
+    title: '11. Transient Debt Schedule — Balancer Vault Unlock/Settle (D₀)',
+    category: 'TRANSIENT_ACCOUNTING',
+    latexFormula:
+      'D_0 = Q_{\\text{borrowed}} \\cdot (1 + \\gamma_{\\text{flash}})\\qquad ' +
+      '\\text{SETTLE: } B_{\\text{final}} \\geq D_0',
+    plainFormula: 'D0 = borrowedAmount * (1 + flashFeeRate);  assert finalInventory >= D0',
+    summary:
+      'The Balancer Vault (dual V2/V3 compatible) opens D₀ at UNLOCK and verifies ' +
+      'repayment at SETTLE within the same flashloan callback. For the Balancer Vault ' +
+      'on Polygon both compatibility modes charge 0% flash fee (γ_flash = 0), so ' +
+      'D₀ = Q_borrowed exactly. C1/C2 routes repay with swap profit. ' +
+      'LIQUIDATION routes repay with collateral bonus proceeds.',
+    variableMap: [
+      { symbol: 'D_0', name: 'Flashloan Debt Obligation', routeSourceKey: 'transientTrace.debtWithFee', exampleVal: '$28,500', unit: 'USD', description: 'TSTORE(DEBT_SLOT, D₀) at Balancer Vault UNLOCK.' },
+      { symbol: 'gamma_flash', name: 'Balancer Vault Flash Fee Rate', routeSourceKey: 'BALANCER_VAULT_FLASH_FEE = 0', exampleVal: '0.0000 (0 bps)', unit: 'Fraction', description: 'Balancer Vault charges 0% on both V2 and V3 compat modes on Polygon.' },
+      { symbol: 'B_final', name: 'Final Inventory After All Legs', routeSourceKey: 'Last leg amountOut', exampleVal: '$28,642', unit: 'USD', description: 'Must be ≥ D₀ for SETTLE to succeed. Excess = profit.' },
+    ],
+    derivationSteps: [
+      'Step 1 (UNLOCK): Balancer Vault calls receiveFlashLoan() on executor. TSTORE(DEBT_SLOT, D₀).',
+      'Step 2: Execute all swap / liquidation legs — inventory grows via arbitrage or liquidation bonus.',
+      'Step 3 (SETTLE): At end of callback, TLOAD(DEBT_SLOT). Assert B_final ≥ D₀.',
+      'Step 4: Transfer D₀ tokens back to Balancer Vault. TSTORE(DEBT_SLOT, 0). Profit = B_final - D₀.',
+    ],
+  },
 ];

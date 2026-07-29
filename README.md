@@ -353,6 +353,36 @@ The navigation surface exposes:
 - Gemini AI assistant
 - Live-mainnet guide
 
+### Transient Accounting Studio (EIP-1153)
+
+The Transient Accounting Studio provides an off-chain simulation of the EIP-1153 transient
+storage ledger that runs inside the executor contract during a flashloan callback chain.
+
+Key features:
+
+- **Execution-type awareness**: C1 (forward arbitrage), C2 (reverse/mirror arbitrage), and
+  LIQUIDATION (Aave V3 borrower) paths are each modelled with the correct leg sequence.
+- **Pool-role awareness**: pools classified as `FUNDING_FLASHLOAN` (Balancer Vault source),
+  `SWAPPABLE_EXECUTION` (AMM swap hops), and `LIQUIDATION_TARGET` (Aave collateral/debt)
+  produce the correct accounting phase for each leg.
+- **Balancer Vault (dual V2/V3 compatible)**: both compatibility modes are addressed via a
+  single vault address. Flash fee = 0% in both modes on Polygon.
+- **UNLOCK / SETTLE lifecycle**: D₀ is opened at Balancer Vault UNLOCK, carried unchanged
+  through intermediate legs, and verified at SETTLE. Profit = B_final − D₀.
+- **Per-leg conservation checks**: each leg verifies |ε_j| ≤ ε_allowed ($0.01 USD by default
+  — configurable in `src/config/chainConfig.ts`). Any violation surfaces as
+  `TRANSIENT_LEG_ACCOUNTING_MISMATCH`.
+- **Integrity hash H_j**: deterministic commitment over route path, pool addresses, feeBps,
+  and amounts. Displayed as a 64-char hex string (TSTORE(INTEGRITY_SLOT, H_j)).
+- **B_j / D_j / F_j timeline chart**: Recharts line chart showing running inventory, debt,
+  and fee accumulation across all legs.
+- **AccountantStream drawer**: click the "Trace" button on any audit log row in the
+  Accountant Stream to open the Transient Accounting Studio for that route inline.
+- **ExecutionIntegritySentinel badge**: every route in the pre-flight dispatch table now
+  shows its transient accounting status (ε_max, legs checked, H truncated).
+- **TransactionPayloadBuilder panel**: shows computed D₀, SETTLE pass condition, and the
+  payload integrity hash before any transaction is submitted.
+
 ## Setup
 
 ```bash

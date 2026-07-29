@@ -22,6 +22,7 @@ import { C1C2CycleLoggingStudio } from './components/C1C2CycleLoggingStudio';
 import { ApexOptimizationStudio } from './components/ApexOptimizationStudio';
 import { Top50ExecutionStudio } from './components/Top50ExecutionStudio';
 import { NinetyDaySimulationStudio } from './components/NinetyDaySimulationStudio';
+import { TransientAccountingStudio } from './components/TransientAccountingStudio';
 
 import {
   INITIAL_POOLS,
@@ -31,6 +32,7 @@ import {
 } from './data/mockEngineData';
 import { ArbitrageRoute, SimulationAuditLog } from './types';
 import { validateRouteAssetRegistry } from './utils/mathEngine';
+import { computeLegLedger } from './utils/transientAccounting';
 import {
   loadSystemMemory,
   saveSystemMemory,
@@ -228,7 +230,8 @@ export default function App() {
       ...targetRoute,
       stage: 'ACCOUNTED' as const,
       txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      notes: 'Mined on Polygon Mainnet. Balancer V3 transient storage flashloan repaid successfully. Verified registry pool assets.',
+      notes: 'Mined on Polygon Mainnet. Balancer Vault transient flashloan repaid successfully. Verified registry pool assets.',
+      transientTrace: computeLegLedger(targetRoute),
     };
 
     setRoutes((prev) =>
@@ -524,9 +527,14 @@ export default function App() {
         {activeTab === 'accountant' && (
           <AccountantStreamStudio
             logs={auditLogs}
+            routes={routes}
             onFlushBatchToSQL={handleFlushBatchToSQL}
             isFlushing={isFlushing}
           />
+        )}
+
+        {activeTab === 'transient_accounting' && (
+          <TransientAccountingStudio routes={routes} />
         )}
 
         {activeTab === 'benchmark' && (
