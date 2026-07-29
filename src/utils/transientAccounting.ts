@@ -41,7 +41,27 @@ import { TRANSIENT_EPSILON_USD_MAX } from '../config/chainConfig';
  * djb2 polynomial hash over the canonical route descriptor.  Returns a
  * 0x-prefixed 64-char hex string that can be stored in transient slot H_j
  * on-chain (via TSTORE) and verified before each leg executes.
+ *
+ * The underlying hash primitive is exported as `djb2HashHex` so callers
+ * that need to hash a non-route canonical string (e.g. the payload builder)
+ * can reuse the same algorithm without duplicating it.
  */
+
+/**
+ * Core primitive: djb2 polynomial hash over 8 independent words.
+ * Returns a 0x-prefixed 64-character hex string (256 bits).
+ */
+export function djb2HashHex(canonical: string): string {
+  const words = new Uint32Array(8);
+  for (let i = 0; i < canonical.length; i++) {
+    const ch = canonical.charCodeAt(i);
+    for (let w = 0; w < 8; w++) {
+      words[w] = Math.imul(words[w], 33) ^ (ch + w * 0x9e3779b9);
+    }
+  }
+  return '0x' + Array.from(words).map((n) => (n >>> 0).toString(16).padStart(8, '0')).join('');
+}
+
 export function buildIntegrityHash(route: ArbitrageRoute): string {
   const canonical = [
     route.id,
@@ -51,16 +71,7 @@ export function buildIntegrityHash(route: ArbitrageRoute): string {
     route.optimalInputUSD.toFixed(6),
     route.grossProfitUSD.toFixed(6),
   ].join('|');
-
-  const words = new Uint32Array(8);
-  for (let i = 0; i < canonical.length; i++) {
-    const ch = canonical.charCodeAt(i);
-    for (let w = 0; w < 8; w++) {
-      // djb2 variant — extended to 8 words
-      words[w] = Math.imul(words[w], 33) ^ (ch + w * 0x9e3779b9);
-    }
-  }
-  return '0x' + Array.from(words).map((n) => (n >>> 0).toString(16).padStart(8, '0')).join('');
+  return djb2HashHex(canonical);
 }
 
 // ---------------------------------------------------------------------------
@@ -73,11 +84,17 @@ export interface ConservationCheckResult {
 }
 
 /**
- * Per-leg conservation equation:
+ * Per-leg conservation equation (spec §3):
  *   valueBefore + externalInflow == valueAfter + cost + deltaMarket  (±ε)
  *
- * externalInflow = 0 for normal legs.
- * deltaMarket    = price-impact value change (negative for slippage).
+ * Sign conventions:
+ *   cost        — always positive (protocol fees + gas + reserves)
+ *   deltaMarket — signed as a **cost** (positive = slippage / value lost to AMM;
+ *                 negative = net value inflow, e.g. the Aave liquidation bonus)
+ *   externalInflow — folded into deltaMarket for this implementation (always 0 here)
+ *
+ * Rearranging with externalInflow = 0:
+ *   residual = |valueBefore − valueAfter − cost − deltaMarket|
  *
  * Rejects with TRANSIENT_LEG_ACCOUNTING_MISMATCH if |ε_j| > epsilon.
  */
@@ -88,6 +105,8 @@ export function checkConservation(
   deltaMarket: number,
   epsilon: number = TRANSIENT_EPSILON_USD_MAX
 ): ConservationCheckResult {
+  // residual = |valueBefore − valueAfter − cost − deltaMarket|
+  // When deltaMarket < 0 (e.g. liquidation bonus), it effectively adds to valueAfter.
   const residualUSD = Math.abs(valueBefore - valueAfter - cost - deltaMarket);
   return { passed: residualUSD <= epsilon, residualUSD };
 }
@@ -257,8 +276,11 @@ export function computeLegLedger(
       tipUSD = amountOut * 0.0004;
       riskReserveUSD = amountOut * 0.0012;
       modelReserveUSD = amountOut * 0.0008;
-      // For liquidation, deltaMarket is the bonus (positive value inflow)
-      deltaMarket = -(liq.bonusUSD); // bonus reduces the "unexplained residual"
+      // deltaMarket is signed as a **cost** (positive = value lost to AMM).
+      // The Aave liquidation bonus is a net value inflow, so it must be stored as a
+      // negative deltaMarket value — this offsets the cost in the conservation check,
+      // keeping the residual within ε_allowed.
+      deltaMarket = -(liq.bonusUSD);
     } else {
       // ── Standard SWAP leg (CPMM / CLMM / Algebra / Curve / Balancer pool) ─
       amountOut = computeSwapOutput(inventory, pool);

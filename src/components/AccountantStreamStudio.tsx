@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SimulationAuditLog, ArbitrageRoute } from '../types';
 import { MonthlyProfitProjectionChart } from './MonthlyProfitProjectionChart';
 import { TransactionConfirmationRunner } from './TransactionConfirmationRunner';
@@ -78,9 +78,10 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
 
   // Transient Accounting Drawer
   const [drawerRouteId, setDrawerRouteId] = useState<string | null>(null);
-  const drawerRoutes: ArbitrageRoute[] = drawerRouteId
-    ? routes.filter((r) => r.id === drawerRouteId)
-    : [];
+  const drawerRoutes: ArbitrageRoute[] = useMemo(
+    () => (drawerRouteId ? routes.filter((r) => r.id === drawerRouteId) : []),
+    [drawerRouteId, routes]
+  );
 
   // Auto-Flush Configuration State (>50 entries rule)
   const [isAutoFlushEnabled, setIsAutoFlushEnabled] = useState<boolean>(true);

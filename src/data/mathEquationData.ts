@@ -361,7 +361,7 @@ export const INDEXED_MATH_EQUATIONS: MathEquation[] = [
       '\\epsilon_j = \\left|V_j^{\\text{before}} - V_j^{\\text{after}} - C_j - \\Delta_j^{\\text{market}}\\right| \\leq \\varepsilon_{\\text{allowed}}',
     plainFormula: 'epsilon[j] = |valueBefore - valueAfter - cost - deltaMarket| <= epsilon_max',
     summary:
-      'Mandatory per-leg conservation check. If any leg\'s residual |ε_j| exceeds ' +
+      "Mandatory per-leg conservation check. If any leg's residual |ε_j| exceeds " +
       'ε_allowed, the contract must revert with TRANSIENT_LEG_ACCOUNTING_MISMATCH. ' +
       'ε_allowed = $0.01 USD (configurable in chainConfig.ts).',
     variableMap: [

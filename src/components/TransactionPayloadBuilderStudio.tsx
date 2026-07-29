@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import { broadcastEthersOnChainTransaction } from '../utils/ethersBroadcaster';
-import { buildIntegrityHash, computeDebtSchedule } from '../utils/transientAccounting';
+import { computeDebtSchedule, djb2HashHex } from '../utils/transientAccounting';
 import {
   Key,
   ShieldCheck,
@@ -725,16 +725,10 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
           {/* Balancer Vault D₀ Debt & H Integrity Commitment Panel */}
           {(() => {
             const debtSchedule = computeDebtSchedule(amountInUSD, 0, amountInUSD + minProfitUSD);
-            // Stub integrity hash using calldata + target + nonce as canonical input
+            // Payload integrity hash: same djb2 algorithm as buildIntegrityHash but
+            // over the payload-level canonical descriptor (target + calldata + amounts + nonce)
             const stubCanonical = `${targetContractAddress}|${calldata.slice(0, 40)}|${amountInUSD}|${minProfitUSD}|${nonce}`;
-            let words = new Uint32Array(8);
-            for (let i = 0; i < stubCanonical.length; i++) {
-              const ch = stubCanonical.charCodeAt(i);
-              for (let w = 0; w < 8; w++) {
-                words[w] = Math.imul(words[w], 33) ^ (ch + w * 0x9e3779b9);
-              }
-            }
-            const H = '0x' + Array.from(words).map((n) => (n >>> 0).toString(16).padStart(8, '0')).join('');
+            const H = djb2HashHex(stubCanonical);
             return (
               <div className="bg-slate-900 border border-purple-800/60 rounded-2xl p-5 space-y-4 shadow-xl">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
