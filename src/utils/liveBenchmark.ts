@@ -73,7 +73,8 @@ function rpcPost(endpoint: string, method: string, params: unknown[] = []): Prom
 // ─── Sigmoid used in VQC scoring ─────────────────────────────────────────────
 
 function sigmoid(x: number): number {
-  return 1 / (1 + Math.exp(-x));
+  const clampedX = Math.max(-500, Math.min(500, x));
+  return 1 / (1 + Math.exp(-clampedX));
 }
 
 // ─── Step 1: RPC Connectivity & Live Block Height ────────────────────────────

@@ -39,7 +39,7 @@ export function usePolygonGasTracker(
   const prevGasRef = useRef<number>(initialGwei);
 
   const updateGasState = useCallback((newGwei: number, type: GasConnectionType) => {
-    const rounded = Math.max(15, Math.round(newGwei));
+    const rounded = Math.max(15, Math.min(150, Math.round(newGwei)));
     const prev = prevGasRef.current;
     
     if (rounded > prev) {
@@ -111,7 +111,7 @@ export function usePolygonGasTracker(
     if (!fetched) {
       // Generate realistic Polygon EIP-1559 base fee simulation (+/- 3 Gwei jitter around 32-55 Gwei)
       const baseJitter = (Math.random() - 0.48) * 6;
-      const simulatedGwei = Math.max(18, Math.min(120, prevGasRef.current + baseJitter));
+      const simulatedGwei = Math.max(15, Math.min(150, prevGasRef.current + baseJitter));
       updateGasState(simulatedGwei, 'simulated');
     }
   }, [updateGasState]);

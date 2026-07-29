@@ -49,6 +49,11 @@ import {
 } from './lib/firebase';
 import { runLiveBenchmark, StepUpdateCallback, PENDING_BENCHMARK_REPORT } from './utils/liveBenchmark';
 
+const MIN_TICKER_GROSS_USD = 50;
+const MAX_TICKER_GROSS_MULTIPLIER = 2;
+const MIN_TICKER_GAS_USD = 0.3;
+const MAX_TICKER_GAS_USD = 0.75;
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('top50_execution');
   
@@ -117,13 +122,15 @@ export default function App() {
 
           // Fluctuate gross profit slightly between -0.8% and +1.2%
           const pctChange = (Math.random() * 0.02) - 0.008;
-          const newGross = Math.max(50, Number((r.grossProfitUSD * (1 + pctChange)).toFixed(2)));
-          const gasAdjustment = Number((0.45 + Math.random() * 0.25).toFixed(2));
-          const newNet = Math.max(10, Number((newGross - gasAdjustment).toFixed(2)));
+          const grossCandidate = Number((r.grossProfitUSD * (1 + pctChange)).toFixed(2));
+          // Keep a hard safety floor while limiting per-tick upside to prevent sudden chart blowouts.
+          const newGross = Math.max(MIN_TICKER_GROSS_USD, Math.min(r.grossProfitUSD * MAX_TICKER_GROSS_MULTIPLIER, grossCandidate));
+          const gasAdjustment = Math.max(MIN_TICKER_GAS_USD, Math.min(MAX_TICKER_GAS_USD, Number((0.45 + Math.random() * 0.25).toFixed(2))));
+          const newNet = Math.max(0, Number((newGross - gasAdjustment).toFixed(2)));
 
           // Fluctuate VQC score slightly
           const vqcDelta = (Math.random() * 0.01) - 0.004;
-          const newVqc = Math.min(0.995, Math.max(0.75, Number((r.vqcAlphaScore + vqcDelta).toFixed(3))));
+          const newVqc = Math.min(0.99, Math.max(0.7, Number((r.vqcAlphaScore + vqcDelta).toFixed(3))));
 
           // Append to history for real-time sparkline updating
           const currentHistory = r.vqcAlphaHistory || [0.88, 0.91, 0.93, 0.89, newVqc];

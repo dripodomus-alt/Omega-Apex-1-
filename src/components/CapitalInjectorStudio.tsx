@@ -340,6 +340,9 @@ export const CapitalInjectorStudio: React.FC<CapitalInjectorStudioProps> = ({ se
 
 // Sub-component for Batch Calculus Apex Solver
 const BatchApexSolverMatrix: React.FC = () => {
+  const BATCH_DEFAULT_SWAP_FEE_BPS = 30;
+  const BATCH_DEFAULT_FLASH_FEE_BPS = 5;
+  const BATCH_DEFAULT_GAS_USD = 0.45;
   const [isSolvingBatch, setIsSolvingBatch] = useState(false);
   const [batchApexRoutes, setBatchApexRoutes] = useState([
     {
@@ -385,12 +388,20 @@ const BatchApexSolverMatrix: React.FC = () => {
     setTimeout(() => {
       setBatchApexRoutes((prev) =>
         prev.map((r) => {
-          const newOptimal = Math.round(r.rInUSD * (0.1 + Math.random() * 0.1));
-          const newProfit = Number((newOptimal * 0.0035 + Math.random() * 200).toFixed(2));
+          const calibratedApex = solveProfitApex(
+            r.rInUSD,
+            r.rOutUSD,
+            BATCH_DEFAULT_SWAP_FEE_BPS,
+            BATCH_DEFAULT_FLASH_FEE_BPS,
+            BATCH_DEFAULT_GAS_USD
+          );
+          // Defensive fallback keeps the matrix stable if upstream values ever produce non-finite math outputs.
+          const safeOptimalInput = Number.isFinite(calibratedApex.optimalInputUSD) ? calibratedApex.optimalInputUSD : 0;
+          const safeNetProfit = Number.isFinite(calibratedApex.maxNetProfitUSD) ? calibratedApex.maxNetProfitUSD : 0;
           return {
             ...r,
-            optimalInputUSD: newOptimal,
-            maxProfitUSD: newProfit,
+            optimalInputUSD: Math.round(safeOptimalInput),
+            maxProfitUSD: Number(safeNetProfit.toFixed(2)),
             status: 'SOLVED (0.12ms)',
           };
         })
