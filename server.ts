@@ -2,6 +2,37 @@ import express from 'express';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
+import Redis from 'ioredis';
+import { Pool } from 'pg';
+
+// ─── Redis client (lazy — only created when env vars are present) ─────────────
+
+let redisClient: Redis | null = null;
+
+function getRedisClient(): Redis | null {
+  if (redisClient) return redisClient;
+  const url = process.env.REDIS_URL;
+  if (!url) return null;
+  redisClient = new Redis(url, { lazyConnect: true, connectTimeout: 5000, maxRetriesPerRequest: 1 });
+  redisClient.on('error', () => { /* suppress uncaught errors — handled per-request */ });
+  return redisClient;
+}
+
+// ─── Cloud SQL (PostgreSQL) pool (lazy) ───────────────────────────────────────
+
+let pgPool: Pool | null = null;
+
+function getPgPool(): Pool | null {
+  if (pgPool) return pgPool;
+  const host = process.env.CLOUD_SQL_HOST;
+  const port = parseInt(process.env.CLOUD_SQL_PORT || '5432', 10);
+  const database = process.env.CLOUD_SQL_DATABASE;
+  const user = process.env.CLOUD_SQL_USER;
+  const password = process.env.CLOUD_SQL_PASSWORD;
+  if (!host || !database || !user || !password) return null;
+  pgPool = new Pool({ host, port, database, user, password, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 5000, max: 5 });
+  return pgPool;
+}
 
 async function startServer() {
   const app = express();
@@ -22,6 +53,166 @@ async function startServer() {
       redisStream: 'omega:audit:simulations',
       timestamp: new Date().toISOString(),
     });
+  });
+
+  // ─── Redis Endpoints ──────────────────────────────────────────────────────
+
+  /** Ping Redis and return latency */
+  app.get('/api/redis/ping', async (req, res) => {
+    const redis = getRedisClient();
+    if (!redis) {
+      return res.status(503).json({ connected: false, error: 'REDIS_URL not configured' });
+    }
+    const t0 = Date.now();
+    try {
+      await redis.ping();
+      res.json({ connected: true, latencyMs: Date.now() - t0 });
+    } catch (err: any) {
+      res.status(503).json({ connected: false, error: err.message });
+    }
+  });
+
+  /** Read routes from Redis hash OMEGA:routes */
+  app.get('/api/redis/routes', async (req, res) => {
+    const redis = getRedisClient();
+    if (!redis) return res.status(503).json({ error: 'REDIS_URL not configured' });
+    try {
+      const raw = await redis.hgetall('OMEGA:routes');
+      const routes = Object.values(raw || {}).map((v) => JSON.parse(v));
+      res.json({ routes });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /** Write a route to Redis hash OMEGA:routes */
+  app.post('/api/redis/routes', async (req, res) => {
+    const redis = getRedisClient();
+    if (!redis) return res.status(503).json({ error: 'REDIS_URL not configured' });
+    const route = req.body;
+    if (!route?.id) return res.status(400).json({ error: 'route.id required' });
+    try {
+      await redis.hset('OMEGA:routes', route.id, JSON.stringify(route));
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /** Read audit logs from Redis stream omega:audit:simulations (last 500) */
+  app.get('/api/redis/audit-logs', async (req, res) => {
+    const redis = getRedisClient();
+    if (!redis) return res.status(503).json({ error: 'REDIS_URL not configured' });
+    try {
+      const entries = await redis.xrevrange('omega:audit:simulations', '+', '-', 'COUNT', 500);
+      const logs = entries.map(([id, fields]) => {
+        const obj: Record<string, string> = {};
+        for (let i = 0; i < fields.length; i += 2) obj[fields[i]] = fields[i + 1];
+        return { _streamId: id, ...JSON.parse(obj.payload || '{}') };
+      });
+      res.json({ logs });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /** Append an audit log to Redis stream */
+  app.post('/api/redis/audit-logs', async (req, res) => {
+    const redis = getRedisClient();
+    if (!redis) return res.status(503).json({ error: 'REDIS_URL not configured' });
+    const log = req.body;
+    if (!log?.id) return res.status(400).json({ error: 'log.id required' });
+    try {
+      const streamId = await redis.xadd('omega:audit:simulations', '*', 'payload', JSON.stringify(log));
+      res.json({ ok: true, streamId });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ─── Cloud SQL Endpoints ──────────────────────────────────────────────────
+
+  /** Ping Cloud SQL */
+  app.get('/api/sql/ping', async (req, res) => {
+    const pool = getPgPool();
+    if (!pool) {
+      return res.status(503).json({ connected: false, error: 'CLOUD_SQL_* env vars not configured' });
+    }
+    const t0 = Date.now();
+    try {
+      await pool.query('SELECT 1');
+      res.json({ connected: true, latencyMs: Date.now() - t0 });
+    } catch (err: any) {
+      res.status(503).json({ connected: false, error: err.message });
+    }
+  });
+
+  /** Read routes from Cloud SQL table omega_routes */
+  app.get('/api/sql/routes', async (req, res) => {
+    const pool = getPgPool();
+    if (!pool) return res.status(503).json({ error: 'CLOUD_SQL_* env vars not configured' });
+    try {
+      const { rows } = await pool.query(
+        'SELECT payload FROM omega_routes ORDER BY updated_at DESC LIMIT 500'
+      );
+      const routes = rows.map((r) => r.payload);
+      res.json({ routes });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /** Upsert a route into Cloud SQL */
+  app.post('/api/sql/routes', async (req, res) => {
+    const pool = getPgPool();
+    if (!pool) return res.status(503).json({ error: 'CLOUD_SQL_* env vars not configured' });
+    const route = req.body;
+    if (!route?.id) return res.status(400).json({ error: 'route.id required' });
+    try {
+      await pool.query(
+        `INSERT INTO omega_routes (id, payload, updated_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (id) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
+        [route.id, route]
+      );
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /** Read audit logs from Cloud SQL table omega_audit_logs */
+  app.get('/api/sql/audit-logs', async (req, res) => {
+    const pool = getPgPool();
+    if (!pool) return res.status(503).json({ error: 'CLOUD_SQL_* env vars not configured' });
+    try {
+      const { rows } = await pool.query(
+        'SELECT payload FROM omega_audit_logs ORDER BY created_at DESC LIMIT 500'
+      );
+      const logs = rows.map((r) => r.payload);
+      res.json({ logs });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  /** Insert an audit log into Cloud SQL */
+  app.post('/api/sql/audit-logs', async (req, res) => {
+    const pool = getPgPool();
+    if (!pool) return res.status(503).json({ error: 'CLOUD_SQL_* env vars not configured' });
+    const log = req.body;
+    if (!log?.id) return res.status(400).json({ error: 'log.id required' });
+    try {
+      await pool.query(
+        `INSERT INTO omega_audit_logs (id, payload, created_at)
+         VALUES ($1, $2, NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [log.id, log]
+      );
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Gemini Route Analysis Endpoint

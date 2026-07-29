@@ -75,3 +75,21 @@ export {
   syncAuditLogToFirestore,
   subscribeAuditLogsFromFirestore,
 } from './firestoreService';
+
+// Re-export Redis data-access helpers (server-proxied).
+export {
+  pingRedis,
+  fetchRoutesFromRedis,
+  syncRouteToRedis,
+  fetchAuditLogsFromRedis,
+  syncAuditLogToRedis,
+} from './redisService';
+
+// Re-export Cloud SQL data-access helpers (server-proxied).
+export {
+  pingCloudSql,
+  fetchRoutesFromCloudSql,
+  syncRouteToCloudSql,
+  fetchAuditLogsFromCloudSql,
+  syncAuditLogToCloudSql,
+} from './cloudSqlService';
