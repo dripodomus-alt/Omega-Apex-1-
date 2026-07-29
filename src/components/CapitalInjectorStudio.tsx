@@ -385,12 +385,11 @@ const BatchApexSolverMatrix: React.FC = () => {
     setTimeout(() => {
       setBatchApexRoutes((prev) =>
         prev.map((r) => {
-          const newOptimal = Math.round(r.rInUSD * (0.1 + Math.random() * 0.1));
-          const newProfit = Number((newOptimal * 0.0035 + Math.random() * 200).toFixed(2));
+          const calibratedApex = solveProfitApex(r.rInUSD, r.rOutUSD, 30, 5, 0.45);
           return {
             ...r,
-            optimalInputUSD: newOptimal,
-            maxProfitUSD: newProfit,
+            optimalInputUSD: Math.round(calibratedApex.optimalInputUSD),
+            maxProfitUSD: Number(calibratedApex.maxNetProfitUSD.toFixed(2)),
             status: 'SOLVED (0.12ms)',
           };
         })

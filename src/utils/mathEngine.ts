@@ -43,11 +43,12 @@ export function convertSqrtPriceX96ToVirtualReserves(
     const liquidity = BigInt(liquidityStr);
 
     // Number conversion for UI visualization
-    const sqrtP = Number(sqrtPriceX96) / Number(Q96);
+    const sqrtPRaw = Number(sqrtPriceX96) / Number(Q96);
+    const sqrtP = Number.isFinite(sqrtPRaw) ? Math.max(1e-6, sqrtPRaw) : 0;
     const price = sqrtP * sqrtP;
     const L = Number(liquidity);
 
-    if (sqrtP <= 0 || L <= 0) {
+    if (!Number.isFinite(sqrtP) || !Number.isFinite(L) || sqrtP <= 0 || L <= 0) {
       return {
         r0Virtual: 1000000,
         r1Virtual: 1000000,
@@ -58,14 +59,15 @@ export function convertSqrtPriceX96ToVirtualReserves(
       };
     }
 
-    const r0Virtual = L / sqrtP;
-    const r1Virtual = L * sqrtP;
+    const r0Virtual = Math.min(1e15, Math.max(1, L / sqrtP));
+    const r1Virtual = Math.min(1e15, Math.max(1, L * sqrtP));
+    const virtualPrice0in1 = Math.min(1e6, Math.max(0, price));
 
     return {
       r0Virtual,
       r1Virtual,
-      virtualPrice0in1: price,
-      virtualPrice1in0: price > 0 ? 1 / price : 0,
+      virtualPrice0in1,
+      virtualPrice1in0: virtualPrice0in1 > 0 ? Math.min(1e6, 1 / virtualPrice0in1) : 0,
       sqrtPriceX96Num: Number(sqrtPriceX96),
       liquidityNum: L,
     };
@@ -288,4 +290,3 @@ export function validateRouteAssetRegistry(
     unregisteredPools: [],
   };
 }
-
