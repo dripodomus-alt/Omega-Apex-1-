@@ -217,7 +217,7 @@ function gasForDay(trades: number, rng: () => number): number {
 async function fetchAlchemyAnchor(): Promise<AlchemyAnchor> {
   const rpc = POLYGON_CHAIN_CONFIG.rpcEndpoints.primaryAlchemyHttp;
   const wallet = POLYGON_CHAIN_CONFIG.executorWallet;
-  const usdcAddress = POLYGON_TOKENS.USDC.address; // USDC.e on Polygon
+  const usdcAddress = POLYGON_TOKENS.USDC.address; // Bridged USDC (USDC.e) on Polygon — symbol 'USDC.e'
 
   const formattedAddr = wallet.toLowerCase().replace('0x', '').padStart(64, '0');
   const usdcCalldata = '0x70a08231' + formattedAddr;

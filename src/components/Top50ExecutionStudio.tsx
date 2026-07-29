@@ -167,6 +167,8 @@ export const Top50ExecutionStudio: React.FC = () => {
       const pool2Before = `1,820,000 ${assetB} / 612 ${assetC}`;
       const pool2After = `1,822,400 ${assetB} / 610.8 ${assetC}`;
 
+      const vqcScore = Math.max(65, Math.round(99 - i * 0.6));
+
       return {
         rank,
         opportunityObjectId,
@@ -180,12 +182,11 @@ export const Top50ExecutionStudio: React.FC = () => {
         estimatedGasUSD: gasUSD,
         netProfitUSD: Math.max(0.8, netYield),
         roiBps: Math.max(10, roi),
-        vqcScore: Math.max(65, Math.round(99 - i * 0.6)),
+        vqcScore,
         // discoverableIsExecutableUponGating: EXECUTABLE if VQC ≥ 85 and net profit positive
         status: (() => {
-          const vqc = Math.max(65, Math.round(99 - i * 0.6));
-          if (vqc >= 85 && Math.max(0.8, netYield) > 0) return 'EXECUTABLE';
-          if (vqc >= 72) return 'WATCHING';
+          if (vqcScore >= 85 && Math.max(0.8, netYield) > 0) return 'EXECUTABLE';
+          if (vqcScore >= 72) return 'WATCHING';
           return 'SIMULATED';
         })(),
         lastActivityTime: 'Just now',
