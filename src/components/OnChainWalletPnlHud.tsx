@@ -365,7 +365,7 @@ export const OnChainWalletPnlHud: React.FC<OnChainWalletPnlHudProps> = ({
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="text-slate-400">Native POL Gas Balance:</span>
-                  <span className="text-purple-300 font-bold">{walletState.nativePolBalance.toFixed(2)} POL (~$1.95)</span>
+                  <span className="text-purple-300 font-bold">{walletState.nativePolBalance.toFixed(2)} POL (~${walletState.polValueUSD.toFixed(2)})</span>
                 </div>
                 <div className="flex justify-between items-center text-[11px]">
                   <span className="text-slate-400">Liquid ERC20 Hot Balance:</span>

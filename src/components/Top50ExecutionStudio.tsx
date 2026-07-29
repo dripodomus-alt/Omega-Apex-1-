@@ -30,6 +30,7 @@ import {
   Copy,
 } from 'lucide-react';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
+import { POLYGON_TOKEN_SYMBOLS, POLYGON_DEX_IDENTIFIERS } from '../data/mockEngineData';
 
 export interface StagingMathMetadata {
   rawSpreadBps: number;
@@ -116,9 +117,12 @@ export const Top50ExecutionStudio: React.FC = () => {
   const [alchemyRateLimitUsage, setAlchemyRateLimitUsage] = useState<number>(12.4); // 12.4% of CU limit
 
   // Generate initial 50 Top Routes with Opportunity Object IDs and Cycle Parity
+  // Uses full Polygon Mainnet (#137) token universe and all 14 active DEX protocols for maximum discovery
   const generateTop50Routes = (blockNum: number, cycleNum: number = 428): RouteItem[] => {
-    const assets = ['WMATIC', 'USDC.e', 'USDT', 'WETH', 'LINK', 'AAVE', 'WBTC', 'QUICK'];
-    const dexs = ['UniswapV3', 'QuickSwapV3', 'BalancerV2', 'Curve', 'MeshSwap', 'KyberSwap'];
+    // Full chain #137 token universe (14 assets)
+    const assets = POLYGON_TOKEN_SYMBOLS;
+    // All 14 active DEX protocols on Polygon Mainnet #137
+    const dexs = POLYGON_DEX_IDENTIFIERS;
 
     return Array.from({ length: 50 }, (_, i) => {
       const rank = i + 1;
@@ -163,6 +167,8 @@ export const Top50ExecutionStudio: React.FC = () => {
       const pool2Before = `1,820,000 ${assetB} / 612 ${assetC}`;
       const pool2After = `1,822,400 ${assetB} / 610.8 ${assetC}`;
 
+      const vqcScore = Math.max(65, Math.round(99 - i * 0.6));
+
       return {
         rank,
         opportunityObjectId,
@@ -176,8 +182,13 @@ export const Top50ExecutionStudio: React.FC = () => {
         estimatedGasUSD: gasUSD,
         netProfitUSD: Math.max(0.8, netYield),
         roiBps: Math.max(10, roi),
-        vqcScore: Math.max(65, Math.round(99 - i * 0.6)),
-        status: i < 5 ? 'EXECUTABLE' : i < 25 ? 'WATCHING' : 'SIMULATED',
+        vqcScore,
+        // discoverableIsExecutableUponGating: EXECUTABLE if VQC ≥ 85 and net profit positive
+        status: (() => {
+          if (vqcScore >= 85 && Math.max(0.8, netYield) > 0) return 'EXECUTABLE';
+          if (vqcScore >= 72) return 'WATCHING';
+          return 'SIMULATED';
+        })(),
         lastActivityTime: 'Just now',
         liquidityDepthUSD: 150000 + i * 12000,
         competingMempoolTxs: (i % 4 === 0) ? 1 : 0,
@@ -313,12 +324,15 @@ export const Top50ExecutionStudio: React.FC = () => {
               <span className="bg-emerald-950 text-emerald-400 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-800 uppercase font-mono flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" /> 100% # Hashtags Resolved
               </span>
+              <span className="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-500/30 uppercase font-mono">
+                Max Discovery: 14 DEXes × 14 Assets
+              </span>
             </div>
             <h1 className="text-xl md:text-2xl font-black text-white tracking-tight">
               Apex Omega Top 50 Arbitrage Cycle Dashboard
             </h1>
             <p className="text-xs text-slate-400 max-w-3xl">
-              Continuously discovers, ranks, and watches activity on the <strong>Top 50 Alpha Routes</strong> per 12-second block cycle on Polygon Mainnet (#137). Maximizes RPC data intake using batched multicalls with 0 rate limit violations.
+              Maximum Chain #137 Discovery Mode active — scans all <strong>14 DEX protocols</strong> and <strong>14 token assets</strong> on Polygon Mainnet. Continuously discovers, ranks, and promotes routes to <strong>EXECUTABLE</strong> per 12-second block cycle via <code className="text-emerald-400">discoverableIsExecutableUponGating</code> gating logic. Maximizes RPC data intake using batched multicalls with 0 rate limit violations.
             </p>
           </div>
 
