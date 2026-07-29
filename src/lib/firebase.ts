@@ -65,3 +65,31 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }
+
+// Re-export all Firebase data-access helpers so callers import from a single
+// './lib/firebase' entry point rather than './lib/firestoreService'.
+export {
+  syncRouteToFirestore,
+  fetchRoutesFromFirestore,
+  subscribeRoutesFromFirestore,
+  syncAuditLogToFirestore,
+  subscribeAuditLogsFromFirestore,
+} from './firestoreService';
+
+// Re-export Redis data-access helpers (server-proxied).
+export {
+  pingRedis,
+  fetchRoutesFromRedis,
+  syncRouteToRedis,
+  fetchAuditLogsFromRedis,
+  syncAuditLogToRedis,
+} from './redisService';
+
+// Re-export Cloud SQL data-access helpers (server-proxied).
+export {
+  pingCloudSql,
+  fetchRoutesFromCloudSql,
+  syncRouteToCloudSql,
+  fetchAuditLogsFromCloudSql,
+  syncAuditLogToCloudSql,
+} from './cloudSqlService';
