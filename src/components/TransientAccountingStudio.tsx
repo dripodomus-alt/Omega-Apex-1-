@@ -69,6 +69,9 @@ const fmtFee = (v: number) => `$${v.toFixed(4)}`;
 /** Formats a per-leg residual ε to 6 decimal places. */
 const fmtResidual = (v: number) => `$${v.toFixed(6)}`;
 
+/** Number of columns in the per-leg trace table. Update here if columns change. */
+const TRACE_TABLE_COLS = 10;
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export const TransientAccountingStudio: React.FC<TransientAccountingStudioProps> = ({
@@ -311,7 +314,7 @@ export const TransientAccountingStudio: React.FC<TransientAccountingStudioProps>
                       {/* Expanded reserve breakdown */}
                       {expandedLegIndex === leg.legIndex && (
                         <tr key={`detail-${leg.legIndex}`}>
-                          <td colSpan={10} className="p-0">
+                          <td colSpan={TRACE_TABLE_COLS} className="p-0">
                             <div className="bg-slate-950 border-t border-slate-800 p-4 grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs">
                               {[
                                 { label: 'Gas Reserve (G_j)', value: leg.gasReserveUSD, color: 'text-amber-300' },

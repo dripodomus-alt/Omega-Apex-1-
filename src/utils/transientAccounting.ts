@@ -60,12 +60,15 @@ import {
  * derivation.  This is a deterministic route fingerprint for accounting
  * integrity checks only (collision resistance is intentionally not required).
  */
+/** Golden ratio constant for djb2 multi-word mixing (32-bit Fibonacci hashing). */
+const GOLDEN_RATIO_32 = 0x9e3779b9;
+
 export function djb2HashHex(canonical: string): string {
   const words = new Uint32Array(8);
   for (let i = 0; i < canonical.length; i++) {
     const ch = canonical.charCodeAt(i);
     for (let w = 0; w < 8; w++) {
-      words[w] = Math.imul(words[w], 33) ^ (ch + w * 0x9e3779b9);
+      words[w] = Math.imul(words[w], 33) ^ (ch + w * GOLDEN_RATIO_32);
     }
   }
   return '0x' + Array.from(words).map((n) => (n >>> 0).toString(16).padStart(8, '0')).join('');
@@ -159,10 +162,13 @@ function resolvePhase(category: PoolCategory, executionType: ExecutionType): Tra
 // Per-leg swap accounting (CPMM / CLMM virtual reserve model)
 // ---------------------------------------------------------------------------
 
+/** Fallback virtual reserve (USD) used when a pool has no on-chain reserve data. */
+const DEFAULT_VIRTUAL_RESERVE_USD = 1_000_000;
+
 function computeSwapOutput(inventory: number, pool: PoolInfo): number {
   const feeFraction = pool.feeBps / 10_000;
-  const xv = pool.reserve0USD || 1_000_000;
-  const yv = pool.reserve1USD || 1_000_000;
+  const xv = pool.reserve0USD || DEFAULT_VIRTUAL_RESERVE_USD;
+  const yv = pool.reserve1USD || DEFAULT_VIRTUAL_RESERVE_USD;
   const xEff = inventory * (1 - feeFraction);
   // CPMM: y(x) = (y_v × x_eff) / (x_v + x_eff)
   return (yv * xEff) / (xv + xEff);
