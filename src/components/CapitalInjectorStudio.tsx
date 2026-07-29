@@ -395,6 +395,7 @@ const BatchApexSolverMatrix: React.FC = () => {
             BATCH_DEFAULT_FLASH_FEE_BPS,
             BATCH_DEFAULT_GAS_USD
           );
+          // Defensive fallback keeps the matrix stable if upstream values ever produce non-finite math outputs.
           const safeOptimalInput = Number.isFinite(calibratedApex.optimalInputUSD) ? calibratedApex.optimalInputUSD : 0;
           const safeNetProfit = Number.isFinite(calibratedApex.maxNetProfitUSD) ? calibratedApex.maxNetProfitUSD : 0;
           return {

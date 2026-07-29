@@ -147,7 +147,6 @@ export const Top50ExecutionStudio: React.FC = () => {
       const opportunityObjectId = `OPP-C${cycleNum}-R${rankStr}-${routeHash}`;
       const cycleParity = `CYCLE-#${cycleNum} | BLOCK-#${blockNum}`;
 
-      const optimalFlashUSD = 2500 + i * 500;
       const grossUSD = clamp(Number((48.5 - i * 0.85 + Math.random() * 2.5).toFixed(2)), 2, 120);
       const gasUSD = clamp(Number((0.28 + (i % 3) * 0.08 + Math.random() * 0.05).toFixed(3)), 0.1, 3);
 
@@ -157,6 +156,7 @@ export const Top50ExecutionStudio: React.FC = () => {
       // Staging Before/After Math Mirror State calculation
       const rawSpreadBps = Math.round(65 + Math.random() * 40 - i * 0.8);
       const rawDeltaBps = Math.round(42 + Math.random() * 25 - i * 0.5);
+      const optimalFlashUSD = 2500 + i * 500;
       const optimalFlashUnits = `${optimalFlashUSD.toLocaleString()} ${assetA}`;
       const postSpreadBps = Math.round(35 + Math.random() * 15 - i * 0.4);
       const postSlippageBps = Number((1.2 + (i % 4) * 0.4).toFixed(1));
