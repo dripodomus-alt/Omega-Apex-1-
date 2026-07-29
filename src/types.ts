@@ -1,5 +1,15 @@
 export type PipelineStage = 'DISCOVERED' | 'RANKED' | 'SIMULATED' | 'PREPARED' | 'EXECUTED' | 'ACCOUNTED';
 
+/** C1 = first-cycle arbitrage; C2 = second-cycle (mirror/reverse); LIQUIDATION = Aave borrower liquidation */
+export type ExecutionType = 'C1_ARBITRAGE' | 'C2_ARBITRAGE' | 'LIQUIDATION';
+
+/** Phase label for each transient accounting leg within a transaction */
+export type TransientLegPhase =
+  | 'BALANCER_VAULT_UNLOCK'   // Balancer Vault flashloan drawdown — opens D₀
+  | 'SWAP'                    // Standard AMM swap hop (V2/V3/Algebra/Curve/Balancer)
+  | 'AAVE_LIQUIDATION'        // Repay Aave borrower debt, seize collateral + bonus
+  | 'BALANCER_VAULT_SETTLE';  // Balancer Vault flashloan repayment — clears D₀
+
 export type ProtocolType =
   | 'V2_CPMM'
   | 'V3_CLMM'
@@ -8,7 +18,9 @@ export type ProtocolType =
   | 'BAL_WEIGHTED'
   | 'CURVE_STABLE'
   | 'AAVE_V3'
-  | 'BALANCER_V3';
+  | 'BALANCER_V3'
+  /** Dual V2/V3-compatible Balancer Vault (unified flashloan source) */
+  | 'BALANCER_VAULT';
 
 export type PoolCategory = 'SWAPPABLE_EXECUTION' | 'FUNDING_FLASHLOAN' | 'LIQUIDATION_TARGET';
 
@@ -52,6 +64,8 @@ export interface ArbitrageRoute {
   isSelfFundingRisk: boolean;
   vqcAlphaHistory?: number[];
   notes?: string;
+  /** C1_ARBITRAGE (default), C2_ARBITRAGE (mirror/reverse), or LIQUIDATION */
+  executionType?: ExecutionType;
   transientTrace?: TransientAccountingTrace;
 }
 
@@ -134,6 +148,9 @@ export interface MathEquation {
 
 export interface TransientLeg {
   legIndex: number;
+  phase: TransientLegPhase;
+  poolCategory: PoolCategory;
+  poolProtocol: ProtocolType;
   tokenIn: string;
   tokenOut: string;
   amountIn: number;
@@ -149,8 +166,10 @@ export interface TransientLeg {
 
 export interface TransientAccountingTrace {
   routeId: string;
+  executionType: ExecutionType;
   borrowedToken: string;
   borrowedAmount: number;
+  /** D₀ = borrowedAmount × (1 + flashFeeRate). Zero for Balancer Vault (0-fee). */
   debtWithFee: number;
   legs: TransientLeg[];
   integrityHash: string;

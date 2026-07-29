@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { SimulationAuditLog } from '../types';
+import { SimulationAuditLog, ArbitrageRoute } from '../types';
 import { MonthlyProfitProjectionChart } from './MonthlyProfitProjectionChart';
 import { TransactionConfirmationRunner } from './TransactionConfirmationRunner';
+import { TransientAccountingStudio } from './TransientAccountingStudio';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import {
   Database,
@@ -31,6 +32,7 @@ import {
 
 interface AccountantStreamStudioProps {
   logs: SimulationAuditLog[];
+  routes?: ArbitrageRoute[];
   onFlushBatchToSQL: () => void;
   isFlushing: boolean;
 }
@@ -62,6 +64,7 @@ GROUP BY status;`,
 
 export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
   logs,
+  routes = [],
   onFlushBatchToSQL,
   isFlushing,
 }) => {
@@ -72,6 +75,12 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
   // Batch Selection State
   const [selectedLogIds, setSelectedLogIds] = useState<string[]>([]);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  // Transient Accounting Drawer
+  const [drawerRouteId, setDrawerRouteId] = useState<string | null>(null);
+  const drawerRoutes: ArbitrageRoute[] = drawerRouteId
+    ? routes.filter((r) => r.id === drawerRouteId)
+    : [];
 
   // Auto-Flush Configuration State (>50 entries rule)
   const [isAutoFlushEnabled, setIsAutoFlushEnabled] = useState<boolean>(true);
@@ -563,6 +572,7 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
                 <th className="p-3">Status</th>
                 <th className="p-3">Gas (Gwei)</th>
                 <th className="p-3">Cloud SQL Sync</th>
+                <th className="p-3">Trace</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60">
@@ -621,6 +631,20 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
                         </span>
                       )}
                     </td>
+                    <td className="p-3">
+                      {routes.some((r) => r.id === log.routeId) ? (
+                        <button
+                          onClick={() => setDrawerRouteId(drawerRouteId === log.routeId ? null : log.routeId)}
+                          className="flex items-center gap-1 text-purple-400 hover:text-purple-200 transition-colors text-[10px] font-bold"
+                          title="View Transient Accounting Trace"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>{drawerRouteId === log.routeId ? 'Hide' : 'Trace'}</span>
+                        </button>
+                      ) : (
+                        <span className="text-slate-600 text-[10px]">—</span>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -628,6 +652,27 @@ export const AccountantStreamStudio: React.FC<AccountantStreamStudioProps> = ({
           </table>
         </div>
       </div>
+
+      {/* Transient Accounting Trace Drawer */}
+      {drawerRouteId && drawerRoutes.length > 0 && (
+        <div className="bg-slate-950 border border-purple-800/60 rounded-xl p-5 shadow-2xl animate-fadeIn space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-purple-400" />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">
+                Transient Accounting Trace — Route {drawerRouteId}
+              </span>
+            </div>
+            <button
+              onClick={() => setDrawerRouteId(null)}
+              className="text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <TransientAccountingStudio routes={drawerRoutes} />
+        </div>
+      )}
 
       {/* SQL Schema Console & VQC Training View */}
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl space-y-4">

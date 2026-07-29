@@ -29,8 +29,8 @@ export const POLYGON_CHAIN_CONFIG = {
   algebraFactory: '0x411b0fAcC3489691f28ad58c47006AF5E3Ab3A28',
   algebraQuoter: '0xa15F0D7377B2A0C0c10db057f641beD21028FC89',
   algebraRouter: '0xf5b509bB0909a69B1c207E495f687a596C168E12',
-  balancerV2Vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
-  balancerV3Vault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+  balancerVaultAddress: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+  // Single vault address provides dual V2/V3 compatibility for flashloan capital
   curveAddressProvider: '0x0000000022D53366457F9d5E68Ec105046FC4383',
 
   // Custom Omega Adapters

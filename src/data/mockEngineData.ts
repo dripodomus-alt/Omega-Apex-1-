@@ -35,7 +35,7 @@ export const POLYGON_TOKEN_SYMBOLS: string[] = [
  * Used in route path string generation across the pipeline.
  */
 export const POLYGON_DEX_IDENTIFIERS: string[] = [
-  'UniswapV3', 'QuickSwapV2', 'QuickSwapV3', 'BalancerV3Vault', 'BalancerV2Weighted',
+  'UniswapV3', 'QuickSwapV2', 'QuickSwapV3', 'BalancerVault', 'BalancerWeighted',
   'CurvePolygon', 'SushiSwapV2', 'SushiSwapV3Trident', 'AaveV3', 'DodoV2',
   'KyberSwapElastic', 'MeshSwapV2', 'PearlV3', 'RetroV3',
 ];
@@ -60,8 +60,8 @@ export const FULL_CHAIN_137_METRICS = {
     'Uniswap V3',
     'QuickSwap V2',
     'QuickSwap V3 (Algebra)',
-    'Balancer V3 Vault',
-    'Balancer V2 Weighted',
+    'Balancer Vault (V2/V3 Dual Compat)',
+    'Balancer Weighted',
     'Curve Polygon',
     'SushiSwap V2',
     'SushiSwap V3 Trident',
@@ -102,10 +102,10 @@ export const CHAINLINK_FEEDS: Record<string, { address: string; pair: string; pr
  */
 export const INITIAL_POOLS: PoolInfo[] = [
   {
-    id: 'pool_bal_v3_vault',
-    name: 'Balancer V3 Vault (Transient Storage)',
-    protocol: 'BALANCER_V3',
-    protocolArchitecture: 'Balancer V3 Vault Transient Storage',
+    id: 'pool_bal_vault',
+    name: 'Balancer Vault (Transient Storage — V2/V3 Dual Compatible)',
+    protocol: 'BALANCER_VAULT',
+    protocolArchitecture: 'Balancer Vault Transient Storage (Dual V2/V3 Compat)',
     category: 'FUNDING_FLASHLOAN',
     address: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
     token0: POLYGON_TOKENS.WMATIC,
