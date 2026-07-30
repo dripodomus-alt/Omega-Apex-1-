@@ -57,6 +57,31 @@ def _get_chainlink_price(feed_address: str) -> Decimal:
     # For now return a sentinel that forces fallback
     raise PriceUnavailable("Chainlink direct call not wired in this snapshot")
 
+def _chainlink_prices_multicall(symbols: List[str]) -> Dict[str, Decimal]:
+    """Read Chainlink prices through multicall; skip empty return bytes."""
+    calls = []
+    ordered: list[str] = []
+    for symbol in symbols:
+        feed = CHAINLINK_FEEDS.get(symbol)
+        if not feed:
+            continue
+        calls.append({"target": feed, "callData": rpc_layer._encode_fn("latestRoundData()")})
+        ordered.append(symbol)
+    if not calls:
+        return {}
+    out: Dict[str, Decimal] = {}
+    for symbol, (ok, data) in zip(ordered, rpc_layer.multicall3_aggregate(calls)):
+        if not ok or not data:
+            continue
+        try:
+            decoded = rpc_layer.w3.codec.decode(["uint80", "int256", "uint256", "uint256", "uint80"], data)
+            answer = Decimal(str(decoded[1])) / Decimal("100000000")
+            if answer > 0:
+                out[symbol] = answer
+        except Exception:
+            continue
+    return out
+
 
 def token_price_usd(symbol: str) -> Decimal:
     """Legacy Decimal price (kept for compatibility)."""
@@ -202,3 +227,4 @@ def get_precision_price_x18(
     # This function now delegates to the canonical implementation in the
     # precision_pricing module, which has the full engine logic.
     return _get_price(symbol)
+

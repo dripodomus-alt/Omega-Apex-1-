@@ -375,6 +375,14 @@ ADDRESS_TO_SYMBOL: Dict[str, str] = {
 }
 
 
+def multicall3_aggregate(calls: list[Any]) -> list[tuple[bool, bytes]]:
+    """Fallback multicall surface; callers/tests may monkeypatch this."""
+    return [(False, b"") for _ in calls]
+
+def _encode_fn(signature: str, args: list[Any] | tuple[Any, ...] = ()) -> bytes:
+    """Encode a function selector for lightweight multicall helpers."""
+    return Web3.keccak(text=signature)[:4]
+
 def canonical_asset_id(symbol: str) -> str:
     """Return stable chain-scoped asset id for configured or symbolic assets."""
     address = TOKEN_ADDRESSES.get(str(symbol), "")
@@ -593,4 +601,6 @@ def _audit_v2_pair_canonical(
         "canonical_addrs": canonical,
         "reject_reasons": reject_reasons,
     }
+
+
 

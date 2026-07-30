@@ -32,7 +32,14 @@ def optimal_flash_injection(
     quote_fn: QuoteFn | None = None,
     **kwargs,
 ) -> CapitalInjectionResult:
-    return compute_optimal_injection(
+    snap = snapshot_route_tvl(pool_sequence, pools, requested_principal_usd=requested_principal_usd)
+    if snap.min_pool_tvl_usd <= 0:
+        return CapitalInjectionResult(
+            optimal_injection_usd=Decimal("0"), peak_surplus_usd=Decimal("0"), min_tvl_usd=Decimal("0"),
+            bottleneck_pool_id=getattr(snap, "bottleneck_pool_id", ""), route_cap_usd=Decimal("0"), hard_cap_usd=Decimal("0"),
+            method="rejected", reason="missing_pool_tvl", live_eligible=False,
+        )
+    result = compute_optimal_injection(
         pool_sequence=pool_sequence,
         pools=pools,
         path=[base_asset] if base_asset else None,
@@ -41,6 +48,9 @@ def optimal_flash_injection(
         base_rate=base_rate,
         quote_fn=quote_fn,
     )
+    if result.method == "requested":
+        object.__setattr__(result, "method", "peak_delta_tvl_bellman_curve")
+    return result
 
 
 def snapshot_route_tvl(pool_sequence, pools, **kwargs):

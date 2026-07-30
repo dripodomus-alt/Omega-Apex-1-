@@ -37,7 +37,6 @@ from .config import (
     ENABLE_DYNAMIC_SIZE_OPTIMIZER,
     MAX_ROUTE_IMPACT,
     STABLE_MIN_NET_PROFIT_USD,
-    live_min_net_profit_usd,
     STABLE_RISK_BUFFER_USD,
 )
 from .cycle_shape import (

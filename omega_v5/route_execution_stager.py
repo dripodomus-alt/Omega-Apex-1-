@@ -126,6 +126,10 @@ class PreRankedRoute:
     discovery_block: int = 0
     discovery_block_hash: str = ""
 
+    @property
+    def opp_id(self) -> str:
+        return "OPP-" + str(abs(hash((self.path, self.pool_sequence, self.discovery_block))))
+
 
 
 def enumerate_closed_token_paths(
@@ -163,6 +167,7 @@ def pre_rank_routes(
     base_tokens: list[str] | None = None,
     hops: tuple[int, ...] = SUPPORTED_HOPS,
     max_routes: int = 50,
+    principal_usd: Decimal | None = None,
 ) -> tuple[list[PreRankedRoute], dict[str, int]]:
     candidates: list[PreRankedRoute] = []
     stats = Counter()
@@ -173,6 +178,7 @@ def pre_rank_routes(
             liquidity_keys = tuple(str(edge.get("liquidity_key") or edge.get("pool_id", "")) for edge in combo)
             if len(set(liquidity_keys)) != len(liquidity_keys):
                 stats["duplicate_liquidity_key"] += 1
+                stats["rejected_duplicate_liquidity_key"] += 1
                 continue
             gross_rate = Decimal("1")
             for edge in combo:
@@ -195,12 +201,20 @@ def pre_rank_routes(
                 discovery_block_hash=getattr(rpc_layer, "BLOCK_HASH", "") or "0x" + "00" * 32,
             ))
             if len(candidates) >= max_routes:
-                return candidates, dict(stats)
+                return candidates, {"rejection_counts": dict(stats), **dict(stats)}
     stats["candidates"] = len(candidates)
-    return candidates, dict(stats)
+    return candidates, {"rejection_counts": dict(stats), **dict(stats)}
 
 
-def stage_pre_ranked_route(route: PreRankedRoute, *, principal_usd: Decimal, pools: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def stage_pre_ranked_route(route: PreRankedRoute, pools: dict[str, dict[str, Any]] | None = None, *, principal_usd: Decimal | None = None, requested_principal_usd: Decimal | None = None, slippage_bps: Decimal | None = None) -> dict[str, Any]:
+    if principal_usd is None:
+        principal_usd = requested_principal_usd if requested_principal_usd is not None else Decimal("0")
+    pools = pools or {}
+    try:
+        quote_route_for_executor(route, pools=pools, principal_usd=principal_usd, slippage_bps=slippage_bps)
+    except Exception as exc:
+        opp_id = getattr(route, "opp_id", "") or "OPP-QUOTE-EXCEPTION"
+        return {"opp_id": opp_id, "status": "rejected", "stage": "exact_quote_exception", "reason": type(exc).__name__, "opportunity_id_frozen": True, "unified_route_envelope": {"schema_version": UNIFIED_ROUTE_SCHEMA_VERSION, "staging": {"stage": "exact_quote_exception"}}}
     initial_amount_raw = int(_decimal(principal_usd) * Decimal("1000000"))
     identity = build_route_identity(route, initial_amount_raw=initial_amount_raw)
     opp_id = f"OPP-{identity['quote_snapshot_id'][2:18]}"
@@ -218,7 +232,7 @@ def stage_pre_ranked_route(route: PreRankedRoute, *, principal_usd: Decimal, poo
         "opportunity_id_frozen": True,
         "identity": identity,
         "net_gain_usd": str(net_gain),
-        "net_formula": {"hop_fees_usd": str(hop_fee_total), "net_gain_usd": str(net_gain)},
+        "net_formula": {"hop_fees_usd": hop_fee_total, "net_gain_usd": net_gain},
         "pool_hop_fees": [str(x) for x in hop_fees],
         "unified_route_envelope": {
             "schema_version": UNIFIED_ROUTE_SCHEMA_VERSION,

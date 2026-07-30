@@ -39,7 +39,33 @@ def estimate_route_tvl_usd(pool_sequence, live_pools):
     return min(tvls) if tvls else Decimal("0")
 
 def dynamic_size_optimizer(*args, **kwargs):
-    # Delegate to official when possible
+    profit_function = kwargs.get("profit_function")
+    if profit_function is not None:
+        min_principal = Decimal(str(kwargs.get("min_principal", "0")))
+        max_principal = Decimal(str(kwargs.get("max_principal", "0")))
+        steps = max(1, int(kwargs.get("steps", 10)))
+        if max_principal <= min_principal:
+            return Decimal("0"), None
+        step = (max_principal - min_principal) / Decimal(steps)
+        best_principal = Decimal("0")
+        best_profit = None
+        best_net = Decimal("-Infinity")
+        declines = 0
+        for i in range(steps + 1):
+            principal = min_principal + (step * Decimal(i))
+            prof = profit_function(principal)
+            if not getattr(prof, "passes_gate", False):
+                continue
+            net = Decimal(str(getattr(prof, "net_profit_usd", "0")))
+            if net > best_net:
+                best_principal, best_profit, best_net = principal, prof, net
+                declines = 0
+            else:
+                declines += 1
+                if declines >= 3:
+                    break
+        return best_principal, best_profit
+
     if "pool_sequence" in kwargs and "pools" in kwargs:
         try:
             res = compute_optimal_injection(
@@ -50,10 +76,41 @@ def dynamic_size_optimizer(*args, **kwargs):
         except Exception:
             pass
     return Decimal("10000"), None
-
 def optimize_principal_with_dynamic(*args, **kwargs):
+    if "opportunity" in kwargs:
+        opportunity = kwargs.get("opportunity")
+        live_pools = kwargs.get("live_pools", {})
+        quote_function = kwargs.get("quote_function", lambda p: p)
+        tvl = estimate_route_tvl_usd(getattr(opportunity, "pool_sequence", []), live_pools)
+        fraction = FLASH_ROUTE_TVL_FRACTIONS[0] if FLASH_ROUTE_TVL_FRACTIONS else Decimal("0.15")
+        upper = max(MIN_FLASH_PRINCIPAL_USD, min(MAX_FLASH_PRINCIPAL_USD, tvl * fraction))
+        best_principal = Decimal("0")
+        best_profit = Decimal("0")
+        if tvl > 0 and upper >= MIN_FLASH_PRINCIPAL_USD:
+            def profit_fn(p: Decimal):
+                gross = quote_function(p)
+                return evaluate_profitability(
+                    gross_amount_out_usd=gross,
+                    principal_usd=p,
+                    hops=max(1, len(getattr(opportunity, "pool_sequence", []))),
+                    flash_source=getattr(opportunity, "flash_source", FlashSource.BALANCER),
+                )
+            best_principal, best_prof = dynamic_size_optimizer(
+                profit_function=profit_fn,
+                min_principal=MIN_FLASH_PRINCIPAL_USD,
+                max_principal=upper,
+                steps=10,
+            )
+            if best_prof is not None:
+                best_profit = Decimal(str(getattr(best_prof, "net_profit_usd", "0")))
+        return RouteSizing(
+            selected_principal_usd=best_principal,
+            max_profit_usd=max(best_profit, Decimal("0")),
+            min_pool_tvl_usd=tvl,
+            search_upper_bound_usd=upper,
+            method="dynamic_optimizer",
+        )
     return dynamic_size_optimizer(*args, **kwargs)
-
 class RouteSizing:
     def __init__(self, **kw):
         self.selected_principal_usd = kw.get("selected_principal_usd", Decimal("10000"))
@@ -77,4 +134,6 @@ class DynamicSizeResult:
 
 def _apply_impact_penalty(principal, min_tvl, gross):
     return Decimal("0")
+
+
 
