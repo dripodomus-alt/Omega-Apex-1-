@@ -135,6 +135,23 @@ def optimize_route_principal(
     )
 
 
+
+def compute_optimal_principal(
+    principal_usd: Decimal | float | int | str,
+    pool_sequence: Sequence[str] | Iterable[str] = (),
+    pools: dict[str, Any] | None = None,
+    **kwargs: Any,
+) -> Decimal:
+    sizing = optimize_route_principal(
+        principal_usd,
+        pool_sequence,
+        pools or {},
+        path=kwargs.get("path"),
+        flash_source=kwargs.get("flash_source", FlashSource.BALANCER),
+        base_rate=kwargs.get("base_rate"),
+        steps=int(kwargs.get("steps", 12)),
+    )
+    return Decimal(str(getattr(sizing, "selected_principal_usd", principal_usd or 0)))
 __all__ = [
     "CAPITAL_SOURCE_REGISTRY",
     "EXECUTION_VENUE_REGISTRY",
@@ -143,6 +160,7 @@ __all__ = [
     "check_self_cannibalization",
     "compute_derivative_optimal_size",
     "compute_optimal_injection",
+    "compute_optimal_principal",
     "import_metadata_for_route",
     "prepare_sizing_for_rust",
     "register_execution_venue",

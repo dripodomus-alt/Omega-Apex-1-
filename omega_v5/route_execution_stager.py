@@ -29,6 +29,7 @@ from .oracle_layer import token_price_usd
 from .paths import output_path
 from .pricing.net_delta import route_within_lifespan
 from .pipeline_validation import validate_calldata_integrity
+from .calldata_semantic_audit import build_calldata_semantic_audit
 from .payload_envelope import UNIFIED_ROUTE_SCHEMA_VERSION
 
 logger = logging.getLogger("omega.stager")
@@ -52,6 +53,44 @@ def _decimal(value: Any) -> Decimal:
     except Exception:
         return Decimal("0")
 
+
+
+def _hop_fee_fraction(hop: dict[str, Any], pool: dict[str, Any] | None = None) -> Decimal:
+    data = dict(pool or {})
+    data.update(hop or {})
+    raw = data.get("fee_tier", data.get("fee_bps", data.get("fee")))
+    if raw is None:
+        raw = 3000
+    fee = _decimal(raw)
+    if fee <= 0:
+        return Decimal("0")
+    if fee < 1:
+        return fee
+    if "fee_bps" in data:
+        return fee / Decimal("10000")
+    if fee in {Decimal("100"), Decimal("500"), Decimal("3000"), Decimal("10000")} or fee >= Decimal("100"):
+        return fee / Decimal("1000000")
+    return fee / Decimal("10000")
+
+
+def _estimate_hop_fees_usd(
+    edges: Iterable[dict[str, Any]],
+    *,
+    base_amount_in: Decimal,
+    base_token: str,
+    pools: dict[str, dict[str, Any]] | None = None,
+) -> tuple[list[Decimal], Decimal]:
+    pool_map = pools or {}
+    try:
+        base_price = token_price_usd(base_token)
+    except Exception:
+        base_price = Decimal("1")
+    notional_usd = _decimal(base_amount_in) * _decimal(base_price)
+    breakdown: list[Decimal] = []
+    for edge in edges:
+        pool = pool_map.get(str(edge.get("pool_id", "")), {})
+        breakdown.append((notional_usd * _hop_fee_fraction(edge, pool)).normalize())
+    return breakdown, sum(breakdown, Decimal("0")).normalize()
 
 def _row_ready_for_exact_call(row: dict[str, Any]) -> bool:
     return row.get("status") in {READY_FOR_EXACT_CALL_STATUS, LEGACY_READY_STATUS}
@@ -86,6 +125,142 @@ class PreRankedRoute:
     edge_entries: tuple[dict[str, Any], ...] = field(default_factory=tuple)
     discovery_block: int = 0
     discovery_block_hash: str = ""
+
+
+
+def enumerate_closed_token_paths(
+    rates: dict[tuple[str, str], list[dict[str, Any]]],
+    *,
+    hops: tuple[int, ...] = SUPPORTED_HOPS,
+    base_tokens: list[str] | None = None,
+) -> list[tuple[str, ...]]:
+    bases = base_tokens or sorted({pair[0] for pair in rates})
+    paths: set[tuple[str, ...]] = set()
+    adjacency: dict[str, set[str]] = {}
+    for token_in, token_out in rates:
+        adjacency.setdefault(token_in, set()).add(token_out)
+    for base in bases:
+        stack: list[tuple[str, ...]] = [(base,)]
+        while stack:
+            path = stack.pop()
+            edges_used = len(path) - 1
+            if edges_used >= max(hops):
+                continue
+            for nxt in adjacency.get(path[-1], set()):
+                candidate = path + (nxt,)
+                candidate_edges = len(candidate) - 1
+                if nxt == base and candidate_edges in hops:
+                    paths.add(candidate)
+                elif nxt not in path and candidate_edges < max(hops):
+                    stack.append(candidate)
+    return sorted(paths)
+
+
+def pre_rank_routes(
+    rates: dict[tuple[str, str], list[dict[str, Any]]],
+    pools: dict[str, dict[str, Any]],
+    *,
+    base_tokens: list[str] | None = None,
+    hops: tuple[int, ...] = SUPPORTED_HOPS,
+    max_routes: int = 50,
+) -> tuple[list[PreRankedRoute], dict[str, int]]:
+    candidates: list[PreRankedRoute] = []
+    stats = Counter()
+    for path in enumerate_closed_token_paths(rates, hops=hops, base_tokens=base_tokens):
+        edge_options = [rates.get((path[i], path[i + 1]), []) for i in range(len(path) - 1)]
+        for combo in itertools.product(*edge_options):
+            pool_sequence = tuple(str(edge.get("pool_id", "")) for edge in combo)
+            liquidity_keys = tuple(str(edge.get("liquidity_key") or edge.get("pool_id", "")) for edge in combo)
+            if len(set(liquidity_keys)) != len(liquidity_keys):
+                stats["duplicate_liquidity_key"] += 1
+                continue
+            gross_rate = Decimal("1")
+            for edge in combo:
+                gross_rate *= _decimal(edge.get("rate", "1"))
+            raw_delta_bps = (gross_rate - Decimal("1")) * Decimal("10000")
+            if raw_delta_bps <= 0:
+                stats["non_positive_delta"] += 1
+                continue
+            candidates.append(PreRankedRoute(
+                path=tuple(path),
+                pool_sequence=pool_sequence,
+                protocol_seq=tuple(str(edge.get("protocol", pools.get(str(edge.get("pool_id", "")), {}).get("protocol", ""))) for edge in combo),
+                liquidity_keys=liquidity_keys,
+                route_class_seq=tuple(str(edge.get("route_class", pools.get(str(edge.get("pool_id", "")), {}).get("route_class", ""))) for edge in combo),
+                approximate_gross_rate=gross_rate,
+                approximate_raw_delta_usd=raw_delta_bps,
+                approximate_raw_delta_bps=raw_delta_bps,
+                edge_entries=tuple(dict(edge) for edge in combo),
+                discovery_block=getattr(rpc_layer, "BLOCK", 0),
+                discovery_block_hash=getattr(rpc_layer, "BLOCK_HASH", "") or "0x" + "00" * 32,
+            ))
+            if len(candidates) >= max_routes:
+                return candidates, dict(stats)
+    stats["candidates"] = len(candidates)
+    return candidates, dict(stats)
+
+
+def stage_pre_ranked_route(route: PreRankedRoute, *, principal_usd: Decimal, pools: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    initial_amount_raw = int(_decimal(principal_usd) * Decimal("1000000"))
+    identity = build_route_identity(route, initial_amount_raw=initial_amount_raw)
+    opp_id = f"OPP-{identity['quote_snapshot_id'][2:18]}"
+    hop_fees, hop_fee_total = _estimate_hop_fees_usd(route.edge_entries, base_amount_in=_decimal(principal_usd), base_token=route.path[0], pools=pools)
+    net_gain = route.approximate_raw_delta_usd - hop_fee_total
+    return {
+        "opp_id": opp_id,
+        "status": READY_FOR_EXACT_CALL_STATUS,
+        "path": list(route.path),
+        "pool_sequence": list(route.pool_sequence),
+        "protocol_seq": list(route.protocol_seq),
+        "principal_usd": str(principal_usd),
+        "route_pair_id": identity["route_pair_id"],
+        "quote_snapshot_id": identity["quote_snapshot_id"],
+        "opportunity_id_frozen": True,
+        "identity": identity,
+        "net_gain_usd": str(net_gain),
+        "net_formula": {"hop_fees_usd": str(hop_fee_total), "net_gain_usd": str(net_gain)},
+        "pool_hop_fees": [str(x) for x in hop_fees],
+        "unified_route_envelope": {
+            "schema_version": UNIFIED_ROUTE_SCHEMA_VERSION,
+            "opp_id": opp_id,
+            "route": {"path": list(route.path), "pool_sequence": list(route.pool_sequence)},
+            "staging": {"opportunity_id_frozen": True, "principal_usd": str(principal_usd), "identity": identity, "route_pair_id": identity["route_pair_id"], "quote_snapshot_id": identity["quote_snapshot_id"]},
+            "fees": {},
+            "math": {"net_gain_usd": str(net_gain)},
+        },
+    }
+
+def build_route_identity(route: PreRankedRoute, *, initial_amount_raw: int | str | None = None) -> dict[str, Any]:
+    block_hash = route.discovery_block_hash or "0x" + "00" * 32
+    block_hash_source = "route.discovery_block_hash" if route.discovery_block_hash else "zero_hash_missing_discovery_block_hash"
+    route_material = json.dumps({
+        "chain_id": CHAIN_ID,
+        "block": route.discovery_block,
+        "block_hash": block_hash,
+        "path": list(route.path),
+        "pool_sequence": list(route.pool_sequence),
+        "protocol_seq": list(route.protocol_seq),
+        "liquidity_keys": list(route.liquidity_keys),
+    }, sort_keys=True, default=str)
+    route_pair_id = Web3.keccak(text=route_material).hex()
+    amount_raw = "" if initial_amount_raw is None else str(int(initial_amount_raw))
+    quote_material = json.dumps({"route_pair_id": route_pair_id, "initial_amount_raw": amount_raw}, sort_keys=True)
+    quote_snapshot_id = Web3.keccak(text=quote_material).hex()
+    return {
+        "route_pair_id": route_pair_id,
+        "quote_snapshot_id": quote_snapshot_id,
+        "block_hash": block_hash,
+        "block_hash_source": block_hash_source,
+        "hash_encoding": "keccak256(abi.encode(...))",
+        "initial_amount_raw": amount_raw,
+        "initial_amount_raw_status": "resolved" if amount_raw else "missing",
+        "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals" if amount_raw else "missing",
+        "invariants": {
+            "leg1_destination_differs_from_leg2_destination": len(route.pool_sequence) < 2 or route.pool_sequence[0] != route.pool_sequence[1],
+            "direction_sensitive": True,
+            "size_changes_quote_snapshot_only": True,
+        },
+    }
 
 def _build_unified_route_envelope(
     opportunity: Any,
@@ -160,6 +335,29 @@ def _stage_single_route(opportunity: Any, sizing_result: Any) -> dict[str, Any]:
         raise ValueError("Calldata integrity check failed during staging.")
 
     profitability = opportunity.profitability
+    economic_audit = {
+        "gross_surplus_usd": str(getattr(profitability, "gross_surplus_usd", "")),
+        "slippage_cost_usd": str(getattr(profitability, "slippage_cost_usd", "0")),
+        "flashloan_fee_usd": str(getattr(profitability, "flashloan_fee_usd", "0")),
+        "gas_cost_usd": str(getattr(profitability, "gas_cost_usd", "0")),
+        "relay_tip_usd": str(getattr(profitability, "relay_tip_usd", "0")),
+        "builder_fee_usd": str(getattr(profitability, "builder_fee_usd", "0")),
+        "risk_buffer_usd": str(getattr(profitability, "risk_buffer_usd", "0")),
+        "net_profit_usd": str(getattr(profitability, "net_profit_usd", "")),
+    }
+    semantic_audit = build_calldata_semantic_audit(
+        calldata=tx_payload.get("data", ""),
+        identity_sources={"staging": opportunity.opp_id, "calldata": opportunity.opp_id},
+        execution_parameters={
+            "gas_limit": tx_payload.get("gas", 0),
+            "route_id": opportunity.opp_id,
+            "mode_flag": "dry_run_stage",
+        },
+        economic=economic_audit,
+        protocol=opportunity.protocol_seq[0] if opportunity.protocol_seq else "",
+        tstore_report={"uses_eip_1153": False},
+        relay={"relay_tip_usd": economic_audit["relay_tip_usd"], "relay_tip_bps": "0", "relay_tip_base_usd": economic_audit["net_profit_usd"] or "0"},
+    )
 
     return {
         "opp_id": opportunity.opp_id,
@@ -187,6 +385,7 @@ def _stage_single_route(opportunity: Any, sizing_result: Any) -> dict[str, Any]:
             },
         },
         "sizing": sizing_result.as_dict(),
+        "semantic_calldata_audit": semantic_audit,
         "unified_route_envelope": _build_unified_route_envelope(
             opportunity, sizing_result, tx_payload.get("data", ""), profitability
         ),

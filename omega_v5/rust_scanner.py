@@ -198,3 +198,20 @@ class RustScanner:
 def find_best_legs_with_rust(pools: Dict[str, Dict[str, Any]], min_tvl: str = str(MIN_TVL_USD)) -> List[RustScanResult]:
     scanner = RustScanner(min_tvl_usd=min_tvl)
     return scanner.scan(pools)
+
+
+def is_available() -> bool:
+    return RustScanner().is_available()
+
+
+def scan(live_pools: Dict[str, Dict[str, Any]], principal_usd: float = 0.0, max_slippage_bps: float = 0.0) -> list[dict[str, Any]]:
+    results = RustScanner().scan(live_pools)
+    out: list[dict[str, Any]] = []
+    for item in results:
+        out.append({
+            "path": (item.token_in, item.token_mid, item.token_in),
+            "pool_sequence": (item.buy_leg.pool_address, item.sell_leg.pool_address),
+            "protocol_seq": (item.buy_leg.protocol, item.sell_leg.protocol),
+            "metadata": {"net_spread": str(item.net_spread)},
+        })
+    return out

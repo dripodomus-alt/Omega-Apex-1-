@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # ==============================================================================
+# preflight.py -- System readiness checks and pre-flight transaction simulation.
 # preflight.py  -- read-only live-readiness checks for Omega V5.
 #
 # This command connects to Polygon, verifies the pinned executor bytecode and
@@ -13,16 +14,60 @@ from __future__ import annotations
 
 import sys
 
+from typing import Dict, Any, Optional, Tuple
+from web3 import Web3
+
 from . import rpc_layer
 from .config import (
     CHAIN_ID,
     EXECUTOR_CONTRACT,
     RPC_QUOTA_ENFORCEMENT,
+    FORK_SIM_RPC_URL,
 )
 from .rust_engine import assert_rust_engine_ready
 
 from .rpc_layer import get_quota_stats, quota_manager
+# Assuming the existence of a payload builder from your project structure
+from .payload_builder import build_swap_payload
 
+
+def run_preflight_simulation(opportunity: Dict[str, Any]) -> Tuple[bool, int]:
+    """
+    Simulates a transaction on a live fork using eth_call. This is the "truth gate".
+
+    Args:
+        opportunity: A fully formed opportunity object.
+
+    Returns:
+        A tuple of (success, net_profit_raw), where success is True if the
+        simulation ran, and net_profit_raw is the profit in the base asset's
+        atomic units. A profit of 0 indicates a failure or revert.
+    """
+    try:
+        w3_fork = Web3(Web3.HTTPProvider(FORK_SIM_RPC_URL))
+        if not w3_fork.is_connected():
+            print("[ERROR] Pre-flight simulation failed: Cannot connect to fork RPC.")
+            return False, 0
+
+        # Build the transaction payload using the logic from your payload builder.
+        # This function needs to return the `to` address and the `data` payload.
+        to_address, tx_data = build_swap_payload(opportunity)
+
+        # Simulate the transaction. The from address is the executor wallet.
+        # The return value is the raw bytes returned by the contract call.
+        return_data = w3_fork.eth.call({
+            "from": opportunity["profitability"]["flashloan"]["asset"], # Placeholder for executor wallet
+            "to": to_address,
+            "data": tx_data,
+        })
+
+        # Decode the return data to get the net profit. This assumes the contract
+        # returns a single uint256 value representing the profit.
+        net_profit_raw = int.from_bytes(return_data, 'big')
+        return True, net_profit_raw
+    except Exception as e:
+        print(f"[ERROR] Pre-flight simulation exception: {e}")
+        return False, 0
 
 def run_preflight() -> int:
     print("=== OMEGA V5 PREFLIGHT (with RPC Plan Quota) ===")

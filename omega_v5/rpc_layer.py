@@ -547,3 +547,36 @@ def discover_factory_pool_registry(base_registry: Dict[str, dict] | None = None)
 print("[rpc_layer] Quota-aware RPC layer loaded. Enforcement=", RPC_QUOTA_ENFORCEMENT)
 
 
+
+
+def _audit_v2_pair_canonical(
+    *,
+    pool_id: str,
+    pool_meta: dict,
+    toks: list[str],
+    token_addrs: list[str],
+    onchain_decimals: list[int] | None = None,
+    reserves_raw: list[int] | None = None,
+) -> dict:
+    reject_reasons: list[str] = []
+    canonical = [TOKEN_ADDRESSES.get(str(tok), "").lower() for tok in toks]
+    for idx, (tok, observed, expected) in enumerate(zip(toks, token_addrs, canonical)):
+        observed_l = str(observed or "").lower()
+        if not observed_l or observed_l == "0x0000000000000000000000000000000000000000":
+            reject_reasons.append(f"token{idx}_unknown_onchain_address")
+            continue
+        if expected and observed_l != expected:
+            reject_reasons.append(f"token{idx}_unknown_onchain_address")
+            reject_reasons.append(f"token{idx}_address_symbol_mismatch")
+    if onchain_decimals and any(int(d) < 0 for d in onchain_decimals):
+        reject_reasons.append("invalid_onchain_decimals")
+    if reserves_raw and any(int(r) <= 0 for r in reserves_raw):
+        reject_reasons.append("empty_reserves")
+    return {
+        "status": "fail" if reject_reasons else "pass",
+        "pool_id": pool_id,
+        "tokens": toks,
+        "token_addrs": token_addrs,
+        "canonical_addrs": canonical,
+        "reject_reasons": reject_reasons,
+    }

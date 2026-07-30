@@ -43,7 +43,9 @@ CHAINLINK_FEEDS: Dict[str, str] = {
     # add more as needed
 }
 
-# Legacy price cache (kept)
+# Legacy price cache and source audit maps (kept)
+TOKEN_USD_PRICE: Dict[str, Decimal] = {}
+TOKEN_USD_SOURCE: Dict[str, str] = {}
 _price_cache: Dict[str, tuple[float, Decimal]] = {}
 _price_cache: Dict[str, Decimal] = {}
 _cache_ttl = 30  # seconds
@@ -70,6 +72,7 @@ def token_price_usd(symbol: str) -> Decimal:
     if symbol in CHAINLINK_FEEDS:
         try:
             price = _get_chainlink_price(CHAINLINK_FEEDS[symbol])
+            TOKEN_USD_SOURCE[symbol] = "chainlink"
         except Exception:
             price = None
 
@@ -90,6 +93,7 @@ def token_price_usd(symbol: str) -> Decimal:
                 val = data.get(cg_id, {}).get("usd")
                 if val:
                     price = Decimal(str(val))
+                    TOKEN_USD_SOURCE[symbol] = "coingecko"
         except Exception:
             pass
 
@@ -109,6 +113,7 @@ def token_price_usd(symbol: str) -> Decimal:
                     val = data.get("price")
                     if val:
                         price = Decimal(str(val))
+                        TOKEN_USD_SOURCE[symbol] = "1inch"
         except Exception:
             pass
 
@@ -116,9 +121,21 @@ def token_price_usd(symbol: str) -> Decimal:
         raise PriceUnavailable(f"No price for {symbol}")
 
     _price_cache[symbol] = (now, price)
+    TOKEN_USD_PRICE[symbol] = price
     return price
 
 
+
+def refresh_token_prices(force: bool = False, symbols: List[str] | None = None) -> Dict[str, Decimal]:
+    if force:
+        _price_cache.clear()
+    targets = symbols or list(TOKEN_ADDRESSES.keys())[:25]
+    for symbol in targets:
+        try:
+            token_price_usd(symbol)
+        except Exception:
+            continue
+    return dict(TOKEN_USD_PRICE)
 # ── Precision engine adapters (new — makes TS logic usable in pipeline) ───────
 class LegacyOracleSource(OracleSource):
     """Adapter that turns the existing oracle_layer into a PrecisionPricingEngine source."""

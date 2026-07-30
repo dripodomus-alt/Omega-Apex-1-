@@ -62,6 +62,7 @@ from . import scanner as py_scanner
 from . import rpc_layer
 from .pricing.net_delta import route_within_lifespan
 from .sizing import compute_optimal_principal
+from .ml_alpha_ranker import rerank_with_vqc
 from .payload_envelope import build_payload_envelope
 
 logger = logging.getLogger(__name__)
@@ -119,6 +120,18 @@ def find_opportunities(live_pools: dict, principal_usd: Decimal, max_slippage_bp
     else:
         logger.warning(f"SCANNER_MODE={mode} is not recognized")
         return []
+
+
+def rerank_by_ml_alpha(opportunities: list[LiveOpportunity]) -> list[LiveOpportunity]:
+    """
+    Re-ranks a list of opportunities using the ML Alpha model if it's enabled and ready.
+    If not, it returns the original list, preserving the deterministic ranking.
+    """
+    if RUST_SCANNER_AVAILABLE and SCANNER_MODE == "rust":
+        return rerank_with_vqc(opportunities)
+    else:
+        logger.debug("ML Alpha re-ranking skipped: Rust engine not active.")
+        return opportunities
 
 
 # ... (rest of the module: evaluate, rank, etc. preserved in original)

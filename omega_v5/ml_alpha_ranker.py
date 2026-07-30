@@ -9,11 +9,13 @@ from __future__ import annotations
 import os
 import pickle
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from .config import OMEGA_ML_MODEL_DIR, DYNAMIC_SIZE_OPT_BINS_USD, MIN_FLASH_PRINCIPAL_USD
-from .opportunity_ranker import LiveOpportunity
+if TYPE_CHECKING:
+    from .opportunity_ranker import LiveOpportunity
 from .quantum_logic_gate import create_vqc_circuit, simulate_and_measure
 
 SCALER_FILE = os.path.join(OMEGA_ML_MODEL_DIR, "vqc_ranker_scaler.pkl")

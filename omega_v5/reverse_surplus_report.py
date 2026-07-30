@@ -20,11 +20,13 @@ from .arbitrage import ArbitrageGraphEngine, detect_four_leg_cycles, detect_thre
 from .execution_truth import ExecutionTruthResult, final_truth_rank, truth_summary
 from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, MIN_NET_PROFIT_USD
+from .preflight import run_preflight_simulation
 from .flash_loan import evaluate_profitability
 from .opportunity_ranker import (
     LiveOpportunity,
     RoutePriceStep,
     score_cross_pool_spreads,
+    rerank_by_ml_alpha,
     score_opportunities,
     score_pegged_stable_spreads,
 )
@@ -289,6 +291,24 @@ def _scan_ranked(principal: Decimal) -> tuple[dict[str, dict], dict, list[LiveOp
         key=lambda item: item.profitability.net_profit_usd,
         reverse=True,
     )
+    # --- ML Alpha Re-ranking ---
+    # Re-rank the opportunities based on the ML model's prediction of success.
+    # This is a fail-closed operation; if the model is not ready, it returns the original list.
+    ranked = rerank_by_ml_alpha(ranked)
+
+
+    # --- Pre-flight Simulation Integration ---
+    # Here, we take the top-ranked opportunities and run them through the
+    # pre-flight simulation truth gate.
+    preflight_results = []
+    for op in ranked[:max(1, int(args.max_opps))]:
+        sim_ok, sim_profit_raw = run_preflight_simulation(op.as_dict())
+        preflight_results.append({
+            "opp_id": op.opp_id,
+            "simulation_ok": sim_ok,
+            "simulated_net_profit_raw": sim_profit_raw,
+        })
+
     stats = {
         "pools_loaded": len(pools),
         "rate_pairs": len(rates),
@@ -297,6 +317,7 @@ def _scan_ranked(principal: Decimal) -> tuple[dict[str, dict], dict, list[LiveOp
         "stable_spreads": len(stable),
         "cycles_detected": len(cycles),
         "ranked_profit_gate": len(ranked),
+        "preflight_simulations_run": len(preflight_results),
     }
     return pools, rates, ranked, stats
 
@@ -597,6 +618,11 @@ def report(argv: Iterable[str] | None = None) -> int:
         f"stable_spreads={stats['stable_spreads']} "
         f"cycles_detected={stats['cycles_detected']} "
         f"ranked_profit_gate={stats['ranked_profit_gate']}"
+    )
+    print(
+        "preflight_summary="
+        f"simulations_run={stats['preflight_simulations_run']} "
+        f"executable_found={sum(1 for r in stats.get('preflight_results', []) if r.get('simulated_net_profit_raw', 0) > 0)}"
     )
 
     try:

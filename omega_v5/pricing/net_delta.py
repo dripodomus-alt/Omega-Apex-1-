@@ -9,7 +9,7 @@ Updated for compatibility with PrecisionPricingEngine:
 """
 
 from decimal import Decimal, ROUND_FLOOR
-from .gas_oracle import get_live_gas_price_gwei
+from .gas_oracle import get_live_gas_price_gwei, get_live_native_price_usd
 from typing import Any, Dict, Optional, cast
 
 from ..units import ( # Updated to use new precision helpers
@@ -33,25 +33,32 @@ from .precision_pricing import ( # Import from the new engine
 )
 
 
-def calculate_gas_expense_usd_x18(estimated_gas_units: int, gas_price_gwei: float) -> int:
+def calculate_gas_expense_usd_x18(estimated_gas_units: int, gas_price_gwei: float, native_token_price_usd: float) -> int:
     """
     Calculates the total gas expense in USD (scaled by 1e18) using live gas prices.
 
     Args:
         estimated_gas_units: The raw gas units estimated for the transaction.
         gas_price_gwei: The current gas price in Gwei.
+        native_token_price_usd: The current price of the native gas token (e.g., MATIC) in USD.
 
     Returns:
         The total gas cost in USD, scaled by 1e18.
     """
     # 1 Gwei = 1e9 Wei. 1 POL = 1e18 Wei.
     # Gas Cost (POL) = gas_units * gas_price_gwei * 1e9 / 1e18 = gas_units * gas_price_gwei / 1e9
-    # For now, we assume 1 POL = 1 USD for simplicity. A full implementation would
-    # fetch the live POL/USD price.
-    gas_cost_pol_x18 = (estimated_gas_units * int(gas_price_gwei * 100) * 10**18) // (10**9 * 100)
+    gas_cost_pol_atomic = estimated_gas_units * int(gas_price_gwei * 10**9)
 
-    # Assuming 1 POL ~= 1 USD for this calculation.
-    return gas_cost_pol_x18
+    # Convert POL cost to USD using the live price, all scaled by 1e18.
+    # To do this with integer math, we scale the USD price.
+    # gas_cost_usd = gas_cost_pol * native_price_usd
+    # (gas_cost_pol_atomic / 1e18) * native_price_usd
+    # (gas_cost_pol_atomic * (native_price_usd * 1e18)) / 1e18 / 1e18
+    # We can simplify to: (gas_cost_pol_atomic * native_price_usd_x18) / 1e18
+    native_price_usd_x18 = int(native_token_price_usd * 10**18)
+    gas_cost_usd_x18 = (gas_cost_pol_atomic * native_price_usd_x18) // 10**18
+
+    return gas_cost_usd_x18
 
 
 def _to_raw(symbol: str, amount: Decimal) -> int:

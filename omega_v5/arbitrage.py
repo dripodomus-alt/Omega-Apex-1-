@@ -6,23 +6,26 @@
 from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from . import rust_engine
 from .config import normalize_protocol
 from .flash_loan import FlashLoanParams, FlashSource, Profitability
-from .opportunity_ranker import LiveOpportunity
 from .pricing.precision_pricing import (
     PrecisionPricingEngine,
     get_price_usd_x18,  # re-exported convenience from oracle bridge
     PRICE_SCALE,
 )
 
+if TYPE_CHECKING:
+    from .opportunity_ranker import LiveOpportunity
+
 # Re-export for the rest of the pipeline
 __all__ = ["run_arbitrage_discovery", "PrecisionPricingEngine", "PRICE_SCALE"]
 
 
 def _reconstruct_opportunities(opp_data_list: list[dict]) -> list[LiveOpportunity]:
+    from .opportunity_ranker import LiveOpportunity
     """Deserializes a list of opportunity dicts from Rust back into LiveOpportunity objects.
     Ensures protocol_seq uses canonical internal keys.
     """
@@ -90,3 +93,11 @@ def run_arbitrage_discovery(
 # Back-compat
 def discover_opportunities(*args: Any, **kwargs: Any) -> list[LiveOpportunity]:
     return run_arbitrage_discovery(*args, **kwargs)
+
+
+class ArbitrageGraphEngine:
+    def discover(self, chain_id: int = 137) -> list[Any]:
+        return run_arbitrage_discovery(chain_id=chain_id)
+
+    def run(self, chain_id: int = 137) -> list[Any]:
+        return self.discover(chain_id=chain_id)

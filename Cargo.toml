@@ -1,13 +1,6 @@
 [workspace]
 resolver = "2"
-members = [
-    "crates/apex-types",
-    "crates/apex-core",
-    "crates/apex-adapters",
-    "crates/apex-routing",
-    "crates/apex-simulation",
-    "python/scanner_core",
-]
+members = ["rust_engine"]
 
 [workspace.dependencies]
 pyo3 = { version = "0.21.0", features = ["extension-module"] }
