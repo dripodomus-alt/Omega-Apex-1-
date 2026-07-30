@@ -118,6 +118,7 @@ try {
 }
 
 $chainId = cast chain-id
+Assert-Ok -Condition ($chainId -eq 137) -Message "FATAL: RPC endpoint is connected to the wrong chain (ID: $chainId). Live-fire mode requires Polygon mainnet (ID: 137)."
 
 Write-Host "Sanity-checking executor wallet..."
 $privateKey = $envConfig.EXECUTOR_PRIVATE_KEY
@@ -132,9 +133,12 @@ Write-Phase -Title "Step 2: Final Confirmation" -Subtitle "Review details before
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
 Write-Host "  SIGNER TYPE     : PrivateKey (SDK Mode)" -ForegroundColor Yellow
 Write-Host "  EXECUTOR WALLET : $envConfig.EXECUTOR_WALLET" -ForegroundColor Yellow
-Write-Host "  NETWORK (ChainID) : $chainId" -ForegroundColor Yellow
+Write-Host "  NETWORK         : Polygon Mainnet (ChainID: $chainId)" -ForegroundColor Yellow
 Write-Host "  RPC ENDPOINT    : $rpcUrl" -ForegroundColor Yellow
 Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
+Write-Host "  BENCHMARK SCOPE" -ForegroundColor Yellow
+Write-Host "  Cycles to Run   : $Cycles" -ForegroundColor Yellow
+Write-Host "  Min Profit / Tx : `$ $($MinProfitUSD)" -ForegroundColor Yellow
 $initialBalanceWei = cast balance $envConfig.EXECUTOR_WALLET
 $initialBalanceNative = cast from-wei $initialBalanceWei
 Write-Host "Initial wallet balance: $initialBalanceNative POL" -ForegroundColor Green

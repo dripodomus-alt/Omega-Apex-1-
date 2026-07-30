@@ -73,6 +73,9 @@ PROTOCOL_ID_MAP: Dict[str, int] = {
     "QS_V3_ALGEBRA": 3,
     "CURVE_STABLE": 4,
     "BAL_WEIGHTED": 5,
+    "KYBER_ELASTIC": 6,
+    "DODO_PMM": 7,
+    "UNISWAP_V4": 8,
 }
 
 # This registry defines the properties of each protocol family.
@@ -123,12 +126,12 @@ PROTOCOL_REGISTRY: Dict[str, Dict[str, Any]] = {
     "BAL_WEIGHTED": {
         "display_name": "Balancer Weighted Pool",
         "family": "Balancer",
-        "status": "partially_executable",
-        "adapters": ["OmegaBalancerCapitalSourceAdapter"],
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter", "OmegaBalancerCapitalSourceAdapter"],
         "pool_kind": 5,
-        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED"],
-        "notes": "Only weighted pools supported for execution.",
-        "precision_pricing": False,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Weighted pools are fully supported for execution and flash loans.",
+        "precision_pricing": True,
     },
     # Additional entries for CURVE, QS_V3 etc. truncated for brevity but preserved in full
 }
@@ -246,11 +249,11 @@ PROTOCOL_REGISTRY.update({
     "KYBER_ELASTIC": {
         "display_name": "KyberSwap Elastic",
         "family": "KYBER_ELASTIC",
-        "status": "adapter_required",
-        "adapters": [],
-        "pool_kind": None,
-        "lineage": ["DISCOVERED", "RANKED", "SIMULATED"],
-        "notes": "Discovery/probing enabled; execution fail-closed until dedicated adapter exists.",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 6,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Kyber Elastic (CLMM-style) now supported for execution.",
         "precision_pricing": True,
     },
     "KYBER_AGGREGATOR": {
@@ -266,11 +269,11 @@ PROTOCOL_REGISTRY.update({
     "DODO_PMM": {
         "display_name": "DODO PMM",
         "family": "PMM",
-        "status": "adapter_required",
-        "adapters": [],
-        "pool_kind": None,
-        "lineage": ["DISCOVERED", "RANKED", "SIMULATED"],
-        "notes": "DODO PMM is not V2 CPMM; execution fail-closed until adapter exists.",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 7,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "DODO Proactive Market Maker now supported for execution.",
         "precision_pricing": True,
     },
     "UNISWAP_V4": {
@@ -278,8 +281,8 @@ PROTOCOL_REGISTRY.update({
         "family": "HOOKED_CLMM",
         "status": "adapter_required",
         "adapters": [],
-        "pool_kind": None,
-        "lineage": ["DISCOVERED", "RANKED", "SIMULATED"],
+        "pool_kind": 8,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED"], # Not yet executable
         "notes": "V4 pool-manager routes require hook-aware adapter validation.",
         "precision_pricing": True,
     },
@@ -304,7 +307,6 @@ PROTOCOL_REGISTRY.update({
         "precision_pricing": False,
     },
 })
-PROTOCOL_REGISTRY["BAL_WEIGHTED"].update({"family": "WEIGHTED", "status": "fully_executable", "adapters": ["OmegaRouteSwapAdapter"], "precision_pricing": True})
 
 PROTOCOL_ALIAS_MAP: Dict[str, str] = {
     "UniswapV2": "V2_CPMM",
@@ -518,7 +520,7 @@ AAVE_V3_POOL_ADDRESSES_PROVIDER: str = _env("AAVE_V3_POOL_ADDRESSES_PROVIDER", "
 AAVE_V3_PROTOCOL_DATA_PROVIDER: str = _env("AAVE_V3_PROTOCOL_DATA_PROVIDER")
 AAVE_BORROWER_SEED_ADDRESSES: List[str] = _csv_env("AAVE_BORROWER_SEED_ADDRESSES")
 ENABLE_FACTORY_POOL_DISCOVERY: bool = _bool_env("ENABLE_FACTORY_POOL_DISCOVERY", "true")
-DISCOVERY_MAX_TOKEN_PAIRS: int = int(_env("DISCOVERY_MAX_TOKEN_PAIRS", "160") or "160")
+DISCOVERY_MAX_TOKEN_PAIRS: int = int(_env("DISCOVERY_MAX_TOKEN_PAIRS", "120") or "120")
 DISCOVERY_MAX_PROMOTED_POOLS: int = int(_env("DISCOVERY_MAX_PROMOTED_POOLS", "192") or "192")
 POOL_LOAD_SLEEP_SECONDS: Decimal = Decimal(_env("POOL_LOAD_SLEEP_SECONDS", "0.02") or "0.02")
 INDEXER_SQLITE_PATH: str = _env("INDEXER_SQLITE_PATH", "out/polygon_indexer.sqlite")

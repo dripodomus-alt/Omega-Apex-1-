@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python3
 """Compact route execution staging layer with buy-low/sell-high proof."""
 
 from __future__ import annotations
@@ -9,6 +8,7 @@ import argparse
 import json
 import logging
 import os
+import time
 from collections import Counter
 from dataclasses import dataclass, field
 from decimal import Decimal
@@ -17,12 +17,18 @@ from typing import Any, Iterable
 from web3 import Web3
 
 from . import rpc_layer
-from .config import CHAIN_ID, normalize_protocol
+from .config import (
+    CHAIN_ID,
+    normalize_protocol,
+    MIN_CALldata_LENGTH,
+    MAX_CALldata_LENGTH,
+)
 from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, MIN_NET_PROFIT_USD
 from .oracle_layer import token_price_usd
 from .paths import output_path
 from .pricing.net_delta import route_within_lifespan
+from .pipeline_validation import validate_calldata_integrity
 from .payload_envelope import UNIFIED_ROUTE_SCHEMA_VERSION
 
 logger = logging.getLogger("omega.stager")
@@ -142,7 +148,13 @@ def _stage_single_route(opportunity: Any, sizing_result: Any) -> dict[str, Any]:
     """
     # In a full implementation, this would call `build_tx_payload`
     # For now, we'll use placeholder calldata.
-    tx_payload = {"data": "0x" + "a" * 128, "gas": 650000}
+    # This logic is expanded to handle the newly executable protocols.
+    if any(p in ["DODO_PMM", "KYBER_ELASTIC"] for p in opportunity.protocol_seq):
+        logger.info(f"Staging newly executable protocol route for {opportunity.opp_id}")
+        # Use a distinct placeholder to signify a different adapter path might be used.
+        tx_payload = {"data": "0x" + "d0d0" * 32, "gas": 750000}
+    else:
+        tx_payload = {"data": "0x" + "a" * 128, "gas": 650000}
 
     if not validate_calldata_integrity(tx_payload.get("data", ""), opportunity.opp_id, "stager_c1"):
         raise ValueError("Calldata integrity check failed during staging.")

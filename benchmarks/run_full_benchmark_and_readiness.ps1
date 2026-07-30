@@ -16,11 +16,11 @@
 #>
 [CmdletBinding()]
 param(
-    [int]$AnvilCycles = 2,
+    [int]$AnvilCycles = 5,
     [switch]$SkipAnvil,
     [switch]$ReadinessOnly,
-    [int]$ScannerTokens = 25,
-    [int]$ScannerPoolsPerPair = 5
+    [int]$ScannerTokens = 50,
+    [int]$ScannerPoolsPerPair = 10
 )
 
 $ErrorActionPreference = "Stop"
@@ -148,7 +148,7 @@ try {
 
     # --- Phase 7: Route Proof Matrix ---
     Write-Phase "Route Proof Matrix"
-    $proofProfile = "fastest_low_latency"
+    $proofProfile = "maximum_dynamics"
     Write-Host "Running route proof matrix with profile: '$proofProfile'..."
     python -m omega_v5.route_proof_matrix --profiles $proofProfile
     Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Route proof matrix script (route_proof_matrix.py) failed to execute."

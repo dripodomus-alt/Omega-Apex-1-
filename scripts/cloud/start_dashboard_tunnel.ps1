@@ -19,8 +19,8 @@
   .\scripts\cloud\start_dashboard_tunnel.ps1 -VmName "my-other-vm" -Zone "us-central1-a"
 #>
 param(
-    [string]$VmName = "omega-executor-vm-1",
-    [string]$Zone = "us-east1-b",
+    [string]$VmName = "apex-node-1",
+    [string]$Zone = "us-central1-a",
     [string]$Project = "", # Will be automatically detected from gcloud config if not provided
     [int]$LocalPort = 8080,
     [int]$RemotePort = 8080
@@ -34,7 +34,7 @@ if (!(Get-Command gcloud -ErrorAction SilentlyContinue)) {
 
 $effectiveProject = $Project
 if ([string]::IsNullOrEmpty($effectiveProject)) {
-    $effectiveProject = $env:GCP_PROJECT_ID
+    $effectiveProject = $env:GCP_PROJECT_ID # Fallback to environment variable
 }
 if ([string]::IsNullOrEmpty($effectiveProject)) {
     try {
@@ -50,4 +50,5 @@ Write-Host "   Forwarding local port $LocalPort to remote port $RemotePort."
 Write-Host "   When the tunnel is active, open this URL in your browser: http://localhost:$LocalPort/" -ForegroundColor Green
 Write-Host "   Press CTRL+C in this window to close the tunnel." -ForegroundColor Yellow
 
-gcloud compute ssh "$VmName" --project "$effectiveProject" --zone "$Zone" -- -N -L "$($LocalPort):127.0.0.1:$($RemotePort)"
+# Use the modern --ssh-flag syntax, which is more robust than the deprecated '--' separator.
+gcloud compute ssh "$VmName" --project "$effectiveProject" --zone "$Zone" --ssh-flag="-N" --ssh-flag="-L $($LocalPort):127.0.0.1:$($RemotePort)"
