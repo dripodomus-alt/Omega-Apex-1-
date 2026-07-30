@@ -56,3 +56,11 @@ rust_engine/target/
 .traces/
 .ariana_saved_traces/
 .vault_secret_key
+# Environment overlays
+.env.*
+!.env.example
+!infra/env/*.example
+# Runtime/tool state
+.pytest_cache/
+.pm2/
+runtime/

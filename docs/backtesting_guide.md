@@ -35,7 +35,7 @@ When a bottleneck appears, switch to a tuned `.env` template (see below).
 
 These `.env` files were derived from benchmark runs. Copy the one that matches your market conditions.
 
-### .env.max_speed (Low-Latency, Competitive Markets)
+### infra/env/.env.max_speed (Low-Latency, Competitive Markets)
 ```env
 SCANNER_MODE=rust
 TARGET_TOKENS="USDC,WETH,WBTC,MATIC,USDT,DAI"
@@ -45,7 +45,7 @@ RPC_RPS_LIMIT=25
 ```
 **When to use**: High-frequency trading where cycle time must stay ~5s. Benchmarks show best multiplier here.
 
-### .env.deep_scan (Broad Market Exploration)
+### infra/env/.env.deep_scan (Broad Market Exploration)
 ```env
 SCANNER_MODE=rust
 TARGET_TOKENS="*"
@@ -57,8 +57,8 @@ RPC_RPS_LIMIT=15
 
 ## Interpreting Results & Next Steps
 
-- If multiplier collapses at high complexity → adopt `.env.max_speed` and limit TARGET_TOKENS in code.
-- If Rust time grows linearly but stays acceptable → `.env.deep_scan` is viable.
+- If multiplier collapses at high complexity → adopt `infra/env/.env.max_speed` and limit TARGET_TOKENS in code.
+- If Rust time grows linearly but stays acceptable → `infra/env/.env.deep_scan` is viable.
 - Always re-run the readiness script after swapping .env files.
 - For visualization, see `notebooks/` or `docs/plot_pipeline_performance.py`.
 - Update this guide when new templates are reverse-engineered from fresh benchmarks.
