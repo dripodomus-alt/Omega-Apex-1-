@@ -46,8 +46,8 @@ class TestStagingInvariants(unittest.TestCase):
         self.unprofitable_pools = {
             # Buy WETH for 3000 USDC
             "BUY_LOW": _v2_pool(("USDC", "WETH"), ("3000000", "1000"), 1),
-            # Sell WETH for only 2990 USDC (a loss)
-            "SELL_LOW": _v2_pool(("WETH", "USDC"), ("1000", "2990000"), 3),
+            # Same executable price as BUY_LOW, so no buy-low/sell-high spread exists.
+            "SELL_LOW": _v2_pool(("WETH", "USDC"), ("1000", "3000000"), 3),
         }
 
     def test_profitable_route_is_staged(self):
@@ -167,3 +167,4 @@ class TestStagingInvariants(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

@@ -1,68 +1,90 @@
-# Standardized Cloud Build configuration for the Omega V5 service.
-# This file uses best practices for repository-triggered builds, automatically
-# tagging images with the commit SHA and deploying to Cloud Run.
+# Cloud Build -> Artifact Registry -> Cloud Run for Apex Scanner Live1.
+# Secrets are intentionally referenced by name and must be created in Secret Manager.
 
 substitutions:
+  _REGION: us-east1
   _AR_HOSTNAME: us-east1-docker.pkg.dev
   _AR_REPOSITORY: apex-omega
-  _IMAGE_NAME: omega-finally-rich
-  _SERVICE_NAME: omega-finally-rich
-  _DEPLOY_REGION: 'us-east1'
-  _SERVICE_ACCOUNT: '323456506288-compute@developer.gserviceaccount.com'
+  _IMAGE_NAME: flashloan-execution-monitor
+  _SERVICE_NAME: flashloan-execution-monitor
+  _SERVICE_ACCOUNT: 323456506288-compute@developer.gserviceaccount.com
+  _FIREBASE_PROJECT_ID: apex-scanner-live1
+  _FIREBASE_AUTH_DOMAIN: apex-scanner-live1.firebaseapp.com
+  _FIREBASE_STORAGE_BUCKET: apex-scanner-live1.firebasestorage.app
+  _FIREBASE_MESSAGING_SENDER_ID: '323456506288'
+  _FIREBASE_APP_ID: 1:323456506288:web:c3890257434a8e1c6b5e75
+  _CLOUD_SQL_INSTANCE: apex-scanner-live1:us-east1:apex-omega-sql
+  _MIN_INSTANCES: '0'
+  _MAX_INSTANCES: '3'
+  _MEMORY: 1Gi
+  _CPU: '1'
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  substitutionOption: ALLOW_LOOSE
 
 steps:
-  - id: 'Install Python dependencies'
-    name: 'python:3.11-slim'
-    entrypoint: 'pip'
-    args: ['install', '-r', 'requirements.txt', '--no-cache-dir']
-
-  - id: 'Run unit tests'
-    name: 'python:3.11-slim'
-    entrypoint: 'pytest'
+  - id: python-syntax-and-tests
+    name: python:3.11-slim
+    entrypoint: bash
     args:
-      - 'omega_v5/'
-      - '--ignore=omega_v5/notebooks/' # Example of ignoring a directory
-      - '-v'
-    # This step depends on the successful installation of dependencies.
-    waitFor: ['Install Python dependencies']
+      - -lc
+      - >-
+        python -m pip install --upgrade pip &&
+        pip install -r requirements.in &&
+        python -m py_compile omega_v5/api.py omega_v5/route_execution_stager.py omega_v5/opportunity_ranker.py &&
+        python -m pytest tests --ignore=tests/root_legacy -q
 
-  - id: 'Build image'
-    name: 'gcr.io/cloud-builders/docker'
+  - id: build-image
+    name: gcr.io/cloud-builders/docker
+    waitFor: [python-syntax-and-tests]
     args:
-      - 'build'
-      - '-t'
-      - '${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
-      - '.'
-      - '-f'
-      - 'Dockerfile'
-    # The build will only start if the tests pass.
-    waitFor: ['Run unit tests']
+      - build
+      - --tag
+      - ${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA
+      - --tag
+      - ${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:latest
+      - --file
+      - Dockerfile
+      - .
 
-  - id: 'Push image to Artifact Registry'
-    name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - '${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
+  - id: push-image-sha
+    name: gcr.io/cloud-builders/docker
+    waitFor: [build-image]
+    args: [push, ${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA]
 
-  - id: 'Deploy to Cloud Run'
-    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
-    entrypoint: 'gcloud'
+  - id: push-image-latest
+    name: gcr.io/cloud-builders/docker
+    waitFor: [build-image]
+    args: [push, ${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:latest]
+
+  - id: deploy-cloud-run
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    waitFor: [push-image-sha]
+    entrypoint: gcloud
     args:
-      - 'run'
-      - 'deploy'
-      - '${_SERVICE_NAME}'
-      - '--image=${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
-      - '--region=${_DEPLOY_REGION}'
-      - '--platform=managed'
-      - '--port=8080'
-      - '--service-account=$_SERVICE_ACCOUNT'
-      - '--no-allow-unauthenticated'
-      - '--quiet'
+      - run
+      - deploy
+      - ${_SERVICE_NAME}
+      - --project=$PROJECT_ID
+      - --image=${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA
+      - --region=${_REGION}
+      - --platform=managed
+      - --port=8080
+      - --service-account=${_SERVICE_ACCOUNT}
+      - --cpu=${_CPU}
+      - --memory=${_MEMORY}
+      - --min-instances=${_MIN_INSTANCES}
+      - --max-instances=${_MAX_INSTANCES}
+      - --add-cloudsql-instances=${_CLOUD_SQL_INSTANCE}
+      - --set-env-vars=ENVIRONMENT=production,CHAIN_ID=137,FIREBASE_PROJECT_ID=${_FIREBASE_PROJECT_ID},FIREBASE_AUTH_DOMAIN=${_FIREBASE_AUTH_DOMAIN},FIREBASE_STORAGE_BUCKET=${_FIREBASE_STORAGE_BUCKET},FIREBASE_MESSAGING_SENDER_ID=${_FIREBASE_MESSAGING_SENDER_ID},FIREBASE_APP_ID=${_FIREBASE_APP_ID},CLOUD_SQL_INSTANCE=${_CLOUD_SQL_INSTANCE},API_FRONTEND_TOKEN_REQUIRED=true
+      - --set-secrets=DATABASE_URL=apex-database-url:latest,CLOUD_SQL_DSN=apex-database-url:latest,REDIS_URL=apex-redis-url:latest,HTTP_URL=polygon-http-rpc-url:latest,WSS_URL=polygon-wss-rpc-url:latest,API_TOKEN=apex-api-token:latest
+      - --no-allow-unauthenticated
+      - --quiet
 
 images:
-  - '${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
+  - ${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA
+  - ${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:latest
 
-timeout: 1800s
+timeout: 2400s
+

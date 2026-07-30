@@ -2,6 +2,10 @@
 
 Last validated: 2026-07-13 on Polygon Chain 137.
 
+## Canonical Arbitrage Equation
+
+The executable equation is defined in `docs/arb_equation_and_execution_gate.md`. The pipeline supports broad cross-protocol discovery, but live execution is fail-closed until every route leg has exact quote, calldata, source-adapter, simulation, and settlement verification.
+
 ## End-to-End Cycle
 
 1. RPC connection
@@ -121,3 +125,4 @@ Sources used for the current registry:
 - Liquidation execution is source-ready but not live-armed: `OmegaAaveV3LiquidationAdapter` is deployable source, while the scanner remains `SCANNER_ONLY` until `LIQUIDATION_EXECUTOR_ADDRESS`, adapter deployment, calldata build, and fork simulation are proven.
 - Live broadcasting is intentionally not armed. The local signer value must be a valid private key before it can pass `EXECUTOR_PRIVATE_KEY valid`.
 - Curve pool ingestion needs a current registry/router importer before Curve routes should re-enter active execution discovery.
+

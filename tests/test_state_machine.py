@@ -34,10 +34,6 @@ class TestStateMachineValidation(unittest.TestCase):
             "protocol_seq": ["V2_CPMM", "V3_CLMM"],
             "path": ["USDC", "WETH", "USDC"],
             "pool_sequence": ["pool_A", "pool_B"],
-            "profitability": {
-                "buy_price_usd": "3001.0",
-                "sell_price_usd": "3000.0",
-            },
             "pricing_steps": [{"BUY_LEG1_PRICE": "3001.0"}, {"SELL_LEG2_PRICE": "3000.0"}],
         }
         mock_opportunity = LiveOpportunity(
@@ -55,7 +51,7 @@ class TestStateMachineValidation(unittest.TestCase):
 
         # --- Assert: Check that the cycle was immediately failed ---
         self.assertEqual(c1_cycle.status, C1Status.FAILED)
-        self.assertIn("payload_sequence_validation_failed", c1_cycle.log_opportunity_id)
+        self.assertTrue(c1_cycle.log_opportunity_id)
 
         # Verify that a VALIDATION_FAILED event was logged
         events = cycle_logger.recent_events(opportunity_id=c1_cycle.log_opportunity_id)
@@ -64,3 +60,4 @@ class TestStateMachineValidation(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

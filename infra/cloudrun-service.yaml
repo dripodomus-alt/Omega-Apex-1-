@@ -1,0 +1,73 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: flashloan-execution-monitor
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/cloudsql-instances: apex-scanner-live1:us-east1:apex-omega-sql
+    spec:
+      serviceAccountName: 323456506288-compute@developer.gserviceaccount.com
+      containers:
+        - image: us-east1-docker.pkg.dev/apex-scanner-live1/apex-omega/flashloan-execution-monitor:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ENVIRONMENT
+              value: production
+            - name: CHAIN_ID
+              value: "137"
+            - name: FIREBASE_PROJECT_ID
+              value: apex-scanner-live1
+            - name: FIREBASE_AUTH_DOMAIN
+              value: apex-scanner-live1.firebaseapp.com
+            - name: FIREBASE_STORAGE_BUCKET
+              value: apex-scanner-live1.firebasestorage.app
+            - name: FIREBASE_MESSAGING_SENDER_ID
+              value: "323456506288"
+            - name: FIREBASE_APP_ID
+              value: 1:323456506288:web:c3890257434a8e1c6b5e75
+            - name: CLOUD_SQL_INSTANCE
+              value: apex-scanner-live1:us-east1:apex-omega-sql
+            - name: API_FRONTEND_TOKEN_REQUIRED
+              value: "true"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: apex-database-url
+                  key: latest
+            - name: CLOUD_SQL_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: apex-database-url
+                  key: latest
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: apex-redis-url
+                  key: latest
+            - name: HTTP_URL
+              valueFrom:
+                secretKeyRef:
+                  name: polygon-http-rpc-url
+                  key: latest
+            - name: WSS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: polygon-wss-rpc-url
+                  key: latest
+            - name: API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: apex-api-token
+                  key: latest
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+

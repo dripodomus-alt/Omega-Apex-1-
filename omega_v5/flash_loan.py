@@ -114,6 +114,21 @@ class Profitability:
     expense_breakdown: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class RouteEconomics:
+    flash_principal_usd: Decimal
+    gross_sell_out_usd: Decimal
+    gross_surplus_usd: Decimal
+    flash_fee_usd: Decimal
+    gas_cost_usd: Decimal
+    relay_tip_usd: Decimal
+    builder_fee_usd: Decimal
+    risk_buffer_usd: Decimal
+    impact_penalty_usd: Decimal
+    economic_net_profit_usd: Decimal
+    minimum_profit_usd: Decimal
+    headroom_usd: Decimal
+    passes_gate: bool
 def estimate_static_gas_usd(*, hops: int = 2) -> Decimal:
     units = GAS_UNITS_SIMPLE_ARB if hops <= 2 else (GAS_UNITS_THREE_HOP_ARB if hops == 3 else GAS_UNITS_FOUR_HOP_ARB)
     return units * GAS_PRICE_GWEI / Decimal("1000000000") * POL_USD_PRICE
@@ -191,28 +206,70 @@ def evaluate_profitability(
     )
 
 def calculate_route_economics(
-    route: dict,
-    pools: dict,
+    route: dict | None = None,
+    pools: dict | None = None,
     *,
     flash_source: FlashSource = FlashSource.BALANCER,
-) -> dict:
-    """Route level. Prefers capital_injector result if present in route."""
+    flash_principal_usd: Decimal | str | int | None = None,
+    gross_sell_out_usd: Decimal | str | int | None = None,
+    min_tvl_usd: Decimal | str | int | None = None,
+    flash_fee_usd: Decimal | str | int | None = None,
+    gas_cost_usd: Decimal | str | int | None = None,
+    relay_tip_usd: Decimal | str | int | None = None,
+    builder_fee_usd: Decimal | str | int | None = None,
+    risk_buffer_usd: Decimal | str | int | None = None,
+    minimum_profit_usd: Decimal | str | int | None = None,
+) -> dict | RouteEconomics:
+    """Route-level economics plus direct integer-exact compatibility mode."""
+    if flash_principal_usd is not None or gross_sell_out_usd is not None:
+        principal = Decimal(str(flash_principal_usd or "0"))
+        gross_out = Decimal(str(gross_sell_out_usd or "0"))
+        flash_fee = Decimal(str(flash_fee_usd or "0"))
+        gas = Decimal(str(gas_cost_usd or "0"))
+        relay = Decimal(str(relay_tip_usd or "0"))
+        builder = Decimal(str(builder_fee_usd or "0"))
+        risk = Decimal(str(risk_buffer_usd or "0"))
+        minimum = Decimal(str(minimum_profit_usd if minimum_profit_usd is not None else MIN_NET_PROFIT_USD))
+        try:
+            from .sizing.dynamic_optimizer import _apply_impact_penalty
+            impact = _apply_impact_penalty(principal=principal, min_tvl=Decimal(str(min_tvl_usd or "0")), gross=gross_out - principal)
+        except Exception:
+            impact = Decimal("0")
+        gross_surplus = gross_out - principal
+        net = gross_surplus - flash_fee - gas - relay - builder - risk - impact
+        headroom = net - minimum
+        return RouteEconomics(
+            flash_principal_usd=principal,
+            gross_sell_out_usd=gross_out,
+            gross_surplus_usd=gross_surplus,
+            flash_fee_usd=flash_fee,
+            gas_cost_usd=gas,
+            relay_tip_usd=relay,
+            builder_fee_usd=builder,
+            risk_buffer_usd=risk,
+            impact_penalty_usd=impact,
+            economic_net_profit_usd=net,
+            minimum_profit_usd=minimum,
+            headroom_usd=headroom,
+            passes_gate=headroom >= Decimal("0"),
+        )
+
+    route = route or {}
+    pools = pools or {}
     principal = Decimal(str(route.get("selected_principal_usd", "10000")))
-    # If injector already ran, use its value
     if "sizing" in route and "principal_usd" in route["sizing"]:
         try:
             principal = Decimal(route["sizing"]["principal_usd"])
         except Exception:
             pass
 
-    gross = principal * Decimal("1.0015")  # placeholder
+    gross = principal * Decimal("1.0015")
     prof = evaluate_profitability(gross, principal, hops=len(route.get("pool_sequence", [])), flash_source=flash_source)
     return {
         "principal_usd": str(principal),
         "net_profit_usd": str(prof.net_profit_usd),
         "passes": prof.passes_gate,
     }
-
 # Backwards compat
 live_min_net_profit_usd = lambda: MIN_NET_PROFIT_USD
 live_relay_tip_usd = lambda: RELAY_TIP_USD

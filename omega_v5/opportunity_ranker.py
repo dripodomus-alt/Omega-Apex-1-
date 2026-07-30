@@ -87,6 +87,7 @@ class LiveOpportunity:
     # Additional fields for live execution families
     c1_success: bool = False
     liquidation_data: dict | None = None
+    pricing_steps: list[dict] = field(default_factory=list)
 
 
 def find_opportunities_with_rust(live_pools: dict, principal_usd: Decimal, max_slippage_bps: Decimal) -> list[LiveOpportunity]:
@@ -229,5 +230,6 @@ def score_pegged_stable_spreads(stable_spreads, pools: dict, principal_usd: Deci
         if scored is not None:
             out.append(scored)
     return out
+
 
 

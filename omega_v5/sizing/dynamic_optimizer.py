@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
+import sys
 from typing import Any, Callable
 
 from ..capital_injector import compute_optimal_injection
@@ -17,7 +18,7 @@ from ..config import (
     MIN_FLASH_PRINCIPAL_USD,
     MAX_ROUTE_TVL_FRACTION,
 )
-from ..flash_loan import FlashSource, Profitability
+from ..flash_loan import FlashSource, Profitability, evaluate_profitability
 
 # Re-exports for monkeypatching
 DYNAMIC_SIZE_IMPACT_PENALTY_BPS = Decimal("120")
@@ -78,18 +79,24 @@ def dynamic_size_optimizer(*args, **kwargs):
     return Decimal("10000"), None
 def optimize_principal_with_dynamic(*args, **kwargs):
     if "opportunity" in kwargs:
+        pkg = sys.modules.get("omega_v5.sizing")
         opportunity = kwargs.get("opportunity")
         live_pools = kwargs.get("live_pools", {})
         quote_function = kwargs.get("quote_function", lambda p: p)
-        tvl = estimate_route_tvl_usd(getattr(opportunity, "pool_sequence", []), live_pools)
-        fraction = FLASH_ROUTE_TVL_FRACTIONS[0] if FLASH_ROUTE_TVL_FRACTIONS else Decimal("0.15")
-        upper = max(MIN_FLASH_PRINCIPAL_USD, min(MAX_FLASH_PRINCIPAL_USD, tvl * fraction))
+        estimate_fn = getattr(pkg, "estimate_route_tvl_usd", estimate_route_tvl_usd) if pkg else estimate_route_tvl_usd
+        fractions = getattr(pkg, "FLASH_ROUTE_TVL_FRACTIONS", FLASH_ROUTE_TVL_FRACTIONS) if pkg else FLASH_ROUTE_TVL_FRACTIONS
+        max_flash = Decimal(str(getattr(pkg, "MAX_FLASH_PRINCIPAL_USD", MAX_FLASH_PRINCIPAL_USD))) if pkg else MAX_FLASH_PRINCIPAL_USD
+        min_flash = Decimal(str(getattr(pkg, "MIN_FLASH_PRINCIPAL_USD", MIN_FLASH_PRINCIPAL_USD))) if pkg else MIN_FLASH_PRINCIPAL_USD
+        eval_fn = getattr(pkg, "evaluate_profitability", evaluate_profitability) if pkg else evaluate_profitability
+        tvl = Decimal(str(estimate_fn(getattr(opportunity, "pool_sequence", []), live_pools)))
+        fraction = Decimal(str(fractions[0])) if fractions else Decimal("0.15")
+        upper = max(min_flash, min(max_flash, tvl * fraction))
         best_principal = Decimal("0")
         best_profit = Decimal("0")
-        if tvl > 0 and upper >= MIN_FLASH_PRINCIPAL_USD:
+        if tvl > 0 and upper >= min_flash:
             def profit_fn(p: Decimal):
                 gross = quote_function(p)
-                return evaluate_profitability(
+                return eval_fn(
                     gross_amount_out_usd=gross,
                     principal_usd=p,
                     hops=max(1, len(getattr(opportunity, "pool_sequence", []))),
@@ -97,7 +104,7 @@ def optimize_principal_with_dynamic(*args, **kwargs):
                 )
             best_principal, best_prof = dynamic_size_optimizer(
                 profit_function=profit_fn,
-                min_principal=MIN_FLASH_PRINCIPAL_USD,
+                min_principal=min_flash,
                 max_principal=upper,
                 steps=10,
             )
@@ -107,6 +114,7 @@ def optimize_principal_with_dynamic(*args, **kwargs):
             selected_principal_usd=best_principal,
             max_profit_usd=max(best_profit, Decimal("0")),
             min_pool_tvl_usd=tvl,
+            minimum_principal_usd=min_flash,
             search_upper_bound_usd=upper,
             method="dynamic_optimizer",
         )
@@ -133,7 +141,22 @@ class DynamicSizeResult:
         self.best_method = kw.get("best_method", "legacy")
 
 def _apply_impact_penalty(principal, min_tvl, gross):
-    return Decimal("0")
+    principal = Decimal(str(principal or "0"))
+    min_tvl = Decimal(str(min_tvl or "0"))
+    gross = Decimal(str(gross or "0"))
+    bps = Decimal(str(DYNAMIC_SIZE_IMPACT_PENALTY_BPS))
+    if bps < 0:
+        raise ValueError("DYNAMIC_SIZE_IMPACT_PENALTY_BPS cannot be negative")
+    if gross <= 0 or principal <= 0:
+        return Decimal("0")
+    if min_tvl <= 0:
+        return gross
+    penalty = gross * (principal / min_tvl) * (bps / Decimal("10000"))
+    if penalty < 0:
+        return Decimal("0")
+    return min(gross, penalty)
+
+
 
 
 

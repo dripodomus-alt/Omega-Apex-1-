@@ -210,40 +210,84 @@ def stage_pre_ranked_route(route: PreRankedRoute, pools: dict[str, dict[str, Any
     if principal_usd is None:
         principal_usd = requested_principal_usd if requested_principal_usd is not None else Decimal("0")
     pools = pools or {}
+    sizing = {"principal_usd": str(principal_usd), "requested_principal_usd": str(principal_usd)}
     try:
-        quote_route_for_executor(route, pools=pools, principal_usd=principal_usd, slippage_bps=slippage_bps)
+        quote_route_for_executor(list(route.path), list(route.pool_sequence), pools, _decimal(principal_usd))
     except Exception as exc:
         opp_id = getattr(route, "opp_id", "") or "OPP-QUOTE-EXCEPTION"
-        return {"opp_id": opp_id, "status": "rejected", "stage": "exact_quote_exception", "reason": type(exc).__name__, "opportunity_id_frozen": True, "unified_route_envelope": {"schema_version": UNIFIED_ROUTE_SCHEMA_VERSION, "staging": {"stage": "exact_quote_exception"}}}
+        return {
+            "opp_id": opp_id,
+            "status": "rejected",
+            "stage": "exact_quote_exception",
+            "reason": type(exc).__name__,
+            "opportunity_id_frozen": True,
+            "sizing": sizing,
+            "unified_route_envelope": {
+                "schema_version": UNIFIED_ROUTE_SCHEMA_VERSION,
+                "opp_id": opp_id,
+                "staging": {"stage": "exact_quote_exception", "opportunity_id_frozen": True, "principal_usd": str(principal_usd)},
+                "fees": {},
+                "math": {},
+            },
+        }
     initial_amount_raw = int(_decimal(principal_usd) * Decimal("1000000"))
     identity = build_route_identity(route, initial_amount_raw=initial_amount_raw)
     opp_id = f"OPP-{identity['quote_snapshot_id'][2:18]}"
     hop_fees, hop_fee_total = _estimate_hop_fees_usd(route.edge_entries, base_amount_in=_decimal(principal_usd), base_token=route.path[0], pools=pools)
     net_gain = route.approximate_raw_delta_usd - hop_fee_total
+    fee_components = {
+        "flashloan_fee_usd": Decimal("0"),
+        "gas_cost_usd": Decimal("0"),
+        "relay_or_private_submit_cost_usd": Decimal("0"),
+        "risk_buffer_usd": Decimal("0"),
+        "extra_slippage_buffer_usd": Decimal("0"),
+        "hop_fees_usd": hop_fee_total,
+    }
+    fee_ledger = {
+        "schema_version": "omega_v5.fee_ledger.v1",
+        "normalized_unit": "NUSD",
+        "total_fee_usd": str(sum(fee_components.values(), Decimal("0"))),
+        "components": [
+            {"fee_component": "flashloan_fee", "amount_usd": str(fee_components["flashloan_fee_usd"])},
+            {"fee_component": "gas_fee", "amount_usd": str(fee_components["gas_cost_usd"])},
+            {"fee_component": "relay_fee", "amount_usd": str(fee_components["relay_or_private_submit_cost_usd"])},
+            {"fee_component": "risk_buffer", "amount_usd": str(fee_components["risk_buffer_usd"])},
+            {"fee_component": "slippage_buffer", "amount_usd": str(fee_components["extra_slippage_buffer_usd"])},
+            {"fee_component": "pool_hop_fees", "amount_usd": str(fee_components["hop_fees_usd"])},
+        ],
+        "alignment_rule": "route_math_sums_only_normalized_fee_usd",
+    }
+    net_formula = {
+        **fee_components,
+        "net_gain_usd": net_gain,
+        "gas_payer": "user_wallet",
+        "gas_accounting": {"native_symbol": "POL"},
+    }
     return {
         "opp_id": opp_id,
+        "opportunity_id": opp_id,
         "status": READY_FOR_EXACT_CALL_STATUS,
         "path": list(route.path),
         "pool_sequence": list(route.pool_sequence),
         "protocol_seq": list(route.protocol_seq),
         "principal_usd": str(principal_usd),
+        "sizing": sizing,
         "route_pair_id": identity["route_pair_id"],
         "quote_snapshot_id": identity["quote_snapshot_id"],
         "opportunity_id_frozen": True,
         "identity": identity,
         "net_gain_usd": str(net_gain),
-        "net_formula": {"hop_fees_usd": hop_fee_total, "net_gain_usd": net_gain},
+        "net_formula": net_formula,
         "pool_hop_fees": [str(x) for x in hop_fees],
         "unified_route_envelope": {
             "schema_version": UNIFIED_ROUTE_SCHEMA_VERSION,
             "opp_id": opp_id,
             "route": {"path": list(route.path), "pool_sequence": list(route.pool_sequence)},
             "staging": {"opportunity_id_frozen": True, "principal_usd": str(principal_usd), "identity": identity, "route_pair_id": identity["route_pair_id"], "quote_snapshot_id": identity["quote_snapshot_id"]},
-            "fees": {},
+            "fees": fee_ledger,
             "math": {"net_gain_usd": str(net_gain)},
         },
     }
-
 def build_route_identity(route: PreRankedRoute, *, initial_amount_raw: int | str | None = None) -> dict[str, Any]:
     block_hash = route.discovery_block_hash or "0x" + "00" * 32
     block_hash_source = "route.discovery_block_hash" if route.discovery_block_hash else "zero_hash_missing_discovery_block_hash"
@@ -256,10 +300,10 @@ def build_route_identity(route: PreRankedRoute, *, initial_amount_raw: int | str
         "protocol_seq": list(route.protocol_seq),
         "liquidity_keys": list(route.liquidity_keys),
     }, sort_keys=True, default=str)
-    route_pair_id = Web3.keccak(text=route_material).hex()
+    route_pair_id = "0x" + Web3.keccak(text=route_material).hex().removeprefix("0x")
     amount_raw = "" if initial_amount_raw is None else str(int(initial_amount_raw))
     quote_material = json.dumps({"route_pair_id": route_pair_id, "initial_amount_raw": amount_raw}, sort_keys=True)
-    quote_snapshot_id = Web3.keccak(text=quote_material).hex()
+    quote_snapshot_id = "0x" + Web3.keccak(text=quote_material).hex().removeprefix("0x")
     return {
         "route_pair_id": route_pair_id,
         "quote_snapshot_id": quote_snapshot_id,
@@ -406,6 +450,37 @@ def _stage_single_route(opportunity: Any, sizing_result: Any) -> dict[str, Any]:
     }
 
 
+def _spot_rates_from_pools(pools: dict) -> dict:
+    spot_rates: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for pool_id, pool in (pools or {}).items():
+        tokens = list(pool.get("tokens") or [])
+        reserves = list(pool.get("reserves") or [])
+        if len(tokens) < 2 or len(reserves) < 2:
+            continue
+        token0, token1 = str(tokens[0]), str(tokens[1])
+        reserve0, reserve1 = _decimal(reserves[0]), _decimal(reserves[1])
+        if reserve0 <= 0 or reserve1 <= 0:
+            continue
+        protocol = str(pool.get("protocol", "UniswapV2"))
+        route_class = str(pool.get("route_class", "NATIVE_POOL_ROUTE"))
+        entries = [
+            (token0, token1, reserve1 / reserve0),
+            (token1, token0, reserve0 / reserve1),
+        ]
+        for token_in, token_out, rate in entries:
+            spot_rates.setdefault((token_in, token_out), []).append({
+                "pool_id": str(pool_id),
+                "protocol": protocol,
+                "route_class": route_class,
+                "liquidity_key": str(pool_id),
+                "invariant": str(pool.get("invariant", "constant_product")),
+                "token_in": token_in,
+                "token_out": token_out,
+                "rate": rate,
+            })
+    for values in spot_rates.values():
+        values.sort(key=lambda row: _decimal(row.get("rate")), reverse=True)
+    return spot_rates
 def build_stage_report(
     pools: dict,
     rates: dict,
@@ -413,30 +488,60 @@ def build_stage_report(
     base_tokens: list[str] = None,
     hops: tuple[int, ...] = SUPPORTED_HOPS,
     stage_limit: int = 50,
+    max_pre_ranked: int | None = None,
 ) -> dict:
-    """
-    Builds a stage report. Now tags routes with execution family for C1/C2/Liq support.
-    """
+    """Build a deterministic discovery -> rank -> stage report."""
     base_tokens = base_tokens or ["USDC", "WETH", "DAI"]
+    pre_rank_limit = max_pre_ranked if max_pre_ranked is not None else stage_limit
+    ranking_rates = _spot_rates_from_pools(pools) or rates
+    pre_ranked, stats = pre_rank_routes(
+        ranking_rates,
+        pools,
+        base_tokens=base_tokens,
+        hops=hops,
+        max_routes=pre_rank_limit,
+        principal_usd=principal_usd,
+    )
     routes = []
+    for route in pre_ranked:
+        if len(set(route.pool_sequence)) != len(route.pool_sequence):
+            routes.append({
+                "opp_id": route.opp_id,
+                "status": "rejected",
+                "reason": "repeated_pool",
+                "pool_sequence": list(route.pool_sequence),
+            })
+            continue
+        min_liquidity = min(
+            (_decimal(pools.get(pool_id, {}).get("total_executable_liquidity_usd", "0")) for pool_id in route.pool_sequence),
+            default=Decimal("0"),
+        )
+        if min_liquidity < _decimal(principal_usd):
+            routes.append({
+                "opp_id": route.opp_id,
+                "status": "rejected",
+                "reason": "insufficient_liquidity",
+                "pool_sequence": list(route.pool_sequence),
+                "min_executable_liquidity_usd": str(min_liquidity),
+            })
+            continue
+        row = stage_pre_ranked_route(route, pools, principal_usd=principal_usd)
+        if row.get("status") == READY_FOR_EXACT_CALL_STATUS:
+            row["truth_gate_status"] = READY_FOR_EXACT_CALL_STATUS
+            row["status"] = LEGACY_READY_STATUS
+        routes.append(row)
+        if len([r for r in routes if r.get("status") == LEGACY_READY_STATUS]) >= stage_limit:
+            break
 
-    # In a full implementation, this would call the discovery and ranking engine.
-    # For this update, we assume `ranked_opps` are passed in or generated.
-    # We will simulate a few to demonstrate staging.
-    for i in range(stage_limit):
-        pass
-
-    report = {
+    return {
         "version": UNIFIED_ROUTE_SCHEMA_VERSION,
         "routes": routes,
         "principal_usd": str(principal_usd),
         "hops": list(hops),
         "timestamp": rpc_layer.BLOCK,
         "n_plus_4_lifespan": N_PLUS_4_LIFESPAN,
+        "stats": stats,
     }
-    return report
-
-
 def attach_execution_family(route: dict, family: str = "C1") -> dict:
     """Helper to tag C1 (primary), C2 (dependent), or LIQUIDATION families."""
     route = dict(route)
@@ -458,3 +563,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
