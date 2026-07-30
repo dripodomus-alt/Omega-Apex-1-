@@ -25,7 +25,7 @@ classifiers = [
 [tool.maturin]
 features = ["pyo3/extension-module"]
 module-name = "scanner_core"
-python-source = "."
+python-source = "python"
 
 [tool.maturin.sdist]
-include = ["src/**/*", "Cargo.toml", "Cargo.lock", "pyproject.toml", "README.md"]
+include = ["python/src/**/*", "python/Cargo.toml", "Cargo.toml", "Cargo.lock", "pyproject.toml", "README.md"]

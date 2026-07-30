@@ -9,6 +9,7 @@ Updated for compatibility with PrecisionPricingEngine:
 """
 
 from decimal import Decimal, ROUND_FLOOR
+from .gas_oracle import get_live_gas_price_gwei
 from typing import Any, Dict, Optional, cast
 
 from ..units import ( # Updated to use new precision helpers
@@ -22,9 +23,7 @@ from ..flash_loan import (
     FlashLoanParams,
     FlashSource,
     evaluate_profitability,
-    Profitability,
-    deduct_expenses_from_raw_delta,
-    estimate_static_gas_usd,
+    Profitability
 )
 from ..rpc_layer import TOKEN_DECIMALS # Kept for legacy paths
 from .precision_pricing import ( # Import from the new engine
@@ -32,6 +31,27 @@ from .precision_pricing import ( # Import from the new engine
     mul_div,
     Rounding,
 )
+
+
+def calculate_gas_expense_usd_x18(estimated_gas_units: int, gas_price_gwei: float) -> int:
+    """
+    Calculates the total gas expense in USD (scaled by 1e18) using live gas prices.
+
+    Args:
+        estimated_gas_units: The raw gas units estimated for the transaction.
+        gas_price_gwei: The current gas price in Gwei.
+
+    Returns:
+        The total gas cost in USD, scaled by 1e18.
+    """
+    # 1 Gwei = 1e9 Wei. 1 POL = 1e18 Wei.
+    # Gas Cost (POL) = gas_units * gas_price_gwei * 1e9 / 1e18 = gas_units * gas_price_gwei / 1e9
+    # For now, we assume 1 POL = 1 USD for simplicity. A full implementation would
+    # fetch the live POL/USD price.
+    gas_cost_pol_x18 = (estimated_gas_units * int(gas_price_gwei * 100) * 10**18) // (10**9 * 100)
+
+    # Assuming 1 POL ~= 1 USD for this calculation.
+    return gas_cost_pol_x18
 
 
 def _to_raw(symbol: str, amount: Decimal) -> int:

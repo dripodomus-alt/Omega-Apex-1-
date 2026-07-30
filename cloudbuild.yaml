@@ -1,55 +1,51 @@
+# Standardized Cloud Build configuration for the Omega V5 service.
+# This file uses best practices for repository-triggered builds, automatically
+# tagging images with the commit SHA and deploying to Cloud Run.
+
 substitutions:
+  _AR_HOSTNAME: us-east1-docker.pkg.dev
+  _AR_REPOSITORY: apex-omega
+  _IMAGE_NAME: omega-finally-rich
+  _SERVICE_NAME: omega-finally-rich
   _DEPLOY_REGION: 'us-east1'
-  _SERVICE_NAME: 'flashloan-execution-monitor'
-  _AR_REPOSITORY: 'cloud-run-source-deploy'
-  _IMAGE_PATH: 'local_omega_v5/flashloan-execution-monitor'
-  _TAG: 'manual'
   _SERVICE_ACCOUNT: '323456506288-compute@developer.gserviceaccount.com'
 
 options:
-  logging: 'CLOUD_LOGGING_ONLY'
-  substitutionOption: 'ALLOW_LOOSE'
+  logging: CLOUD_LOGGING_ONLY
 
 steps:
-  - id: 'Build dashboard/API image from local source'
+  - id: 'Build image'
     name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '--pull'
       - '-t'
-      - 'us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
+      - '${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
       - '.'
       - '-f'
       - 'Dockerfile'
 
-  - id: 'Push image'
+  - id: 'Push image to Artifact Registry'
     name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
+      - '${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
 
-  - id: 'Deploy dashboard/API to Cloud Run'
+  - id: 'Deploy to Cloud Run'
     name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:slim'
     entrypoint: 'gcloud'
     args:
       - 'run'
       - 'deploy'
-      - '$_SERVICE_NAME'
-      - '--project=$PROJECT_ID'
-      - '--region=$_DEPLOY_REGION'
+      - '${_SERVICE_NAME}'
+      - '--image=${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
+      - '--region=${_DEPLOY_REGION}'
       - '--platform=managed'
-      - '--image=us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
       - '--port=8080'
-      - '--command='
-      - '--args='
-      - '--max-instances=3'
-      - '--memory=512Mi'
-      - '--cpu=1'
-      - '--timeout=300'
       - '--service-account=$_SERVICE_ACCOUNT'
       - '--no-allow-unauthenticated'
-      - '--labels=managed-by=local-cloudbuild,source=local-dir,service-surface=dashboard-api'
       - '--quiet'
 
 images:
-  - 'us-east1-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_IMAGE_PATH:$_TAG'
+  - '${_AR_HOSTNAME}/$PROJECT_ID/${_AR_REPOSITORY}/${_IMAGE_NAME}:$SHORT_SHA'
+
+timeout: 1800s

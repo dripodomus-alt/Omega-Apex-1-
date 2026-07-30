@@ -1,53 +1,56 @@
 # ==============================================================================
-# Dockerfile for OMEGA-FINALLY-RICH Monorepo
+# Dockerfile for the OMEGA-FINALLY-RICH Python/Rust Hybrid Application
 #
-# This is a multi-stage build optimized for pnpm workspaces.
-# It creates a lean production image by separating build dependencies
-# from the final runtime environment.
+# This is a multi-stage build that:
+# 1. Compiles the Rust extension (`scanner_core`) in a builder stage.
+# 2. Creates a lean final image with the Python application and the compiled
+#    Rust wheel, ready for deployment to Google Cloud Run.
 # ==============================================================================
 
-# --- 1. Base Stage ---
-# Use a specific Node.js version for reproducibility.
-FROM node:20-slim AS base
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable
+# --- 1. Builder Stage ---
+# This stage installs the Rust toolchain and builds the Rust extension wheel.
+FROM python:3.11-slim as builder
 
-# --- 2. Dependencies Stage ---
-# Install all dependencies, including devDependencies, needed for the build.
-FROM base AS deps
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-COPY pnpm-workspace.yaml ./
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
-COPY apps/worker/package.json ./apps/worker/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/shared/package.json ./packages/shared/
-# Add other packages as needed
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+# Install Rust toolchain
+RUN apt-get update && apt-get install -y curl build-essential && \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
-# --- 3. Builder Stage ---
-# Build all the applications in the monorepo.
-FROM base AS builder
+# Install Python build dependencies
+RUN pip install maturin
+
+# Copy the entire project context
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN pnpm build
 
-# --- 4. Runner Stage ---
-# Create the final, lean image for production.
-FROM base AS runner
+# Build the Rust extension as a wheel file.
+# This compiles the code in release mode for maximum performance.
+RUN maturin build --release -o dist --find-interpreter
+
+# --- 2. Final Stage ---
+# This stage creates the lean production image.
+FROM python:3.11-slim as final
+
 WORKDIR /app
 
-# Copy only the necessary production dependencies
-COPY --from=deps /app/node_modules ./node_modules
-# Copy the built application code
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY --from=builder /app/apps/worker/dist ./apps/worker/dist
-COPY --from=builder /app/apps/web/.next ./apps/web/.next
-COPY --from=builder /app/apps/web/public ./apps/web/public
-COPY --from=builder /app/apps/web/package.json ./apps/web/package.json
-# Expose the ports for the services
-EXPOSE 3000
-EXPOSE 8000
+# Install Python application dependencies
+# A requirements.txt file is standard practice. For this project, we install
+# the dependencies known from the benchmark and test scripts.
+RUN pip install pyo3 pyo3-asyncio web3 pytest
+
+# Copy the compiled Rust wheel from the builder stage
+COPY --from=builder /app/dist/*.whl .
+
+# Install the Rust wheel
+RUN pip install *.whl
+
+# Copy the Python application code
+COPY ./omega_v5 ./omega_v5
+
+# Expose the port the application will run on (as defined in cloudbuild.yaml)
+EXPOSE 8080
+
+# Define the command to run the application.
+# This assumes you have a web server (like FastAPI/Uvicorn) in your main module.
+# Replace `omega_v5.main:app` with your actual application entrypoint.
+CMD ["uvicorn", "omega_v5.main:app", "--host", "0.0.0.0", "--port", "8080"]
