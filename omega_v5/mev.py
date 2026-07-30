@@ -66,9 +66,11 @@ def submit_and_poll_for_receipt(tx: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         return {
             "ok": False,
+            "status": "MEV_RELAY_UNAVAILABLE",
             "detail": f"MEV relay error: {e}"
         }
 
 
 if __name__ == "__main__":
     print("mev.py - FastLane Private Relay implementation for revert prevention")
+

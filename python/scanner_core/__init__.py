@@ -48,6 +48,13 @@ def _dec(value: Any, default: str = "0") -> Decimal:
         return Decimal(default)
 
 
+def _fmt_dec(value: Decimal) -> str:
+    text = format(value, 'f')
+    if '.' in text:
+        text = text.rstrip('0').rstrip('.')
+    return text or '0'
+
+
 def _pool_price(pool: dict[str, Any]) -> Decimal:
     if "executable_price" in pool:
         return _dec(pool.get("executable_price"))
@@ -80,7 +87,12 @@ def scan_opportunities(pools_json: str, config: GateConfig) -> ScanResults:
 
     out = ScanResults()
     seen: set[tuple[str, str, str, str]] = set()
+    processed_pairs: set[frozenset[str]] = set()
     for (token_in, token_mid), buy_pools in by_pair.items():
+        pair_key = frozenset((token_in, token_mid))
+        if pair_key in processed_pairs:
+            continue
+        processed_pairs.add(pair_key)
         sell_pools = by_pair.get((token_mid, token_in), [])
         if not sell_pools:
             continue
@@ -106,15 +118,14 @@ def scan_opportunities(pools_json: str, config: GateConfig) -> ScanResults:
                 cand.sell_pool_address = sell_addr
                 cand.token_in = token_in
                 cand.token_mid = token_mid
-                cand.buy_pool_tvl_usd = str(buy_tvl)
-                cand.executable_buy_price = str(buy_price.normalize())
-                cand.executable_sell_price = str(sell_price.normalize())
+                cand.buy_pool_tvl_usd = _fmt_dec(buy_tvl)
+                cand.executable_buy_price = _fmt_dec(buy_price)
+                cand.executable_sell_price = _fmt_dec(sell_price)
                 cand.buy_pool_protocol = str(buy.get("protocol", ""))
                 cand.sell_pool_protocol = str(sell.get("protocol", ""))
                 out.append(cand)
     out.sort(key=lambda c: _dec(c.executable_sell_price) - _dec(c.executable_buy_price), reverse=True)
     return out
-
 
 async def test_only_quote(pool_json: str, token_in: str, amount_in: str) -> str:
     pool = json.loads(pool_json)
@@ -134,3 +145,4 @@ async def test_only_quote(pool_json: str, token_in: str, amount_in: str) -> str:
     amount_after_fee = amt * (Decimal("1") - fee)
     result = (amount_after_fee * reserve_out) / (reserve_in + amount_after_fee)
     return str(int(result))
+

@@ -366,10 +366,21 @@ TOKEN_DECIMALS: Dict[str, int] = {
     "B": 18,
 }
 
+TOKEN_DISCOVERY_STATUS: Dict[str, str] = {
+    symbol: "STATIC_REGISTRY" for symbol in TOKEN_ADDRESSES
+}
+
 ADDRESS_TO_SYMBOL: Dict[str, str] = {
     address.lower(): symbol for symbol, address in TOKEN_ADDRESSES.items() if address
 }
 
+
+def canonical_asset_id(symbol: str) -> str:
+    """Return stable chain-scoped asset id for configured or symbolic assets."""
+    address = TOKEN_ADDRESSES.get(str(symbol), "")
+    if address:
+        return f"{CHAIN_ID}:{address.lower()}"
+    return f"{CHAIN_ID}:symbol:{str(symbol).upper()}"
 
 def _protocol_name(raw: Any) -> str:
     if isinstance(raw, int):
@@ -432,9 +443,11 @@ def _dynamic_pool_registry() -> Dict[str, dict]:
         if item.get("token0_address"):
             TOKEN_ADDRESSES.setdefault(token0, str(item["token0_address"]))
             TOKEN_DECIMALS.setdefault(token0, meta["token0_decimals"])
+            TOKEN_DISCOVERY_STATUS.setdefault(token0, "DYNAMIC_POOL_REGISTRY")
         if item.get("token1_address"):
             TOKEN_ADDRESSES.setdefault(token1, str(item["token1_address"]))
             TOKEN_DECIMALS.setdefault(token1, meta["token1_decimals"])
+            TOKEN_DISCOVERY_STATUS.setdefault(token1, "DYNAMIC_POOL_REGISTRY")
     ADDRESS_TO_SYMBOL.update({address.lower(): symbol for symbol, address in TOKEN_ADDRESSES.items() if address})
     return registry
 
@@ -580,3 +593,4 @@ def _audit_v2_pair_canonical(
         "canonical_addrs": canonical,
         "reject_reasons": reject_reasons,
     }
+

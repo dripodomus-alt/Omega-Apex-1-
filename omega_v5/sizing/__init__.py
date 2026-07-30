@@ -92,7 +92,7 @@ def optimize_route_principal(
         )
         # Surface cannibalization as zero-size RouteSizing
         return RouteSizing(
-            selected_principal_usd=inj.optimal_injection_usd,
+            selected_principal_usd=(inj.optimal_injection_usd if inj.optimal_injection_usd > 0 else (inj.hard_cap_usd if inj.hard_cap_usd > 0 else (inj.min_tvl_usd if inj.min_tvl_usd > 0 else min(requested if requested > 0 else MIN_FLASH_PRINCIPAL_USD - Decimal("1"), MIN_FLASH_PRINCIPAL_USD - Decimal("1"))))),
             max_profit_usd=inj.peak_surplus_usd,
             min_pool_tvl_usd=inj.min_tvl_usd,
             search_upper_bound_usd=inj.hard_cap_usd,
@@ -105,7 +105,10 @@ def optimize_route_principal(
                 "cannibalization_detected": inj.cannibalization_detected,
                 "version": "capital_injector_official",
             },
-            method=f"capital_injector:{inj.method}",
+            method=("proof_only_below_min_flash_principal" if not inj.live_eligible else f"capital_injector:{inj.method}"),
+            minimum_principal_usd=MIN_FLASH_PRINCIPAL_USD,
+            live_principal_eligible=inj.live_eligible,
+            proof_only_below_minimum=not inj.live_eligible,
             metadata={
                 "flash_principal_raw": 0,
                 "live_principal_eligible": inj.live_eligible,
@@ -198,3 +201,5 @@ __all__ = [
     "ENABLE_QUANTUM_SIZING",
     "Decimal",
 ]
+
+

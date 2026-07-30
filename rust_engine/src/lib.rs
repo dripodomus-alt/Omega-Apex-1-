@@ -6,6 +6,7 @@
 //! - Separate handling for Uniswap V3 vs QuickSwap Algebra
 
 use pyo3::prelude::*;
+use pyo3::exceptions::PyKeyError;
 use pyo3::types::PyDict;
 use rust_decimal::Decimal;
 use rust_decimal_macros::dec;
@@ -23,11 +24,8 @@ pub struct Candidate {
     pub pool_id: String,
     #[pyo3(get)]
     pub protocol: String,
-    #[pyo3(get)]
     pub buy_price_executable_usd_per_base: Decimal,
-    #[pyo3(get)]
     pub sell_price_executable_usd_per_base: Decimal,
-    #[pyo3(get)]
     pub pool_tvl_usd: Decimal,
     #[pyo3(get)]
     pub has_live_quote: bool,
@@ -65,6 +63,21 @@ impl Candidate {
             pool_address,
             metadata: HashMap::new(),
         }
+    }
+
+    #[getter]
+    fn buy_price_executable_usd_per_base(&self) -> String {
+        self.buy_price_executable_usd_per_base.to_string()
+    }
+
+    #[getter]
+    fn sell_price_executable_usd_per_base(&self) -> String {
+        self.sell_price_executable_usd_per_base.to_string()
+    }
+
+    #[getter]
+    fn pool_tvl_usd(&self) -> String {
+        self.pool_tvl_usd.to_string()
     }
 
     fn __repr__(&self) -> String {
@@ -158,22 +171,26 @@ fn find_best_legs(candidates: Vec<Candidate>) -> PyResult<(Option<Candidate>, Op
 
 /// Separate invariant path for Uniswap V3 (standard)
 #[pyfunction]
-fn quote_uniswap_v3(pool_data: &PyDict) -> PyResult<Decimal> {
-    // Placeholder for fixed-point V3 math (sqrtPriceX96 based)
-    // In full impl: use U256 + Decimal for exact
-    let sqrt_price: f64 = pool_data.get_item("sqrt_price_x96")?.extract()?;
-    // Simplified fixed-point simulation
+fn quote_uniswap_v3(pool_data: &PyDict) -> PyResult<String> {
+    // Placeholder for fixed-point V3 math (sqrtPriceX96 based).
+    let sqrt_price: f64 = pool_data
+        .get_item("sqrt_price_x96")?
+        .ok_or_else(|| PyKeyError::new_err("sqrt_price_x96"))?
+        .extract()?;
     let price = Decimal::from_f64_retain(sqrt_price).unwrap_or(dec!(1)) / dec!(1e18);
-    Ok(price)
+    Ok(price.to_string())
 }
 
 /// Separate invariant path for QuickSwap Algebra (must not share V3 ABI path)
 #[pyfunction]
-fn quote_algebra(pool_data: &PyDict) -> PyResult<Decimal> {
-    // Dedicated Algebra globalState / liquidity math
-    let global_state: f64 = pool_data.get_item("global_state").unwrap_or(Ok(0.0))?.extract()?;
+fn quote_algebra(pool_data: &PyDict) -> PyResult<String> {
+    // Dedicated Algebra globalState / liquidity math.
+    let global_state: f64 = match pool_data.get_item("global_state")? {
+        Some(value) => value.extract()?,
+        None => 0.0,
+    };
     let price = Decimal::from_f64_retain(global_state).unwrap_or(dec!(1)) / dec!(1e18);
-    Ok(price)
+    Ok(price.to_string())
 }
 
 /// Fixed-point RustMath entry (used by ranking)
@@ -194,3 +211,5 @@ fn omega_scanner(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(fixed_point_price, m)?)?;
     Ok(())
 }
+
+

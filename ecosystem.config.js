@@ -50,6 +50,20 @@ module.exports = {
       },
     },
     {
+      name: 'omega-dashboard',
+      script: 'npm',
+      args: 'run dev',
+      watch: false,
+      autorestart: true,
+      restart_delay: 2000,
+      env: {
+        HOST: process.env.DASHBOARD_HOST || '0.0.0.0',
+        PORT: process.env.DASHBOARD_PORT || '3000',
+        APEX_API_PROXY_TARGET: process.env.APEX_API_PROXY_TARGET || 'http://127.0.0.1:8080',
+        REQUIRE_FORK_SIM_BEFORE_SUBMIT: process.env.REQUIRE_FORK_SIM_BEFORE_SUBMIT || 'true',
+        REQUIRE_CHAIN_ID_MATCH: process.env.REQUIRE_CHAIN_ID_MATCH || 'true',
+      },
+    },    {
       name: 'omega-engine',
       script: PYTHON_INTERPRETER,
       args: '-m omega_v5.main',
@@ -75,3 +89,4 @@ module.exports = {
     },
   ],
 };
+

@@ -19,6 +19,7 @@ def _profitability(gross, principal, *, passes=True, risk=Decimal("1")):
     net = Decimal(str(gross)) - Decimal(str(principal)) - risk
     return Profitability(
         gross_amount_out=Decimal(str(gross)),
+        gross_amount_out_min=Decimal(str(gross)),
         flashloan=flash,
         gas_cost_usd=Decimal("0"),
         relay_tip_usd=Decimal("0"),
@@ -87,3 +88,4 @@ def test_stable_spreads_use_stable_profitability_overrides(monkeypatch):
         assert call_kwargs.get("min_net_override") == opportunity_ranker.STABLE_MIN_NET_PROFIT_USD
         assert call_kwargs.get("risk_buffer_override") == opportunity_ranker.STABLE_RISK_BUFFER_USD
         assert call_kwargs.get("strategy") == "PEGGED_STABLE_TWO_LEG"
+

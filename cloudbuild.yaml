@@ -14,6 +14,21 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 steps:
+  - id: 'Install Python dependencies'
+    name: 'python:3.11-slim'
+    entrypoint: 'pip'
+    args: ['install', '-r', 'requirements.txt', '--no-cache-dir']
+
+  - id: 'Run unit tests'
+    name: 'python:3.11-slim'
+    entrypoint: 'pytest'
+    args:
+      - 'omega_v5/'
+      - '--ignore=omega_v5/notebooks/' # Example of ignoring a directory
+      - '-v'
+    # This step depends on the successful installation of dependencies.
+    waitFor: ['Install Python dependencies']
+
   - id: 'Build image'
     name: 'gcr.io/cloud-builders/docker'
     args:
@@ -23,6 +38,8 @@ steps:
       - '.'
       - '-f'
       - 'Dockerfile'
+    # The build will only start if the tests pass.
+    waitFor: ['Run unit tests']
 
   - id: 'Push image to Artifact Registry'
     name: 'gcr.io/cloud-builders/docker'

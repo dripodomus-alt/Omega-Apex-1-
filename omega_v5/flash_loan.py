@@ -37,7 +37,7 @@ BALANCER_FLASH_FEE_BPS = Decimal("0")  # 0 % on Polygon
 
 # ── Gas parameters (Polygon micro-fee recalibration) ──────────────────────────
 GAS_PRICE_GWEI = Decimal("5")
-GAS_UNITS_SIMPLE_ARB = Decimal("35000")
+GAS_UNITS_SIMPLE_ARB = Decimal("350000")
 GAS_UNITS_THREE_HOP_ARB = Decimal("50000")
 GAS_UNITS_FOUR_HOP_ARB = Decimal("65000")
 POL_USD_PRICE = Decimal("0.0766")
@@ -220,4 +220,5 @@ live_risk_buffer_usd = lambda: RISK_BUFFER_USD
 
 def build_executable_route_economics(*args, **kwargs):
     return calculate_route_economics(*args, **kwargs)
+
 

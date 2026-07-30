@@ -16,7 +16,7 @@ class TestFindOpportunitiesRouter(unittest.TestCase):
     @patch("omega_v5.opportunity_ranker.find_opportunities_with_rust")
     @patch("omega_v5.opportunity_ranker.RUST_SCANNER_AVAILABLE", True)
     def test_routes_to_rust_when_available(
-        self, mock_rust_available, mock_rust_scanner, mock_env_get
+        self, mock_rust_scanner, mock_env_get
     ):
         """
         Verify that when SCANNER_MODE is 'rust' and the module is available,
@@ -40,7 +40,7 @@ class TestFindOpportunitiesRouter(unittest.TestCase):
     @patch("omega_v5.opportunity_ranker.RUST_SCANNER_AVAILABLE", False)
     @patch("omega_v5.opportunity_ranker.logger.error")
     def test_returns_empty_when_rust_unavailable(
-        self, mock_logger, mock_rust_available, mock_rust_scanner, mock_env_get
+        self, mock_logger, mock_rust_scanner, mock_env_get
     ):
         """
         Verify that if SCANNER_MODE is 'rust' but the engine is not available,
@@ -138,3 +138,4 @@ class TestLiveDataSupport(unittest.TestCase):
             family="C2"
         )
         self.assertEqual(op2.family, "C2")
+

@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Default-deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Primitive Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 3. Entity Validation Blueprints
+    function isValidOperator(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) 
+        && data.keys().size() >= 3 && data.keys().size() <= 4
+        && data.uid is string && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && data.role is string && (data.role == 'operator' || data.role == 'admin')
+        && (!('lastLogin' in data) || (data.lastLogin is string && data.lastLogin.size() <= 128));
+    }
+
+    function isValidSimulation(data) {
+      return data.keys().hasAll(['id', 'operatorId', 'netProfitUsd', 'timestamp'])
+        && data.keys().size() >= 4 && data.keys().size() <= 8
+        && data.id is string && data.id.size() <= 128
+        && data.operatorId is string && data.operatorId.size() <= 128
+        && data.netProfitUsd is number
+        && data.timestamp is string && data.timestamp.size() <= 64
+        && (!('opportunityId' in data) || (data.opportunityId is string && data.opportunityId.size() <= 128))
+        && (!('gasCostUsd' in data) || data.gasCostUsd is number)
+        && (!('decision' in data) || (data.decision is string && data.decision.size() <= 64))
+        && (!('c1StateHash' in data) || (data.c1StateHash is string && data.c1StateHash.size() <= 128));
+    }
+
+    // 4. Operator Resource Hardening
+    match /operators/{operatorId} {
+      allow get: if isOwner(operatorId);
+      allow create: if isOwner(operatorId) && isValidOperator(incoming()) && incoming().role == 'operator';
+      allow update: if isOwner(operatorId) && isValidOperator(incoming()) && incoming().role == existing().role;
+      allow delete: if false;
+    }
+
+    // 5. Simulation Logs Resource Hardening (Immutable Audit Trail)
+    match /simulations/{simulationId} {
+      allow get: if isSignedIn() && existing().operatorId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.operatorId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().operatorId == request.auth.uid && isValidSimulation(incoming());
+      allow update, delete: if false;
+    }
+  }
+}

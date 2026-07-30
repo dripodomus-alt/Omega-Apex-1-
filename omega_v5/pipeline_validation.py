@@ -103,20 +103,38 @@ def validate_calldata_integrity(
     if not calldata.startswith("0x"):
         msg = "Calldata missing '0x' prefix."
         logger.warning(f"[{opportunity_id}] {msg}")
-        cycle_logger.log_event(opportunity_id, cycle_id, CycleType.C1, CycleEventType.VALIDATION_FAILED, msg)
+        cycle_logger.log_event(
+            opportunity_id=opportunity_id,
+            cycle_id=cycle_id,
+            cycle_type=CycleType.C1,
+            event_type=CycleEventType.VALIDATION_FAILED,
+            message=msg,
+        )
         return False
     
     hex_body = calldata[2:]
     if len(hex_body) % 2 != 0:
         msg = "Calldata hex body has an odd number of characters."
         logger.warning(f"[{opportunity_id}] {msg}")
-        cycle_logger.log_event(opportunity_id, cycle_id, CycleType.C1, CycleEventType.VALIDATION_FAILED, msg)
+        cycle_logger.log_event(
+            opportunity_id=opportunity_id,
+            cycle_id=cycle_id,
+            cycle_type=CycleType.C1,
+            event_type=CycleEventType.VALIDATION_FAILED,
+            message=msg,
+        )
         return False
 
     if not (MIN_CALldata_LENGTH <= len(hex_body) <= MAX_CALldata_LENGTH):
         msg = f"Calldata length ({len(hex_body)}) is outside expected bounds ({MIN_CALldata_LENGTH}-{MAX_CALldata_LENGTH})."
         logger.warning(f"[{opportunity_id}] {msg}")
-        cycle_logger.log_event(opportunity_id, cycle_id, CycleType.C1, CycleEventType.VALIDATION_FAILED, msg)
+        cycle_logger.log_event(
+            opportunity_id=opportunity_id,
+            cycle_id=cycle_id,
+            cycle_type=CycleType.C1,
+            event_type=CycleEventType.VALIDATION_FAILED,
+            message=msg,
+        )
         return False
 
     # Further checks like bytes.fromhex round-trip can be added if needed, but are more expensive.
@@ -151,3 +169,4 @@ if __name__ == "__main__":
         print("\nAll validation proofs passed.")
     else:
         print("\nOne or more validation proofs failed. Check cycle_events.jsonl for details.")
+

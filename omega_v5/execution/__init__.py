@@ -63,6 +63,12 @@ try:
     simulation_from_address = _exec_mod.simulation_from_address
     run_dry_run_cycles = getattr(_exec_mod, "run_dry_run_cycles", lambda *a, **k: {})
     run_execution_loop = _exec_mod.run_execution_loop
+    def revalidate_profitability_at_broadcast(*args, **kwargs):
+        _sync_patchable_execution_symbols()
+        _exec_mod.simulate_on_pending_block = globals().get("simulate_on_pending_block", _exec_mod.simulate_on_pending_block)
+        return _exec_mod.revalidate_profitability_at_broadcast(*args, **kwargs)
+    simulate_on_pending_block = _exec_mod.simulate_on_pending_block
+    execute_route = _exec_mod.execute_route
     _await_next_block = _exec_mod._await_next_block
     execution_armed = _exec_mod.execution_armed
     execution_guard_status = _exec_mod.execution_guard_status
@@ -95,6 +101,9 @@ __all__ = [
     "simulation_from_address",
     "run_dry_run_cycles",
     "run_execution_loop",
+    "revalidate_profitability_at_broadcast",
+    "simulate_on_pending_block",
+    "execute_route",
     "_await_next_block",
     "execution_armed",
     "execution_guard_status",
@@ -106,4 +115,6 @@ __all__ = [
     "_broadcast_w3",
     "wallet_address",
 ]
+
+
 

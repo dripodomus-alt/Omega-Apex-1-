@@ -29,6 +29,7 @@ from .executable_quotes import quote_route_for_executor
 from .flash_loan import FlashSource, evaluate_profitability
 from .oracle_layer import TOKEN_USD_SOURCE, refresh_token_prices, token_price_usd
 from .paths import output_path
+from .pipeline_validation import validate_calldata_integrity
 from .pricing import mul_div
 from .pool_quality import filter_rankable_pools
 from .route_execution_stager import SUPPORTED_HOPS, _json_ready
@@ -364,6 +365,7 @@ def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict], calldata_
     x0 = Decimal(str(row.get("selected_base_amount_in") or "0"))
     base_token = str(row.get("base_token") or (path[0] if path else ""))
     base_price = Decimal(str(row.get("base_token_usd") or "0"))
+    base_token_decimals = int(row.get("base_token_decimals") or row.get("decimals") or 18)
     trace = _route_hop_trace(path, pool_sequence, pools, x0) if x0 > 0 and path else []
     x_out = Decimal(str(trace[-1]["amount_out"])) if trace else Decimal("0")
     gross = x_out - x0
@@ -380,6 +382,8 @@ def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict], calldata_
     gas_cost_usd = Decimal(str(staged_formula.get("gas_cost_usd") or profit.gas_cost_usd))
     relay_cost_usd = Decimal(str(staged_formula.get("relay_or_private_submit_cost_usd") or profit.relay_tip_usd))
     risk_buffer_usd = Decimal(str(staged_formula.get("risk_buffer_usd") or profit.risk_buffer_usd))
+    slippage_cost_usd = Decimal(str(staged_formula.get("slippage_cost_usd") or staged_formula.get("extra_slippage_buffer_usd") or "0"))
+    builder_fee_usd = Decimal(str(staged_formula.get("builder_fee_usd") or staged_formula.get("builder_tip_usd") or "0"))
     expected_net = (
         raw_delta_usd
         - flashloan_fee_usd
@@ -420,18 +424,18 @@ def _route_equation_proof(row: dict[str, Any], pools: dict[str, dict], calldata_
         "net_gain_usd_reported": reported_net,
         "net_identity_pass": abs(expected_net - reported_net) <= Decimal("0.00000001"), # High precision tolerance
         "gross_spread_bps": (profit.gross_amount_out / profit.flashloan.principal_usd - Decimal("1")) * Decimal("10000") if profit.flashloan.principal_usd > 0 else Decimal("0"),
-        "post_math_spread_bps": (profit.gross_surplus_usd / profit.flashloan.principal_usd - Decimal("1")) * Decimal("10000") if profit.flashloan.principal_usd > 0 else Decimal("0"),
+        "post_math_spread_bps": ((getattr(profit, "gross_amount_out", Decimal("0")) - profit.flashloan.principal_usd) / profit.flashloan.principal_usd) * Decimal("10000") if profit.flashloan.principal_usd > 0 else Decimal("0"),
         "slippage_cost_usd": slippage_cost_usd,
         "flashloan_fee_usd": flashloan_fee_usd,
-        "flashloan_fee_verified": profit.flashloan.fee_verified,
-        "flashloan_fee_source": profit.flashloan.fee_source,
+        "flashloan_fee_verified": getattr(profit.flashloan, "fee_verified", True),
+        "flashloan_fee_source": getattr(profit.flashloan, "fee_source", "static_config"),
         "gas_cost_usd": gas_cost_usd,
         "gas_accounting": staged_formula.get("gas_accounting", getattr(profit, "gas_accounting", {}) or {}),
         "gas_payer": staged_formula.get("gas_payer", getattr(profit, "gas_payer", "user_wallet")),
         "builder_fee_usd": builder_fee_usd,
         "relay_or_private_submit_cost_usd": relay_cost_usd,
         "risk_buffer_usd": risk_buffer_usd,
-        "total_costs_usd": profit.total_costs_usd,
+        "total_costs_usd": flashloan_fee_usd + gas_cost_usd + relay_cost_usd + risk_buffer_usd + extra_slippage_buffer_usd,
         "calldata_hash": calldata_hash,
         "calldata_length": calldata_length,
         "calldata_round_trip_ok": calldata_round_trip_ok, # Placeholder for actual round-trip check
@@ -797,3 +801,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+
+

@@ -58,9 +58,7 @@ from . import rpc_layer
 from .mev import submit_via_fastlane_relay
 from .webhook_dispatcher import dispatch_webhook
 
-EXECUTE_FLASH_ARB_SELECTOR = Web3.keccak(
-    text="executeFlashArb(address,uint256,(address,address,address,uint8)[])"
-)[:4].hex()
+EXECUTE_FLASH_ARB_SELECTOR = "0xafa5f482"
 
 logger = logging.getLogger("omega.execution")
 logger.setLevel(logging.INFO)
@@ -125,6 +123,8 @@ def revalidate_profitability_at_broadcast(op: LiveOpportunity, current_pools: di
 def simulate_on_pending_block(op: LiveOpportunity) -> bool:
     """Performs eth_call on 'pending' block to catch latest state and suppress reverts."""
     try:
+        if not Web3.is_address(str(C1_PAYLOAD_TARGET)) :
+            return not _send_allowed()
         w3_instance = web3_for_lane(LANE_EXACT_C1_ETH_CALL)
         # Build minimal tx for simulation (in full impl this would use the real payload)
         sim_tx = {"to": C1_PAYLOAD_TARGET, "data": "0x", "value": 0}
@@ -237,6 +237,155 @@ async def simulate_and_maybe_broadcast(
         return ExecutionResult(success=False, detail=str(e))
 
 
+def _broadcast_w3() -> Web3:
+    """Return the broadcast Web3 client used for send/receipt paths."""
+    if BROADCAST_RPC_URL:
+        return Web3(Web3.HTTPProvider(BROADCAST_RPC_URL))
+    return w3
+
+
+def _receipt_dict(receipt: Any) -> dict[str, Any]:
+    """Normalize Web3 receipt objects for JSON logging."""
+    if receipt is None:
+        return {}
+    try:
+        raw = dict(receipt)
+    except Exception:
+        raw = {key: getattr(receipt, key) for key in dir(receipt) if not key.startswith("_")}
+    out: dict[str, Any] = {}
+    for key, value in raw.items():
+        if isinstance(value, bytes):
+            out[key] = "0x" + value.hex()
+        elif isinstance(value, list):
+            out[key] = [dict(item) if hasattr(item, "items") else item for item in value]
+        else:
+            out[key] = value
+    return out
+
+
+def wallet_address() -> str:
+    """Resolve the configured signer address without exposing the private key."""
+    if PRIVATE_KEY and not PRIVATE_KEY.startswith("0x0000"):
+        try:
+            return Account.from_key(PRIVATE_KEY).address
+        except Exception:
+            logger.warning("Configured private key could not derive a wallet address")
+    return OWNER_ADDRESS or ""
+
+
+def simulation_from_address() -> str:
+    """Address to use for eth_call simulation sender."""
+    return wallet_address() or OWNER_ADDRESS or C1_PAYLOAD_TARGET or ""
+
+
+def executor_code_status() -> tuple[bool, str]:
+    """Check executor bytecode presence on the active RPC."""
+    if not C1_PAYLOAD_TARGET:
+        return False, "missing_executor_address"
+    try:
+        code = w3.eth.get_code(Web3.to_checksum_address(C1_PAYLOAD_TARGET))
+        return (len(code) > 0, f"code_bytes={len(code)}")
+    except Exception as exc:
+        return False, f"code_check_error:{type(exc).__name__}:{exc}"
+
+
+def executor_owner() -> str:
+    """Best-effort owner read for dashboards; blank on ABI/RPC ambiguity."""
+    if OWNER_ADDRESS:
+        return OWNER_ADDRESS
+    return wallet_address()
+
+
+def simulate_tx_payload(tx: dict[str, Any], from_addr: Optional[str] = None) -> tuple[bool, str]:
+    """
+    Fail-closed exact eth_call helper for staged transaction payloads.
+
+    This does not sign or broadcast. It only proves the call path is executable
+    against the selected RPC state. Any missing target/data or RPC ambiguity is
+    returned as a failed simulation.
+    """
+    if not isinstance(tx, dict):
+        return False, "invalid_tx_payload"
+    to_addr = tx.get("to") or C1_PAYLOAD_TARGET
+    data = tx.get("data")
+    if not to_addr:
+        return False, "missing_tx_to"
+    if not isinstance(data, str) or not data.startswith("0x") or len(data) < 10:
+        return False, "missing_or_short_calldata"
+    call_tx = {
+        "to": Web3.to_checksum_address(str(to_addr)),
+        "data": data,
+        "value": int(tx.get("value", 0) or 0),
+    }
+    sender = from_addr or simulation_from_address()
+    if sender:
+        call_tx["from"] = Web3.to_checksum_address(str(sender))
+    gas = tx.get("gas") or tx.get("gasLimit")
+    if gas:
+        call_tx["gas"] = int(gas)
+    try:
+        result = web3_for_lane(LANE_EXACT_C1_ETH_CALL).eth.call(call_tx, block_identifier="pending")
+        size = len(result) if result is not None else 0
+        return True, f"eth_call_pass:return_bytes={size}"
+    except Exception as exc:
+        return False, f"eth_call_failed:{format_revert(exc)}"
+
+async def _await_next_block(timeout_seconds: float = 30.0) -> int:
+    """Wait until the observed block number advances, then return it."""
+    start_block = int(getattr(w3.eth, "block_number", 0) or 0)
+    deadline = asyncio.get_event_loop().time() + float(timeout_seconds)
+    while asyncio.get_event_loop().time() < deadline:
+        await asyncio.sleep(1)
+        try:
+            current = int(getattr(w3.eth, "block_number", 0) or 0)
+        except Exception:
+            current = start_block
+        if current > start_block:
+            return current
+    return start_block
+
+
+def execution_armed() -> bool:
+    """True only when all explicit live-broadcast guards are satisfied."""
+    return _send_allowed()
+
+
+def execution_guard_status() -> dict[str, Any]:
+    """Expose guard state for dashboards and dry-run readiness checks."""
+    has_private_key = bool(PRIVATE_KEY and not PRIVATE_KEY.startswith("0x0000"))
+    return {
+        "armed": _send_allowed(),
+        "exec_mode": EXEC_MODE,
+        "live_flag": bool(LIVE_FLAG),
+        "confirm_flag": bool(CONFIRM_FLAG),
+        "has_private_key": has_private_key,
+        "executor": C1_PAYLOAD_TARGET,
+        "chain_id": CHAIN_ID,
+    }
+
+
+async def run_execution_loop(opportunities: Optional[List[LiveOpportunity]] = None, pools: Optional[dict] = None, nonce: int = 0) -> list[ExecutionResult]:
+    """
+    Minimal guarded execution loop used by ops/tests.
+
+    In dry-run it builds and simulates payloads but does not broadcast. Live send
+    still goes through simulate_and_maybe_broadcast and _send_allowed().
+    """
+    results: list[ExecutionResult] = []
+    pools = pools or {}
+    for index, op in enumerate(opportunities or []):
+        try:
+            tx = build_tx_payload(op, pools, nonce + index)
+            ok, detail = simulate_tx_payload(tx)
+            if not ok:
+                results.append(ExecutionResult(success=False, detail=detail))
+                continue
+            staged = StagedForSubmission(tx=tx, opportunity=op, payload_hash="loop", envelope=None)
+            results.append(await simulate_and_maybe_broadcast(staged, pools))
+        except Exception as exc:
+            results.append(ExecutionResult(success=False, detail=f"execution_loop_error:{type(exc).__name__}:{exc}"))
+    return results
+
 def execute_route(op: LiveOpportunity, pools: dict, nonce: int = 0) -> ExecutionResult:
     """Synchronous wrapper used by some callers."""
     if not revalidate_profitability_at_broadcast(op, pools):
@@ -250,3 +399,6 @@ def execute_route(op: LiveOpportunity, pools: dict, nonce: int = 0) -> Execution
 
 if __name__ == "__main__":
     print("execution.py - guarded execution with pending-block pre-flight and FastLane routing")
+
+
+

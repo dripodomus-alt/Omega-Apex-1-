@@ -264,6 +264,7 @@ class TestBuildTxPayload(unittest.TestCase):
 class TestRevalidateAtBroadcast(unittest.TestCase):
     """Tests for re-profitability check before broadcast (simultaneous C1/C2/Liq)."""
 
+    @patch("omega_v5.execution.simulate_on_pending_block", MagicMock(return_value=True))
     def test_revalidate_profitability_at_broadcast_accepts_still_profitable(self):
         from omega_v5.execution import revalidate_profitability_at_broadcast
         op = MockLiveOpportunity(
@@ -288,6 +289,7 @@ class TestRevalidateAtBroadcast(unittest.TestCase):
         pools = {"p1": {}, "p2": {}}
         self.assertFalse(revalidate_profitability_at_broadcast(op, pools))
 
+    @patch("omega_v5.execution.simulate_on_pending_block", MagicMock(return_value=True))
     def test_supports_liquidation_family(self):
         from omega_v5.execution import revalidate_profitability_at_broadcast
         op = MockLiveOpportunity(

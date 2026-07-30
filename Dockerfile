@@ -33,11 +33,11 @@ FROM python:3.11-slim as final
 
 WORKDIR /app
 
-# Install Python application dependencies
-# A requirements.txt file is standard practice. For this project, we install
-# the dependencies known from the benchmark and test scripts.
-RUN pip install pyo3 pyo3-asyncio web3 pytest
+# Copy requirements file first to leverage Docker layer caching.
+COPY ./requirements.txt .
 
+# Install Python application dependencies from the single source of truth.
+RUN pip install --no-cache-dir -r requirements.txt
 # Copy the compiled Rust wheel from the builder stage
 COPY --from=builder /app/dist/*.whl .
 

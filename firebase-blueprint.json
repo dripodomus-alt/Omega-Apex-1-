@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "operator": {
+      "title": "Operator",
+      "description": "An authorized operator of the Omega control panel",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The Firebase Authentication UID"
+        },
+        "email": {
+          "type": "string",
+          "description": "Operator email address"
+        },
+        "role": {
+          "type": "string",
+          "description": "Access level of the operator",
+          "enum": ["operator", "admin"]
+        },
+        "lastLogin": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last sign-in timestamp"
+        }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "simulation": {
+      "title": "SimulationLog",
+      "description": "Logs of execution simulations performed by operators",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique simulation event ID"
+        },
+        "operatorId": {
+          "type": "string",
+          "description": "The UID of the operator who triggered the simulation"
+        },
+        "opportunityId": {
+          "type": "string",
+          "description": "Identifier of the simulated opportunity or route"
+        },
+        "netProfitUsd": {
+          "type": "number",
+          "description": "Simulated net profit in USD"
+        },
+        "gasCostUsd": {
+          "type": "number",
+          "description": "Simulated gas cost in USD"
+        },
+        "decision": {
+          "type": "string",
+          "description": "Orchestrator decision (e.g., MIRROR, EXECUTED, NO_OP)"
+        },
+        "c1StateHash": {
+          "type": "string",
+          "description": "State hash of the C1 pipeline"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of simulation run"
+        }
+      },
+      "required": ["id", "operatorId", "netProfitUsd", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/operators/{operatorId}": {
+      "schema": { "$ref": "#/entities/operator" },
+      "description": "Authorized control panel operators"
+    },
+    "/simulations/{simulationId}": {
+      "schema": { "$ref": "#/entities/simulation" },
+      "description": "Audit trail of executed simulations"
+    }
+  }
+}

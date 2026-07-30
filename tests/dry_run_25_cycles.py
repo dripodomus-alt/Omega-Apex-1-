@@ -38,6 +38,38 @@ from omega_v5.flash_loan import ( # type: ignore
 LIVE_MODE = bool(os.getenv("OMEGA_LIVE_TEST") or os.getenv("LIVE_TEST_RPC_URL"))
 
 
+def _staging_buy_price(op: Any) -> Decimal:
+    sequence = getattr(op, "metadata", {}).get("execution_sequence", {}) if hasattr(op, "metadata") else {}
+    buy_leg = sequence.get("buy_leg", {}) if isinstance(sequence, dict) else {}
+    raw = buy_leg.get("executable_buy_price_base_per_mid") if isinstance(buy_leg, dict) else None
+    try:
+        return Decimal(str(raw))
+    except Exception:
+        return Decimal("Infinity")
+
+
+def simulate_staging(ranked_opportunities: List[Any], max_staged: int = 8) -> List[Any]:
+    """
+    Deterministic dry-run staging proof.
+
+    Lowest executable buy price is considered first, then pool conflicts are
+    rejected so no staged opportunities consume the same pool liquidity.
+    """
+    if max_staged <= 0:
+        return []
+    ordered = sorted(enumerate(ranked_opportunities), key=lambda item: (_staging_buy_price(item[1]), item[0]))
+    staged: List[Any] = []
+    used_pools: set[str] = set()
+    for _, opportunity in ordered:
+        pools = tuple(str(pool) for pool in getattr(opportunity, "pool_sequence", ()) if pool)
+        if any(pool in used_pools for pool in pools):
+            continue
+        staged.append(opportunity)
+        used_pools.update(pools)
+        if len(staged) >= max_staged:
+            break
+    return staged
+
 def run_dry_cycles(num_cycles: int = 25, use_live: bool = False):
     print(f"Running {num_cycles} dry-run cycles (live={use_live or LIVE_MODE})...")
 
@@ -70,3 +102,4 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False):
 
 if __name__ == "__main__":
     run_dry_cycles(5, use_live=LIVE_MODE)
+

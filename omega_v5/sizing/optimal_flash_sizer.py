@@ -1,30 +1,22 @@
 """
-optimal_flash_sizer.py — Legacy wrapper.
+optimal_flash_sizer.py - legacy compatibility wrapper.
 
-All new code should use omega_v5.capital_injector (the official module).
-This file now delegates its main entrypoint to the official injector.
+Primary sizing delegates to omega_v5.capital_injector. The helper surface below
+keeps older tests and ops scripts working without changing the official sizing
+engine.
 """
 
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any, Callable, Iterable, Optional
+from types import SimpleNamespace
+from typing import Callable, Iterable
 
-from ..capital_injector import (
-    CapitalInjectionResult,
-    compute_optimal_injection,
-    import_metadata_for_route,
-)
-from ..config import (
-    ENABLE_DYNAMIC_FLASH_SIZING,
-    MAX_FLASH_PRINCIPAL_USD,
-    MIN_FLASH_PRINCIPAL_USD,
-)
+from ..capital_injector import CapitalInjectionResult, compute_optimal_injection, import_metadata_for_route
+from ..config import MAX_FLASH_PRINCIPAL_USD
 from ..flash_loan import FlashSource
 
-# Re-export for compatibility
-from ..capital_injector import RouteMetadata as RouteTvlSnapshot
-
+RouteTvlSnapshot = SimpleNamespace
 QuoteFn = Callable[[Decimal], Decimal]
 
 
@@ -40,9 +32,6 @@ def optimal_flash_injection(
     quote_fn: QuoteFn | None = None,
     **kwargs,
 ) -> CapitalInjectionResult:
-    """
-    Legacy entry. Delegates to the OFFICIAL capital_injector.
-    """
     return compute_optimal_injection(
         pool_sequence=pool_sequence,
         pools=pools,
@@ -54,10 +43,25 @@ def optimal_flash_injection(
     )
 
 
-# Keep other helpers as thin pass-throughs or minimal for tests
 def snapshot_route_tvl(pool_sequence, pools, **kwargs):
     meta = import_metadata_for_route(pool_sequence, pools)
-    return meta  # shape compatible enough
+    requested = kwargs.get("requested_principal_usd")
+    max_fraction = Decimal("0.25")
+    hard_cap = min(
+        Decimal(str(requested)) if requested else MAX_FLASH_PRINCIPAL_USD,
+        MAX_FLASH_PRINCIPAL_USD,
+        meta.min_tvl_usd * max_fraction,
+    )
+    return SimpleNamespace(
+        min_pool_tvl_usd=meta.min_tvl_usd,
+        min_tvl_usd=meta.min_tvl_usd,
+        bottleneck_pool_id=meta.bottleneck_pool_id,
+        hard_cap_usd=hard_cap,
+        max_fraction=max_fraction,
+        pool_ids=meta.pool_ids,
+        pool_tvls=meta.pool_tvls,
+    )
+
 
 def estimate_pool_tvl_usd(pool: dict) -> Decimal:
     from ..liquidity_registry import _local_tvl_usd
@@ -66,17 +70,42 @@ def estimate_pool_tvl_usd(pool: dict) -> Decimal:
     except Exception:
         return Decimal("0")
 
-# Stubs for other symbols used in tests
-def build_size_ladder(*args, **kwargs):
-    return [Decimal("10000")]
 
-def find_peak_delta_injection(*args, **kwargs):
-    return Decimal("10000"), Decimal("10"), 0, ()
+def build_size_ladder(*args, **kwargs):
+    hard_cap = Decimal(str(kwargs.get("hard_cap_usd", args[0] if args else "10000")))
+    min_principal = Decimal(str(kwargs.get("min_principal_usd", "0")))
+    seeds = [Decimal("1000"), Decimal("2500"), Decimal("5000"), Decimal("10000"), Decimal("20000"), hard_cap]
+    return sorted({x for x in seeds if x > min_principal and x <= hard_cap}) or [hard_cap]
+
+
+def find_peak_delta_injection(ladder, *, gross_fn, hops=2, flash_source=FlashSource.BALANCER, asset="USDC", stop_on_decline=True, **kwargs):
+    best_x = Decimal("0")
+    best_pi = Decimal("-Infinity")
+    best_i = -1
+    samples = []
+    declines = 0
+    for idx, raw_x in enumerate(ladder):
+        x = Decimal(str(raw_x))
+        gross = Decimal(str(gross_fn(x)))
+        pi = gross - x
+        samples.append({"principal": x, "gross": gross, "delta": pi})
+        if pi > best_pi:
+            best_x, best_pi, best_i = x, pi, idx
+            declines = 0
+        else:
+            declines += 1
+            if stop_on_decline and declines >= 2:
+                break
+    return best_x, best_pi, best_i, samples
+
 
 def apply_injection_to_route_dict(route, inj):
-    route = dict(route)
-    route["flash_principal_usd"] = str(inj.optimal_injection_usd if hasattr(inj, "optimal_injection_usd") else inj)
+    amount = getattr(inj, "injection_usd", getattr(inj, "optimal_injection_usd", inj))
+    route["flash_principal_usd"] = str(amount)
+    route["principal_usd"] = str(amount)
+    route["sizing"] = getattr(inj, "as_payload_fields", lambda: {"flash_injection_usd": str(amount)})()
     return route
+
 
 SizeSample = dict
 OptimalFlashSize = CapitalInjectionResult

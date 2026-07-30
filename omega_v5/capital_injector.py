@@ -367,6 +367,23 @@ class CapitalInjectionResult:
     cannibalization_detected: bool = False
     cannibalization_message: str = ""
 
+    @property
+    def injection_usd(self) -> Decimal:
+        return self.optimal_injection_usd
+
+    @property
+    def min_pool_tvl_usd(self) -> Decimal:
+        return self.min_tvl_usd
+
+    def as_payload_fields(self) -> dict[str, Any]:
+        return {
+            "flash_injection_usd": str(self.optimal_injection_usd),
+            "flash_principal_usd": str(self.optimal_injection_usd),
+            "min_pool_tvl_usd": str(self.min_tvl_usd),
+            "hard_cap_usd": str(self.hard_cap_usd),
+            "method": self.method,
+        }
+
     def as_sizing_params(self) -> dict[str, Any]:
         params: dict[str, Any] = {
             "principal_usd": str(self.optimal_injection_usd),
@@ -578,7 +595,7 @@ def compute_optimal_injection(
     # If the route is self-cannibalizing, we must stop and return a zero-size result.
     if cannibal:
         return _zero_result(
-            method="cannibal_block",
+            method="cannibalization_blocked",
             reason="self_cannibalization",
             cannibal=True,
             cannibal_msg=cannibal_msg,
@@ -671,7 +688,7 @@ def compute_optimal_injection(
         quantum_score=qscore,
         quantum_adjustment=ZERO,
         live_eligible=live_eligible,
-        metadata={"rin": str(rin), "rout": str(rout), "f_swap": str(f_swap), "f_flash": str(f_flash)},
+        metadata={"rin": str(rin), "rout": str(rout), "f_swap": str(f_swap), "f_flash": str(f_flash), "cannibalization_checked": True},
         cannibalization_detected=False,
     )
 
@@ -715,3 +732,4 @@ def optimal_flash_injection(
 
 if __name__ == "__main__":
     print("capital_injector.py — canonical module ready.")
+

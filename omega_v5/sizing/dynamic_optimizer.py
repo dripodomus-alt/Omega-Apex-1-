@@ -59,6 +59,14 @@ class RouteSizing:
         self.selected_principal_usd = kw.get("selected_principal_usd", Decimal("10000"))
         self.max_profit_usd = kw.get("max_profit_usd", Decimal("0"))
         self.min_pool_tvl_usd = kw.get("min_pool_tvl_usd", Decimal("0"))
+        self.minimum_principal_usd = kw.get("minimum_principal_usd", MIN_FLASH_PRINCIPAL_USD)
+        self.live_principal_eligible = kw.get("live_principal_eligible", self.selected_principal_usd >= self.minimum_principal_usd)
+        self.proof_only_below_minimum = kw.get("proof_only_below_minimum", not self.live_principal_eligible)
+        self.search_upper_bound_usd = kw.get("search_upper_bound_usd", Decimal("0"))
+        self.search_steps = kw.get("search_steps", 0)
+        self.profitability_at_selection = kw.get("profitability_at_selection")
+        self.search_space_details = kw.get("search_space_details", {})
+        self.metadata = kw.get("metadata", {})
         self.method = kw.get("method", "legacy_fallback")
 
 class DynamicSizeResult:
@@ -69,3 +77,4 @@ class DynamicSizeResult:
 
 def _apply_impact_penalty(principal, min_tvl, gross):
     return Decimal("0")
+
