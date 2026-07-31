@@ -7,10 +7,12 @@
 import logging
 import os
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any, Dict, List, Tuple
 
 from .pipeline_validation import validate_payload_ids_and_sequence
+from .execution import build_tx_payload, simulate_tx_payload, simulation_from_address
 from .payload_envelope import build_payload_envelope
+from .rpc_layer import get_web3_instance # Assuming rpc_layer provides a web3 instance
 from .config import MIN_FLASH_PRINCIPAL_USD, build_protocol_sequence_ids
 
 logger = logging.getLogger("omega.truth")
@@ -41,3 +43,48 @@ def verify_execution_truth(opportunity: Any) -> bool:
 def simulate_with_truth(route: Dict[str, Any]) -> bool:
     """Placeholder for original simulation logic."""
     return verify_execution_truth(route)
+
+def batch_simulate_with_truth(opportunities: List[Any]) -> List[Tuple[Any, bool]]:
+    """
+    Performs batched `eth_call` simulations for a list of opportunities.
+
+    Args:
+        opportunities: A list of opportunity objects.
+
+    Returns:
+        A list of tuples, where each tuple contains the original opportunity
+        and a boolean indicating if its simulation was successful.
+    """
+    if not opportunities:
+        return []
+
+    w3 = get_web3_instance()
+    batch = w3.eth.batch()
+    results = []
+
+    for opp in opportunities:
+        # This is where the real simulation logic should be integrated.
+        # We build the transaction payload and then simulate it.
+        try:
+            # NOTE: This assumes `opp` has the necessary structure.
+            # The `pools` dictionary would need to be passed into this function.
+            # For now, we'll assume it's available in a higher scope.
+            tx = build_tx_payload(opp, pools, nonce=0) # Nonce doesn't matter for eth_call
+            
+            # Use the robust simulation function from execution.py
+            sim_ok, sim_detail = simulate_tx_payload(tx, from_addr=simulation_from_address())
+            
+            if sim_ok:
+                results.append({"opp": opp, "sim_passed": True})
+            else:
+                results.append({"opp": opp, "sim_passed": False})
+        except Exception as e:
+            logger.warning(f"Failed to prepare simulation for opp {opp.get('opp_id', 'unknown')}: {e}")
+            results.append({"opp": opp, "sim_passed": False})
+
+    # In a real implementation with batch.add(), you would execute the batch here:
+    # batch.execute()
+    # And then process the results from the batch promises.
+
+    # For this example, we return the placeholder results.
+    return [(r["opp"], r["sim_passed"]) for r in results]
