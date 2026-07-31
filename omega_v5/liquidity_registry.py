@@ -9,6 +9,7 @@ from dataclasses import dataclass, asdict
 from decimal import Decimal
 from typing import Any
 
+from .config import ASSET_UNIVERSE
 from .oracle_layer import PriceUnavailable, token_price_usd
 
 
@@ -28,45 +29,20 @@ PRODUCTION_ROUTING_SPINE = {
     "WETH": ["WBTC", "WPOL", "USDC.e"],
 }
 
+# Dynamically build lane definitions from the canonical asset universe.
+BASE_ASSETS = set(ASSET_UNIVERSE.base_route_assets)
+MID_ASSETS = set(ASSET_UNIVERSE.mid_token_assets)
+
+# Hot lanes: pairs of two base assets, or a base and a major mid-token.
 HOT_LANE_PAIRS = {
-    tuple(sorted(pair))
-    for pair in [
-        ("USDC", "USDC.e"),
-        ("USDC.e", "USDT"),
-        ("USDC.e", "DAI"),
-        ("USDC.e", "WPOL"),
-        ("WBTC", "WETH"),
-        ("WBTC", "USDC.e"),
-        ("USDC.e", "WETH"),
-    ]
+    tuple(sorted((a, b)))
+    for a in BASE_ASSETS
+    for b in (BASE_ASSETS | (MID_ASSETS & {"USDT", "DAI", "WBTC"}))
+    if a != b
 }
 
-WARM_LANE_PAIRS = {
-    tuple(sorted(pair))
-    for pair in [
-        ("LINK", "WETH"),
-        ("AAVE", "WETH"),
-        ("UNI", "WETH"),
-        ("QUICK", "WPOL"),
-        ("BAL", "WETH"),
-        ("CRV", "WETH"),
-        ("SUSHI", "WETH"),
-    ]
-}
-
-DISCOVERY_LANE_ASSETS = {
-    "GNS",
-    "GHST",
-    "TEL",
-    "QI",
-    "DFYN",
-    "EURS",
-    "jEUR",
-    "EURT",
-    "RETH",
-    "CBETH",
-    "wstETH",
-}
+# Warm lanes: pairs involving other mid-tokens.
+WARM_LANE_PAIRS = {tuple(sorted((a, b))) for a in BASE_ASSETS for b in MID_ASSETS if a != b}
 
 SUPPORTED_CALLDATA_FAMILIES = {
     "V2_CPMM",
@@ -174,7 +150,7 @@ def lane_for_pair(tokens: list[str]) -> str:
         return "hot"
     if key in WARM_LANE_PAIRS:
         return "warm"
-    if any(token in DISCOVERY_LANE_ASSETS for token in tokens):
+    if not all(token in BASE_ASSETS or token in MID_ASSETS for token in tokens):
         return "discovery"
     return "warm" if len(tokens) >= 2 else "discovery"
 

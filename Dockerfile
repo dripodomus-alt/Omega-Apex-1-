@@ -14,8 +14,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.in ./requirements.in
+# Install pip-tools first to leverage Docker cache.
+# Then install application dependencies. This layer only rebuilds if requirements.in changes.
 RUN python -m pip install --upgrade pip \
-    && pip install -r requirements.in
+    && pip install pip-tools \
+    && pip-sync requirements.in
 
 COPY omega_v5 ./omega_v5
 COPY README.md ./README.md

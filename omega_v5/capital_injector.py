@@ -39,6 +39,7 @@ from .config import (
 )
 from .flash_loan import FlashSource, evaluate_profitability, live_min_net_profit_usd
 from .liquidity_registry import _local_tvl_usd
+from .rpc_layer import get_latest_gas_prices # Assume this function exists
 from .oracle_layer import token_price_usd
 from .precision_pricing import PrecisionPricingEngine
 from .quantum_logic_gate import create_vqc_circuit, simulate_and_measure
@@ -574,6 +575,7 @@ def compute_optimal_injection(
     requested_principal_usd: Optional[Decimal] = None,
     base_rate: Optional[Decimal] = None,
     quote_fn: Optional[Callable[[Decimal], Decimal]] = None,
+    gas_price_gwei: Optional[Decimal] = None, # New parameter for gas price
 ) -> CapitalInjectionResult:
     """
     Official entry point. Runs cannibal guard then derivative sizing.
@@ -656,20 +658,36 @@ def compute_optimal_injection(
     # refine this initial 'optimal' guess by searching a "ladder" of discrete
     # trade sizes around it to find the true peak of the profit curve.
     br = base_rate or Decimal("1.0015")
-    peak = _bellman_ford_surplus_curve(optimal, br, metadata.min_tvl_usd)
-    qscore = _quantum_score_size(optimal, metadata.min_tvl_usd, peak)
+
+    # --- Gas-Aware Optimization ---
+    # Fetch current gas price if not provided.
+    if gas_price_gwei is None:
+        try:
+            gas_info = get_latest_gas_prices()
+            gas_price_gwei = Decimal(str(gas_info.get("base_fee_gwei", 20)))
+        except Exception:
+            gas_price_gwei = Decimal("20") # Fallback
+
+    # Define a threshold for "high gas". e.g., 50 Gwei
+    high_gas_threshold_gwei = Decimal(os.environ.get("OMEGA_HIGH_GAS_THRESHOLD_GWEI", "50"))
+    is_high_gas = gas_price_gwei > high_gas_threshold_gwei
 
     # Ladder search for best
     ladder = _build_ladder(hard_cap, metadata.min_tvl_usd)
-    best_prin = optimal
-    best_surplus = peak
+    best_prin = ZERO
+    best_surplus = ZERO
+    best_score = Decimal("-1")
     samples = []
     # This loop simulates the profit at various trade sizes to find the
     # empirical maximum, which becomes our final `optimal_injection_usd`.
     for cand in ladder:
         sur = _bellman_ford_surplus_curve(cand, br, metadata.min_tvl_usd)
-        samples.append({"principal": str(cand), "surplus": str(sur)})
-        if sur > best_surplus:
+        # NOTE: This is a simplified gas cost. A more accurate model would be better.
+        gas_cost_usd = gas_price_gwei * Decimal("0.000000001") * Decimal("500000") * token_price_usd("MATIC")
+        score = (sur - gas_cost_usd) / gas_cost_usd if is_high_gas and gas_cost_usd > 0 else sur
+        samples.append({"principal": str(cand), "surplus": str(sur), "score": str(score)})
+        if score > best_score:
+            best_score = score
             best_surplus = sur
             best_prin = cand
 
@@ -684,7 +702,7 @@ def compute_optimal_injection(
         hard_cap_usd=hard_cap,
         method=method,
         reason=reason,
-        samples=tuple(samples),
+        samples=tuple(sorted(samples, key=lambda x: Decimal(x["score"]), reverse=True)),
         quantum_score=qscore,
         quantum_adjustment=ZERO,
         live_eligible=live_eligible,
@@ -732,4 +750,3 @@ def optimal_flash_injection(
 
 if __name__ == "__main__":
     print("capital_injector.py — canonical module ready.")
-

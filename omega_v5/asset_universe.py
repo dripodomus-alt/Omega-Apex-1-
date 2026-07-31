@@ -54,6 +54,11 @@ DEFAULT_MID_TOKEN_ASSETS = (
     "RETH",
     "CBETH",
     "wstETH",
+    "ANKR",
+    "AVAX",
+    "BNB",
+    "FXS",
+    "USDD",
 )
 
 # Assets allowed to appear in swap routes after metadata + behavior checks.
@@ -72,6 +77,10 @@ DEFAULT_SWAPPABLE_ASSETS = tuple(dict.fromkeys((
     "GHST",
     "RNDR",
     "ANKR",
+    "AVAX",
+    "BNB",
+    "FXS",
+    "USDD",
 )))
 
 # Assets whose pool reserves/state should be hydrated for route construction.

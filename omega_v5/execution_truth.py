@@ -44,12 +44,13 @@ def simulate_with_truth(route: Dict[str, Any]) -> bool:
     """Placeholder for original simulation logic."""
     return verify_execution_truth(route)
 
-def batch_simulate_with_truth(opportunities: List[Any]) -> List[Tuple[Any, bool]]:
+def batch_simulate_with_truth(opportunities: List[Any], pools: dict) -> List[Tuple[Any, bool]]:
     """
     Performs batched `eth_call` simulations for a list of opportunities.
 
     Args:
         opportunities: A list of opportunity objects.
+        pools: A dictionary of live pool data required for building transactions.
 
     Returns:
         A list of tuples, where each tuple contains the original opportunity

@@ -19,8 +19,8 @@
   .\scripts\cloud\start_dashboard_tunnel.ps1 -VmName "my-other-vm" -Zone "us-central1-a"
 #>
 param(
-    [string]$VmName = "apex-node-1",
-    [string]$Zone = "us-central1-a",
+    [string]$VmName = "omega-executor-vm-1",
+    [string]$Zone = "us-east1-b",
     [string]$Project = "", # Will be automatically detected from gcloud config if not provided
     [int]$LocalPort = 8080,
     [int]$RemotePort = 8080

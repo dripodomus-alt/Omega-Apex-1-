@@ -28,8 +28,8 @@ param(
     [Parameter(Mandatory = $true)]
     [switch]$Confirm,
 
-    [string]$InstanceName = "omega-v5-prod",
-    [string]$Zone = "us-central1-a",
+    [string]$InstanceName = "omega-executor-vm-1",
+    [string]$Zone = "us-east1-b",
     [string]$Project
 )
 

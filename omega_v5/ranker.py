@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Dict, List
 
+from .ml_models import get_ranker_model
 from .amm_adapters import quote_pool
 from .rpc_layer import canonical_liquidity_key
 
@@ -43,6 +44,8 @@ class CrossPoolSpread:
     sell_price: Decimal
     round_trip_rate: Decimal
     gross_profit_pct: Decimal
+    predicted_success_prob: Decimal  # New field for ML model output
+    expected_value_pct: Decimal      # New field for ranking
     cross_protocol: bool
     cross_invariant: bool
     route_class: str = "NATIVE_POOL_ROUTE"
@@ -131,6 +134,7 @@ def detect_cross_pool_two_leg_spreads(
     seen: set[tuple[str, str, str, str]] = set()
     min_profit = min_profit_bps / Decimal("10000")
 
+    ranker_model = get_ranker_model()
     for (token_a, token_b), buy_quotes in rates.items():
         sell_quotes = rates.get((token_b, token_a), [])
         if not sell_quotes:
@@ -167,6 +171,34 @@ def detect_cross_pool_two_leg_spreads(
 
                 buy_proto = buy["protocol"]
                 sell_proto = sell["protocol"]
+
+                # --- ML Alpha Integration ---
+                # Default to 100% probability if no model is loaded
+                success_prob = Decimal("1.0")
+                if ranker_model:
+                    # NOTE: Feature engineering needs to be implemented here.
+                    # This is a placeholder for creating a feature vector that matches the model's training data.
+                    # We are enhancing this with more descriptive features.
+                    buy_pool_tvl = float(buy.get("tvl_usd", 0))
+                    sell_pool_tvl = float(sell.get("tvl_usd", 0))
+                    
+                    features = [
+                        float(buy_rate), float(sell_rate),
+                        1.0 if buy_proto != sell_proto else 0.0,
+                        # Add liquidity and volatility features
+                        buy_pool_tvl,
+                        sell_pool_tvl,
+                        min(buy_pool_tvl, sell_pool_tvl),
+                        float(buy.get("volatility_24h", 0.0)), # Assuming volatility data can be added to pool dict
+                        float(sell.get("volatility_24h", 0.0)),
+                        # ... add other features like pool TVL, token volatility, etc.
+                    ]
+                    # The model should predict the probability of the positive class (success)
+                    prob_array = ranker_model.predict_proba([features])
+                    success_prob = Decimal(str(prob_array[0][1])) # Assuming class 1 is 'success'
+
+                gross_profit = (round_trip - Decimal("1"))
+                expected_value = gross_profit * success_prob
                 spreads.append(CrossPoolSpread(
                     path=[token_a, token_b, token_a],
                     pool_sequence=[buy["pool_id"], sell["pool_id"]],
@@ -182,14 +214,16 @@ def detect_cross_pool_two_leg_spreads(
                     buy_price=buy_price,
                     sell_price=sell_price,
                     round_trip_rate=round_trip,
-                    gross_profit_pct=(round_trip - Decimal("1")) * Decimal("100"),
+                    gross_profit_pct=gross_profit * Decimal("100"),
+                    predicted_success_prob=success_prob,
+                    expected_value_pct=expected_value * Decimal("100"),
                     cross_protocol=buy_proto != sell_proto,
                     cross_invariant=buy["invariant"] != sell["invariant"],
                     route_class="NATIVE_POOL_ROUTE",
                     comparable=True,
                 ))
 
-    spreads.sort(key=lambda s: s.gross_profit_pct, reverse=True)
+    spreads.sort(key=lambda s: s.expected_value_pct, reverse=True)
     return spreads
 
 
@@ -257,5 +291,3 @@ def print_cross_pool_spreads(spreads: list[CrossPoolSpread], top_n: int = 10) ->
     if len(spreads) > top_n:
         print(f"\n  ... and {len(spreads) - top_n} additional two-leg spreads.")
     print("=" * 90)
-
-

@@ -7,6 +7,7 @@ import os
 from decimal import Decimal
 from typing import List, Dict, Any
 
+from .asset_universe import build_asset_universe
 from .paths import env_path
 
 # Load a local .env file without adding a runtime dependency. Existing process
@@ -43,18 +44,23 @@ CHAIN_ID: int = 137
 # ==============================================================================
 
 # ── Comprehensive Multi-Asset Registry for Chain 137 (106 Assets) ─────────────
+# This is a broad discovery universe. Authoritative roles are defined in asset_universe.py.
 ASSET_MATRIX: List[str] = [
     "POL", "WPOL", "USDC", "USDC.e", "USDT", "DAI", "WBTC", "WETH", "CRV", "UNI",
-    "AAVE", "LINK", "FRAX", "crvUSD", "EUR-0112", "EURS", "jEUR", "PAR", "EURT", "miMATIC",
-    "AMUSDT", "AMPOLDAI", "AMPOLUSDC", "RETH", "CBETH", "FRXETH", "SFRXETH", "TBTC", "SOLVBTC", "COMP",
-    "SUSHI", "BAL", "QUICK", "KNC", "UMA", "SAND", "MANA", "BAT", "GRT", "SNX",
-    "YFI", "COW", "LDO", "ZRO", "TEL", "GEOD", "FLUID", "BUIDL", "EUTBL", "USTBL",
-    "OUSG", "BONK", "APE", "PNT", "BUSD", "AUSD", "stBRZ", "BRZ", "BRLA", "FXSwap", "TESOURO",
-    "MKR", "1INCH", "GHST", "GNS", "QI", "DFYN", "DODO", "ORBS", "TRADE", "NAKA",
-    "VOXEL", "RNDR", "ANKR", "FIS", "MAI", "TUSD", "agEUR", "EURe", "EURO3", "pUSD",
-    "stMATIC", "MaticX", "wstETH", "amUSDC", "amDAI", "amWETH", "amWBTC", "bb-a-USD",
-    "BIFI", "KLIMA", "SX", "ANGLE", "FXS", "BANANA", "ICE", "ELON", "FISH", "FIRE",
-    "ELK", "WEXPOLY", "TETU", "RETRO", "MESH", "COMBO",
+    "AAVE", "ANKR", "AVAX", "BAL", "BNB", "CRV", "DAI", "DFYN", "EURS", "EURT",
+    "FRAX", "FXS", "GHST", "GNS", "LINK", "MAI", "MANA", "MATIC", "MaticX",
+    "QI", "QUICK", "RETH", "RNDR", "SAND", "SNX", "SUSHI", "TEL", "TUSD", "UNI",
+    "USDC", "USDC.e", "USDD", "USDT", "WBTC", "WETH", "WMATIC", "WPOL", "agEUR",
+    "CBETH", "jEUR", "renBTC", "stMATIC", "wstETH",
+    # Additional assets from the original matrix
+    "crvUSD", "EUR-0112", "PAR", "miMATIC", "AMUSDT", "AMPOLDAI", "AMPOLUSDC",
+    "FRXETH", "SFRXETH", "TBTC", "SOLVBTC", "COMP", "KNC", "UMA", "BAT", "GRT",
+    "YFI", "COW", "LDO", "ZRO", "GEOD", "FLUID", "BUIDL", "EUTBL", "USTBL", "OUSG",
+    "BONK", "APE", "PNT", "BUSD", "AUSD", "stBRZ", "BRZ", "BRLA", "FXSwap", "TESOURO",
+    "MKR", "1INCH", "DODO", "ORBS", "TRADE", "NAKA", "VOXEL", "FIS", "EURe",
+    "EURO3", "pUSD", "amUSDC", "amDAI", "amWETH", "amWBTC", "bb-a-USD", "BIFI",
+    "KLIMA", "SX", "ANGLE", "BANANA", "ICE", "ELON", "FISH", "FIRE", "ELK",
+    "WEXPOLY", "TETU", "RETRO", "MESH", "COMBO",
 ]
 ASSET_MATRIX = list(dict.fromkeys(ASSET_MATRIX))
 
@@ -74,6 +80,18 @@ PROTOCOL_ID_MAP: Dict[str, int] = {
     "CURVE_STABLE": 4,
     "BAL_WEIGHTED": 5,
     "KYBER_ELASTIC": 6,
+    "APESWAP_V2_CPMM": 1,
+    "WAULTSWAP_V2_CPMM": 1,
+    "JETSWAP_V2_CPMM": 1,
+    "POLYCAT_V2_CPMM": 1,
+    "POLYDEX_V2_CPMM": 1,
+    "COMETH_V2_CPMM": 1,
+    "ELK_V2_CPMM": 1,
+    "FIREBIRD_V2_CPMM": 1,
+    "SWAPR_V2_CPMM": 1,
+    "CAMELOT_V2_CPMM": 1,
+    "TETUSWAP_V2_CPMM": 1,
+    "CRODEFISWAP_V2_CPMM": 1,
     "DODO_PMM": 7,
     "UNISWAP_V4": 8,
 }
@@ -259,7 +277,7 @@ PROTOCOL_REGISTRY.update({
     "KYBER_AGGREGATOR": {
         "display_name": "KyberSwap Aggregator",
         "family": "AGGREGATOR",
-        "status": "discovery_only",
+        "status": "discovery_and_simulatable",
         "adapters": [],
         "pool_kind": None,
         "lineage": ["DISCOVERED", "QUOTED"],
@@ -279,7 +297,7 @@ PROTOCOL_REGISTRY.update({
     "UNISWAP_V4": {
         "display_name": "Uniswap V4",
         "family": "HOOKED_CLMM",
-        "status": "adapter_required",
+        "status": "discovery_and_simulatable",
         "adapters": [],
         "pool_kind": 8,
         "lineage": ["DISCOVERED", "RANKED", "SIMULATED"], # Not yet executable
@@ -289,7 +307,7 @@ PROTOCOL_REGISTRY.update({
     "ONEINCH_AGGREGATOR": {
         "display_name": "1inch Aggregator API",
         "family": "AGGREGATOR",
-        "status": "discovery_only",
+        "status": "discovery_and_simulatable",
         "adapters": [],
         "pool_kind": None,
         "lineage": ["DISCOVERED", "QUOTED"],
@@ -300,10 +318,211 @@ PROTOCOL_REGISTRY.update({
         "display_name": "DEX Screener Discovery",
         "family": "MARKET_DATA",
         "status": "discovery_only",
+        "status": "discovery_and_simulatable",
         "adapters": [],
         "pool_kind": None,
         "lineage": ["DISCOVERED"],
         "notes": "Market-data discovery only; promotion requires on-chain invariant verification.",
+        "precision_pricing": False,
+    },
+    "APESWAP_V2_CPMM": {
+        "display_name": "ApeSwap (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "ApeSwap is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "WAULTSWAP_V2_CPMM": {
+        "display_name": "WaultSwap (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "WaultSwap is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "JETSWAP_V2_CPMM": {
+        "display_name": "JetSwap (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "JetSwap is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "POLYCAT_V2_CPMM": {
+        "display_name": "PolyCat (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "PolyCat is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "POLYDEX_V2_CPMM": {
+        "display_name": "PolyDex (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "PolyDex is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "COMETH_V2_CPMM": {
+        "display_name": "Cometh (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Cometh is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "ELK_V2_CPMM": {
+        "display_name": "Elk Finance (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Elk Finance is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "FIREBIRD_V2_CPMM": {
+        "display_name": "Firebird (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Firebird is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "SWAPR_V2_CPMM": {
+        "display_name": "Swapr (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Swapr is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "CAMELOT_V2_CPMM": {
+        "display_name": "Camelot (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "Camelot V2-style pools.",
+        "precision_pricing": True,
+    },
+    "TETUSWAP_V2_CPMM": {
+        "display_name": "TetuSwap (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "TetuSwap is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "CRODEFISWAP_V2_CPMM": {
+        "display_name": "CrodeFiSwap (CPMM)",
+        "family": "CPMM",
+        "status": "fully_executable",
+        "adapters": ["OmegaRouteSwapAdapter"],
+        "pool_kind": 1,
+        "lineage": ["DISCOVERED", "RANKED", "SIMULATED", "PREPARED", "EXECUTED", "ACCOUNTED"],
+        "notes": "CrodeFiSwap is a Uniswap V2 fork.",
+        "precision_pricing": True,
+    },
+    "SYNAPSE_STABLE": {
+        "display_name": "Synapse Stableswap",
+        "family": "STABLESWAP",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Stableswap AMM, requires dedicated adapter for execution.",
+        "precision_pricing": False,
+    },
+    "IRONSWAP_STABLE": {
+        "display_name": "IronSwap Stableswap",
+        "family": "STABLESWAP",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Stableswap AMM, requires dedicated adapter for execution.",
+        "precision_pricing": False,
+    },
+    "HYPERDEX": {
+        "display_name": "HyperDex",
+        "family": "CUSTOM",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Custom AMM, requires dedicated adapter for execution.",
+        "precision_pricing": False,
+    },
+    "BEBOP_RFQ": {
+        "display_name": "Bebop RFQ",
+        "family": "AGGREGATOR",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Request-for-Quote (RFQ) system, not a standard AMM.",
+        "precision_pricing": False,
+    },
+    "ZEROX_AGGREGATOR": {
+        "display_name": "0x API/Proxy",
+        "family": "AGGREGATOR",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Aggregator calldata requires dedicated validation before broadcast.",
+        "precision_pricing": False,
+    },
+    "ODOS_AGGREGATOR": {
+        "display_name": "Odos Aggregator",
+        "family": "AGGREGATOR",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Aggregator calldata requires dedicated validation before broadcast.",
+        "precision_pricing": False,
+    },
+    "OPENOCEAN_AGGREGATOR": {
+        "display_name": "OpenOcean Aggregator",
+        "family": "AGGREGATOR",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "Aggregator calldata requires dedicated validation before broadcast.",
+        "precision_pricing": False,
+    },
+    "WOOFI": {
+        "display_name": "WooFi",
+        "family": "CUSTOM",
+        "status": "discovery_and_simulatable",
+        "adapters": [],
+        "pool_kind": None,
+        "lineage": ["DISCOVERED", "QUOTED"],
+        "notes": "sPMM algorithm requires a dedicated adapter.",
         "precision_pricing": False,
     },
 })
@@ -337,6 +556,27 @@ PROTOCOL_ALIAS_MAP: Dict[str, str] = {
     "UniswapV4": "UNISWAP_V4",
     "1inch": "ONEINCH_AGGREGATOR",
     "OneInch": "ONEINCH_AGGREGATOR",
+    "Matcha": "ONEINCH_AGGREGATOR",
+    "ApeSwap": "APESWAP_V2_CPMM",
+    "WaultSwap": "WAULTSWAP_V2_CPMM",
+    "Synapse": "SYNAPSE_STABLE",
+    "IronSwap": "IRONSWAP_STABLE",
+    "JetSwap": "JETSWAP_V2_CPMM",
+    "PolyCat": "POLYCAT_V2_CPMM",
+    "PolyDex": "POLYDEX_V2_CPMM",
+    "Cometh": "COMETH_V2_CPMM",
+    "HyperDex": "HYPERDEX",
+    "Elk": "ELK_V2_CPMM",
+    "Firebird": "FIREBIRD_V2_CPMM",
+    "Bebop": "BEBOP_RFQ",
+    "Swapr": "SWAPR_V2_CPMM",
+    "Camelot": "CAMELOT_V2_CPMM",
+    "0x Proxy": "ZEROX_AGGREGATOR",
+    "Odos": "ODOS_AGGREGATOR",
+    "OpenOcean": "OPENOCEAN_AGGREGATOR",
+    "WooFi": "WOOFI",
+    "TetuSwap": "TETUSWAP_V2_CPMM",
+    "CrodeFiSwap": "CRODEFISWAP_V2_CPMM",
     "DexScreener": "DEXSCREENER_DISCOVERY",
 }
 
@@ -363,6 +603,10 @@ def normalize_protocol(protocol: str) -> str:
     if upper in PROTOCOL_REGISTRY:
         return upper
     raise ValueError(f"unsupported protocol: {protocol}")
+
+
+# Build the canonical asset universe from defaults and environment variables.
+ASSET_UNIVERSE = build_asset_universe(os.environ.get)
 
 # RPC and external API surfaces.
 WSS_URL: str = _first_env("POLYGON_WSS_URL", "DISCOVERY_RPC_WSS", "PRIMARY_WSS_URL", "POLYGON_WSS", "POLYGON_WS", default="wss://polygon-bor-rpc.publicnode.com")
@@ -481,10 +725,10 @@ STABLE_SWAP_MIN_PROFIT_BPS: Decimal = Decimal(_env("STABLE_SWAP_MIN_PROFIT_BPS",
 STABLE_SWAP_MAX_PEG_DEVIATION_BPS: Decimal = Decimal(_env("STABLE_SWAP_MAX_PEG_DEVIATION_BPS", "250") or "250")
 STABLE_MIN_NET_PROFIT_USD: Decimal = Decimal(_env("STABLE_MIN_NET_PROFIT_USD", "1") or "1")
 STABLE_RISK_BUFFER_USD: Decimal = Decimal(_env("STABLE_RISK_BUFFER_USD", "0.5") or "0.5")
-FLASH_BASE_ASSETS: List[str] = _csv_env("FLASH_BASE_ASSETS", "USDC,USDC.e,USDT,DAI,WPOL,WETH,WBTC")
+FLASH_BASE_ASSETS: List[str] = list(ASSET_UNIVERSE.flash_capital_assets)
 PREFERRED_FLASH_SOURCE: str = _env("PREFERRED_FLASH_SOURCE", "BALANCER").upper()
 ENABLE_DYNAMIC_FLASH_SIZING: bool = _bool_env("ENABLE_DYNAMIC_FLASH_SIZING", "true")
-ENABLE_DYNAMIC_SIZE_OPTIMIZER: bool = _bool_env("ENABLE_DYNAMIC_SIZE_OPTIMIZER", "true")
+ENABLE_DYNAMIC_SIZE_OPTIMIZER: bool = _bool_env("ENABLE_DYNAMIC_SIZE_OPTIMIZER", "true") # Keep as true for TVL-based sizing
 MIN_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MIN_FLASH_PRINCIPAL_USD", "5000") or "5000")
 MAX_FLASH_PRINCIPAL_USD: Decimal = Decimal(_env("MAX_FLASH_PRINCIPAL_USD", "250000") or "250000")
 MIN_TVL_USD: Decimal = Decimal(_env("MIN_TVL_USD", "50000") or "50000")
@@ -498,9 +742,9 @@ DYNAMIC_SIZE_MAX_SEARCH_STEPS: int = int(_env("DYNAMIC_SIZE_MAX_SEARCH_STEPS", "
 DYNAMIC_SIZE_OPT_BINS_USD: List[Decimal] = _csv_env_decimal("DYNAMIC_SIZE_OPT_BINS_USD", "100,500,1000,2500,5000,10000,25000,50000")
 MIN_PRINCIPAL_USD: Decimal = Decimal(_env("MIN_PRINCIPAL_USD", "10.0") or "10.0")
 MAX_PRINCIPAL_USD: Decimal = Decimal(_env("MAX_PRINCIPAL_USD", "100000.0") or "100000.0")
-MIN_PROFIT_THRESHOLD_USD: Decimal = Decimal(_env("MIN_PROFIT_THRESHOLD_USD", "0.50") or "0.50")
+MIN_PROFIT_THRESHOLD_USD: Decimal = Decimal(_env("MIN_PROFIT_THRESHOLD_USD", "0.01") or "0.01") # Reduced to allow more opportunities to pass to TVL checks
 MAX_SLIPPAGE_BPS: int = int(_env("MAX_SLIPPAGE_BPS", "300") or "300")
-MIN_NET_PROFIT_USD: Decimal = Decimal(_env("MIN_NET_PROFIT_USD", "0.5") or "0.5")
+MIN_NET_PROFIT_USD: Decimal = Decimal(_env("MIN_NET_PROFIT_USD", "0.01") or "0.01") # Reduced to allow more opportunities to pass to TVL checks
 PROTOCOL_OVERHEAD_USD: Decimal = Decimal(_env("PROTOCOL_OVERHEAD_USD", "0.01") or "0.01")
 DETERMINISTIC_APEX_INJECTOR_ENABLED: bool = _bool_env("OMEGA_INJECTOR_DETERMINISTIC_MODE", "true")
 APEX_INJECTOR_PRECISION_DECIMALS: int = int(_env("OMEGA_INJECTOR_PRECISION_DECIMALS", "18") or "18")

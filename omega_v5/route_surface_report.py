@@ -14,7 +14,7 @@ from typing import Any
 
 from . import rpc_layer
 from .arbitrage import ArbitrageGraphEngine, detect_four_leg_cycles, detect_three_leg_cycles, merge_cycle_sets
-from .config import ASSET_MATRIX, CHAIN_ID, HTTP_URL
+from .config import ASSET_UNIVERSE, CHAIN_ID, HTTP_URL
 from .execution import AdapterSemanticError, build_tx_payload, execution_guard_status
 from .flash_loan import FlashSource
 from .liquidity_registry import build_verified_pool_registry, registry_summary
@@ -277,13 +277,22 @@ def build_route_surface_report(*, rpc_url: str = "", top: int = 25, calldata_pro
         "chain_id": CHAIN_ID,
         "block": rpc_layer.BLOCK,
         "elapsed_seconds": Decimal(str(round(time.time() - started, 3))),
-        "discoverable_assets": {
-            "configured_asset_matrix_count": len(ASSET_MATRIX),
-            "configured_asset_matrix": list(ASSET_MATRIX),
+        "asset_universe_configured": {
+            "flash_capital_assets": list(ASSET_UNIVERSE.flash_capital_assets),
+            "base_route_assets": list(ASSET_UNIVERSE.base_route_assets),
+            "mid_token_assets": list(ASSET_UNIVERSE.mid_token_assets),
+            "swappable_assets": list(ASSET_UNIVERSE.swappable_assets),
+            "pool_state_assets": list(ASSET_UNIVERSE.pool_state_assets),
+            "price_assets": list(ASSET_UNIVERSE.price_assets),
+            "counts": {
+                "flash_capital": len(ASSET_UNIVERSE.flash_capital_assets),
+                "base_route": len(ASSET_UNIVERSE.base_route_assets),
+                "mid_token": len(ASSET_UNIVERSE.mid_token_assets),
+                "swappable": len(ASSET_UNIVERSE.swappable_assets),
+                "pool_state": len(ASSET_UNIVERSE.pool_state_assets),
+                "price": len(ASSET_UNIVERSE.price_assets),
+            },
             "runtime_token_registry_count": len(rpc_layer.TOKEN_ADDRESSES),
-            "runtime_token_registry_sample": sorted(rpc_layer.TOKEN_ADDRESSES)[:200],
-            "polygon_token_list_runtime_added": rpc_layer.POLYGON_TOKEN_LIST_DISCOVERY_STATS.get("runtime_added", 0),
-            "curve_tokens_added": rpc_layer.CURVE_POOL_REGISTRY_STATS.get("tokens_added", 0),
         },
         "discovered_assets": {
             "pool_asset_count": len(discovered_assets),
