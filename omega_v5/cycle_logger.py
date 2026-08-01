@@ -215,6 +215,10 @@ class OpportunityRecord:
     sell_family: str = ""
     buy_leg_price: str = "0"
     sell_leg_price: str = "0"
+    buy_leg_token_prices: dict = field(default_factory=dict)
+    sell_leg_token_prices: dict = field(default_factory=dict)
+    buy_leg_token_price_usd: str = "0"
+    sell_leg_token_price_usd: str = "0"
     raw_spread_usd: str = "0"
     raw_spread_bps: str = "0"
     state_hash: str = ""
@@ -249,6 +253,10 @@ class CycleLogger:
         sell_family: str = "",
         buy_leg_price: Any = "0",
         sell_leg_price: Any = "0",
+        buy_leg_token_prices: Optional[dict] = None,
+        sell_leg_token_prices: Optional[dict] = None,
+        buy_leg_token_price_usd: Any = "0",
+        sell_leg_token_price_usd: Any = "0",
         raw_spread_usd: Any = "0",
         raw_spread_bps: Any = "0",
         config_version: int = 0,
@@ -286,6 +294,10 @@ class CycleLogger:
             sell_family=sell_family,
             buy_leg_price=_dec(buy_leg_price),
             sell_leg_price=_dec(sell_leg_price),
+            buy_leg_token_prices=buy_leg_token_prices or {},
+            sell_leg_token_prices=sell_leg_token_prices or {},
+            buy_leg_token_price_usd=_dec(buy_leg_token_price_usd),
+            sell_leg_token_price_usd=_dec(sell_leg_token_price_usd),
             raw_spread_usd=_dec(raw_spread_usd),
             raw_spread_bps=_dec(raw_spread_bps),
             state_hash=sh,

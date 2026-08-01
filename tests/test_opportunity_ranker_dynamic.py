@@ -1,4 +1,5 @@
 from decimal import Decimal
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from omega_v5.flash_loan import FlashLoanParams, FlashSource, Profitability
@@ -88,4 +89,51 @@ def test_stable_spreads_use_stable_profitability_overrides(monkeypatch):
         assert call_kwargs.get("min_net_override") == opportunity_ranker.STABLE_MIN_NET_PROFIT_USD
         assert call_kwargs.get("risk_buffer_override") == opportunity_ranker.STABLE_RISK_BUFFER_USD
         assert call_kwargs.get("strategy") == "PEGGED_STABLE_TWO_LEG"
+
+
+def test_score_closed_path_populates_unified_leg_token_price_schema(monkeypatch):
+    """Scored opportunities should expose buy/sell leg token price data in the shared schema."""
+    monkeypatch.setattr(opportunity_ranker, "route_within_lifespan", lambda *args, **kwargs: True)
+    monkeypatch.setattr(opportunity_ranker.rpc_layer, "BLOCK", 100)
+    monkeypatch.setattr(opportunity_ranker, "token_price_usd", lambda symbol: Decimal("1.5") if symbol == "USDC" else Decimal("2000"))
+    monkeypatch.setattr(
+        opportunity_ranker,
+        "_quote_route_amount",
+        lambda *args, **kwargs: (
+            Decimal("10010"),
+            SimpleNamespace(amount_out=Decimal("10010"), clmm_unquoted=0, hop_proofs=[]),
+        ),
+    )
+    monkeypatch.setattr(
+        opportunity_ranker,
+        "evaluate_profitability",
+        lambda *args, **kwargs: SimpleNamespace(
+            passes_gate=True,
+            flashloan=SimpleNamespace(principal_usd=Decimal("10000"), fee_usd=Decimal("0")),
+            net_profit_usd=Decimal("5"),
+            gas_cost_usd=Decimal("0"),
+            relay_tip_usd=Decimal("0"),
+            risk_buffer_usd=Decimal("0"),
+        ),
+    )
+
+    result = opportunity_ranker._score_closed_path(
+        path=("USDC", "WETH", "USDC"),
+        pool_seq=("P1", "P2"),
+        proto_seq=("UniswapV3", "UniswapV2"),
+        pools={
+            "P1": {"total_executable_liquidity_usd": Decimal("1000000")},
+            "P2": {"total_executable_liquidity_usd": Decimal("1000000")},
+        },
+        principal_usd=Decimal("10000"),
+        slippage_bps=Decimal("10"),
+        flash_source=FlashSource.BALANCER,
+        disc_block=100,
+    )
+
+    assert result is not None
+    assert result.buy_leg_token_prices["USDC"] == Decimal("1.5")
+    assert result.sell_leg_token_prices["USDC"] == Decimal("1.5")
+    assert result.buy_leg_token_price_usd == Decimal("1.5")
+    assert result.sell_leg_token_price_usd == Decimal("1.5")
 

@@ -56,11 +56,16 @@ from .flash_loan import ( # type: ignore
     evaluate_profitability,
     MIN_NET_PROFIT_USD,
     live_min_net_profit_usd,
+    live_relay_tip_usd,
+    live_risk_buffer_usd,
+    route_tx_gas_limit,
+    current_pol_price_usd,
 )
 from . import arbitrage
 from . import rust_scanner
 from . import scanner as py_scanner
 from . import rpc_layer
+from .gas_oracle import profitability_gas_price_gwei
 from .oracle_layer import token_price_usd
 from .pricing.net_delta import route_within_lifespan
 from .sizing import compute_optimal_principal
@@ -71,6 +76,89 @@ logger = logging.getLogger(__name__)
 
 RUST_SCANNER_AVAILABLE = rust_scanner.is_available()
 SCANNER_MODE = os.environ.get("SCANNER_MODE", "rust").lower()
+
+
+def _normalize_token_price(value: Any) -> Decimal:
+    try:
+        return Decimal(str(value))
+    except Exception:
+        return Decimal("0")
+
+
+def _build_leg_token_price_schema(path: Iterable[str], *, token_price_lookup: Any) -> dict[str, Decimal]:
+    prices: dict[str, Decimal] = {}
+    for token in path:
+        token_str = str(token or "")
+        if not token_str:
+            continue
+        price = _normalize_token_price(token_price_lookup(token_str))
+        if price > 0:
+            prices[token_str] = price
+    return prices
+
+
+def _default_slippage_bps() -> Decimal:
+    try:
+        return Decimal(str(os.environ.get("DEFAULT_SLIPPAGE_BPS", "10")))
+    except Exception:
+        return Decimal("10")
+
+
+def _calculate_profitability(
+    *,
+    gross_out: Decimal,
+    principal: Decimal,
+    base_asset: str = "USDC",
+    hops: int = 2,
+    flash_source: FlashSource = FlashSource.BALANCER,
+    min_net_profit_usd: Decimal | None = None,
+    risk_buffer_usd: Decimal | None = None,
+    relay_tip_usd: Decimal | None = None,
+    slippage_bps: Decimal | None = None,
+) -> Profitability:
+    """Compatibility wrapper that evaluates profitability with dynamic gas and native-token pricing."""
+    principal_usd = Decimal(str(principal))
+    gross = Decimal(str(gross_out))
+    fee_bps = Decimal("0") if flash_source == FlashSource.BALANCER else Decimal("5")
+    fee_usd = principal_usd * fee_bps / Decimal("10000")
+
+    gas_price_gwei, _ = profitability_gas_price_gwei()
+    pol_price_usd, _ = current_pol_price_usd()
+    gas_units = Decimal(str(route_tx_gas_limit(hops)))
+    gas_cost_usd = (gas_units * Decimal(str(gas_price_gwei)) / Decimal("1e9")) * Decimal(str(pol_price_usd))
+
+    relay = Decimal(str(relay_tip_usd if relay_tip_usd is not None else live_relay_tip_usd()))
+    risk = Decimal(str(risk_buffer_usd if risk_buffer_usd is not None else live_risk_buffer_usd()))
+    min_profit = Decimal(str(min_net_profit_usd if min_net_profit_usd is not None else live_min_net_profit_usd()))
+    slippage = Decimal(str(slippage_bps if slippage_bps is not None else _default_slippage_bps())) / Decimal("10000")
+    gross_out_min = gross * (Decimal("1") - slippage)
+    raw_delta = gross_out_min - principal_usd
+    net = raw_delta - fee_usd - gas_cost_usd - relay - risk
+    passes = net >= min_profit
+    flash = FlashLoanParams(flash_source, base_asset, principal_usd, fee_bps, fee_usd, principal_usd + fee_usd)
+    return Profitability(
+        gross_amount_out=gross,
+        gross_amount_out_min=gross_out_min,
+        flashloan=flash,
+        gas_cost_usd=gas_cost_usd,
+        relay_tip_usd=relay,
+        risk_buffer_usd=risk,
+        net_profit_usd=net,
+        profit_to_gas=(net / gas_cost_usd) if gas_cost_usd > 0 else Decimal("999"),
+        passes_gate=passes,
+        raw_delta_usd=raw_delta,
+        expense_breakdown={
+            "raw_delta_usd": str(raw_delta),
+            "flash_fee_usd": str(fee_usd),
+            "gas_cost_usd": str(gas_cost_usd),
+            "relay_tip_usd": str(relay),
+            "risk_buffer_usd": str(risk),
+            "total_expenses_usd": str(fee_usd + gas_cost_usd + relay + risk),
+            "net_after_expenses_usd": str(net),
+            "min_net_profit_usd": str(min_profit),
+            "passes_min_net": passes,
+        },
+    )
 
 
 @dataclass
@@ -88,6 +176,10 @@ class LiveOpportunity:
     c1_success: bool = False
     liquidation_data: dict | None = None
     pricing_steps: list[dict] = field(default_factory=list)
+    buy_leg_token_prices: dict[str, Decimal] = field(default_factory=dict)
+    sell_leg_token_prices: dict[str, Decimal] = field(default_factory=dict)
+    buy_leg_token_price_usd: Decimal | None = None
+    sell_leg_token_price_usd: Decimal | None = None
 
 
 def find_opportunities_with_rust(live_pools: dict, principal_usd: Decimal, max_slippage_bps: Decimal) -> list[LiveOpportunity]:
@@ -131,7 +223,7 @@ def find_opportunities(
     elif mode == "python_reference":
         return _find_opportunities_with_python_reference(live_pools, principal_usd, max_slippage_bps)
     else:
-        logger.warning(f"SCANNER_MODE={mode} is not recognized")
+        logger.warning(f"Unrecognized SCANNER_MODE: SCANNER_MODE={mode} is not recognized")
         return []
 
 
@@ -179,38 +271,51 @@ def _score_closed_path(
     pools = pools or {}
 
     probe = SimpleNamespace(block_detected=disc_block)
-    if disc_block and not route_within_lifespan(probe, current_block=getattr(rpc_layer, "BLOCK", disc_block)):
-        return None
+    try:
+        if disc_block and not route_within_lifespan(probe, current_block=getattr(rpc_layer, "BLOCK", disc_block)):
+            return None
 
-    base = path[0] if path else ""
-    base_price = Decimal(str(token_price_usd(base) or "0")) if base else Decimal("0")
-    if base_price <= 0:
-        return None
+        base = path[0] if path else ""
+        base_price = Decimal(str(token_price_usd(base) or "0")) if base else Decimal("0")
+        if base_price <= 0:
+            return None
 
-    amount_out, quote_proof = _quote_route_amount(path, pool_seq, proto_seq, pools, principal_usd, slippage_bps=slippage_bps)
-    amount_out = Decimal(str(amount_out))
-    if amount_out <= Decimal(str(principal_usd)):
-        return None
+        buy_leg_token_prices = _build_leg_token_price_schema(path[:2], token_price_lookup=token_price_usd)
+        sell_leg_token_prices = _build_leg_token_price_schema(path[1:], token_price_lookup=token_price_usd)
+        buy_leg_token_price_usd = buy_leg_token_prices.get(base, base_price) if base else None
+        sell_leg_token_price_usd = sell_leg_token_prices.get(path[-1] if path else "", base_price) if path else None
 
-    profitability = evaluate_profitability(
-        amount_out,
-        Decimal(str(principal_usd)),
-        hops=max(1, len(pool_seq)),
-        flash_source=flash_source,
-        min_net_profit_usd=min_net_override if min_net_override is not None else live_min_net_profit_usd(),
-        risk_buffer_usd=risk_buffer_override,
-    )
-    if not getattr(profitability, "passes_gate", False):
-        return None
+        amount_out, quote_proof = _quote_route_amount(path, pool_seq, proto_seq, pools, principal_usd, slippage_bps=slippage_bps)
+        amount_out = Decimal(str(amount_out))
+        if amount_out <= Decimal(str(principal_usd)):
+            return None
 
-    return LiveOpportunity(
-        path=path,
-        pool_sequence=pool_seq,
-        protocol_seq=proto_seq,
-        profitability=profitability,
-        block_detected=disc_block,
-        metadata={"strategy": strategy, "quote_proof": quote_proof},
-    )
+        profitability = evaluate_profitability(
+            amount_out,
+            Decimal(str(principal_usd)),
+            hops=max(1, len(pool_seq)),
+            flash_source=flash_source,
+            min_net_profit_usd=min_net_override if min_net_override is not None else live_min_net_profit_usd(),
+            risk_buffer_usd=risk_buffer_override,
+        )
+        if not getattr(profitability, "passes_gate", False):
+            return None
+
+        return LiveOpportunity(
+            path=path,
+            pool_sequence=pool_seq,
+            protocol_seq=proto_seq,
+            profitability=profitability,
+            block_detected=disc_block,
+            metadata={"strategy": strategy, "quote_proof": quote_proof},
+            buy_leg_token_prices=buy_leg_token_prices,
+            sell_leg_token_prices=sell_leg_token_prices,
+            buy_leg_token_price_usd=buy_leg_token_price_usd,
+            sell_leg_token_price_usd=sell_leg_token_price_usd,
+        )
+    except Exception as e:
+        logger.debug(f"Could not score route {path} on pools {pool_seq}: {e}")
+        return None
 
 def score_pegged_stable_spreads(stable_spreads, pools: dict, principal_usd: Decimal) -> list[LiveOpportunity]:
     """Promote pegged-stable spreads through the standard closed-path scorer."""
@@ -230,6 +335,3 @@ def score_pegged_stable_spreads(stable_spreads, pools: dict, principal_usd: Deci
         if scored is not None:
             out.append(scored)
     return out
-
-
-
