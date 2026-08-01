@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_FLOOR
 from typing import Any
 
+from . import units
+
 
 WEI_PER_POL = Decimal("1000000000000000000")
 WEI_PER_GWEI = Decimal("1000000000")
@@ -19,6 +21,14 @@ def decimal_value(value: Any, default: Decimal = Decimal("0")) -> Decimal:
         return Decimal(str(value))
     except Exception:
         return default
+
+
+def value_to_x18(value: Any) -> int:
+    return units.decimal_to_x18(decimal_value(value))
+
+
+def x18_to_value(value_x18: int | Decimal) -> Decimal:
+    return units.x18_to_decimal(value_x18)
 
 
 def wei_to_gwei(wei: int | Decimal) -> Decimal:
@@ -38,8 +48,7 @@ def gwei_to_native_per_gas(gwei: Decimal) -> Decimal:
 
 
 def token_units_to_raw_floor(amount: Decimal, decimals: int) -> int:
-    units = decimal_value(amount) * (Decimal(10) ** int(decimals))
-    return max(0, int(units.to_integral_value(rounding=ROUND_FLOOR)))
+    return units.to_raw_units("", decimal_value(amount), decimals_override=decimals)
 
 
 def token_raw_to_units(raw: int | Decimal, decimals: int) -> Decimal:

@@ -32,8 +32,55 @@ from .pricing import (
 NATIVE_GAS_TOKEN = "WPOL"
 
 
+def _as_decimal(value: object) -> Decimal:
+    if isinstance(value, Decimal):
+        return value
+    return Decimal(str(value))
+
+
+def decimal_to_x18(value: object) -> int:
+    """Canonical x18 normalization for Decimal-style values."""
+    normalized = _as_decimal(value)
+    if normalized <= 0:
+        return 0
+    return int((normalized * Decimal(PRICE_SCALE)).to_integral_value(rounding=ROUND_FLOOR))
+
+
+def x18_to_decimal(value: int | Decimal) -> Decimal:
+    """Canonical Decimal representation for an x18-scaled integer value."""
+    normalized = _as_decimal(value)
+    if normalized <= 0:
+        return Decimal("0")
+    return normalized / Decimal(PRICE_SCALE)
+
+
+def value_equivalent_x18(
+    left_x18: int | Decimal,
+    right_x18: int | Decimal,
+    *,
+    max_deviation_bps: int = 0,
+) -> bool:
+    """Returns True when two x18 values are equivalent within the configured deviation budget."""
+    left = int(_as_decimal(left_x18))
+    right = int(_as_decimal(right_x18))
+    if left <= 0 or right <= 0:
+        return False
+    if max_deviation_bps <= 0:
+        return left == right
+    return abs(left - right) * 10_000 // right <= int(max_deviation_bps)
+
+
+def x18_deviation_bps(value_x18: int | Decimal, reference_x18: int | Decimal) -> int:
+    """Measures x18 deviation against a positive reference as basis points."""
+    value = int(_as_decimal(value_x18))
+    reference = int(_as_decimal(reference_x18))
+    if value <= 0 or reference <= 0:
+        return 10_000_000
+    return abs(value - reference) * 10_000 // reference
+
+
 # ── Legacy Decimal paths (kept for backward compatibility) ────────────────────
-def to_raw_units(symbol: str, amount_decimal: Decimal) -> int:
+def to_raw_units(symbol: str, amount_decimal: Decimal, *, decimals_override: int | None = None) -> int:
     """Converts a decimal token amount to its raw integer representation (e.g., wei)."""
     if not isinstance(amount_decimal, Decimal):
         amount_decimal = Decimal(str(amount_decimal))
@@ -41,7 +88,7 @@ def to_raw_units(symbol: str, amount_decimal: Decimal) -> int:
     if amount_decimal <= 0:
         return 0
 
-    decimals = int(rpc_layer.TOKEN_DECIMALS.get(symbol, 18))
+    decimals = int(decimals_override if decimals_override is not None else rpc_layer.TOKEN_DECIMALS.get(symbol, 18))
     raw = amount_decimal * (Decimal(10) ** decimals)
     return int(raw.to_integral_value(rounding=ROUND_FLOOR))
 

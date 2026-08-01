@@ -2,6 +2,7 @@ import pytest
 import json
 import scanner_core  # This is the Rust extension module
 import os
+from omega_v5.contract_deployments import deployment_address
 
 # Mark all tests in this file as asyncio
 pytestmark = pytest.mark.asyncio
@@ -245,7 +246,10 @@ async def test_v3_adapter_fork_validation():
 
     # On-chain contracts
     pool_contract = w3.eth.contract(address=Web3.to_checksum_address(pool_address), abi=V3_POOL_ABI)
-    quoter_contract = w3.eth.contract(address=Web3.to_checksum_address("0xb27308f9F90D607463bb33eA174115C648b97d53"), abi=V3_QUOTER_ABI)
+    quoter_contract = w3.eth.contract(
+        address=Web3.to_checksum_address(deployment_address("UNISWAP_V3_QUOTER")),
+        abi=V3_QUOTER_ABI,
+    )
 
     # --- Fetch Live State ---
     slot0 = pool_contract.functions.slot0().call()
@@ -416,3 +420,5 @@ async def test_balancer_adapter_fork_validation():
 # ABIs for the fork test
 V3_POOL_ABI = """[{"inputs":[],"name":"slot0","outputs":[{"internalType":"uint160","name":"sqrtPriceX96","type":"uint160"},{"internalType":"int24","name":"tick","type":"int24"},{"internalType":"uint16","name":"observationIndex","type":"uint16"},{"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},{"internalType":"uint16","name":"observationCardinalityNext","type":"uint16"},{"internalType":"uint8","name":"feeProtocol","type":"uint8"},{"internalType":"bool","name":"unlocked","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"liquidity","outputs":[{"internalType":"uint128","name":"","type":"uint128"}],"stateMutability":"view","type":"function"}]"""
 V3_QUOTER_ABI = """[{"inputs":[{"internalType":"address","name":"tokenIn","type":"address"},{"internalType":"address","name":"tokenOut","type":"address"},{"internalType":"uint24","name":"fee","type":"uint24"},{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint160","name":"sqrtPriceLimitX96","type":"uint160"}],"name":"quoteExactInputSingle","outputs":[{"internalType":"uint256","name":"amountOut","type":"uint256"}],"stateMutability":"nonpayable","type":"function"}]"""
+CURVE_POOL_ABI = """[{"inputs":[{"internalType":"int128","name":"i","type":"int128"}],"name":"balances","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"A","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"int128","name":"i","type":"int128"},{"internalType":"int128","name":"j","type":"int128"},{"internalType":"uint256","name":"dx","type":"uint256"}],"name":"get_dy","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]"""
+BALANCER_VAULT_ABI = """[{"inputs":[{"internalType":"bytes32","name":"poolId","type":"bytes32"}],"name":"getPoolTokens","outputs":[{"internalType":"address[]","name":"tokens","type":"address[]"},{"internalType":"uint256[]","name":"balances","type":"uint256[]"},{"internalType":"uint256","name":"lastChangeBlock","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"kind","type":"uint8"},{"components":[{"internalType":"bytes32","name":"poolId","type":"bytes32"},{"internalType":"uint256","name":"assetInIndex","type":"uint256"},{"internalType":"uint256","name":"assetOutIndex","type":"uint256"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes","name":"userData","type":"bytes"}],"internalType":"struct IVault.BatchSwapStep[]","name":"swaps","type":"tuple[]"},{"internalType":"address[]","name":"assets","type":"address[]"},{"components":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"bool","name":"fromInternalBalance","type":"bool"},{"internalType":"address payable","name":"recipient","type":"address"},{"internalType":"bool","name":"toInternalBalance","type":"bool"}],"internalType":"struct IVault.FundManagement","name":"funds","type":"tuple"}],"name":"queryBatchSwap","outputs":[{"internalType":"int256[]","name":"assetDeltas","type":"int256[]"}],"stateMutability":"nonpayable","type":"function"}]"""

@@ -12,13 +12,15 @@ from __future__ import annotations
 import argparse
 import itertools
 import json
+import logging
 import os
+import sys
 import time
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from decimal import Decimal
-from typing import Any
-
+from typing import Any, Optional
+from web3 import Web3
 from . import rpc_layer
 from .arbitrage import ArbitrageGraphEngine
 from .config import (
@@ -26,18 +28,22 @@ from .config import (
     FLASH_ROUTE_TVL_FRACTIONS,
 )
 from .executable_quotes import quote_route_for_executor
+from .execution import build_tx_payload, simulate_tx_payload
 from .flash_loan import FlashSource, evaluate_profitability
 from .oracle_layer import TOKEN_USD_SOURCE, refresh_token_prices, token_price_usd
 from .paths import output_path
-from .pipeline_validation import validate_calldata_integrity
+from .pipeline_validation import validate_calldata_integrity, validate_usdc_value_correlation
 from .pricing import mul_div
 from .pool_quality import filter_rankable_pools
-from .route_execution_stager import SUPPORTED_HOPS, _json_ready
+from .route_execution_stager import SUPPORTED_HOPS, _json_ready, enumerate_closed_token_paths
+from .transport_lanes import simulation_from_address, web3_for_lane, LANE_EXACT_C1_ETH_CALL
 
 
 LATEST_PROOF_REPORT = output_path("route_proof_matrix_latest.json")
 HISTORY_PROOF_REPORT = output_path("route_proof_matrix_history.jsonl")
 LATEST_PROFILE_REPORT = output_path("route_profile_settings_latest.json")
+DEFAULT_MAX_OPTION_COMBINATIONS = 200_000
+logger = logging.getLogger("omega.proof_matrix")
 
 
 @dataclass(frozen=True)
@@ -53,6 +59,35 @@ class ProofProfile:
     max_token_paths: int
     max_pre_ranked: int
     slippage_bps: Decimal
+
+    def __post_init__(self) -> None:
+        principal = Decimal(str(self.principal_usd))
+        max_principal = Decimal(str(MAX_FLASH_PRINCIPAL_USD))
+        slippage = Decimal(str(self.slippage_bps))
+        hops = tuple(int(hop) for hop in self.hops)
+
+        if principal <= 0:
+            raise ValueError(f"Profile {self.name!r} principal_usd must be positive; got {principal}")
+        if principal > max_principal:
+            raise ValueError(
+                f"Profile {self.name!r} principal {principal} exceeds max {max_principal}"
+            )
+        if slippage < 0 or slippage > Decimal("1000"):
+            raise ValueError(
+                f"Profile {self.name!r} slippage_bps {slippage} out of bounds (0..1000)"
+            )
+        if not hops:
+            raise ValueError(f"Profile {self.name!r} must declare at least one hop")
+
+        unsupported = tuple(hop for hop in hops if hop not in SUPPORTED_HOPS)
+        if unsupported:
+            raise ValueError(
+                f"Profile {self.name!r} has unsupported hops {unsupported}; supported={SUPPORTED_HOPS}"
+            )
+
+        object.__setattr__(self, "principal_usd", principal)
+        object.__setattr__(self, "slippage_bps", slippage)
+        object.__setattr__(self, "hops", hops)
 
     def to_row(self) -> dict[str, Any]:
         return _json_ready({
@@ -292,7 +327,7 @@ def _live_state_summary(pool: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def _route_hop_trace(path: list[str], pool_sequence: list[str], pools: dict[str, dict], amount_in: Decimal, base_token_decimals: int) -> list[dict[str, Any]]:
+def _route_hop_trace(path: list[str], pool_sequence: list[str], pools: dict[str, dict], amount_in: Decimal, base_token_decimals: int = 18) -> list[dict[str, Any]]:
     amount = Decimal(amount_in)
     amount_raw = mul_div(int(amount * Decimal("1e18")), 1, 1, rounding=0) # Convert to raw units for tracing
     rows: list[dict[str, Any]] = []
@@ -309,7 +344,7 @@ def _route_hop_trace(path: list[str], pool_sequence: list[str], pools: dict[str,
         if protocol == "UniswapV2" and len(reserves_before) == 2:
             k_before = reserves_before[0] * reserves_before[1]
 
-        quote = quote_route_for_executor([token_in, token_out], [pool_id], pools, amount, base_token_decimals)
+        quote = quote_route_for_executor([token_in, token_out], [pool_id], pools, amount)
         
         # Simulate reserve mutation (simplified for tracing)
         reserves_after = list(reserves_before)
@@ -450,6 +485,7 @@ def _route_universal_conditions(row: dict[str, Any], pools: dict[str, dict], equ
     metadata = [_pool_metadata_proof(pool_id, pools.get(pool_id, {})) for pool_id in pool_sequence]
     liquidity_keys = [str(pools.get(pool_id, {}).get("liquidity_key") or pool_id) for pool_id in pool_sequence]
     hop_trace = list(equation.get("hop_trace") or [])
+    usdc_correlation_ok = validate_usdc_value_correlation(row, opportunity_id=row.get("opp_id", "unknown"), cycle_id="proof_matrix")
     checks = {
         "closed_route": bool(path) and path[0] == path[-1],
         "supported_hop_count": len(pool_sequence) in SUPPORTED_HOPS,
@@ -459,6 +495,7 @@ def _route_universal_conditions(row: dict[str, Any], pools: dict[str, dict], equ
         "all_hops_positive": bool(hop_trace) and all(item.get("positive") for item in hop_trace),
         "clmm_execution_truth_proven": all(int(item.get("clmm_unquoted") or 0) == 0 for item in hop_trace),
         "net_identity_pass": bool(equation.get("net_identity_pass")),
+        "usdc_value_correlation_normalized": usdc_correlation_ok,
         "no_sign_no_broadcast": True,
     }
     checks["route_proof_pass"] = all(checks.values())
@@ -471,6 +508,26 @@ def _route_universal_conditions(row: dict[str, Any], pools: dict[str, dict], equ
 
 def _quote_options(entries: list[dict[str, Any]], max_options: int) -> list[dict[str, Any]]:
     return list(entries if max_options <= 0 else entries[:max_options])
+
+
+def _option_space_estimate_for_path(
+    path: tuple[str, ...],
+    rates: dict[tuple[str, str], list[dict[str, Any]]],
+    max_quote_options_per_pair: int,
+) -> tuple[int, bool, list[int]]:
+    """Estimates the number of quote combinations for a token path after option capping."""
+    counts: list[int] = []
+    for idx in range(len(path) - 1):
+        entries = list(rates.get((path[idx], path[idx + 1]), []))
+        options = _quote_options(entries, max_quote_options_per_pair)
+        if not options:
+            return 0, False, counts
+        counts.append(len(options))
+
+    combinations = 1
+    for count in counts:
+        combinations *= count
+    return combinations, True, counts
 
 
 def _exact_route_probe(
@@ -571,14 +628,40 @@ def _build_exact_route_probes( # This function is currently disabled in run_prof
     limit: int = 50,
 ) -> dict[str, Any]:
     started = time.time()
+    max_option_combinations = int(
+        os.environ.get("OMEGA_PROOF_MAX_COMBINATIONS", str(DEFAULT_MAX_OPTION_COMBINATIONS)) or DEFAULT_MAX_OPTION_COMBINATIONS
+    )
     rows: list[dict[str, Any]] = []
     reject_counts: Counter[str] = Counter()
+    estimated_total_combinations = 0
+    skipped_option_space_paths = 0
     paths = enumerate_closed_token_paths(
         rates,
         hops=profile.hops,
         max_token_paths=profile.max_token_paths,
     )
     for path in paths:
+        estimated_combos, has_full_path, edge_option_counts = _option_space_estimate_for_path(
+            path,
+            rates,
+            profile.max_quote_options_per_pair,
+        )
+        if not has_full_path:
+            reject_counts["missing_directional_edge"] += 1
+            continue
+        estimated_total_combinations += estimated_combos
+        if max_option_combinations > 0 and estimated_combos > max_option_combinations:
+            skipped_option_space_paths += 1
+            reject_counts["option_space_guard"] += 1
+            logger.warning(
+                "route_proof_matrix option-space guard skipped path=%s combos=%s limit=%s edge_option_counts=%s",
+                path,
+                estimated_combos,
+                max_option_combinations,
+                edge_option_counts,
+            )
+            continue
+
         option_sets = []
         for idx in range(len(path) - 1):
             options = _quote_options(
@@ -613,12 +696,58 @@ def _build_exact_route_probes( # This function is currently disabled in run_prof
         "purpose": "prove exact sequential quote, metadata, SPLS accounting, and rejection causes even when pre-rank has no raw-positive stage candidates",
         "attempted": len(rows),
         "limit": limit,
+        "option_space": {
+            "estimated_total_combinations": estimated_total_combinations,
+            "max_combinations_per_path": max_option_combinations,
+            "paths_skipped_by_guard": skipped_option_space_paths,
+            "guard_env": "OMEGA_PROOF_MAX_COMBINATIONS",
+        },
         "status_counts": dict(sorted(counts.items())),
         "route_proofs_passed": proof_counts.get("passed", 0),
         "route_proofs_failed": proof_counts.get("failed", 0),
         "reject_counts": dict(sorted(reject_counts.items())),
         "elapsed_seconds": Decimal(str(round(time.time() - started, 3))),
         "routes": rows,
+    }
+
+
+def simulate_and_diagnose(
+    route: dict[str, Any],
+    pools: dict[str, dict],
+    *,
+    w3_override: Optional[Web3] = None
+) -> dict[str, Any]:
+    """
+    Builds calldata for a route, simulates it via eth_call, and returns a
+    diagnostic proof.
+    """
+    w3 = w3_override or web3_for_lane(LANE_EXACT_C1_ETH_CALL)
+    if w3 is None:
+        return {"ok": False, "status": "rpc_unavailable", "detail": "web3_for_lane returned None"}
+
+    # The route dict from the stager has the necessary fields for build_tx_payload
+    try:
+        # build_tx_payload needs a nonce, but it's not used for eth_call, so 0 is fine.
+        tx_payload = build_tx_payload(route, pools, nonce=0)
+    except Exception as e:
+        return {
+            "ok": False,
+            "status": "payload_build_failed",
+            "detail": f"{type(e).__name__}: {e}",
+        }
+
+    # The from_addr is sourced from the transport lane module to ensure consistency.
+    from_addr = simulation_from_address()
+    sim_ok, sim_detail = simulate_tx_payload(tx_payload, from_addr=from_addr, w3_override=w3)
+
+    return {
+        "ok": sim_ok,
+        "status": "pass" if sim_ok else "fail",
+        "detail": sim_detail,
+        "from_address": from_addr,
+        "to_address": tx_payload.get("to"),
+        "calldata_bytes": len(tx_payload.get("data", "0x")) // 2 - 1,
+        "selector": tx_payload.get("data", "0x")[:10],
     }
 
 
@@ -629,9 +758,11 @@ def _enrich_stage_report(stage_report: dict[str, Any], pools: dict[str, dict], p
         if row.get("selected_base_amount_in") and row.get("path") and row.get("pool_sequence"):
             equation = _route_equation_proof(row, pools, row.get("calldata_hash", ""), row.get("calldata_length", 0))
             universal = _route_universal_conditions(row, pools, equation)
+            simulation = simulate_and_diagnose(row, pools)
             route["route_proof"] = {
                 "equation": _json_ready(equation), # This will now include calldata details
                 "universal_conditions": _json_ready(universal),
+                "simulation_proof": _json_ready(simulation),
             }
         else:
             route["route_proof"] = {
@@ -695,24 +826,50 @@ def run_profile(
     pools, pool_load_stats = _load_profile_pools(profile)
     prices = refresh_token_prices(force=True)
 
-    # --- New Unified Pipeline ---
-    arb_engine = ArbitrageGraphEngine(pools, prices)
+    # --- Unified Pipeline with compatibility fallback ---
+    arb_engine = ArbitrageGraphEngine()
     sizing_params = {
         "min_principal_usd": str(profile.principal_usd),
         "max_principal_usd": str(MAX_FLASH_PRINCIPAL_USD),
         "tvl_fractions": [str(f) for f in FLASH_ROUTE_TVL_FRACTIONS],
         "max_impact_bps": int(MAX_ROUTE_IMPACT * 10000),
     }
-    ranked_opps, discovery_report = arb_engine.find_and_rank_opportunities(
-        sizing_params=sizing_params,
-        flash_source=flash_source,
-        stager_max_token_paths=profile.max_token_paths,
-        stager_max_pre_ranked=profile.max_pre_ranked,
-        max_quote_options_per_pair=profile.max_quote_options_per_pair,
-    )
+
+    if hasattr(arb_engine, "find_and_rank_opportunities"):
+        ranked_opps, discovery_report = arb_engine.find_and_rank_opportunities(
+            sizing_params=sizing_params,
+            flash_source=flash_source,
+            stager_max_token_paths=profile.max_token_paths,
+            stager_max_pre_ranked=profile.max_pre_ranked,
+            max_quote_options_per_pair=profile.max_quote_options_per_pair,
+        )
+    else:
+        ranked_opps = arb_engine.discover(chain_id=CHAIN_ID)
+        discovery_report = {
+            "engine_mode": "discover_fallback",
+            "cycles_detected": len(ranked_opps),
+            "directional_quotes": 0,
+            "rate_pairs": 0,
+            "stager_blueprints": len(ranked_opps),
+            "sizing_params": sizing_params,
+        }
+
+    def _opp_to_row(opp: Any) -> dict[str, Any]:
+        if isinstance(opp, dict):
+            return dict(opp)
+        if hasattr(opp, "as_dict"):
+            try:
+                return dict(opp.as_dict())
+            except Exception:
+                pass
+        if is_dataclass(opp):
+            return asdict(opp)
+        if hasattr(opp, "__dict__"):
+            return dict(vars(opp))
+        return {"repr": repr(opp)}
 
     # Reconstruct a report compatible with the proof matrix's expectations
-    staged_routes = [opp.as_dict() for opp in ranked_opps[:profile.stage_limit or len(ranked_opps)]]
+    staged_routes = [_opp_to_row(opp) for opp in ranked_opps[:profile.stage_limit or len(ranked_opps)]]
     stage_report = {
         "routes": staged_routes,
         "stage": {
@@ -801,7 +958,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
-
