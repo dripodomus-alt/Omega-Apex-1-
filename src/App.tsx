@@ -30,9 +30,8 @@ import {
   POLYGON_TOKEN_SYMBOLS,
   POLYGON_DEX_IDENTIFIERS,
 } from './data/mockEngineData';
-import { ArbitrageRoute, SimulationAuditLog } from './types';
+import { ArbitrageRoute, ExecutionMode, SimulationAuditLog } from './types';
 import { validateRouteAssetRegistry } from './utils/mathEngine';
-import { computeLegLedger } from './utils/transientAccounting';
 import {
   loadSystemMemory,
   saveSystemMemory,
@@ -50,6 +49,7 @@ import {
   syncAuditLogToFirestore,
 } from './lib/firebase';
 import { runLiveBenchmark, StepUpdateCallback, PENDING_BENCHMARK_REPORT } from './utils/liveBenchmark';
+import { runExecutionPipeline } from './utils/executionPipeline';
 
 const MIN_TICKER_GROSS_USD = 50;
 const MAX_TICKER_GROSS_MULTIPLIER = 2;
@@ -71,6 +71,7 @@ export default function App() {
   const [gasGwei, setGasGwei] = useState<number>(initialMemory.gasGwei || 38);
   const [isHandsFreeActive, setIsHandsFreeActive] = useState<boolean>(initialMemory.handsFreeActive);
   const [lastSyncedAt, setLastSyncedAt] = useState<string>(initialMemory.lastSyncedAt);
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>(initialMemory.executionMode);
 
   const [isSimulating, setIsSimulating] = useState<boolean>(false);
   const [isFlushing, setIsFlushing] = useState<boolean>(false);
@@ -85,9 +86,10 @@ export default function App() {
       wallet: walletState,
       handsFreeActive: isHandsFreeActive,
       gasGwei,
+      executionMode,
     });
     setLastSyncedAt(timestamp);
-  }, [walletState, isHandsFreeActive, gasGwei]);
+  }, [walletState, isHandsFreeActive, gasGwei, executionMode]);
 
   useEffect(() => {
     persistCurrentState();
@@ -214,65 +216,41 @@ export default function App() {
     setLastSyncedAt(new Date().toISOString());
   };
 
-  // Handler: Execute Route Relay
+  // Handler: Execute Route Relay — routes through the unified execution pipeline
   const handleExecuteRoute = (routeId: string) => {
     const targetRoute = routes.find((r) => r.id === routeId);
     if (!targetRoute) return;
 
-    // Registry Constraint Check: route can only execute if all pools hold registered assets
-    const validation = validateRouteAssetRegistry(targetRoute, pools);
-    if (!validation.isExecutable) {
-      alert(`[EXECUTION REJECTED]: ${validation.reason}`);
-      return;
-    }
+    runExecutionPipeline(targetRoute, pools, executionMode, gasGwei)
+      .then(({ dispatchResult, executedRoute, auditLog }) => {
+        setRoutes((prev) => prev.map((r) => (r.id === routeId ? executedRoute : r)));
 
-    const executedRoute = {
-      ...targetRoute,
-      stage: 'ACCOUNTED' as const,
-      txHash: '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-      notes: 'Mined on Polygon Mainnet. Balancer Vault transient flashloan repaid successfully. Verified registry pool assets.',
-      transientTrace: computeLegLedger(targetRoute),
-    };
+        // Only sync to Firestore and update live wallet balances for real executions
+        if (!dispatchResult.isDryRun) {
+          syncRouteToFirestore(executedRoute).catch((err) =>
+            console.warn('Failed to sync executed route to Firestore:', err)
+          );
 
-    setRoutes((prev) =>
-      prev.map((r) => (r.id === routeId ? executedRoute : r))
-    );
+          setWalletState((prev) => ({
+            ...prev,
+            usdcBalance: prev.usdcBalance + targetRoute.netProfitUSD,
+            nativePolBalance: Number((prev.nativePolBalance - 0.12).toFixed(2)),
+            gasSpentUSD: Number((prev.gasSpentUSD + targetRoute.estimatedGasUSD).toFixed(2)),
+            nonceCount: prev.nonceCount + 1,
+            executedCount: prev.executedCount + 1,
+            totalNetProfitUSD: prev.totalNetProfitUSD + targetRoute.netProfitUSD,
+          }));
+        }
 
-    // Sync executed route state back to Firestore
-    syncRouteToFirestore(executedRoute).catch((err) =>
-      console.warn('Failed to sync executed route to Firestore:', err)
-    );
-
-    // Update Wallet Balances & Nonce count
-    setWalletState((prev) => ({
-      ...prev,
-      usdcBalance: prev.usdcBalance + targetRoute.netProfitUSD,
-      nativePolBalance: Number((prev.nativePolBalance - 0.12).toFixed(2)),
-      gasSpentUSD: Number((prev.gasSpentUSD + targetRoute.estimatedGasUSD).toFixed(2)),
-      nonceCount: prev.nonceCount + 1,
-      executedCount: prev.executedCount + 1,
-      totalNetProfitUSD: prev.totalNetProfitUSD + targetRoute.netProfitUSD,
-    }));
-
-    // Append audit log and sync to Firestore
-    const newLog: SimulationAuditLog = {
-      id: `log_${Date.now()}`,
-      simulationId: `sim_${Math.random().toString(36).substring(2, 8)}`,
-      routeId: targetRoute.id,
-      pathString: targetRoute.pathString,
-      optimalInputUSD: targetRoute.optimalInputUSD,
-      expectedGrossProfitUSD: targetRoute.grossProfitUSD,
-      netProfitUSD: targetRoute.netProfitUSD,
-      status: 'SUCCESS',
-      gasUsedGwei: gasGwei + 2.5,
-      redisStreamKey: `omega:audit:simulations:${Date.now()}-0`,
-      sqlSynced: false,
-      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
-    };
-    setAuditLogs((prev) => [newLog, ...prev]);
-    syncAuditLogToFirestore(newLog).catch((err) =>
-      console.warn('Failed to sync audit log to Firestore:', err)
-    );
+        setAuditLogs((prev) => [auditLog, ...prev]);
+        syncAuditLogToFirestore(auditLog).catch((err) =>
+          console.warn('Failed to sync audit log to Firestore:', err)
+        );
+      })
+      .catch((err) => {
+        console.error('[PIPELINE] Execution pipeline error:', err);
+        alert(`[EXECUTION REJECTED]: ${err?.message ?? 'Pipeline stage failed.'}`);
+      });
   };
 
   // Handler: Flush Redis Stream to Cloud SQL Batch
@@ -452,6 +430,10 @@ export default function App() {
           onExecuteRoute={handleExecuteRoute}
           isHandsFreeActive={isHandsFreeActive}
           onToggleHandsFree={() => setIsHandsFreeActive((prev) => !prev)}
+          executionMode={executionMode}
+          onToggleExecutionMode={() =>
+            setExecutionMode((prev) => (prev === 'LIVE' ? 'DRY_RUN' : 'LIVE'))
+          }
         />
 
         {activeTab === 'top50_execution' && (
