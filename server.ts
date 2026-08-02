@@ -1291,8 +1291,8 @@ async function startServer() {
               };
             }
             await releaseOpportunityLock(lock.id, "C2_NO_OP", {
-              mirrorError: mirrorResult.message,
-              reverseError: reverseResult.message,
+              mirrorError: mirrorResult.error,
+              reverseError: reverseResult.error,
               blockNumber: currentBlock,
             });
             return {
@@ -1302,15 +1302,15 @@ async function startServer() {
               routeEvaluation: {
                 listener: "C2_BLOCK_LISTENER",
                 gate: "MIRROR_AND_REVERSE_FAILED_GATES",
-                mirrorError: mirrorResult.message,
-                reverseError: reverseResult.message,
+                mirrorError: mirrorResult.error,
+                reverseError: reverseResult.error,
                 txCreated: false,
               },
             };
           }
 
           await releaseOpportunityLock(lock.id, "C2_NO_OP", {
-            mirrorError: mirrorResult.message,
+            mirrorError: mirrorResult.error,
             reverseError: reversePayload.error,
             blockNumber: currentBlock,
           });
@@ -1321,7 +1321,7 @@ async function startServer() {
             routeEvaluation: {
               listener: "C2_BLOCK_LISTENER",
               gate: "MIRROR_FAILED_REVERSE_UNAVAILABLE",
-              mirrorError: mirrorResult.message,
+              mirrorError: mirrorResult.error,
               reverseError: reversePayload.error,
               txCreated: false,
             },
@@ -1329,7 +1329,7 @@ async function startServer() {
         }
 
         await releaseOpportunityLock(lock.id, "C2_NO_OP", {
-          mirrorError: mirrorResult.message,
+          mirrorError: mirrorResult.error,
           blockNumber: currentBlock,
         });
         return {
@@ -1339,7 +1339,7 @@ async function startServer() {
           routeEvaluation: {
             listener: "C2_BLOCK_LISTENER",
             gate: "MIRROR_FAILED_REVERSE_DISABLED",
-            mirrorError: mirrorResult.message,
+            mirrorError: mirrorResult.error,
             txCreated: false,
           },
         };
@@ -1753,12 +1753,10 @@ async function startServer() {
       const executorWallet = getConfiguredExecutorWallet(); 
       const balanceHex = await queryPolygonRPC("eth_getBalance", [executorWallet, "latest"]);
       const balanceWei = BigInt(balanceHex);
-      const balanceMatic = Number(balanceWei) / 1e18; // Convert to MATIC
       const balancePol = Number(balanceWei) / 1e18; // Convert to POL
       
       const maticPriceUsd = globalPrices["POL / MATIC"] ?? 0;
 
-      const currentWalletBalanceUsd = balanceMatic * maticPriceUsd;
       const currentWalletBalanceUsd = balancePol * maticPriceUsd;
       
       // Calculate derived PnL
@@ -1775,7 +1773,6 @@ async function startServer() {
         current_rpc_block_height: realBlockNumber,
         executor_wallet_address: executorWallet,
         active_cryptographic_wallet_balance_wei: balanceHex,
-        active_wallet_balance_matic: balanceMatic,
         active_wallet_balance_pol: balancePol,
         derived_usd_value: currentWalletBalanceUsd,
         math_proof: `${currentWalletBalanceUsd.toFixed(2)} (Current Wallet Balance) = ${derivedPnlUsd.toFixed(2)} (Dashboard Net P&L)`,
@@ -3625,13 +3622,11 @@ async function startServer() {
       const balanceHex = await queryPolygonRPC("eth_getBalance", [address, "latest"]);
       
       const balanceWei = BigInt(balanceHex);
-      const balanceMatic = (Number(balanceWei) / 1e18).toString();
       const balancePol = (Number(balanceWei) / 1e18).toString();
 
       res.json({
         success: true,
         address,
-        balance: balanceMatic,
         balance: balancePol,
         symbol: "POL",
         network: "Polygon Mainnet",

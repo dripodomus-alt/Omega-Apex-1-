@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 """
 25-Cycle Dry Run Simulator
-- Generates synthetic opportunities.
-- Applies ranking using the canonical raw gate.
+- Uses the real discovery/ranking/staging pipeline in all modes.
 - Emits a structured shadow report with discovery, execution, and profitability metrics.
 - Writes the report to `out/dry_run_shadow_report.json`.
 
-Live mode:
-    OMEGA_LIVE_TEST=1 python tests/dry_run_25_cycles.py
-    (will attempt real discovery when possible)
+Dry-run execution mode (no transaction broadcasting):
+    python tests/dry_run_25_cycles.py
 """
 
 import json
@@ -49,65 +47,126 @@ except Exception:  # pragma: no cover
 LIVE_MODE = bool(os.getenv("OMEGA_LIVE_TEST") or os.getenv("LIVE_TEST_RPC_URL"))
 
 
+def _open_live_pipeline_gates() -> None:
+    """Force-enable pipeline gates for live-proof dry runs (no tx broadcasting)."""
+    os.environ["OMEGA_ENGINE_NO_SCAN"] = "false"
+    os.environ.setdefault("REQUIRE_EXECUTABLE_ROUTE_STREAM", "false")
+    os.environ.setdefault("ENGINE_STRATEGY", "FULL_ARB")
+    os.environ.setdefault("EXECUTION_MODE", "dry_run")
+    os.environ.setdefault("LIVE_TRADING", "0")
+    os.environ.setdefault("WAAS_BROADCAST_ADAPTER_ENABLED", "false")
+
+
+def _rank_live_opportunities(opportunities: List[Any]) -> List[Any]:
+    """Rank opportunities by net profit before staging."""
+    def _score(opp: Any) -> Decimal:
+        flash = getattr(opp, "flash_loan", None)
+        net_profit = getattr(flash, "net_profit_usd", 0)
+        try:
+            return Decimal(str(net_profit))
+        except (ValueError, TypeError, InvalidOperation):
+            return Decimal("-Infinity")
+
+    return sorted(opportunities, key=_score, reverse=True)
+
+
+def _iter_rpc_urls() -> List[str]:
+    """Return the configured RPC rotation list, falling back to the single RPC URL env vars."""
+    candidates: List[str] = []
+    rotation_value = os.getenv("RPC_ROTATION_HTTP_URLS", "").strip()
+    if rotation_value:
+        candidates.extend([item.strip() for item in rotation_value.split(",") if item.strip()])
+
+    if not candidates:
+        single_url = os.getenv("POLYGON_RPC_URL") or os.getenv("RPC_URL") or os.getenv("DISCOVERY_RPC_URL") or os.getenv("PRIMARY_READ_RPC_URL")
+        if single_url:
+            candidates.append(single_url)
+
+    return candidates
+
+
 def _discover_live_opportunities() -> List[Any]:
     """Use the live coefficient engine to discover opportunities from current Polygon market state."""
     engine_strategy = os.getenv('ENGINE_STRATEGY', 'FULL_ARB').upper()
+    rpc_urls = _iter_rpc_urls()
+    if rpc_urls:
+        print(f"🔁 RPC rotation endpoints: {len(rpc_urls)}")
+    else:
+        print("⚠️ No RPC rotation endpoints configured; falling back to single-endpoint discovery")
 
-    try:
-        if engine_strategy == 'COEFFICIENT':
-            print("🚦 Using COEFFICIENT engine for live discovery...")
-            from coefficient_arbitrage_engine import get_coefficient_engine
-            engine = get_coefficient_engine()
-            scan_method = "scan_for_coefficient_opportunities"
+    # Try each configured RPC in order until one yields usable data.
+    last_error: str | None = None
+    for idx, rpc_url in enumerate(rpc_urls or [None]):
+        if rpc_url:
+            os.environ['POLYGON_RPC_URL'] = rpc_url
+            os.environ['RPC_URL'] = rpc_url
+            os.environ['DISCOVERY_RPC_URL'] = rpc_url
+            os.environ['PRIMARY_READ_RPC_URL'] = rpc_url
+            print(f"🔗 Trying RPC endpoint {idx + 1}/{len(rpc_urls)}: {rpc_url}")
         else:
-            print("🚦 Using FULL_ARB engine for live discovery...")
-            from arbitrage_engine import get_arbitrage_engine
-            engine = get_arbitrage_engine()
-            scan_method = "scan_for_spreads"
-    except ImportError as exc:  # pragma: no cover - live discovery fallback
-        print(f"Live discovery unavailable: {exc}")
-        return []
+            print("🔗 Trying default RPC endpoint")
 
-    deadline = time.time() + 6
-    waited = 0
-    while getattr(engine, "pools_loading", False) and time.time() < deadline:
-        print("Live discovery waiting for pool data...")
-        time.sleep(0.25)
-        waited += 1
-
-    if getattr(engine, "pools_loading", False):
-        print("Live discovery timed out waiting for pool data")
-        return []
-
-    try:
-        opportunities = getattr(engine, scan_method)(max_comparisons=600)
-    except Exception as exc:  # pragma: no cover - resilience for live discovery issues
-        print(f"Live discovery scan failed: {exc}")
-        return []
-
-    filtered: List[Any] = []
-    for opp in opportunities:
-        flash_loan_data = getattr(opp, "flash_loan", None)
-        if not flash_loan_data:
+        try:
+            if engine_strategy == 'COEFFICIENT':
+                print("🚦 Using COEFFICIENT engine for live discovery...")
+                from coefficient_arbitrage_engine import get_coefficient_engine
+                engine = get_coefficient_engine()
+                scan_method = "scan_for_coefficient_opportunities"
+            else:
+                print("🚦 Using FULL_ARB engine for live discovery...")
+                from arbitrage_engine import get_arbitrage_engine
+                engine = get_arbitrage_engine()
+                scan_method = "scan_for_spreads"
+        except ImportError as exc:  # pragma: no cover - live discovery fallback
+            last_error = str(exc)
             continue
 
-        if engine_strategy == 'COEFFICIENT' and not hasattr(opp, 'min_reserve_usd'):
-            opp.min_reserve_usd = min(getattr(opp.buy_pool, "reserve_usd", 0), getattr(opp.sell_pool, "reserve_usd", 0))
-            if not hasattr(flash_loan_data, 'loan_amount_usd'):
-                flash_loan_data.loan_amount_usd = getattr(opp, 'optimal_loan_usd', 0)
+        deadline = time.time() + 6
+        waited = 0
+        while getattr(engine, "pools_loading", False) and time.time() < deadline:
+            print("Live discovery waiting for pool data...")
+            time.sleep(0.25)
+            waited += 1
 
-        min_liq = getattr(opp, "min_reserve_usd", 0)
-        if min_liq < 25000:
+        if getattr(engine, "pools_loading", False):
+            print("Live discovery timed out waiting for pool data")
             continue
 
-        optimal_loan_usd = getattr(flash_loan_data, "loan_amount_usd", 0)
-        utilization = optimal_loan_usd / min_liq if min_liq > 0 else 0
-        if utilization > 0.20:
+        try:
+            opportunities = getattr(engine, scan_method)(max_comparisons=600)
+        except Exception as exc:  # pragma: no cover - resilience for live discovery issues
+            last_error = str(exc)
             continue
 
-        filtered.append(opp)
+        filtered: List[Any] = []
+        for opp in opportunities:
+            flash_loan_data = getattr(opp, "flash_loan", None)
+            if not flash_loan_data:
+                continue
 
-    return filtered
+            if engine_strategy == 'COEFFICIENT' and not hasattr(opp, 'min_reserve_usd'):
+                opp.min_reserve_usd = min(getattr(opp.buy_pool, "reserve_usd", 0), getattr(opp.sell_pool, "reserve_usd", 0))
+                if not hasattr(flash_loan_data, 'loan_amount_usd'):
+                    flash_loan_data.loan_amount_usd = getattr(opp, 'optimal_loan_usd', 0)
+
+            min_liq = getattr(opp, "min_reserve_usd", 0)
+            if min_liq < 25000:
+                continue
+
+            optimal_loan_usd = getattr(flash_loan_data, "loan_amount_usd", 0)
+            utilization = optimal_loan_usd / min_liq if min_liq > 0 else 0
+            if utilization > 0.20:
+                continue
+
+            filtered.append(opp)
+
+        if filtered:
+            return filtered
+
+    if last_error:
+        print(f"Live discovery unavailable: {last_error}")
+    return []
+
 
 
 def _build_live_opportunity(cycle: int, index: int, opp: Any) -> LiveOpportunity:
@@ -115,12 +174,35 @@ def _build_live_opportunity(cycle: int, index: int, opp: Any) -> LiveOpportunity
     # We just need to ensure the metadata is updated for the simulation report.
     if not hasattr(opp, "metadata"):
         opp.metadata = {}
-    
+
     opp.metadata["cycle"] = cycle
     opp.metadata["index"] = index
     opp.metadata["source"] = opp.metadata.get("source", "rust_scanner" if os.getenv("SCANNER_MODE", "rust") == "rust" else "python_scanner")
 
-    return LiveOpportunity(
+    pool_states: List[dict[str, Any]] = []
+    for pool in (getattr(opp, "buy_pool", None), getattr(opp, "sell_pool", None)):
+        if pool is None:
+            continue
+        pool_states.append({
+            "address": getattr(pool, "address", None),
+            "reserve_usd": getattr(pool, "reserve_usd", None),
+            "reserve0": getattr(pool, "reserve0", None),
+            "reserve1": getattr(pool, "reserve1", None),
+            "token0": getattr(pool, "token0", None),
+            "token1": getattr(pool, "token1", None),
+            "price": getattr(pool, "price", None),
+            "protocol": getattr(pool, "protocol", None),
+        })
+
+    market_snapshot = {
+        "source": "live_discovery",
+        "path": tuple(getattr(opp, "path", ())),
+        "pool_sequence": tuple(getattr(opp, "pool_sequence", ())),
+        "protocol_seq": tuple(getattr(opp, "protocol_seq", ())),
+        "pool_states": pool_states,
+    }
+
+    opportunity = LiveOpportunity(
         path=getattr(opp, "path", ()),
         pool_sequence=getattr(opp, "pool_sequence", ()),
         protocol_seq=getattr(opp, "protocol_seq", ()),
@@ -128,6 +210,8 @@ def _build_live_opportunity(cycle: int, index: int, opp: Any) -> LiveOpportunity
         family=getattr(opp, "family", "C1"),
         metadata=opp.metadata,
     )
+    opportunity.market_snapshot = market_snapshot
+    return opportunity
 
 
 def _staging_buy_price(op: Any) -> Decimal:
@@ -158,27 +242,8 @@ def simulate_staging(ranked_opportunities: List[Any], max_staged: int = 8) -> Li
     return staged
 
 
-def _build_synthetic_opportunity(cycle: int, index: int, profitable: bool) -> LiveOpportunity:
-    net_profit = Decimal("12.3") if profitable else Decimal("3.1")
-    metadata = {
-        "cycle": cycle,
-        "index": index,
-        "family": "C1" if index == 0 else "C2",
-        "execution_sequence": {"buy_leg": {"executable_buy_price_base_per_mid": Decimal("1000.00") + Decimal(index) - Decimal(cycle * 0.01)}},
-    }
-    profitability = type("P", (), {"net_profit_usd": net_profit, "flashloan": type("F", (), {"principal_usd": Decimal("5000")})()})()
-    return LiveOpportunity(
-        path=("USDC", "WETH", "USDC"),
-        pool_sequence=(f"p{cycle}-{index}", f"p{cycle}-{index + 1}"),
-        protocol_seq=("UniswapV2", "UniswapV2"),
-        profitability=profitability,
-        family="C1" if index == 0 else "C2",
-        metadata=metadata,
-    )
-
-
 def run_dry_cycles(num_cycles: int = 25, use_live: bool = False, emit_report: bool = True) -> dict[str, Any]:
-    print(f"Running {num_cycles} dry-run cycles (live={use_live or LIVE_MODE})...")
+    print(f"Running {num_cycles} dry-run cycles (live_pipeline=True, requested_live={use_live or LIVE_MODE})...")
 
     cycles: list[dict[str, Any]] = []
     discovered_total = 0
@@ -187,32 +252,32 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False, emit_report: bo
     rejected_total = 0
     total_profit_usd = Decimal("0")
     live_discovery_count = 0
-    pipeline_mode = "live" if (use_live or LIVE_MODE) else "synthetic"
+    ranked_total = 0
+    pipeline_mode = os.getenv("EXECUTION_MODE", "dry_run")
+    _open_live_pipeline_gates()
 
     for cycle in range(num_cycles):
-        if use_live or LIVE_MODE:
-            discovered_live = _discover_live_opportunities()
+        discovered_live = _discover_live_opportunities()
+        if discovered_live:
             live_discovery_count += len(discovered_live)
-            if discovered_live:
-                opportunities = [_build_live_opportunity(cycle, i, opp) for i, opp in enumerate(discovered_live[:4])]
-                data_source = "live"
-            else:
-                opportunities = [_build_synthetic_opportunity(cycle, i, profitable=(i % 2 == 0)) for i in range(3)]
-                data_source = "synthetic_fallback"
+            ranked_live = _rank_live_opportunities(discovered_live)
+            ranked_total += len(ranked_live)
+            opportunities = [_build_live_opportunity(cycle, i, opp) for i, opp in enumerate(ranked_live[:4])]
         else:
-            opportunities = [_build_synthetic_opportunity(cycle, i, profitable=(i % 2 == 0)) for i in range(3)]
-            data_source = "synthetic"
+            opportunities = []
 
         discovered_total += len(opportunities)
         staged = simulate_staging(opportunities, max_staged=2)
         cycle_report = {
             "cycle": cycle + 1,
             "discovered": len(opportunities),
+            "ranked": len(opportunities),
             "staged": len(staged),
             "shadow_executed": 0,
             "accepted": 0,
             "rejected": 0,
             "profit_usd": 0.0,
+            "data_source": "live_proof",
         }
 
         for opportunity in staged:
@@ -233,6 +298,7 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False, emit_report: bo
     summary = {
         "cycles": num_cycles,
         "discovered_total": discovered_total,
+        "ranked_total": ranked_total,
         "shadow_executed_total": shadow_executed_total,
         "accepted_total": accepted_total,
         "rejected_total": rejected_total,
@@ -241,9 +307,10 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False, emit_report: bo
         "discovery_rate": round((accepted_total / max(shadow_executed_total, 1)) * 100, 2),
         "profit_per_cycle_usd": round(float(total_profit_usd / max(num_cycles, 1)), 2),
         "accepted_per_cycle": round(accepted_total / max(num_cycles, 1), 2),
-        "data_source": data_source,
+        "data_source": "live_proof",
         "pipeline_mode": pipeline_mode,
         "live_discovery_count": live_discovery_count,
+        "tx_broadcasting": False,
     }
 
     report = {

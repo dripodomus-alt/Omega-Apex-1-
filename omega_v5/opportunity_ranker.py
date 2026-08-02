@@ -82,12 +82,29 @@ class LiveOpportunity:
     profitability: Profitability
     block_detected: int = 0
     metadata: dict = field(default_factory=dict)
+    market_snapshot: dict[str, Any] | None = None
     opp_id: str = ""
     family: str = "C1"   # C1 (primary arb), C2 (paired), LIQUIDATION
     # Additional fields for live execution families
     c1_success: bool = False
     liquidation_data: dict | None = None
     pricing_steps: list[dict] = field(default_factory=list)
+
+    def to_payload(self) -> dict[str, Any]:
+        """Return a JSON-friendly payload for downstream reporting or staging."""
+        return {
+            "path": list(self.path),
+            "pool_sequence": list(self.pool_sequence),
+            "protocol_seq": list(self.protocol_seq),
+            "profitability": {
+                "net_profit_usd": getattr(getattr(self.profitability, "net_profit_usd", None), "__float__", lambda: getattr(self.profitability, "net_profit_usd", None))(),
+            },
+            "block_detected": self.block_detected,
+            "metadata": self.metadata,
+            "market_snapshot": self.market_snapshot,
+            "opp_id": self.opp_id,
+            "family": self.family,
+        }
 
 
 def find_opportunities_with_rust(live_pools: dict, principal_usd: Decimal, max_slippage_bps: Decimal) -> list[LiveOpportunity]:

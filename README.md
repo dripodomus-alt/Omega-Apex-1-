@@ -47,27 +47,21 @@ This keeps the Node toolchain and Python runtime separated while still enabling 
 
 ---
 
-## Important Reality Check
+### Important Notice — Current System Status
 
-This codebase includes both **live integrations** and **deterministic simulated/mock data**.
+This repository currently operates as a **prototype operator console and simulation environment**, not as an audited production trading system.
 
-### Live or integration-backed surfaces
+**Key limitations:**
 
-- Polygon RPC balance and nonce fetches in `src/utils/persistentState.ts`
-- 90-day history anchoring against live RPC state in `src/components/NinetyDaySimulationStudio.tsx`
-- Gemini route analysis API in `server.ts`
-- Firebase Auth / Firestore helpers in `src/lib`
-- Google Drive export helpers in `src/lib/googleDriveService.ts`
+- Benchmark results, route profitability figures, and pool metrics are **seeded / simulated mock data**. They do not represent live traded performance or real P&L.
+- Live external connectivity is limited to:
+  - RPC calls for balance and nonce checks
+  - Gemini AI route analysis
+  - Firebase persistence
+- No production-grade execution, risk management, or capital custody layers are active.
+- The system has **not** undergone formal security audits, formal verification, or mainnet battle-testing.
 
-### Simulated, seeded, or presentation-layer proof surfaces
-
-- benchmark results in `src/data/mockEngineData.ts`
-- initial routes, pools, and audit logs in `src/data/mockEngineData.ts`
-- Top 50 execution cycle generation in `src/components/Top50ExecutionStudio.tsx`
-- full automation event loop behavior in `src/components/FullAutomationLiveEngine.tsx`
-- live-mainnet activation console and sample confirmations in `src/components/LiveMainnetGuide.tsx`
-
-Accordingly, this README documents the system **as implemented in this repository today**: a strong operator console and simulation/proof surface with selected live connectivity, not a fully self-contained audited production trading stack.
+Until these components are replaced with live data feeds, audited execution paths, and production infrastructure, this codebase should be treated strictly as a development and simulation surface.
 
 ## Core System Capabilities
 
