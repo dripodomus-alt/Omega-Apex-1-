@@ -1,0 +1,20 @@
+Session signer proof: PASS
+Scope: optional SESSION_SIGNER / WaaS_BROADCAST_ADAPTER dry-run proof lane
+Hot path policy: not in live arbitrage hot path
+Exact-call endpoint: https://polygon-mainnet.infura.io/...
+Remote WaaS configured: False
+Remote Execute attempted: False
+Latency: {'count': 9, 'min_ms': 0.002, 'p50_ms': 0.614, 'p95_ms': 12490.799, 'max_ms': 12490.799}
+
+Steps:
+- PASS config_gate 0.255ms :: pass
+- PASS hot_path_isolation_gate 0.002ms :: delegated lane is isolated from live arbitrage broadcast
+- PASS exact_call_lane_selection 12490.799ms :: selected
+- PASS exact_call_bytecode_probe_1 1427.67ms :: bytecode/exact-call path proven
+- PASS exact_call_bytecode_probe_2 1516.648ms :: bytecode/exact-call path proven
+- PASS exact_call_bytecode_probe_3 1607.249ms :: bytecode/exact-call path proven
+- PASS dry_run_prepare_envelope 0.167ms :: prepare envelope constructed without secret material
+- PASS remote_execute_fail_closed 0.002ms :: expected fail-closed: WaaS URL/credential/wallet are not fully configured
+- PASS proof_log_redis_stream 0.614ms :: redis stream logged
+
+JSON proof: C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\out\session_signer_proof_latest.json

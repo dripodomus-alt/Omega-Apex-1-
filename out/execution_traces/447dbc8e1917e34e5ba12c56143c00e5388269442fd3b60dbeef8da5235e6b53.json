@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784064873560418400,
+  "envelope": {
+    "calldata_hash": "40afbabee2a0263e19453e280c0684978e9c5504cc9a7349a7847b3057ba4893",
+    "chain_id": 137,
+    "created_ns": 1784064872547097700,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "7b5c49dd7194866d0e6eed653f5ae1ea303bd77f910fc1d23ff9ef3ec6d6a876",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "291.1039065224769461491974360",
+      "opp_id": "OPP-0022",
+      "path": [
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "pool_sequence": [
+        "V3_WPOL_WETH_500",
+        "QS_WPOL_USDC_e",
+        "DISC_V3_USDC_e_WBTC_100",
+        "V3_WBTC_WETH_500"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "291.1039065224769461491974360",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0022",
+  "parent_trace_hash": "",
+  "payload_hash": "be11932e3c1fb87803de148a49772b77eea461cbc5f5973013a3318c147f624d",
+  "pool_addresses": [
+    "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+    "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+  ],
+  "pool_sequence": [
+    "V3_WPOL_WETH_500",
+    "QS_WPOL_USDC_e",
+    "DISC_V3_USDC_e_WBTC_100",
+    "V3_WBTC_WETH_500"
+  ],
+  "receipt": {},
+  "route": [
+    "WETH",
+    "WPOL",
+    "USDC.e",
+    "WBTC",
+    "WETH"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "447dbc8e1917e34e5ba12c56143c00e5388269442fd3b60dbeef8da5235e6b53"
+}

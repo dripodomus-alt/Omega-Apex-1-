@@ -1,0 +1,65 @@
+✅ HTTP connected  →  polygon-bor-rpc.publicnode.com  block #90,235,138
+🔎 Factory discovery promoted 96 live pool(s) (251 live found).
+   🧭 tickSpacing cached: 61/61
+   🧩 Balancer poolIds cached: 1/1
+🌐 Loading live state for 115 registered pools...
+   ✅ 115 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 1
+   🧭 V3/Algebra orientation+decimals audit: passed=58/61 failed=3 filtered_out=3
+      reject_reasons={'non_positive_liquidity': 3}
+   📊 V3 TVL state hydrated: 47/58
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+📐 Graph built: 37 nodes (tokens), 212 edges (pool routes)
+ranked=54 block=90235138 sim_from=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+01 ok=False opp=XPOOL-0002 net=1245.559072 path=USDC.e->WBTC->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_USDC_e_WBTC_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+02 ok=False opp=XPOOL-0001 net=1245.558886 path=WBTC->USDC.e->WBTC pools=['DISC_V3_USDC_e_WBTC_500', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+03 ok=False opp=OPP-0040 net=1138.635332 path=WBTC->WETH->USDC.e->WBTC pools=['V3_WBTC_WETH_500', 'V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+04 ok=False opp=OPP-0041 net=1138.635332 path=USDC.e->WBTC->WETH->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500', 'V3_USDC_e_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+05 ok=False opp=OPP-0042 net=1138.635332 path=WETH->USDC.e->WBTC->WETH pools=['V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+06 ok=False opp=OPP-0002 net=404.026191 path=WETH->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+07 ok=False opp=OPP-0003 net=404.026191 path=WBTC->WETH->USDC.e->WBTC pools=['DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+08 ok=False opp=OPP-0001 net=404.026191 path=USDC.e->WBTC->WETH->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_USDC_e_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+09 ok=False opp=OPP-0028 net=376.392387 path=WETH->USDC.e->WBTC->WETH pools=['V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+10 ok=False opp=OPP-0026 net=376.392289 path=USDC.e->WBTC->WETH->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'V3_USDC_e_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+11 ok=False opp=OPP-0027 net=376.392289 path=WBTC->WETH->USDC.e->WBTC pools=['DISC_ALGEBRA_WBTC_WETH', 'V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+12 ok=False opp=OPP-0032 net=368.354406 path=WBTC->WETH->USDC->USDC.e->WBTC pools=['DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+13 ok=False opp=OPP-0035 net=368.354306 path=USDC->USDC.e->WBTC->WETH->USDC pools=['DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+14 ok=False opp=OPP-0033 net=368.354160 path=USDC.e->WBTC->WETH->USDC->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+15 ok=False opp=OPP-0034 net=368.354160 path=WETH->USDC->USDC.e->WBTC->WETH pools=['DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+16 ok=False opp=OPP-0024 net=363.004140 path=WBTC->WETH->USDC.e->WBTC pools=['V3_WBTC_WETH_500', 'DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+17 ok=False opp=OPP-0023 net=363.004140 path=USDC.e->WBTC->WETH->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500', 'DISC_ALGEBRA_USDC_e_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+18 ok=False opp=OPP-0025 net=363.003717 path=WETH->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+19 ok=False opp=OPP-0046 net=307.870307 path=WETH->USDC->USDC.e->WBTC->WETH pools=['DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+20 ok=False opp=OPP-0045 net=307.870180 path=WBTC->WETH->USDC->USDC.e->WBTC pools=['DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_500', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+21 ok=False opp=OPP-0043 net=307.870180 path=USDC->USDC.e->WBTC->WETH->USDC pools=['DISC_V3_USDC_USDC_e_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+22 ok=False opp=OPP-0044 net=307.870180 path=USDC.e->WBTC->WETH->USDC->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+23 ok=False opp=OPP-0005 net=207.237832 path=WBTC->WETH->WPOL->USDC.e->WBTC pools=['DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+24 ok=False opp=OPP-0007 net=207.237395 path=WETH->WPOL->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+25 ok=False opp=OPP-0006 net=207.237392 path=WPOL->USDC.e->WBTC->WETH->WPOL pools=['QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+26 ok=False opp=OPP-0004 net=206.909934 path=USDC.e->WBTC->WETH->WPOL->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+27 ok=False opp=OPP-0011 net=203.924133 path=WBTC->WETH->WPOL->USDC.e->WBTC pools=['DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100'] detail=unknown_custom_error selector=0x08c379a0
+28 ok=False opp=OPP-0009 net=203.921836 path=WPOL->USDC.e->WBTC->WETH->WPOL pools=['BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH'] detail=unknown_custom_error selector=0x08c379a0
+29 ok=False opp=OPP-0008 net=203.921698 path=WETH->WPOL->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH'] detail=unknown_custom_error selector=0x08c379a0
+30 ok=False opp=OPP-0010 net=200.157540 path=USDC.e->WBTC->WETH->WPOL->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+31 ok=False opp=XPOOL-0003 net=36.905893 path=WBTC->USDC.e->WBTC pools=['DISC_V3_USDC_e_WBTC_3000', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+32 ok=False opp=XPOOL-0004 net=36.905762 path=USDC.e->WBTC->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_USDC_e_WBTC_3000'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+33 ok=False opp=OPP-0012 net=13.404929 path=USDC.e->WBTC->WETH->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_USDC_e_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+34 ok=False opp=OPP-0013 net=13.404857 path=WBTC->WETH->USDC.e->WBTC pools=['DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+35 ok=False opp=OPP-0014 net=13.404857 path=WETH->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+36 ok=False opp=OPP-0021 net=13.238876 path=WBTC->WETH->WPOL->USDC.e->WBTC pools=['DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100'] detail=unknown_custom_error selector=0x08c379a0
+37 ok=False opp=OPP-0019 net=13.238690 path=WETH->WPOL->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100'] detail=unknown_custom_error selector=0x08c379a0
+38 ok=False opp=OPP-0022 net=13.238689 path=WPOL->USDC.e->WBTC->WETH->WPOL pools=['BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH'] detail=unknown_custom_error selector=0x08c379a0
+39 ok=False opp=OPP-0016 net=13.229363 path=WETH->WPOL->USDC.e->WBTC->WETH pools=['DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+40 ok=False opp=OPP-0017 net=13.229363 path=WPOL->USDC.e->WBTC->WETH->WPOL pools=['QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+41 ok=False opp=OPP-0015 net=13.229238 path=WBTC->WETH->WPOL->USDC.e->WBTC pools=['DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+42 ok=False opp=OPP-0018 net=13.227714 path=USDC.e->WBTC->WETH->WPOL->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+43 ok=False opp=OPP-0020 net=13.219304 path=USDC.e->WBTC->WETH->WPOL->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+44 ok=False opp=OPP-0030 net=11.858309 path=WBTC->WETH->USDC.e->WBTC pools=['DISC_V3_WBTC_WETH_100', 'V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+45 ok=False opp=OPP-0031 net=11.858309 path=WETH->USDC.e->WBTC->WETH pools=['V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+46 ok=False opp=OPP-0029 net=11.858217 path=USDC.e->WBTC->WETH->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'V3_USDC_e_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+47 ok=False opp=OPP-0038 net=11.567907 path=WETH->USDC->USDC.e->WBTC->WETH pools=['DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+48 ok=False opp=OPP-0039 net=11.567907 path=WBTC->WETH->USDC->USDC.e->WBTC pools=['DISC_V3_WBTC_WETH_100', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+49 ok=False opp=OPP-0036 net=11.567786 path=USDC->USDC.e->WBTC->WETH->USDC pools=['DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_V3_USDC_WETH_500'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+50 ok=False opp=OPP-0037 net=11.567786 path=USDC.e->WBTC->WETH->USDC->USDC.e pools=['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100'] detail=AdapterSlippageOrProfit() selector=0x01ecd1cc
+exact_call_pass_count_top50=0

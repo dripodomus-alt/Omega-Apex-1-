@@ -1,0 +1,107 @@
+{
+  "config_semantics": {
+    "max_pools": "0 = load every configured pool; positive values load that many prioritized pools",
+    "max_pre_ranked": "0 = keep every raw-positive pre-ranked route",
+    "max_quote_options_per_pair": "0 = use every quote edge per token pair",
+    "max_token_paths": "0 = enumerate every closed token path for selected hop depths",
+    "slippage_bps": "higher value is more conservative for net execution proof",
+    "stage_limit": "0 = stage every pre-ranked raw-positive route; positive values cap staged rows"
+  },
+  "ordering": "fastest_lowest_latency_to_slowest_maximum_precision",
+  "profiles": [
+    {
+      "hops": [
+        2
+      ],
+      "intent": "minimum wall-clock proof with real metadata and exact route quotes",
+      "max_pools": 12,
+      "max_pre_ranked": 32,
+      "max_quote_options_per_pair": 2,
+      "max_token_paths": 250,
+      "name": "fastest_low_latency",
+      "principal_usd": "1000",
+      "rank_fast_to_slow": 1,
+      "slippage_bps": "5",
+      "speed_coverage_precision_tradeoff": {
+        "path_scope": "first 250 closed token paths",
+        "pool_scope": "first 12 prioritized pools",
+        "precision_note": "precision increases as caps move to zero, because zero means uncapped in this runner",
+        "quote_scope": "top 2 quote edges per pair",
+        "stage_scope": "top 8 staged routes"
+      },
+      "stage_limit": 8
+    },
+    {
+      "hops": [
+        2,
+        3
+      ],
+      "intent": "broader two/three-hop coverage while keeping live proof runtime bounded",
+      "max_pools": 40,
+      "max_pre_ranked": 150,
+      "max_quote_options_per_pair": 4,
+      "max_token_paths": 1500,
+      "name": "balanced_coverage",
+      "principal_usd": "5000",
+      "rank_fast_to_slow": 2,
+      "slippage_bps": "10",
+      "speed_coverage_precision_tradeoff": {
+        "path_scope": "first 1500 closed token paths",
+        "pool_scope": "first 40 prioritized pools",
+        "precision_note": "precision increases as caps move to zero, because zero means uncapped in this runner",
+        "quote_scope": "top 4 quote edges per pair",
+        "stage_scope": "top 25 staged routes"
+      },
+      "stage_limit": 25
+    },
+    {
+      "hops": [
+        2,
+        3,
+        4
+      ],
+      "intent": "full configured discovery dynamics across all supported hop depths",
+      "max_pools": 0,
+      "max_pre_ranked": 500,
+      "max_quote_options_per_pair": 0,
+      "max_token_paths": 0,
+      "name": "maximum_dynamics",
+      "principal_usd": "10000",
+      "rank_fast_to_slow": 3,
+      "slippage_bps": "15",
+      "speed_coverage_precision_tradeoff": {
+        "path_scope": "all closed token paths",
+        "pool_scope": "all configured live pools",
+        "precision_note": "precision increases as caps move to zero, because zero means uncapped in this runner",
+        "quote_scope": "all quote edges",
+        "stage_scope": "top 100 staged routes"
+      },
+      "stage_limit": 100
+    },
+    {
+      "hops": [
+        2,
+        3,
+        4
+      ],
+      "intent": "slowest profile: no quote-option cap, no path cap, stage every raw-positive route returned",
+      "max_pools": 0,
+      "max_pre_ranked": 0,
+      "max_quote_options_per_pair": 0,
+      "max_token_paths": 0,
+      "name": "maximum_precision_slowest",
+      "principal_usd": "10000",
+      "rank_fast_to_slow": 4,
+      "slippage_bps": "20",
+      "speed_coverage_precision_tradeoff": {
+        "path_scope": "all closed token paths",
+        "pool_scope": "all configured live pools",
+        "precision_note": "precision increases as caps move to zero, because zero means uncapped in this runner",
+        "quote_scope": "all quote edges",
+        "stage_scope": "all raw-positive staged routes"
+      },
+      "stage_limit": 0
+    }
+  ],
+  "schema_version": "omega_v5.route_profile_settings.v1"
+}

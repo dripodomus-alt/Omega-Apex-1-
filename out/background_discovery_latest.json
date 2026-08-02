@@ -1,0 +1,6 @@
+{
+  "error": "ImportError: cannot import name 'detect_four_leg_cycles' from 'omega_v5.arbitrage' (C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\omega_v5\\arbitrage.py)",
+  "mode": "read_only_no_broadcast",
+  "ok": false,
+  "updated_at": 1784470822
+}

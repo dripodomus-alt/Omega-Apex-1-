@@ -1,0 +1,35 @@
+{
+  "balance_source": "polygon-mainnet.infura.io",
+  "chain_id": 137,
+  "checks": {
+    "executor_contract_configured": true,
+    "gas_wallet_has_min_buffer": true,
+    "owner_matches_wallet_or_unset": true,
+    "private_key_valid": true,
+    "wallet_present": true
+  },
+  "estimated_liquidation_gas_pol": "0.462132344842200000",
+  "estimated_liquidation_gas_usd": "0.16174632069477000000",
+  "executor_contract": "0x409e...7346",
+  "gas_payer": "user_wallet",
+  "gas_quote": {
+    "max_fee_gwei": "513.480383158",
+    "priority_fee_gwei": "134.158332627",
+    "source": "polygon_gas_station_v2.fast",
+    "tier": "fast"
+  },
+  "min_wallet_gas_buffer_pol": "1",
+  "mode": "dry_run",
+  "native_balance_pol": "26.773809012703822800",
+  "native_balance_usd": "9.37083315444633798000",
+  "native_gas_asset": "POL",
+  "ok": true,
+  "owner_address": "0x9Bd5...ef95",
+  "owner_matches_wallet_or_unset": true,
+  "pol_price_source": "static_config_POL_USD_PRICE",
+  "pol_price_usd": "0.35",
+  "private_key_status": "valid",
+  "updated_at": 1784441147,
+  "wallet": "0x9Bd5...ef95",
+  "wallet_address": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+}

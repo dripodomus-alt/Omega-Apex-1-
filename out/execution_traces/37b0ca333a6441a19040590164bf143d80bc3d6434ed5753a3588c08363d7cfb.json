@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784059926303635400,
+  "envelope": {
+    "calldata_hash": "712a3902833abfa018209b484cebb6f0ad22175f81d1cd2cf2e4100b8cff1500",
+    "chain_id": 137,
+    "created_ns": 1784059925617201800,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "89733dd3e20e0d0c096c43acfba886b0c392e906ee6edfc9dc7b56d298616930",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "11.57614671245000769624751945",
+      "opp_id": "OPP-0037",
+      "path": [
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_USDC_e_100",
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_V3_WBTC_WETH_100",
+        "DISC_V3_USDC_WETH_500"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "11.57614671245000769624751945",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0037",
+  "parent_trace_hash": "",
+  "payload_hash": "bed0c947705c88d6f659536766e8ba5819f5d183e088f7251701d64ffb8c1684",
+  "pool_addresses": [
+    "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+    "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_USDC_e_100",
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_V3_WBTC_WETH_100",
+    "DISC_V3_USDC_WETH_500"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC",
+    "USDC.e",
+    "WBTC",
+    "WETH",
+    "USDC"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "37b0ca333a6441a19040590164bf143d80bc3d6434ed5753a3588c08363d7cfb"
+}

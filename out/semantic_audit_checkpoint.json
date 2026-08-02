@@ -1,0 +1,180 @@
+{
+  "created_at_ns": 1785444721655300000,
+  "critical_findings": [],
+  "economic_validity": "PASS",
+  "execution_safety": "WARNING",
+  "execution_verdict": "UNKNOWN",
+  "identity_parity": "PASS",
+  "overall_confidence_pct": 90,
+  "phases": [
+    {
+      "evidence": {
+        "abi_words": 1,
+        "calldata_bytes": 36,
+        "expected_selector": "",
+        "selector": "0x12345678",
+        "static_payload_bytes": 32,
+        "word_aligned": true,
+        "words_sha256": "60e05bd1b195af2f94112fa7197a5c88289058840ce7c6df9693756bc6250f55"
+      },
+      "findings": [],
+      "name": "ABI Integrity",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "fields": [
+          {
+            "decoded_integer": "0",
+            "engineering_units": "unknown_without_abi_or_field_manifest",
+            "index": 0,
+            "possible_interpretations": [
+              {
+                "confidence": "medium",
+                "type": "uint256",
+                "value": "0"
+              },
+              {
+                "confidence": "medium",
+                "type": "bool",
+                "value": false
+              },
+              {
+                "confidence": "low",
+                "type": "bytes32",
+                "value": "0x0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            ],
+            "raw_hex": "0x0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        ]
+      },
+      "findings": [
+        "no_abi_field_manifest_meanings_are_unknown"
+      ],
+      "name": "Semantic Decode",
+      "status": "WARNING"
+    },
+    {
+      "evidence": {
+        "normalized_sources": {
+          "checkpoint": "dry_run_semantic_audit"
+        }
+      },
+      "findings": [],
+      "name": "Opportunity Identity Parity",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "parameters": {
+          "mode_flag": {
+            "classification": "mode_flag",
+            "confidence": "high",
+            "numeric": "not_numeric",
+            "value": "dry_run"
+          }
+        }
+      },
+      "findings": [],
+      "name": "Execution Parameter Validation",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "costs_usd": {
+          "flash_fee_usd": "1",
+          "gas_cost_usd": "1"
+        },
+        "gross_profit_usd": "10",
+        "recomputed_net_profit_usd": "8",
+        "reported_net_profit_usd": "8"
+      },
+      "findings": [],
+      "name": "Economic Consistency",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "state": {
+          "actual_input": "1",
+          "after": [
+            "1001",
+            "999.001"
+          ],
+          "before": [
+            "1000",
+            "1000"
+          ],
+          "output": "0.999"
+        }
+      },
+      "findings": [],
+      "name": "Reserve State Validation",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "k_after": "1000000.001",
+        "k_before": "1000000",
+        "protocol": "V2_CPMM"
+      },
+      "findings": [],
+      "name": "Constant Product Validation",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "bps_fields": []
+      },
+      "findings": [
+        "no_bps_fields_provided"
+      ],
+      "name": "Basis Point Audit",
+      "status": "WARNING"
+    },
+    {
+      "evidence": {
+        "costs_usd": {
+          "flash_fee_usd": "1",
+          "gas_cost_usd": "1"
+        },
+        "gross_profit_usd": "10",
+        "recomputed_net_profit_usd": "8",
+        "reported_net_profit_usd": "8"
+      },
+      "findings": [],
+      "name": "Economic Consistency",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "tstore_report": {
+          "uses_eip_1153": false
+        }
+      },
+      "findings": [],
+      "name": "TSTORE Audit",
+      "status": "PASS"
+    },
+    {
+      "evidence": {
+        "relay": {
+          "relay_tip_base_usd": "8",
+          "relay_tip_bps": "0",
+          "relay_tip_usd": "0"
+        }
+      },
+      "findings": [],
+      "name": "Relay Audit",
+      "status": "PASS"
+    }
+  ],
+  "recommended_fixes": [
+    "Provide authoritative evidence for Semantic Decode: no_abi_field_manifest_meanings_are_unknown"
+  ],
+  "schema_version": "apex_omega.calldata_semantic_audit.v1",
+  "semantic_validity": "WARNING",
+  "state_parity": "PASS",
+  "structural_validity": "PASS"
+}

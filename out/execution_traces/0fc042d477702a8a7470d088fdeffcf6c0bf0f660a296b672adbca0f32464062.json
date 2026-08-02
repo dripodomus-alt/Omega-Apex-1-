@@ -1,0 +1,61 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784055450976115600,
+  "envelope": {
+    "calldata_hash": "0a16db7bbe7a573b742753cc3df57652fa8cc1493e4cb79ddee9bd69ec636201",
+    "chain_id": 137,
+    "created_ns": 1784055450975788300,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "45596ea4befe56f7146ecb1209116b98f69621dd249365f4b32b38d552a36745",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "1247.896622379602186402264779",
+      "opp_id": "XPOOL-0002",
+      "path": [
+        "USDC.e",
+        "WBTC",
+        "USDC.e"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_V3_USDC_e_WBTC_500"
+      ],
+      "strategy": "CROSS_POOL_TWO_LEG"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "1247.896622379602186402264779",
+    "reason": "runtime_not_live"
+  },
+  "mode": "dry_run",
+  "opp_id": "XPOOL-0002",
+  "parent_trace_hash": "",
+  "payload_hash": "3f85d3b1d15bf54fecd93fe8488d070c949294ecad2544b0200da61f341dfc91",
+  "pool_addresses": [
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0xeef1a9507b3d505f0062f2be9453981255b503c8"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_V3_USDC_e_WBTC_500"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC.e",
+    "WBTC",
+    "USDC.e"
+  ],
+  "stage": "C1",
+  "status": "DRY_RUN_STAGED",
+  "trace_hash": "0fc042d477702a8a7470d088fdeffcf6c0bf0f660a296b672adbca0f32464062"
+}

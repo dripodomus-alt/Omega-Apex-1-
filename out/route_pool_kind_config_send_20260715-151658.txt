@@ -1,0 +1,52 @@
+✅ HTTP connected  →  polygon-mainnet.infura.io  block #90,299,216
+broadcast_rpc_selected=https://lb.drpc.live/polygon/...tBrJVX
+🔎 Factory discovery promoted 72 live pool(s) (132 live found).
+   🧬 Polygon token-list discovery staged 143 candidate token(s) against bases USDC.e,WETH,WPOL,WBTC,USDT,DAI,USDC.
+   🗂️  Dynamic pool registry staged 256 metadata pool(s) for live RPC verification.
+   🌀 Curve official registry staged 76 pool(s) across {'main': 2, 'factory': 52, 'factory-crypto': 22}.
+route_pool_kind_rows=458 live_registry=True protocol_counts={'Balancer': 2, 'Curve': 76, 'QuickSwapV3': 14, 'UniswapV2': 168, 'UniswapV3': 198}
+adapter=aave address=0x766346f18B7646f6044F88Dfc903D92D9AbF70e1 owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+adapter=aave route_pool_kind_needed=360 already_correct=98
+configure_chunk_split adapter=aave pools=80 worst_case_native=1.448249 cap_native=0.850000
+configured_route_pool_kinds adapter=aave pools=40 kinds={1: 40} gas=1183902 max_native=0.733124 gas_source=polygon_gas_station_v2.fast tx=5952c7ce42c0efb45f4f51d20a4e5080104860822ec73af21e903cc525a7732c
+configured_route_pool_kinds adapter=aave pools=40 kinds={1: 40} gas=1183878 max_native=0.733109 gas_source=polygon_gas_station_v2.fast tx=497112228b290817c6665df4a2dc0808b293b6f433524dd97eff75ce91eef720
+configure_chunk_split adapter=aave pools=80 worst_case_native=1.448249 cap_native=0.850000
+configured_route_pool_kinds adapter=aave pools=40 kinds={1: 40} gas=1183902 max_native=0.734472 gas_source=polygon_gas_station_v2.fast tx=54dfc4bd233d98f1501ba8cf2f724311c9535536e34608c8b15cc1ae8eb0bfe0
+configured_route_pool_kinds adapter=aave pools=40 kinds={1: 10, 2: 30} gas=1183878 max_native=0.734457 gas_source=polygon_gas_station_v2.fast tx=a1c3665eb499e7f51f3e9ccdd1afdec7d324dcc7e7a3efd30f255a6ce7dec5e1
+configure_chunk_split adapter=aave pools=80 worst_case_native=1.581452 cap_native=0.850000
+configured_route_pool_kinds adapter=aave pools=40 kinds={2: 40} gas=1183890 max_native=0.800549 gas_source=polygon_gas_station_v2.fast tx=da8c32b953d52d0d5ae3deb7d065c0690174a6f8e9540677937990798f8697a2
+configured_route_pool_kinds adapter=aave pools=40 kinds={2: 40} gas=1183878 max_native=0.800541 gas_source=polygon_gas_station_v2.fast tx=fa58109f16e1dc1bc4ecc7c2d332df5a8aa3327412dd00a3dadbe0dd298f1616
+configure_chunk_split adapter=aave pools=80 worst_case_native=1.613519 cap_native=0.850000
+configured_route_pool_kinds adapter=aave pools=40 kinds={2: 37, 3: 3} gas=1183914 max_native=0.816786 gas_source=polygon_gas_station_v2.fast tx=64a8792f6a46315c73039445694dba61bf580d2c5a289b0afa0e0ffe02d9cdb3
+configured_route_pool_kinds adapter=aave pools=40 kinds={3: 3, 4: 37} gas=1183890 max_native=0.816770 gas_source=polygon_gas_station_v2.fast tx=9ecc216610d1ff6e828356a4dc7f2d873710d781e8c0cb9b619eeb01abaa0598
+configure_chunk_split adapter=aave pools=40 worst_case_native=0.863828 cap_native=0.850000
+configured_route_pool_kinds adapter=aave pools=20 kinds={4: 20} gas=605890 max_native=0.442501 gas_source=polygon_gas_station_v2.fast tx=bff469aee2bcb89c427b2cfefdd60f67a66d24ba4bde8e1a814163098a781b4a
+configured_route_pool_kinds adapter=aave pools=20 kinds={4: 19, 5: 1} gas=605914 max_native=0.442518 gas_source=polygon_gas_station_v2.fast tx=0f9b60a7ccda44fa58e6d4a51901ea3b2389a9aa1d81157ec81ad3ae166e469e
+adapter=balancer address=0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+adapter=balancer route_pool_kind_needed=360 already_correct=98
+configure_chunk_split adapter=balancer pools=80 worst_case_native=1.734720 cap_native=0.850000
+configure_chunk_split adapter=balancer pools=40 worst_case_native=0.878156 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 20} gas=605947 max_native=0.449861 gas_source=polygon_gas_station_v2.fast tx=ddebb66d390c139d8d9f105dd7b6c7895706e13f2c930f8c64769bc7832212a5
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 20} gas=605959 max_native=0.449870 gas_source=polygon_gas_station_v2.fast tx=1086aba83c5b52796c010104ea8be675f731c1ac3e6dd3a36c971f79befcbb6a
+configure_chunk_split adapter=balancer pools=40 worst_case_native=0.878138 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 20} gas=605947 max_native=0.462964 gas_source=polygon_gas_station_v2.fast tx=85aafd7bc278703b2cede5c082d74cd17a6d46c9f60c4dddb2d70cf7cfa73077
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 20} gas=605935 max_native=0.462955 gas_source=polygon_gas_station_v2.fast tx=0335aede44257504c7ebaf7c87f79216d88beb73b75d8e18be6d94943c5ef319
+configure_chunk_split adapter=balancer pools=80 worst_case_native=1.785247 cap_native=0.850000
+configure_chunk_split adapter=balancer pools=40 worst_case_native=0.903734 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 20} gas=605959 max_native=0.462973 gas_source=polygon_gas_station_v2.fast tx=50719e15628922efa8f87cf27eb01cd8a870cb0d912fa08c1aa78beecdd4f976
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 20} gas=605947 max_native=0.449125 gas_source=polygon_gas_station_v2.fast tx=c9fe7648d21a3d63a17b08c038f25df4e031047b98dfcf52f7c569d4e03bc2f7
+configure_chunk_split adapter=balancer pools=40 worst_case_native=0.876702 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=20 kinds={1: 10, 2: 10} gas=605935 max_native=0.449117 gas_source=polygon_gas_station_v2.fast tx=60b2c0075ba5bb8f714ca0a841186bd166da5f3f6aa0f9bebd74e574d2be3d76
+configured_route_pool_kinds adapter=balancer pools=20 kinds={2: 20} gas=605947 max_native=0.432975 gas_source=polygon_gas_station_v2.fast tx=ffb932f9b4466380d04301b4db21c51232dea9b789276b1340605d0cd9d210f8
+configure_chunk_split adapter=balancer pools=80 worst_case_native=1.669596 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=40 kinds={2: 40} gas=1183935 max_native=0.845185 gas_source=polygon_gas_station_v2.fast tx=901924b5161af08b8222b49f2fc8700ba96b7733d62ee3abac2f4aa4d98c1a41
+configure_chunk_split adapter=balancer pools=40 worst_case_native=0.857055 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=20 kinds={2: 20} gas=605947 max_native=0.439060 gas_source=polygon_gas_station_v2.fast tx=444c73d9dfccc1770a06f7b7fa9e514999141335ff43f6e85dedab43e1b10fc2
+configured_route_pool_kinds adapter=balancer pools=20 kinds={2: 20} gas=605935 max_native=0.439051 gas_source=polygon_gas_station_v2.fast tx=baf5bd72e3ac4c4f0949890552fc77a926935a9798ae40f1dfda3f118bcf58e1
+configure_chunk_split adapter=balancer pools=80 worst_case_native=1.693087 cap_native=0.850000
+configure_chunk_split adapter=balancer pools=40 worst_case_native=0.857081 cap_native=0.850000
+configured_route_pool_kinds adapter=balancer pools=20 kinds={2: 20} gas=605959 max_native=0.429695 gas_source=polygon_gas_station_v2.fast tx=9af532e7968fc699a7084fd2b7130df4069218b59a15c65fedaadc1cfa29a0aa
+configured_route_pool_kinds adapter=balancer pools=20 kinds={2: 17, 3: 3} gas=605959 max_native=0.429695 gas_source=polygon_gas_station_v2.fast tx=bad9706a35601b58036d3d50fb74e7a6077e4a451c16adbf9524b36330b320bd
+configured_route_pool_kinds adapter=balancer pools=40 kinds={3: 3, 4: 37} gas=1183935 max_native=0.830451 gas_source=polygon_gas_station_v2.fast tx=7c772601fd6d688101921e2c21a35193dcb54f38af5d8327ac13cf6837d578df
+configured_route_pool_kinds adapter=balancer pools=40 kinds={4: 39, 5: 1} gas=1183935 max_native=0.830451 gas_source=polygon_gas_station_v2.fast tx=7a9564980869d58fbc45c7897c7660f25df1770395c142ef19c66843fd7c5373
+configure_route_pool_kinds=SENT tx_count=25 broadcast_rpc=https://lb.drpc.live/polygon/...tBrJVX

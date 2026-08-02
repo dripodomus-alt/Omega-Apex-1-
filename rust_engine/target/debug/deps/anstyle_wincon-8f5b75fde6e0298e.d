@@ -1,0 +1,8 @@
+C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\rust_engine\target\debug\deps\anstyle_wincon-8f5b75fde6e0298e.d: C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\lib.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\ansi.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\stream.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\windows.rs
+
+C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\rust_engine\target\debug\deps\libanstyle_wincon-8f5b75fde6e0298e.rmeta: C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\lib.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\ansi.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\stream.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\windows.rs
+
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\lib.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\ansi.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\stream.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\anstyle-wincon-3.0.11\src\windows.rs:

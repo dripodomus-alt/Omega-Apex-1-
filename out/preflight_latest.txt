@@ -1,0 +1,28 @@
+Omega V5 preflight: read-only Polygon execution readiness
+chain_id=137
+executor=0x409ece3Fd71DFBd8f692B600f36A89301cb37346
+schema=executeFlashArb(uint8,address,uint256,address[],address[],uint256)
+selector=0x626482a3
+broadcast_rpc=SET
+broadcast_wss=SET
+flashbots_relay=SET
+titan_mev_us_west=SET
+dodo_rpc_provider=SET
+dodo_rpc_proxy=SET
+redis_cache_ok=True detail=connected
+dodo_provider_polygon_endpoints=0
+fork_upstream_ok=True detail=chain_id=137 block=90235440
+broadcast_rpc_ok=True detail=chain_id=137 block=90235441
+✅ WSS connected  →  polygon-bor-rpc.publicnode.com  block #90,235,441
+rpc_live=True
+block=90235441
+executor_code_ok=True detail=bytecode present and selector 0x626482a3 found
+executor_owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+simulation_from=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+wallet=SET 0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+guard runtime_mode=live: False
+guard RPC_LIVE: True
+guard EXECUTOR_PRIVATE_KEY valid: True
+guard EXECUTOR_CONTRACT_ADDR set: True
+guard BROADCAST_RPC configured: True
+live_execution_armed=False

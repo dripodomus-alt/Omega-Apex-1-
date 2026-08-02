@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784063913554416300,
+  "envelope": {
+    "calldata_hash": "4259281f36e91cae652d37cb58d7c5ff94d19fa9bd6f0323a1af661cc24bd611",
+    "chain_id": 137,
+    "created_ns": 1784063912793702700,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "528436dec7d72dbc68d7a744b090db4c846eb5cc0d0b95c1a4c4fd3a706c6941",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "13.31307178841193864432815320",
+      "opp_id": "OPP-0018",
+      "path": [
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC"
+      ],
+      "pool_sequence": [
+        "DISC_V3_WBTC_WETH_100",
+        "DISC_ALGEBRA_WPOL_WETH",
+        "QS_WPOL_USDC_e",
+        "DISC_V3_USDC_e_WBTC_100"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "13.31307178841193864432815320",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0018",
+  "parent_trace_hash": "",
+  "payload_hash": "ef19ddb611e1aa71df3683884aa6d2b7f0480cb5c35c92b62fb62703558eeb3e",
+  "pool_addresses": [
+    "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+    "0x479e1B71A702a595e19b6d5932CD5c863ab57ee0",
+    "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+  ],
+  "pool_sequence": [
+    "DISC_V3_WBTC_WETH_100",
+    "DISC_ALGEBRA_WPOL_WETH",
+    "QS_WPOL_USDC_e",
+    "DISC_V3_USDC_e_WBTC_100"
+  ],
+  "receipt": {},
+  "route": [
+    "WBTC",
+    "WETH",
+    "WPOL",
+    "USDC.e",
+    "WBTC"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "0777fbadb5d813370fb1a66ab84d598798e68d771cd1a63d93cd2a2c36a40464"
+}

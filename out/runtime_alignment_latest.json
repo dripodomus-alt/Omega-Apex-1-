@@ -1,0 +1,178 @@
+{
+  "ok": true,
+  "status": "PASS",
+  "generated_at_unix": 1784441587.5182364,
+  "chain_id": 137,
+  "runtime": {
+    "mode": "live",
+    "updated_at_ns": 1784441537019865300,
+    "updated_by": "codex_live_canary_completion",
+    "settings": {
+      "execute_top": 1,
+      "print_top_routes": 20,
+      "ticks": 1,
+      "principal_usd": "1000",
+      "interval_seconds": 60,
+      "no_scan": false,
+      "canary_mode": true
+    },
+    "live_reset_policy": "explicit_user_reset_only",
+    "dry_run_armed_at_ns": 1784436050184117400,
+    "live_armed_at_ns": 1784441537019865300
+  },
+  "policy": {
+    "runtime_control_is_authoritative": true,
+    "dry_run_and_live_share_route_builders": true,
+    "live_requires_exact_call_before_broadcast": true,
+    "anvil_fork_uses_same_upstream_profile": true,
+    "broadcast_isolated_from_read_rotation": true
+  },
+  "checks": {
+    "runtime_mode_valid": {
+      "ok": true,
+      "detail": "live"
+    },
+    "live_env_triplet_aligned": {
+      "ok": true,
+      "detail": {
+        "runtime_mode": "live",
+        "EXECUTION_MODE": "live",
+        "LIVE_TRADING": "1",
+        "CONFIRM_MAINNET_EXECUTION": "present"
+      }
+    },
+    "dry_run_does_not_require_live_triplet": {
+      "ok": true,
+      "detail": "dry-run can coexist with configured live credentials because runtime control is authoritative"
+    },
+    "private_key_gate": {
+      "ok": true,
+      "detail": "configured",
+      "wallet": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+    },
+    "wallet_config": {
+      "ok": true,
+      "detail": {
+        "gas_payer": "user_wallet",
+        "native_balance_pol": "26.773809012703822800",
+        "min_wallet_gas_buffer_pol": "1",
+        "balance_source": "polygon-mainnet.infura.io",
+        "checks": {
+          "private_key_valid": true,
+          "wallet_present": true,
+          "executor_contract_configured": true,
+          "owner_matches_wallet_or_unset": true,
+          "gas_wallet_has_min_buffer": true
+        }
+      }
+    },
+    "primary_exact_aligned": {
+      "ok": true,
+      "detail": {
+        "primary_read": "https://lb.drpc.live/...",
+        "exact_call": "https://lb.drpc.live/...",
+        "same_endpoint": true,
+        "selected_exact": "https://lb.drpc.live/..."
+      }
+    },
+    "broadcast_isolated": {
+      "ok": true,
+      "detail": {
+        "broadcast": "https://polygon-mainnet.infura.io/...",
+        "broadcast_wss": "wss://polygon-mainnet.infura.io/...",
+        "broadcast_fallback_count": 8,
+        "broadcast_wss_fallback_count": 3,
+        "selected_broadcast": "https://polygon-mainnet.infura.io/...",
+        "exact_call": "https://lb.drpc.live/...",
+        "same_as_exact": false
+      }
+    },
+    "fork_runtime_aligned": {
+      "ok": true,
+      "detail": {
+        "fork_upstream": "https://lb.drpc.live/...",
+        "fork_rpc": "http://127.0.0.1:8545/...",
+        "fork_sim": "http://127.0.0.1:8545/...",
+        "selected_fork_lane": "http://127.0.0.1:8545/...",
+        "local_fork": true
+      }
+    },
+    "wss_aligned": {
+      "ok": true,
+      "detail": {
+        "primary_wss": "wss://lb.drpc.live/..."
+      }
+    },
+    "session_lane_isolated": {
+      "ok": true,
+      "detail": {
+        "session_signer_mode": "dry_run",
+        "waas_adapter_mode": "dry_run",
+        "waas_adapter_enabled": false
+      }
+    },
+    "probed_chain_ids": {
+      "ok": true,
+      "detail": {
+        "primary_read": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90491057,
+          "latency_ms": 659.647
+        },
+        "exact_call": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90491057,
+          "latency_ms": 618.439
+        },
+        "broadcast_primary": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90491057,
+          "latency_ms": 1107.891
+        },
+        "broadcast": {
+          "url_hash": "70e98ffff5fbb9c1b67a",
+          "host": "polygon-mainnet.infura.io",
+          "url_masked": "https://polygon-mainnet.infura.io/...",
+          "ok": true,
+          "chain_id": 137,
+          "block": 90491058,
+          "latency_ms": 854.86,
+          "score": 57,
+          "error": "",
+          "ts": 1784441585.109219,
+          "send_raw_transaction_method": true,
+          "send_raw_transaction_probe_ms": 758.72,
+          "send_raw_transaction_detail": "Invalid parameters: transaction could not be decoded: not enough input to decode"
+        },
+        "fork_sim": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90490777,
+          "latency_ms": 8.334
+        },
+        "fork_upstream": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90491060,
+          "latency_ms": 782.012
+        },
+        "required_for_mode": [
+          "primary_read",
+          "exact_call",
+          "fork_sim",
+          "fork_upstream",
+          "broadcast"
+        ],
+        "broadcast_probe_required": true
+      }
+    }
+  }
+}

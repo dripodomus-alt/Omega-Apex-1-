@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784061509454924100,
+  "envelope": {
+    "calldata_hash": "91c36fb190eef82c3972bf16454404633d218681ce5d9faaec0f0b8abb4895ae",
+    "chain_id": 137,
+    "created_ns": 1784061508451262700,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "dedcd5b68259bf4b2620f8214de5a00aa8684406661d6c5bd8dbf6ea033408c5",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "200.9275419093128363274139115",
+      "opp_id": "OPP-0009",
+      "path": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_ALGEBRA_WBTC_WETH",
+        "DISC_ALGEBRA_WPOL_WETH",
+        "BAL_WPOL_WETH_USDC"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "200.9275419093128363274139115",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0009",
+  "parent_trace_hash": "",
+  "payload_hash": "354c1763f0c0b8ee0d5376ce61e926a1e7f786eb9ad4dabfe878701757d10bc1",
+  "pool_addresses": [
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0xAC4494e30a85369e332BDB5230d6d694d4259DbC",
+    "0x479e1B71A702a595e19b6d5932CD5c863ab57ee0",
+    "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_ALGEBRA_WBTC_WETH",
+    "DISC_ALGEBRA_WPOL_WETH",
+    "BAL_WPOL_WETH_USDC"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC.e",
+    "WBTC",
+    "WETH",
+    "WPOL",
+    "USDC.e"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "393def85149b530d8a5b1c040958a1fda61754027f35ce1950fb062bd9fb1e77"
+}

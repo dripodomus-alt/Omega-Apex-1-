@@ -1,0 +1,62 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784061178860588700,
+  "envelope": {
+    "calldata_hash": "301beb93aaba0ff92b47b7e0168a9a86d91732d489da808a7a9f2bbb76e2421f",
+    "chain_id": 137,
+    "created_ns": 1784061177694599000,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "759920947ffd4c650c0dc2adeba13df57e9f9b4163bee868bd7be67b7d7e9815",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "36.90583974022148427521382110",
+      "opp_id": "XPOOL-0004",
+      "path": [
+        "USDC.e",
+        "WBTC",
+        "USDC.e"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_V3_USDC_e_WBTC_3000"
+      ],
+      "strategy": "CROSS_POOL_TWO_LEG"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "36.90583974022148427521382110",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "XPOOL-0004",
+  "parent_trace_hash": "",
+  "payload_hash": "a7b7083c71f87e1e1c0e934a3b836fdc4c1161a7b7c64e17ccda4de85b277437",
+  "pool_addresses": [
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_V3_USDC_e_WBTC_3000"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC.e",
+    "WBTC",
+    "USDC.e"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "9eb381704c7b87244692930ba5dacac383573c66f79e7fa4f3cf1cb7b3cf7417"
+}

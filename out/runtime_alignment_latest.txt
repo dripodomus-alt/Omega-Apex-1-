@@ -1,0 +1,12 @@
+runtime_alignment=PASS
+runtime_mode_valid=PASS detail=dry_run
+live_env_triplet_aligned=PASS detail={'runtime_mode': 'dry_run', 'EXECUTION_MODE': 'live', 'LIVE_TRADING': '1', 'CONFIRM_MAINNET_EXECUTION': 'present'}
+dry_run_does_not_require_live_triplet=PASS detail=dry-run can coexist with configured live credentials because runtime control is authoritative
+private_key_gate=PASS detail=configured
+primary_exact_aligned=PASS detail={'primary_read': 'https://lb.drpc.live/...', 'exact_call': 'https://lb.drpc.live/...', 'same_endpoint': True, 'selected_exact': 'https://polygon-mainnet.infura.io/...'}
+broadcast_isolated=PASS detail={'broadcast': 'https://thrumming-few-water.matic.quiknode.pro/...', 'broadcast_wss': 'wss://thrumming-few-water.matic.quiknode.pro/...', 'selected_broadcast': '', 'exact_call': 'https://lb.drpc.live/...', 'same_as_exact': False}
+fork_runtime_aligned=PASS detail={'fork_upstream': 'https://lb.drpc.live/...', 'fork_rpc': 'http://127.0.0.1:8545/...', 'fork_sim': 'http://127.0.0.1:8545/...', 'selected_fork_lane': 'https://polygon-mainnet.infura.io/...', 'local_fork': True}
+wss_aligned=PASS detail={'primary_wss': 'wss://lb.drpc.live/...'}
+session_lane_isolated=PASS detail={'session_signer_mode': 'dry_run', 'waas_adapter_mode': 'dry_run', 'waas_adapter_enabled': False}
+probed_chain_ids=PASS detail={'primary_read': {'configured': True, 'ok': True, 'chain_id': 137, 'block': 90247389, 'latency_ms': 705.085}, 'exact_call': {'configured': True, 'ok': True, 'chain_id': 137, 'block': 90247390, 'latency_ms': 709.14}, 'broadcast': {'configured': True, 'ok': False, 'latency_ms': 692.279, 'error': "SSLError: HTTPSConnectionPool(host='thrumming-few-water.matic.quiknode.pro', port=443): Max retries exceeded with url: /aee62fad5b9c4e0c3f1179658db72b6416792d45 (Caused by SSLError(SSLError(1, '[SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1081)')))"}, 'fork_sim': {'configured': True, 'ok': True, 'chain_id': 137, 'block': 90247365, 'latency_ms': 5.491}, 'fork_upstream': {'configured': True, 'ok': True, 'chain_id': 137, 'block': 90247391, 'latency_ms': 662.425}, 'required_for_mode': ['primary_read', 'exact_call', 'fork_sim', 'fork_upstream'], 'broadcast_probe_required': False}
+JSON proof: C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\out\runtime_alignment_latest.json

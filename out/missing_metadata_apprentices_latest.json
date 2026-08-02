@@ -1,0 +1,889 @@
+{
+  "case_count": 364,
+  "elapsed_seconds": 12.469,
+  "mode": "read_only_missing_metadata_apprentices_assigned_background",
+  "ok": true,
+  "policy": {
+    "ai_output_can_promote_directly": false,
+    "apprentices_write_registry_proposals": true,
+    "assigned_runner_count": 6,
+    "assigned_runners": [
+      "venue_protocol_apprentice",
+      "public_market_apprentice",
+      "web_search_apprentice",
+      "openai_metadata_apprentice",
+      "gemini_metadata_apprentice",
+      "grok_metadata_apprentice"
+    ],
+    "autonomous_constant_cycle_while_missing_metadata_exists": true,
+    "communicates_with": [
+      "asset_state_research artifact",
+      "optional Redis missing_metadata cases/results"
+    ],
+    "final_gate": "deterministic candidate validation",
+    "main_pipeline_blocking": false,
+    "registry_mutation_requires_discovery_review": true,
+    "runs_in_background": true
+  },
+  "processed": 25,
+  "promotable_count": 0,
+  "results": [
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x43d8b67152410db043c6137bf0ca238e60a401b6",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLOXX"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x2C1084a041B976b96B769d1C250562864317c1Aa",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLTV"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0xe7f960685aba7327ada3b161ea252703c87be0bf",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLUE"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x1f7826d9562f42e745823bdbb690902e00d995f6",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLUEMEL"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x7669095586806bcd340014730584116bc94c2620",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLXM"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x0142666baa520bc49b32ad44c505421346c69164",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLYS"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x438b28c5aa5f00a817b7def7ce2fb3d5d1970974",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLZ"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x1a47e3316282d57df146f87c58a1fb4b26992bbf",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BMI"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x3BA4c387f786bFEE076A58914F5Bd38d668B42c3",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BNB"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x032b3217241fe53ffadb334a9d06aacd2a9153d9",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BND"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x91efbe97e08d0ffc7d31381c032d05fad8e25aaa",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BNQ"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x350bf84b899E3A7abC9048F28d25eaEBde8E9916",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BNS"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0xFe457497A2A71bCE1eb93eA9e6a685057dd93dEe",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BNSD"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0xc26d47d5c33ac71ac5cf9f776d63ba292a4f7842",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BNT"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x0f40d69ff494a9e74b1f20a89eff299b2a05918f",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BNTY"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_368_BOB_CURVE_miMATIC_A3FA99_074eAC"
+        ],
+        "symbol": "BOB"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {
+            "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+            "confidence": 0.55,
+            "decimals": null,
+            "evidence_urls": [
+              "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+            ],
+            "name": "BOB",
+            "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+            "price_sources": [
+              "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+            ],
+            "symbol": "BOB"
+          },
+          "results": [
+            {
+              "baseToken": {
+                "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+                "name": "BOB",
+                "symbol": "BOB"
+              },
+              "liquidity": {
+                "base": 190060,
+                "quote": 10707,
+                "usd": 200751.53
+              },
+              "pairAddress": "0x0a63D3910fFC1529190e80E10855c4216407cc45",
+              "priceUsd": "0.9999",
+              "source": "dexscreener_token",
+              "url": "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+            }
+          ],
+          "runner": "public_market_apprentice",
+          "status": "ok"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": [
+        {
+          "candidate": {
+            "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+            "confidence": 0.55,
+            "decimals": null,
+            "evidence_urls": [
+              "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+            ],
+            "name": "BOB",
+            "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+            "price_sources": [
+              "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+            ],
+            "symbol": "BOB"
+          },
+          "runner": "public_market_apprentice",
+          "validation": {
+            "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+            "decimals": null,
+            "evidence_urls": [
+              "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+            ],
+            "failures": [
+              "candidate_decimals_missing"
+            ],
+            "onchain": {
+              "reason": "rpc_not_connected",
+              "status": "skipped"
+            },
+            "promotion_policy": "proposal_only_discovery_review_required",
+            "status": "rejected",
+            "symbol": "BOB"
+          }
+        }
+      ]
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0xa4b2b20b2c73c7046ed19ac6bff5e5285c58f20a",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BOBA"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x9dbdc7b58b4dfcc73daf45fc386b266262d11c41",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BOBL"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x7Dc47Cfb674bEb5827283F6140F635680A5cE992",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BOLLY"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x53c0855f38f418e7c13f6e1ecd9b7997b286a481",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BOLT"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0xa041544fe2be56cce31ebb69102b965e06aace80",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BOND"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x64ca1571d1476b7a21c5aaf9f1a750a193a103c0",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BONDLY"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "web_search_apprentice",
+      "case": {
+        "address": "",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "metadata_address_unresolved_after_all_sources",
+          "metadata_decimals_unresolved_after_all_sources",
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BONK"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "provider": "disabled",
+          "query": "Polygon token metadata BONK decimals contract address Coingecko DexScreener CoinMarketCap",
+          "reason": "set METADATA_SEARCH_PROVIDER plus provider API key",
+          "runner": "web_search_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "openai_metadata_apprentice",
+      "case": {
+        "address": "",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "metadata_address_unresolved_after_all_sources",
+          "metadata_decimals_unresolved_after_all_sources",
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BRLA"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "reason": "OPENAI_API_KEY not set",
+          "runner": "openai_metadata_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "provider": "disabled",
+        "query": "Polygon token metadata BRLA decimals contract address Coingecko DexScreener CoinMarketCap",
+        "reason": "set METADATA_SEARCH_PROVIDER plus provider API key",
+        "runner": "web_search_apprentice",
+        "status": "skipped"
+      },
+      "validations": []
+    },
+    {
+      "assigned_runner": "public_market_apprentice",
+      "case": {
+        "address": "0x6c060CE95131427550201cB296fb09F3A52150D0",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_332_jBRL_BRZ_096057"
+        ],
+        "symbol": "BRZ"
+      },
+      "promotable_candidates": [],
+      "runners": [
+        {
+          "candidate": {},
+          "results": [],
+          "runner": "public_market_apprentice",
+          "status": "skipped"
+        }
+      ],
+      "search_context": {
+        "runner": "web_search_apprentice",
+        "status": "not_required"
+      },
+      "validations": []
+    }
+  ],
+  "source_report": "C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\out\\asset_state_research_latest.json"
+}

@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784063060873740400,
+  "envelope": {
+    "calldata_hash": "520f41fedc006bb58e3b6167cb0064e4aceed4782eed490dfa7edadb76454ba6",
+    "chain_id": 137,
+    "created_ns": 1784063060126362700,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "0c9489ca7348b1c5c1d5d8db916440c3888397e0441dcffff0f65b4a023e6177",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "13.29530756631562102053322800",
+      "opp_id": "OPP-0019",
+      "path": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_V3_WBTC_WETH_100",
+        "DISC_ALGEBRA_WPOL_WETH",
+        "BAL_WPOL_WETH_USDC"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "13.29530756631562102053322800",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0019",
+  "parent_trace_hash": "",
+  "payload_hash": "d4e8d4bfbb7d09522237c52565b4a7d56d6e31baa5dd6624ff80ba0d412b6da1",
+  "pool_addresses": [
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+    "0x479e1B71A702a595e19b6d5932CD5c863ab57ee0",
+    "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_V3_WBTC_WETH_100",
+    "DISC_ALGEBRA_WPOL_WETH",
+    "BAL_WPOL_WETH_USDC"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC.e",
+    "WBTC",
+    "WETH",
+    "WPOL",
+    "USDC.e"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "605b0be1557a62093c7caa56076d8c1342ed7ca2f5195a3f9c4ec6dc80dcb07b"
+}

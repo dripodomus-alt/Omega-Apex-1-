@@ -1,0 +1,66 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784054830158258900,
+  "envelope": {
+    "calldata_hash": "b0570f31efb2fc1edcacdf9c4ba503334b0673fc750d88dff5302cdc4ba2f5b7",
+    "chain_id": 137,
+    "created_ns": 1784054830157942100,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "89dfd830fb61636c9e68a2ff8286969def5a4d4a82ac1213c81782b1661d21b9",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "1139.772466895212274101160540",
+      "opp_id": "OPP-0040",
+      "path": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC.e"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_e_WBTC_100",
+        "V3_WBTC_WETH_500",
+        "V3_USDC_e_WETH_500"
+      ],
+      "strategy": "THREE_LEG_TRIANGLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "1139.772466895212274101160540",
+    "reason": "runtime_not_live"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0040",
+  "parent_trace_hash": "",
+  "payload_hash": "4e7faa938f22a480e649e0412e6a8124e8e67eb62095dfd3741c01ccdadf81d2",
+  "pool_addresses": [
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+    "0x45dDa9cb7c25131DF268515131f647d726f50608"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_100",
+    "V3_WBTC_WETH_500",
+    "V3_USDC_e_WETH_500"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC.e",
+    "WBTC",
+    "WETH",
+    "USDC.e"
+  ],
+  "stage": "C1",
+  "status": "DRY_RUN_STAGED",
+  "trace_hash": "3f15468231b8779515c6d391e478e36a1d0d43b91a7691b80103bca14cf9e4c8"
+}

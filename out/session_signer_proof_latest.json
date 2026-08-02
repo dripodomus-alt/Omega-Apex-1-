@@ -1,0 +1,202 @@
+{
+  "ok": true,
+  "status": "PASS",
+  "generated_at_unix": 1784436150.9961011,
+  "chain_id": 137,
+  "scope": "optional SESSION_SIGNER / WaaS_BROADCAST_ADAPTER dry-run proof lane",
+  "hot_path_policy": "not in live arbitrage hot path",
+  "exact_call_endpoint_masked": "https://lb.drpc.live/...",
+  "remote_waas_configured": false,
+  "remote_execute_attempted": false,
+  "definition_of_done": {
+    "local_gates_proven": true,
+    "external_waas_prepare_execute_proven": false,
+    "external_waas_reason": "missing WaaS URL/credential/wallet"
+  },
+  "latency_summary": {
+    "count": 9,
+    "min_ms": 0.002,
+    "p50_ms": 0.596,
+    "p95_ms": 15514.122,
+    "max_ms": 15514.122
+  },
+  "steps": [
+    {
+      "name": "config_gate",
+      "ok": true,
+      "latency_ms": 0.169,
+      "detail": "pass",
+      "data": {
+        "targets": [
+          "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+          "0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951"
+        ],
+        "selectors": [
+          "0x626482a3"
+        ],
+        "session_signer_mode": "dry_run",
+        "waas_adapter_enabled": false,
+        "waas_adapter_mode": "dry_run",
+        "waas_url_configured": false,
+        "credential_configured": false,
+        "wallet_configured": false
+      }
+    },
+    {
+      "name": "hot_path_isolation_gate",
+      "ok": true,
+      "latency_ms": 0.002,
+      "detail": "delegated lane is isolated from live arbitrage broadcast",
+      "data": {
+        "smart_sessions_in_hot_path": false,
+        "adapter_enabled": false
+      }
+    },
+    {
+      "name": "exact_call_lane_selection",
+      "ok": true,
+      "latency_ms": 15514.122,
+      "detail": "selected",
+      "data": {
+        "endpoint_masked": "https://lb.drpc.live/..."
+      }
+    },
+    {
+      "name": "exact_call_bytecode_probe_1",
+      "ok": true,
+      "latency_ms": 1364.683,
+      "detail": "bytecode/exact-call path proven",
+      "data": {
+        "chain_id": 137,
+        "block": 90487447,
+        "endpoint_masked": "https://polygon.drpc.org/...",
+        "targets": [
+          {
+            "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+            "bytecode_present": true,
+            "bytecode_length": 5644,
+            "owner_call_ok": true,
+            "owner": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+          },
+          {
+            "target": "0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951",
+            "bytecode_present": true,
+            "bytecode_length": 5729,
+            "owner_call_ok": true,
+            "owner": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+          }
+        ]
+      }
+    },
+    {
+      "name": "exact_call_bytecode_probe_2",
+      "ok": true,
+      "latency_ms": 1430.9,
+      "detail": "bytecode/exact-call path proven",
+      "data": {
+        "chain_id": 137,
+        "block": 90487447,
+        "endpoint_masked": "https://polygon.drpc.org/...",
+        "targets": [
+          {
+            "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+            "bytecode_present": true,
+            "bytecode_length": 5644,
+            "owner_call_ok": true,
+            "owner": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+          },
+          {
+            "target": "0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951",
+            "bytecode_present": true,
+            "bytecode_length": 5729,
+            "owner_call_ok": true,
+            "owner": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+          }
+        ]
+      }
+    },
+    {
+      "name": "exact_call_bytecode_probe_3",
+      "ok": true,
+      "latency_ms": 1172.525,
+      "detail": "bytecode/exact-call path proven",
+      "data": {
+        "chain_id": 137,
+        "block": 90487448,
+        "endpoint_masked": "https://polygon.drpc.org/...",
+        "targets": [
+          {
+            "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+            "bytecode_present": true,
+            "bytecode_length": 5644,
+            "owner_call_ok": true,
+            "owner": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+          },
+          {
+            "target": "0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951",
+            "bytecode_present": true,
+            "bytecode_length": 5729,
+            "owner_call_ok": true,
+            "owner": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+          }
+        ]
+      }
+    },
+    {
+      "name": "dry_run_prepare_envelope",
+      "ok": true,
+      "latency_ms": 0.286,
+      "detail": "prepare envelope constructed without secret material",
+      "data": {
+        "envelope": {
+          "lane": "SESSION_SIGNER",
+          "adapter": "WaaS_BROADCAST_ADAPTER",
+          "mode": "dry_run",
+          "operation": "PrepareEthereumContractCall",
+          "walletId": "",
+          "credentialId": "",
+          "chainId": 137,
+          "to": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+          "value": "0",
+          "data": "0x626482a3",
+          "permissions": {
+            "allowedTargets": [
+              "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+              "0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951"
+            ],
+            "allowedSelectors": [
+              "0x626482a3"
+            ],
+            "maxValueWei": "0"
+          },
+          "dryRun": true
+        },
+        "selector_allowed": true,
+        "target_allowed": true,
+        "zero_value": true
+      }
+    },
+    {
+      "name": "remote_execute_fail_closed",
+      "ok": true,
+      "latency_ms": 0.003,
+      "detail": "expected fail-closed: WaaS URL/credential/wallet are not fully configured",
+      "data": {
+        "remote_configured": false,
+        "execute_attempted": false
+      }
+    },
+    {
+      "name": "proof_log_redis_stream",
+      "ok": true,
+      "latency_ms": 0.596,
+      "detail": "redis stream logged",
+      "data": {
+        "redis_ok": true,
+        "redis_detail": "connected",
+        "stream": "omega:proofs:session_signer",
+        "proof_id": "1784436170483-0"
+      }
+    }
+  ]
+}

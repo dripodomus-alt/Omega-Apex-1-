@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "C1-0001",
+  "c1_tx_hash": "473b77173aa0aab8b89a456ecd7500209e05a043eb328105269ac47b5de38cdd",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784056422703227500,
+  "envelope": {
+    "calldata_hash": "945798804091200c41c5d4d666693fe68d788bfc1b591d2f4180923aa1aef7c0",
+    "chain_id": 137,
+    "created_ns": 1784056418801437900,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "1863442a6efc9de36d0570f3c347ba435d6d52dd92ab3cf7ba9a5194526f3be7",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "1246.307866380695355763517974",
+      "opp_id": "XPOOL-0001",
+      "path": [
+        "WBTC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "pool_sequence": [
+        "DISC_V3_USDC_e_WBTC_500",
+        "DISC_V3_USDC_e_WBTC_100"
+      ],
+      "strategy": "CROSS_POOL_TWO_LEG"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "receipt status=0",
+    "flash_source": "Balancer_Vault",
+    "gas_cost_usd": "0.0096086027471191846082280"
+  },
+  "mode": "live",
+  "opp_id": "XPOOL-0001",
+  "parent_trace_hash": "",
+  "payload_hash": "f60b82791becef354da7b7c4541462d88929923d63eeb761f5f479325de974d8",
+  "pool_addresses": [
+    "0xeef1a9507b3d505f0062f2be9453981255b503c8",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_500",
+    "DISC_V3_USDC_e_WBTC_100"
+  ],
+  "receipt": {
+    "blockHash": "155c95ba04d8fb2a69cbcd467d90e079f73dad46e458d0722a5d805fe6621ada",
+    "blockNumber": 90234285,
+    "effectiveGasPrice": 280913795783,
+    "from": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95",
+    "gasUsed": 407347,
+    "logsBloom": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000008100000000000000000800000000000000000000100000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000020000000400000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000004000000000000000000001000000000000000000400000000000100000000000000000000000000000000000000000000000000000000000000000000000108000",
+    "status": 0,
+    "to": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346",
+    "transactionHash": "473b77173aa0aab8b89a456ecd7500209e05a043eb328105269ac47b5de38cdd",
+    "transactionIndex": 87
+  },
+  "route": [
+    "WBTC",
+    "USDC.e",
+    "WBTC"
+  ],
+  "stage": "C1",
+  "status": "REVERTED",
+  "trace_hash": "62744311376098f39cf56dd8bffced86ee3f46e05a9c9e56de0ba1f3243c8310"
+}

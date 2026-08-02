@@ -1,0 +1,29 @@
+✅ HTTP connected  →  polygon-mainnet.infura.io  block #90,309,232
+truth_scan_rpc=OK block=90309232
+🔎 Factory discovery promoted 100 live pool(s) (160 live found).
+   🧬 Polygon token-list discovery staged 146 candidate token(s) against bases USDC.e,WETH,WPOL,WBTC,USDT,DAI,USDC.
+   🗂️  Dynamic pool registry staged 256 metadata pool(s) for live RPC verification.
+   🌀 Curve official registry staged 77 pool(s) across {'main': 2, 'factory': 53, 'factory-crypto': 22}.
+   🧭 tickSpacing cached: 241/241
+   🧩 Balancer poolIds cached: 2/2
+🌐 Loading live state for 487 registered pools...
+   ✅ 487 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 2
+   🧭 V3/Algebra orientation+decimals audit: passed=147/241 failed=94 filtered_out=94
+      reject_reasons={'invalid_onchain_token_pair': 4, 'non_positive_liquidity': 76, 'registered_pair_does_not_match_onchain_pair': 17, 'token0_address_symbol_mismatch': 32, 'token1_address_symbol_mismatch': 3}
+   📊 V3 TVL state hydrated: 96/147
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+   🧮 Total executable liquidity hydrated: 384/393 pools  |  unavailable=9
+truth_scan_pools=393
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+📐 Graph built: 102 nodes (tokens), 734 edges (pool routes)
+🦀 Rust Bellman-Ford engine returned 5 negative-cycle candidate(s)
+truth_scan_theoretical_ranked=3
+truth_scan_gas_fee_source=polygon_gas_station_v2.fast base_fee_gwei=245.421344977
+truth_scan_executor_executable=0 inspected=3 rejections={'bad_route_semantics': 2, 'slippage_or_profit_floor': 1}
+truth_result_1=opp:XPOOL-0002 path:QUICK->WPOL->QUICK executable:False selected_size:NONE tested:7243.704873647014041133188022,5432.778655235260530849891016,4829.136582431342694088792015,3621.852436823507020566594011,2535.296705776454914396615808,1810.926218411753510283297006,1086.555731047052106169978203 reject:bad_route_semantics
+truth_result_2=opp:XPOOL-0001 path:WPOL->QUICK->WPOL executable:False selected_size:NONE tested:4829.136582431342694088792015,7243.704873647014041133188022,3621.852436823507020566594011,2414.568291215671347044396008,1690.197803850969942931077205,1207.284145607835673522198004,724.3704873647014041133188022 reject:bad_route_semantics
+truth_result_3=opp:XPOOL-0005 path:USDC.e->CURVE_miMATIC_A3FA99->USDC.e executable:False selected_size:NONE tested:15030.55152912339900,11272.9136468425492500,10020.36768608226600,7515.275764561699500,5260.6930351931896500,3757.6378822808497500,2254.5827293685098500 reject:slippage_or_profit_floor
+truth_scan=PASS

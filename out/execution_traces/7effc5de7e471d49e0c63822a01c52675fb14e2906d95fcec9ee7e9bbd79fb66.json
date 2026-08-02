@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784064949356544000,
+  "envelope": {
+    "calldata_hash": "1b68688e902a3469b79ad5922dfcd73cdbe0fce1c8ce6ec4c3a0169df92afedf",
+    "chain_id": 137,
+    "created_ns": 1784064948416560000,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "17e96d09e9bdb2db92c238c1219f254e3d3553eb51be615b30ccb6a0cff90912",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "11.76314920523643132048549530",
+      "opp_id": "OPP-0004",
+      "path": [
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL"
+      ],
+      "pool_sequence": [
+        "QS_WPOL_USDC_e",
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_V3_WBTC_WETH_100",
+        "V3_WPOL_WETH_500"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "11.76314920523643132048549530",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0004",
+  "parent_trace_hash": "",
+  "payload_hash": "12654f33a1bd6adb2ff9c867ef53ead3cdcda51546b7eb6b5a028fb481b8cc40",
+  "pool_addresses": [
+    "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+    "0x86f1d8390222A3691C28938eC7404A1661E618e0"
+  ],
+  "pool_sequence": [
+    "QS_WPOL_USDC_e",
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_V3_WBTC_WETH_100",
+    "V3_WPOL_WETH_500"
+  ],
+  "receipt": {},
+  "route": [
+    "WPOL",
+    "USDC.e",
+    "WBTC",
+    "WETH",
+    "WPOL"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "7effc5de7e471d49e0c63822a01c52675fb14e2906d95fcec9ee7e9bbd79fb66"
+}

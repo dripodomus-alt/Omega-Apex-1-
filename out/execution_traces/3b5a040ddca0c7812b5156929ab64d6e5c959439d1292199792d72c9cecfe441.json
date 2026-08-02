@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784058613450234200,
+  "envelope": {
+    "calldata_hash": "d96b9ee794d33b1c18ec425cf78b9364f2824086d8233fac4833f5715355da6b",
+    "chain_id": 137,
+    "created_ns": 1784058612813439100,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "988cf46ff150495e344ba88678af131f17fc071b2b8e93208b48ca18e1af2053",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "204.1468501480345198465862082",
+      "opp_id": "OPP-0014",
+      "path": [
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL"
+      ],
+      "pool_sequence": [
+        "BAL_WPOL_WETH_USDC",
+        "DISC_V3_USDC_e_WBTC_100",
+        "DISC_ALGEBRA_WBTC_WETH",
+        "DISC_ALGEBRA_WPOL_WETH"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractLogicError: unknown_custom_error selector=0x08c379a0",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "204.1468501480345198465862082",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0014",
+  "parent_trace_hash": "",
+  "payload_hash": "b4755531b6c6d5bfcb6dd0d6cda3a406be191b65bc9147b1e3e751f7f5935058",
+  "pool_addresses": [
+    "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0xAC4494e30a85369e332BDB5230d6d694d4259DbC",
+    "0x479e1B71A702a595e19b6d5932CD5c863ab57ee0"
+  ],
+  "pool_sequence": [
+    "BAL_WPOL_WETH_USDC",
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_ALGEBRA_WBTC_WETH",
+    "DISC_ALGEBRA_WPOL_WETH"
+  ],
+  "receipt": {},
+  "route": [
+    "WPOL",
+    "USDC.e",
+    "WBTC",
+    "WETH",
+    "WPOL"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "3b5a040ddca0c7812b5156929ab64d6e5c959439d1292199792d72c9cecfe441"
+}

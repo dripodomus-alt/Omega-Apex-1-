@@ -1,0 +1,143 @@
+{
+  "ok": true,
+  "status": "PASS",
+  "generated_at_unix": 1784074809.1246839,
+  "chain_id": 137,
+  "runtime": {
+    "mode": "dry_run",
+    "updated_at_ns": 1784074793316568800,
+    "updated_by": "final_dry_run",
+    "settings": {
+      "execute_top": 5,
+      "print_top_routes": 50,
+      "ticks": 1,
+      "principal_usd": "50000",
+      "interval_seconds": 60,
+      "no_scan": true,
+      "canary_mode": false
+    },
+    "live_reset_policy": "explicit_user_reset_only",
+    "dry_run_armed_at_ns": 1784074793316568800,
+    "live_armed_at_ns": 1784065246812798500
+  },
+  "policy": {
+    "runtime_control_is_authoritative": true,
+    "dry_run_and_live_share_route_builders": true,
+    "live_requires_exact_call_before_broadcast": true,
+    "anvil_fork_uses_same_upstream_profile": true,
+    "broadcast_isolated_from_read_rotation": true
+  },
+  "checks": {
+    "runtime_mode_valid": {
+      "ok": true,
+      "detail": "dry_run"
+    },
+    "live_env_triplet_aligned": {
+      "ok": true,
+      "detail": {
+        "runtime_mode": "dry_run",
+        "EXECUTION_MODE": "live",
+        "LIVE_TRADING": "1",
+        "CONFIRM_MAINNET_EXECUTION": "present"
+      }
+    },
+    "dry_run_does_not_require_live_triplet": {
+      "ok": true,
+      "detail": "dry-run can coexist with configured live credentials because runtime control is authoritative"
+    },
+    "private_key_gate": {
+      "ok": true,
+      "detail": "configured",
+      "wallet": "0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95"
+    },
+    "primary_exact_aligned": {
+      "ok": true,
+      "detail": {
+        "primary_read": "https://lb.drpc.live/...",
+        "exact_call": "https://lb.drpc.live/...",
+        "same_endpoint": true,
+        "selected_exact": "https://polygon-mainnet.infura.io/..."
+      }
+    },
+    "broadcast_isolated": {
+      "ok": true,
+      "detail": {
+        "broadcast": "https://thrumming-few-water.matic.quiknode.pro/...",
+        "broadcast_wss": "wss://thrumming-few-water.matic.quiknode.pro/...",
+        "selected_broadcast": "",
+        "exact_call": "https://lb.drpc.live/...",
+        "same_as_exact": false
+      }
+    },
+    "fork_runtime_aligned": {
+      "ok": true,
+      "detail": {
+        "fork_upstream": "https://lb.drpc.live/...",
+        "fork_rpc": "http://127.0.0.1:8545/...",
+        "fork_sim": "http://127.0.0.1:8545/...",
+        "selected_fork_lane": "http://127.0.0.1:8545/...",
+        "local_fork": true
+      }
+    },
+    "wss_aligned": {
+      "ok": true,
+      "detail": {
+        "primary_wss": "wss://lb.drpc.live/..."
+      }
+    },
+    "session_lane_isolated": {
+      "ok": true,
+      "detail": {
+        "session_signer_mode": "dry_run",
+        "waas_adapter_mode": "dry_run",
+        "waas_adapter_enabled": false
+      }
+    },
+    "probed_chain_ids": {
+      "ok": true,
+      "detail": {
+        "primary_read": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90246541,
+          "latency_ms": 721.763
+        },
+        "exact_call": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90246541,
+          "latency_ms": 620.67
+        },
+        "broadcast": {
+          "configured": true,
+          "ok": false,
+          "latency_ms": 629.21,
+          "error": "SSLError: HTTPSConnectionPool(host='thrumming-few-water.matic.quiknode.pro', port=443): Max retries exceeded with url: /aee62fad5b9c4e0c3f1179658db72b6416792d45 (Caused by SSLError(SSLError(1, '[SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1081)')))"
+        },
+        "fork_sim": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90246439,
+          "latency_ms": 5.685
+        },
+        "fork_upstream": {
+          "configured": true,
+          "ok": true,
+          "chain_id": 137,
+          "block": 90246542,
+          "latency_ms": 878.662
+        },
+        "required_for_mode": [
+          "primary_read",
+          "exact_call",
+          "fork_sim",
+          "fork_upstream"
+        ],
+        "broadcast_probe_required": false
+      }
+    }
+  }
+}

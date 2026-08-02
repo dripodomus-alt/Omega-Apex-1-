@@ -1,0 +1,4406 @@
+{
+  "rows": [
+    {
+      "candidate": {
+        "address": "0x71B821aa52a49F32EEd535fCA6Eb5aa130085978",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xbef1666f1a3849bcc6b314f8eb83ba2e16df38d6"
+        ],
+        "name": "0xBitcoin Token",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xbef1666f1a3849bcc6b314f8eb83ba2e16df38d6"
+        ],
+        "symbol": "0xBTC"
+      },
+      "case": {
+        "address": "0x71B821aa52a49F32EEd535fCA6Eb5aa130085978",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:UniswapV2",
+          "live_pool_metadata:UniswapV3",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "DISC_QS_USDC_e_0xBTC",
+          "DISC_QS_WETH_0xBTC",
+          "DISC_QS_WPOL_0xBTC",
+          "DISC_QS_WBTC_0xBTC",
+          "DISC_QS_USDT_0xBTC",
+          "DISC_QS_DAI_0xBTC",
+          "DISC_V3_USDC_e_0xBTC_10000",
+          "DISC_V3_WPOL_0xBTC_10000"
+        ],
+        "symbol": "0xBTC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x71B821aa52a49F32EEd535fCA6Eb5aa130085978",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xbef1666f1a3849bcc6b314f8eb83ba2e16df38d6"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "0xBTC"
+      },
+      "written_at": 1784470895
+    },
+    {
+      "candidate": {
+        "address": "0x598e49f01bEfeB1753737934a5b11fea9119C796",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x85ba262be13329a2db5acf9aa46ac2345b5df4ff"
+        ],
+        "name": "Adshares (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x85ba262be13329a2db5acf9aa46ac2345b5df4ff"
+        ],
+        "symbol": "ADS"
+      },
+      "case": {
+        "address": "0x598e49f01befeb1753737934a5b11fea9119c796",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ADS"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x598e49f01bEfeB1753737934a5b11fea9119C796",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x85ba262be13329a2db5acf9aa46ac2345b5df4ff"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ADS"
+      },
+      "written_at": 1784470918
+    },
+    {
+      "candidate": {
+        "address": "0x033d942A6b495C4071083f4CDe1f17e986FE856c",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x23a6330a529bad13e376ca322d415f5696923fdc"
+        ],
+        "name": "AGA Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x23a6330a529bad13e376ca322d415f5696923fdc"
+        ],
+        "symbol": "AGA"
+      },
+      "case": {
+        "address": "0x033d942A6b495C4071083f4CDe1f17e986FE856c",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AGA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x033d942A6b495C4071083f4CDe1f17e986FE856c",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x23a6330a529bad13e376ca322d415f5696923fdc"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AGA"
+      },
+      "written_at": 1784292605
+    },
+    {
+      "candidate": {
+        "address": "0xF84BD51eab957c2e7B7D646A3427C5A50848281D",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa3283e3470d3cd1f18c074e3f2d3965f6d62fff2-0x7ceb23fd6bc0add59e62ac25578270cff1b9f619-0xf84bd51eab957c2e7b7d646a3427c5a50848281d"
+        ],
+        "name": "AGA Rewards (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xa3283e3470d3cd1f18c074e3f2d3965f6d62fff2-0x7ceb23fd6bc0add59e62ac25578270cff1b9f619-0xf84bd51eab957c2e7b7d646a3427c5a50848281d"
+        ],
+        "symbol": "AGAr"
+      },
+      "case": {
+        "address": "0xF84BD51eab957c2e7B7D646A3427C5A50848281D",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AGAr"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xF84BD51eab957c2e7B7D646A3427C5A50848281D",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa3283e3470d3cd1f18c074e3f2d3965f6d62fff2-0x7ceb23fd6bc0add59e62ac25578270cff1b9f619-0xf84bd51eab957c2e7b7d646a3427c5a50848281d"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AGAr"
+      },
+      "written_at": 1784292606
+    },
+    {
+      "candidate": {
+        "address": "0x190Eb8a183D22a4bdf278c6791b152228857c033",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xf72e10b4573e2842710c98e6102952cb703479df"
+        ],
+        "name": "SingularityNET Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xf72e10b4573e2842710c98e6102952cb703479df"
+        ],
+        "symbol": "AGIX"
+      },
+      "case": {
+        "address": "0x190eb8a183d22a4bdf278c6791b152228857c033",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AGIX"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x190Eb8a183D22a4bdf278c6791b152228857c033",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xf72e10b4573e2842710c98e6102952cb703479df"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AGIX"
+      },
+      "written_at": 1784470924
+    },
+    {
+      "candidate": {
+        "address": "0xf14fbC6B30e2c4BC05A1D4fbE34bf9f14313309D",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x8163e4d98db30659a17d28a1dd117ddfe1dfd1a0"
+        ],
+        "name": "Akash Network (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x8163e4d98db30659a17d28a1dd117ddfe1dfd1a0"
+        ],
+        "symbol": "AKT"
+      },
+      "case": {
+        "address": "0xf14fbc6b30e2c4bc05a1d4fbe34bf9f14313309d",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AKT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xf14fbC6B30e2c4BC05A1D4fbE34bf9f14313309D",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x8163e4d98db30659a17d28a1dd117ddfe1dfd1a0"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AKT"
+      },
+      "written_at": 1784470930
+    },
+    {
+      "candidate": {
+        "address": "0xbFc70507384047Aa74c29Cdc8c5Cb88D0f7213AC",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb4aff667fd9371d4298c312362cae32cf40596c7"
+        ],
+        "name": "Artificial Liquid Intelligence Token",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xb4aff667fd9371d4298c312362cae32cf40596c7"
+        ],
+        "symbol": "ALI"
+      },
+      "case": {
+        "address": "0xbfc70507384047aa74c29cdc8c5cb88d0f7213ac",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ALI"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xbFc70507384047Aa74c29Cdc8c5Cb88D0f7213AC",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb4aff667fd9371d4298c312362cae32cf40596c7"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ALI"
+      },
+      "written_at": 1784470935
+    },
+    {
+      "candidate": {
+        "address": "0xB87904DB461005FC716a6BF9F2d451c33b10b80b",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa9eb7d6c511980334b17ed3ed69f21e653bc5cc5"
+        ],
+        "name": "Alongside Crypto Market Index (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xa9eb7d6c511980334b17ed3ed69f21e653bc5cc5"
+        ],
+        "symbol": "AMKT"
+      },
+      "case": {
+        "address": "0xb87904db461005fc716a6bf9f2d451c33b10b80b",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AMKT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xB87904DB461005FC716a6BF9F2d451c33b10b80b",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa9eb7d6c511980334b17ed3ed69f21e653bc5cc5"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AMKT"
+      },
+      "written_at": 1784470940
+    },
+    {
+      "candidate": {
+        "address": "0x0621d647cecbFb64b79E44302c1933cB4f27054d",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xffe74bbcf5606dc9d092a2cea85cdab96ec9dbab"
+        ],
+        "name": "Amp Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xffe74bbcf5606dc9d092a2cea85cdab96ec9dbab"
+        ],
+        "symbol": "AMP"
+      },
+      "case": {
+        "address": "0x0621d647cecbfb64b79e44302c1933cb4f27054d",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AMP"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x0621d647cecbFb64b79E44302c1933cB4f27054d",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xffe74bbcf5606dc9d092a2cea85cdab96ec9dbab"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AMP"
+      },
+      "written_at": 1784284129
+    },
+    {
+      "candidate": {
+        "address": "0x101A023270368c0D50BFfb62780F4aFd4ea79C35",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xae20515e3de8dbb002cab308fa3f9b6b118b6229"
+        ],
+        "name": "Ankr (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xae20515e3de8dbb002cab308fa3f9b6b118b6229"
+        ],
+        "symbol": "ANKR"
+      },
+      "case": {
+        "address": "0x101A023270368c0D50BFfb62780F4aFd4ea79C35",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:pools_dynamic_json",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "DYN_UniswapV2_WPOL_ANKR_30_41De7F",
+          "DYN_UniswapV2_WETH_ANKR_30_Cb71BA",
+          "DYN_UniswapV3_WPOL_ANKR_1_610224",
+          "DYN_UniswapV3_WPOL_ANKR_30_8b6229",
+          "DYN_UniswapV3_WPOL_ANKR_100_DF24ec",
+          "DYN_UniswapV3_USDC_e_ANKR_1_3D7948",
+          "DYN_UniswapV3_USDT_ANKR_100_9557b2"
+        ],
+        "symbol": "ANKR"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x101A023270368c0D50BFfb62780F4aFd4ea79C35",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xae20515e3de8dbb002cab308fa3f9b6b118b6229"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ANKR"
+      },
+      "written_at": 1784470949
+    },
+    {
+      "candidate": {
+        "address": "0x46F48FbdedAa6F5500993BEDE9539ef85F4BeE8e",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x80ee3d74fc900ee0d0611a47d624e01a2ec09357"
+        ],
+        "name": "ARIANEE (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x80ee3d74fc900ee0d0611a47d624e01a2ec09357"
+        ],
+        "symbol": "ARIA20"
+      },
+      "case": {
+        "address": "0x46f48fbdedaa6f5500993bede9539ef85f4bee8e",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ARIA20"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x46F48FbdedAa6F5500993BEDE9539ef85F4BeE8e",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x80ee3d74fc900ee0d0611a47d624e01a2ec09357"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ARIA20"
+      },
+      "written_at": 1784470958
+    },
+    {
+      "candidate": {
+        "address": "0xEE800B277A96B0f490a1A732e1D6395FAD960A26",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x590f5e967d73ea06dae9aed2788108dcf52da269"
+        ],
+        "name": "ARPA Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x590f5e967d73ea06dae9aed2788108dcf52da269"
+        ],
+        "symbol": "ARPA"
+      },
+      "case": {
+        "address": "0xee800b277a96b0f490a1a732e1d6395fad960a26",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ARPA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xEE800B277A96B0f490a1A732e1D6395FAD960A26",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x590f5e967d73ea06dae9aed2788108dcf52da269"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ARPA"
+      },
+      "written_at": 1784292653
+    },
+    {
+      "candidate": {
+        "address": "0xE52509181FEb30EB4979E29EC70D50FD5C44D590",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xe11bd5a3927a2a4e55266959b348c39ba9eaecd4"
+        ],
+        "name": "ARTH Valuecoin",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xe11bd5a3927a2a4e55266959b348c39ba9eaecd4"
+        ],
+        "symbol": "ARTH"
+      },
+      "case": {
+        "address": "0xE52509181FEb30EB4979E29EC70D50FD5C44D590",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_81_ARTH_USDC_e_a4AdB1"
+        ],
+        "symbol": "ARTH"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xE52509181FEb30EB4979E29EC70D50FD5C44D590",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xe11bd5a3927a2a4e55266959b348c39ba9eaecd4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ARTH"
+      },
+      "written_at": 1784292654
+    },
+    {
+      "candidate": {
+        "address": "0x0df0f72EE0e5c9B7ca761ECec42754992B2Da5BF",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfea0b7e4227520362b4c57fa356cea08bbc8dd47"
+        ],
+        "name": "Automata (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xfea0b7e4227520362b4c57fa356cea08bbc8dd47"
+        ],
+        "symbol": "ATA"
+      },
+      "case": {
+        "address": "0x0df0f72ee0e5c9b7ca761ecec42754992b2da5bf",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ATA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x0df0f72EE0e5c9B7ca761ECec42754992B2Da5BF",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfea0b7e4227520362b4c57fa356cea08bbc8dd47"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ATA"
+      },
+      "written_at": 1784292659
+    },
+    {
+      "candidate": {
+        "address": "0xac51C4c48Dc3116487eD4BC16542e27B5694Da1b",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x2193c6abc8b83fd406353de7b7ca6e111b9b6348"
+        ],
+        "name": "Cosmos (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x2193c6abc8b83fd406353de7b7ca6e111b9b6348"
+        ],
+        "symbol": "ATOM"
+      },
+      "case": {
+        "address": "0xac51C4c48Dc3116487eD4BC16542e27B5694Da1b",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ATOM"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xac51C4c48Dc3116487eD4BC16542e27B5694Da1b",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x2193c6abc8b83fd406353de7b7ca6e111b9b6348"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ATOM"
+      },
+      "written_at": 1784465856
+    },
+    {
+      "candidate": {
+        "address": "0x91c5A5488c0dEcde1Eacd8a4F10e0942fb925067",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xcbdc21b902d0613061e7ec05b49348d887214da7"
+        ],
+        "name": "Auditchain",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xcbdc21b902d0613061e7ec05b49348d887214da7"
+        ],
+        "symbol": "AUDT"
+      },
+      "case": {
+        "address": "0x91c5A5488c0dEcde1Eacd8a4F10e0942fb925067",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AUDT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x91c5A5488c0dEcde1Eacd8a4F10e0942fb925067",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xcbdc21b902d0613061e7ec05b49348d887214da7"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AUDT"
+      },
+      "written_at": 1784470970
+    },
+    {
+      "candidate": {
+        "address": "0xfbA4d30e964E40775C95B58AcF6b5A621b929c0a",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3a18a2f809b48ac6b47572414704b301b7e56e57"
+        ],
+        "name": "Autumn Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x3a18a2f809b48ac6b47572414704b301b7e56e57"
+        ],
+        "symbol": "AUTUMN"
+      },
+      "case": {
+        "address": "0xfba4d30e964e40775c95b58acf6b5a621b929c0a",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AUTUMN"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xfbA4d30e964E40775C95B58AcF6b5A621b929c0a",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3a18a2f809b48ac6b47572414704b301b7e56e57"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AUTUMN"
+      },
+      "written_at": 1784470971
+    },
+    {
+      "candidate": {
+        "address": "0x61BDD9C7d4dF4Bf47A4508c0c8245505F2Af5b7b",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7ba331a8b360f4c31e6014abdd6852f92fb21557"
+        ],
+        "name": "Axie Infinity Shard (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x7ba331a8b360f4c31e6014abdd6852f92fb21557"
+        ],
+        "symbol": "AXS"
+      },
+      "case": {
+        "address": "0x61bdd9c7d4df4bf47a4508c0c8245505f2af5b7b",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AXS"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x61BDD9C7d4dF4Bf47A4508c0c8245505F2Af5b7b",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7ba331a8b360f4c31e6014abdd6852f92fb21557"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AXS"
+      },
+      "written_at": 1784470979
+    },
+    {
+      "candidate": {
+        "address": "0x7CdC0421469398e0F3aA8890693d86c840Ac8931",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x92bb3233f59561fc1fec53efc3339e4af8e917f4"
+        ],
+        "name": "DokiDokiAzuki",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x92bb3233f59561fc1fec53efc3339e4af8e917f4"
+        ],
+        "symbol": "AZUKI"
+      },
+      "case": {
+        "address": "0x7CdC0421469398e0F3aA8890693d86c840Ac8931",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AZUKI"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x7CdC0421469398e0F3aA8890693d86c840Ac8931",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x92bb3233f59561fc1fec53efc3339e4af8e917f4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AZUKI"
+      },
+      "written_at": 1784442856
+    },
+    {
+      "candidate": {
+        "address": "0x3fb83A9A2c4408909c058b0BfE5B4823f54fAfE2",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xf03fd7d297b8a6dc4676afe8f8d5f1070ce730e1"
+        ],
+        "name": "bitsCrunch Token(PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xf03fd7d297b8a6dc4676afe8f8d5f1070ce730e1"
+        ],
+        "symbol": "BCUT"
+      },
+      "case": {
+        "address": "0x3fb83a9a2c4408909c058b0bfe5b4823f54fafe2",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BCUT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x3fb83A9A2c4408909c058b0BfE5B4823f54fAfE2",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xf03fd7d297b8a6dc4676afe8f8d5f1070ce730e1"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BCUT"
+      },
+      "written_at": 1784471000
+    },
+    {
+      "candidate": {
+        "address": "0xFbdd194376de19a88118e84E279b977f165d01b8",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x180237bd326d5245d0898336f54b3c8012c5c62f"
+        ],
+        "name": "beefy.finance",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x180237bd326d5245d0898336f54b3c8012c5c62f"
+        ],
+        "symbol": "BIFI"
+      },
+      "case": {
+        "address": "0xFbdd194376de19a88118e84E279b977f165d01b8",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BIFI"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xFbdd194376de19a88118e84E279b977f165d01b8",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x180237bd326d5245d0898336f54b3c8012c5c62f"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BIFI"
+      },
+      "written_at": 1784467059
+    },
+    {
+      "candidate": {
+        "address": "0xf4C83080E80AE530d6f8180572cBbf1Ac9D5d435",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3b480d50b9ed88b4891e066681467a73f78d8c22"
+        ],
+        "name": "GoBlank Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x3b480d50b9ed88b4891e066681467a73f78d8c22"
+        ],
+        "symbol": "BLANK"
+      },
+      "case": {
+        "address": "0xf4C83080E80AE530d6f8180572cBbf1Ac9D5d435",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BLANK"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xf4C83080E80AE530d6f8180572cBbf1Ac9D5d435",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3b480d50b9ed88b4891e066681467a73f78d8c22"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BLANK"
+      },
+      "written_at": 1784292721
+    },
+    {
+      "candidate": {
+        "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+        ],
+        "name": "BOB",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+        ],
+        "symbol": "BOB"
+      },
+      "case": {
+        "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_368_BOB_CURVE_miMATIC_A3FA99_074eAC"
+        ],
+        "symbol": "BOB"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xB0B195aEFA3650A6908f15CdaC7D92F8a5791B0B",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0a63d3910ffc1529190e80e10855c4216407cc45"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BOB"
+      },
+      "written_at": 1784471029
+    },
+    {
+      "candidate": {
+        "address": "0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x65b7ba2145f01874e580df405e224cda61aa3244"
+        ],
+        "name": "(PoS) Binance USD",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x65b7ba2145f01874e580df405e224cda61aa3244"
+        ],
+        "symbol": "BUSD"
+      },
+      "case": {
+        "address": "0xdab529f40e671a1d4bf91361c21bf9f0c9712ab7",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BUSD"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xdAb529f40E671A1D4bF91361c21bf9f0C9712ab7",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x65b7ba2145f01874e580df405e224cda61aa3244"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BUSD"
+      },
+      "written_at": 1784471036
+    },
+    {
+      "candidate": {
+        "address": "0xE111178A87A3BFf0c8d18DECBa5798827539Ae99",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9e5fd66bebf2592475366285bc4d8494f8262ee3"
+        ],
+        "name": "STASIS EURS Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x9e5fd66bebf2592475366285bc4d8494f8262ee3"
+        ],
+        "symbol": "EURS"
+      },
+      "case": {
+        "address": "0xE111178A87A3BFf0c8d18DECBa5798827539Ae99",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651",
+          "CURVE_factory_factory_v2_20_jEUR_CURVE_EURS_E11117_D4029a"
+        ],
+        "symbol": "CURVE_EURS_E11117"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xE111178A87A3BFf0c8d18DECBa5798827539Ae99",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9e5fd66bebf2592475366285bc4d8494f8262ee3"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "EURS"
+      },
+      "written_at": 1784455640
+    },
+    {
+      "candidate": {
+        "address": "0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7d4324293304797cb662c6ea1b904b6af2b485f5"
+        ],
+        "name": "Monerium EUR emoney",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x7d4324293304797cb662c6ea1b904b6af2b485f5"
+        ],
+        "symbol": "EURe"
+      },
+      "case": {
+        "address": "0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_304_CURVE_EURe_18EC0A_jEUR_4c3cF4",
+          "CURVE_factory_factory_v2_271_CURVE_EURe_18EC0A_jEUR_2FB9ef"
+        ],
+        "symbol": "CURVE_EURe_18EC0A"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7d4324293304797cb662c6ea1b904b6af2b485f5"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "EURe"
+      },
+      "written_at": 1784471041
+    },
+    {
+      "candidate": {
+        "address": "0xA874A3082D232E517654DA2cE89374d556d339C4",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9cc4f1cf73b929978ea8f84a50d2674aab000923"
+        ],
+        "name": "Yen Coin",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x9cc4f1cf73b929978ea8f84a50d2674aab000923"
+        ],
+        "symbol": "YEN"
+      },
+      "case": {
+        "address": "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_255_jJPY_CURVE_JPYC_431D5D_Af1bdc"
+        ],
+        "symbol": "CURVE_JPYC_431D5D"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xA874A3082D232E517654DA2cE89374d556d339C4",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9cc4f1cf73b929978ea8f84a50d2674aab000923"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "YEN"
+      },
+      "written_at": 1784471042
+    },
+    {
+      "candidate": {
+        "address": "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x05bfe97bf794a4db69d3059091f064ea0a5e538e"
+        ],
+        "name": "Liquid Staking Matic (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x05bfe97bf794a4db69d3059091f064ea0a5e538e"
+        ],
+        "symbol": "MaticX"
+      },
+      "case": {
+        "address": "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_288_CURVE_WPOL_EEEEEE_CURVE_MaticX_FA68FB_175274"
+        ],
+        "symbol": "CURVE_MaticX_FA68FB"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x05bfe97bf794a4db69d3059091f064ea0a5e538e"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "MaticX"
+      },
+      "written_at": 1784471042
+    },
+    {
+      "candidate": {
+        "address": "0xDC3326e71D45186F113a2F448984CA0e8D201995",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9bcef8ddd75817e66e01a5af313c776c74319394"
+        ],
+        "name": "XSGD",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x9bcef8ddd75817e66e01a5af313c776c74319394"
+        ],
+        "symbol": "XSGD"
+      },
+      "case": {
+        "address": "0xDC3326e71D45186F113a2F448984CA0e8D201995",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_350_jSGD_CURVE_XSGD_DC3326_A8D449"
+        ],
+        "symbol": "CURVE_XSGD_DC3326"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xDC3326e71D45186F113a2F448984CA0e8D201995",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9bcef8ddd75817e66e01a5af313c776c74319394"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "XSGD"
+      },
+      "written_at": 1784471044
+    },
+    {
+      "candidate": {
+        "address": "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x4d7824115c40744b14d227b511a6cf0c62dcf665"
+        ],
+        "name": "Aave Matic Market DAI",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x4d7824115c40744b14d227b511a6cf0c62dcf665"
+        ],
+        "symbol": "amDAI"
+      },
+      "case": {
+        "address": "0xd106fb0cFB6a3B6a8E9B08C19F8f4d39e4B4cda1",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_200_CRV_Miner_f_am3CRV_26D087"
+        ],
+        "symbol": "CRV_Miner_f"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x27F8D03b3a2196956ED754baDc28D73be8830A6e",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x4d7824115c40744b14d227b511a6cf0c62dcf665"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "amDAI"
+      },
+      "written_at": 1784471039
+    },
+    {
+      "candidate": {
+        "address": "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x160532d2536175d65c03b97b0630a9802c274dad"
+        ],
+        "name": "miMATIC",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x160532d2536175d65c03b97b0630a9802c274dad"
+        ],
+        "symbol": "miMATIC"
+      },
+      "case": {
+        "address": "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_498_CURVE_miMATIC_A3FA99_USDC_e_5B83b2",
+          "CURVE_factory_factory_v2_107_CURVE_miMATIC_A3FA99_am3CRV_F09308",
+          "CURVE_factory_factory_v2_7_CURVE_miMATIC_A3FA99_USDC_e_CEE6db",
+          "CURVE_factory_factory_v2_459_CURVE_miMATIC_A3FA99_FRAX_6Dae27",
+          "CURVE_factory_factory_v2_109_CURVE_miMATIC_A3FA99_am3CRV_e2bD26",
+          "CURVE_factory_factory_v2_368_BOB_CURVE_miMATIC_A3FA99_074eAC"
+        ],
+        "symbol": "CURVE_miMATIC_A3FA99"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x160532d2536175d65c03b97b0630a9802c274dad"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "miMATIC"
+      },
+      "written_at": 1784470825
+    },
+    {
+      "candidate": {
+        "address": "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6c6d5501138258dde5bc4fe51bc9bf422c021f9a"
+        ],
+        "name": "Staked MATIC (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x6c6d5501138258dde5bc4fe51bc9bf422c021f9a"
+        ],
+        "symbol": "stMATIC"
+      },
+      "case": {
+        "address": "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_13_CURVE_stMATIC_3A58A5_WPOL_663a28"
+        ],
+        "symbol": "CURVE_stMATIC_3A58A5"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6c6d5501138258dde5bc4fe51bc9bf422c021f9a"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "stMATIC"
+      },
+      "written_at": 1784470826
+    },
+    {
+      "candidate": {
+        "address": "0xC168E40227E4ebD8C1caE80F7a55a4F0e6D66C97",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x4c38938e21cb9796932b0b0cc3f8a088f07b49b0"
+        ],
+        "name": "DFYN Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x4c38938e21cb9796932b0b0cc3f8a088f07b49b0"
+        ],
+        "symbol": "DFYN"
+      },
+      "case": {
+        "address": "0xC168e40227e4ebD8C1cae80f7a55a4f0e6D66C97",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "DFYN"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xC168E40227E4ebD8C1caE80F7a55a4F0e6D66C97",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x4c38938e21cb9796932b0b0cc3f8a088f07b49b0"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "DFYN"
+      },
+      "written_at": 1784470827
+    },
+    {
+      "candidate": {
+        "address": "0xe4Bf2864ebeC7B7fDf6Eeca9BaCAe7cDfDAffe78",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x35c2fafe34affab78235e1b5536fad21f9cc07b5"
+        ],
+        "name": "DODO bird (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x35c2fafe34affab78235e1b5536fad21f9cc07b5"
+        ],
+        "symbol": "DODO"
+      },
+      "case": {
+        "address": "0xe4bf2864ebeC7B7fDf6Eeca9BaCAe7cDfDAffe78",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "DODO"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xe4Bf2864ebeC7B7fDf6Eeca9BaCAe7cDfDAffe78",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x35c2fafe34affab78235e1b5536fad21f9cc07b5"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "DODO"
+      },
+      "written_at": 1784470828
+    },
+    {
+      "candidate": {
+        "address": "0x8226AC9EdB26ff16DA19151042a8BA3BB2cC237F",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x01e05b18fae44ce5c62b85293f16127dde0e82e9"
+        ],
+        "name": "EscoinToken",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x01e05b18fae44ce5c62b85293f16127dde0e82e9"
+        ],
+        "symbol": "ELG"
+      },
+      "case": {
+        "address": "0x8226AC9EdB26ff16DA19151042a8BA3BB2cC237F",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_359_ELG_USDC_e_0009aB",
+          "CURVE_factory_crypto_factory_crypto_328_ELG_USDT_c61831"
+        ],
+        "symbol": "ELG"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x8226AC9EdB26ff16DA19151042a8BA3BB2cC237F",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x01e05b18fae44ce5c62b85293f16127dde0e82e9"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ELG"
+      },
+      "written_at": 1784292759
+    },
+    {
+      "candidate": {
+        "address": "0xE0339c80fFDE91F3e20494Df88d4206D86024cdF",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7ce77c761f1486ca926382c92fc438500f29344d"
+        ],
+        "name": "Dogelon (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x7ce77c761f1486ca926382c92fc438500f29344d"
+        ],
+        "symbol": "ELON"
+      },
+      "case": {
+        "address": "0xe0339c80ffde91f3e20494df88d4206d86024cdf",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ELON"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xE0339c80fFDE91F3e20494Df88d4206D86024cdF",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7ce77c761f1486ca926382c92fc438500f29344d"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ELON"
+      },
+      "written_at": 1784470832
+    },
+    {
+      "candidate": {
+        "address": "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa48d164f6eb0edc68bd03b56fa59e12f24499ad1"
+        ],
+        "name": "EURA (previously agEUR)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xa48d164f6eb0edc68bd03b56fa59e12f24499ad1"
+        ],
+        "symbol": "EURA"
+      },
+      "case": {
+        "address": "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_209_EURA_jEUR_F4B717",
+          "CURVE_factory_factory_v2_72_EURA_4eur_f_8d7484"
+        ],
+        "symbol": "EURA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa48d164f6eb0edc68bd03b56fa59e12f24499ad1"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "EURA"
+      },
+      "written_at": 1784470833
+    },
+    {
+      "candidate": {
+        "address": "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4"
+        ],
+        "name": "Aavegotchi GHST Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4"
+        ],
+        "symbol": "GHST"
+      },
+      "case": {
+        "address": "0x385Eeac5cb85A38A9a07A70c73e0a3271cfb54A7",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:pools_dynamic_json",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "DYN_UniswapV2_WPOL_GHST_30_1AaAc5",
+          "DYN_UniswapV2_WETH_GHST_30_498AFF",
+          "DYN_UniswapV2_WBTC_GHST_30_5704f4",
+          "DYN_UniswapV2_USDC_e_GHST_30_4c82f4",
+          "DYN_UniswapV2_USDT_GHST_30_b8D87C",
+          "DYN_UniswapV2_DAI_GHST_30_77a764",
+          "DYN_UniswapV2_AAVE_GHST_30_8eaaa7",
+          "DYN_UniswapV2_LINK_GHST_30_cEA37f",
+          "DYN_UniswapV2_UNI_GHST_30_341166",
+          "DYN_UniswapV2_SAND_GHST_30_Ee6E99",
+          "DYN_UniswapV2_MANA_GHST_30_20c63C",
+          "DYN_UniswapV3_WPOL_GHST_1_096541",
+          "DYN_UniswapV3_WPOL_GHST_5_6795e8",
+          "DYN_UniswapV3_WPOL_GHST_30_4ca9fD",
+          "DYN_UniswapV3_WPOL_GHST_100_9c567E",
+          "DYN_UniswapV3_WETH_GHST_30_d645a9",
+          "DYN_UniswapV3_WETH_GHST_100_A7f72d",
+          "DYN_UniswapV3_USDC_e_GHST_100_6792CD"
+        ],
+        "symbol": "GHST"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x096c5ccb33cfc5732bcd1f3195c13dbefc4c82f4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "GHST"
+      },
+      "written_at": 1784470841
+    },
+    {
+      "candidate": {
+        "address": "0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfbae8e2d04a67c10047d83ee9b8aeffe7f6ea3f4"
+        ],
+        "name": "JPY Coin (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xfbae8e2d04a67c10047d83ee9b8aeffe7f6ea3f4"
+        ],
+        "symbol": "JPYC"
+      },
+      "case": {
+        "address": "0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_85_jJPY_JPYC_7F8d9A"
+        ],
+        "symbol": "JPYC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x6AE7Dfc73E0dDE2aa99ac063DcF7e8A63265108c",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfbae8e2d04a67c10047d83ee9b8aeffe7f6ea3f4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "JPYC"
+      },
+      "written_at": 1784470842
+    },
+    {
+      "candidate": {
+        "address": "0x4e78011Ce80ee02d2c3e649Fb657E45898257815",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb2d0d5c86d933b0acefe9b95bec160d514d152e1"
+        ],
+        "name": "Klima DAO",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xb2d0d5c86d933b0acefe9b95bec160d514d152e1"
+        ],
+        "symbol": "KLIMA"
+      },
+      "case": {
+        "address": "0x4e78011ce80ee02d2c3e649fb657e45898257815",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "KLIMA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x4e78011Ce80ee02d2c3e649Fb657E45898257815",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb2d0d5c86d933b0acefe9b95bec160d514d152e1"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "KLIMA"
+      },
+      "written_at": 1784470843
+    },
+    {
+      "candidate": {
+        "address": "0x1C954E8fe737F99f68Fa1CCda3e51ebDB291948C",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa7cca1c4a7d4b70f687380e0454e5ae418db53b1"
+        ],
+        "name": "Kyber Network Crystal v2 (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xa7cca1c4a7d4b70f687380e0454e5ae418db53b1"
+        ],
+        "symbol": "KNC"
+      },
+      "case": {
+        "address": "0x1c954e8fe737f99f68fa1ccda3e51ebdb291948c",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "KNC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x1C954E8fe737F99f68Fa1CCda3e51ebDB291948C",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xa7cca1c4a7d4b70f687380e0454e5ae418db53b1"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "KNC"
+      },
+      "written_at": 1784470844
+    },
+    {
+      "candidate": {
+        "address": "0x6f7C932e7684666C9fd1d44527765433e01fF61d",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xd00877a0289e2b0a0f1af55c6140d90d4221101f"
+        ],
+        "name": "MAKER (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xd00877a0289e2b0a0f1af55c6140d90d4221101f"
+        ],
+        "symbol": "MKR"
+      },
+      "case": {
+        "address": "0x6f7C932e7684666C9fd1d44527765433e01fF61d",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "MKR"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x6f7C932e7684666C9fd1d44527765433e01fF61d",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xd00877a0289e2b0a0f1af55c6140d90d4221101f"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "MKR"
+      },
+      "written_at": 1784470847
+    },
+    {
+      "candidate": {
+        "address": "0x553d3D295e0f695B9228246232eDF400ed3560B5",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x2773d038a811e4c3591c76610af22a98fd1fccc3"
+        ],
+        "name": "Paxos Gold (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x2773d038a811e4c3591c76610af22a98fd1fccc3"
+        ],
+        "symbol": "PAXG"
+      },
+      "case": {
+        "address": "0x553d3D295e0f695B9228246232eDF400ed3560B5",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_20_PAXG_USDC_e_1b4239"
+        ],
+        "symbol": "PAXG"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x553d3D295e0f695B9228246232eDF400ed3560B5",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x2773d038a811e4c3591c76610af22a98fd1fccc3"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "PAXG"
+      },
+      "written_at": 1784470850
+    },
+    {
+      "candidate": {
+        "address": "0xEa0941C6E067A4fb4399436aD3e2510eB36b419D",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb1290965e96578c6855746d75bab793979acfdc6"
+        ],
+        "name": "Prospective",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xb1290965e96578c6855746d75bab793979acfdc6"
+        ],
+        "symbol": "PROS"
+      },
+      "case": {
+        "address": "0xEa0941C6E067A4fb4399436aD3e2510eB36b419D",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_261_CRV_PROS_10Abfe"
+        ],
+        "symbol": "PROS"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xEa0941C6E067A4fb4399436aD3e2510eB36b419D",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb1290965e96578c6855746d75bab793979acfdc6"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "PROS"
+      },
+      "written_at": 1784470854
+    },
+    {
+      "candidate": {
+        "address": "0x580A84C73811E1839F75d86d75d88cCa0c241fF4",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9a8b2601760814019b7e6ee0052e25f1c623d1e6"
+        ],
+        "name": "Qi Dao",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x9a8b2601760814019b7e6ee0052e25f1c623d1e6"
+        ],
+        "symbol": "QI"
+      },
+      "case": {
+        "address": "0x580a84c73811e1839f75d86d75d88cca0c241ff4",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "QI"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x580A84C73811E1839F75d86d75d88cCa0c241fF4",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9a8b2601760814019b7e6ee0052e25f1c623d1e6"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "QI"
+      },
+      "written_at": 1784470856
+    },
+    {
+      "candidate": {
+        "address": "0x61299774020dA444Af134c82fa83E3810b309991",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x95d2483d2a0fff034004f91c53d649623d993896"
+        ],
+        "name": "Render Token",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x95d2483d2a0fff034004f91c53d649623d993896"
+        ],
+        "symbol": "RNDR"
+      },
+      "case": {
+        "address": "0x61299774020dA444Af134c82fa83E3810b309991",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:pools_dynamic_json",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "DYN_UniswapV2_WPOL_RNDR_30_7BCA54",
+          "DYN_UniswapV2_WETH_RNDR_30_0e71D6",
+          "DYN_UniswapV2_USDC_e_RNDR_30_78602D",
+          "DYN_UniswapV3_WPOL_RNDR_30_8316f1",
+          "DYN_UniswapV3_WPOL_RNDR_100_935B83",
+          "DYN_UniswapV3_WETH_RNDR_30_993896",
+          "DYN_UniswapV3_WETH_RNDR_100_1361A7",
+          "DYN_UniswapV3_USDC_e_RNDR_30_F0EF08"
+        ],
+        "symbol": "RNDR"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x61299774020dA444Af134c82fa83E3810b309991",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x95d2483d2a0fff034004f91c53d649623d993896"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "RNDR"
+      },
+      "written_at": 1784470857
+    },
+    {
+      "candidate": {
+        "address": "0x361A5a4993493cE00f61C32d4EcCA5512b82CE90",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6c50e85e3f470dc6f02c594e566f8c1a253ff5ee"
+        ],
+        "name": "Stake DAO Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x6c50e85e3f470dc6f02c594e566f8c1a253ff5ee"
+        ],
+        "symbol": "SDT"
+      },
+      "case": {
+        "address": "0x361A5a4993493cE00f61C32d4EcCA5512b82CE90",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_2_SDT_WETH_2D35e4"
+        ],
+        "symbol": "SDT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x361A5a4993493cE00f61C32d4EcCA5512b82CE90",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6c50e85e3f470dc6f02c594e566f8c1a253ff5ee"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "SDT"
+      },
+      "written_at": 1784460233
+    },
+    {
+      "candidate": {
+        "address": "0x840195888Db4D6A99ED9F73FcD3B225Bb3cB1A79",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3ff616172e87429a037e4b42843fb11bf0c945bb"
+        ],
+        "name": "SportX (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x3ff616172e87429a037e4b42843fb11bf0c945bb"
+        ],
+        "symbol": "SX"
+      },
+      "case": {
+        "address": "0x840195888db4d6a99ed9f73fcd3b225bb3cb1a79",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "SX"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x840195888Db4D6A99ED9F73FcD3B225Bb3cB1A79",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3ff616172e87429a037e4b42843fb11bf0c945bb"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "SX"
+      },
+      "written_at": 1784470858
+    },
+    {
+      "candidate": {
+        "address": "0xdF7837DE1F2Fa4631D716CF2502f8b230F1dcc32",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xe1e09ce7aac2740846d9b6d9d56f588c65314ecb"
+        ],
+        "name": "Telcoin (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xe1e09ce7aac2740846d9b6d9d56f588c65314ecb"
+        ],
+        "symbol": "TEL"
+      },
+      "case": {
+        "address": "0xdf7837de1f2fa4631d716cf2502f8b230f1dcc32",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "TEL"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xdF7837DE1F2Fa4631D716CF2502f8b230F1dcc32",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xe1e09ce7aac2740846d9b6d9d56f588c65314ecb"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "TEL"
+      },
+      "written_at": 1784470860
+    },
+    {
+      "candidate": {
+        "address": "0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f-0x2e1ad108ff1d8c782fcbbb89aad783ac49586756-0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
+        ],
+        "name": "TrueUSD (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f-0x2e1ad108ff1d8c782fcbbb89aad783ac49586756-0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
+        ],
+        "symbol": "TUSD"
+      },
+      "case": {
+        "address": "0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:pools_dynamic_json",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "DYN_UniswapV2_WPOL_TUSD_30_36cb29",
+          "DYN_UniswapV2_WETH_TUSD_30_Cc1D3A",
+          "DYN_UniswapV2_USDC_e_TUSD_30_846F8A",
+          "DYN_UniswapV2_USDT_TUSD_30_bB6AFb",
+          "DYN_UniswapV2_TUSD_FRAX_30_803F38",
+          "DYN_UniswapV3_WPOL_TUSD_5_955112",
+          "DYN_UniswapV3_WPOL_TUSD_100_9F5C86",
+          "CURVE_factory_factory_v2_152_TUSD_am3CRV_2Da263"
+        ],
+        "symbol": "TUSD"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x2e1AD108fF1D8C782fcBbB89AAd783aC49586756",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0d34e5dd4d8f043557145598e4e2dc286b35fd4f-0x2e1ad108ff1d8c782fcbbb89aad783ac49586756-0xc2132d05d31c914a87c6611c10748aeb04b58e8f"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "TUSD"
+      },
+      "written_at": 1784470862
+    },
+    {
+      "candidate": {
+        "address": "0xb5DFABd7fF7F83BAB83995E72A52B97ABb7bcf63",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6ab291a9bb3c20f0017f2e93a6d1196842d09bf4"
+        ],
+        "name": "Real USD",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x6ab291a9bb3c20f0017f2e93a6d1196842d09bf4"
+        ],
+        "symbol": "USDR"
+      },
+      "case": {
+        "address": "0xb5DFABd7fF7F83BAB83995E72A52B97ABb7bcf63",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_339_USDR_am3CRV_e13e1F"
+        ],
+        "symbol": "USDR"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xb5DFABd7fF7F83BAB83995E72A52B97ABb7bcf63",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6ab291a9bb3c20f0017f2e93a6d1196842d09bf4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "USDR"
+      },
+      "written_at": 1784470863
+    },
+    {
+      "candidate": {
+        "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9b08288c3be4f62bbf8d1c20ac9c5e6f9467d8b7"
+        ],
+        "name": "Wrapped Polygon Ecosystem Token",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x9b08288c3be4f62bbf8d1c20ac9c5e6f9467d8b7"
+        ],
+        "symbol": "WPOL"
+      },
+      "case": {
+        "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "WMATIC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x9b08288c3be4f62bbf8d1c20ac9c5e6f9467d8b7"
+        ],
+        "failures": [
+          "candidate_decimals_missing",
+          "candidate_address_conflicts_existing_symbol:WPOL"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "WPOL"
+      },
+      "written_at": 1784470870
+    },
+    {
+      "candidate": {
+        "address": "0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb5c416bbbb7a98da622a80efc1b2eef04903fdd0"
+        ],
+        "name": "Xocolatl MXN Stablecoin",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xb5c416bbbb7a98da622a80efc1b2eef04903fdd0"
+        ],
+        "symbol": "XOC"
+      },
+      "case": {
+        "address": "0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_320_XOC_jMXN_6A3Bfe"
+        ],
+        "symbol": "XOC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xa411c9Aa00E020e4f88Bc19996d29c5B7ADB4ACf",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb5c416bbbb7a98da622a80efc1b2eef04903fdd0"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "XOC"
+      },
+      "written_at": 1784292800
+    },
+    {
+      "candidate": {
+        "address": "0x750e4C4984a9e0f12978eA6742Bc1c5D248f40ed",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x28b96d83fe1210f32a77953cb6accf8be6b6e232"
+        ],
+        "name": "Axelar Wrapped USDC",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x28b96d83fe1210f32a77953cb6accf8be6b6e232"
+        ],
+        "symbol": "axlUSDC"
+      },
+      "case": {
+        "address": "0x750e4C4984a9e0f12978eA6742Bc1c5D248f40ed",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_221_axlUSDC_USDC_e_639392"
+        ],
+        "symbol": "axlUSDC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x750e4C4984a9e0f12978eA6742Bc1c5D248f40ed",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x28b96d83fe1210f32a77953cb6accf8be6b6e232"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "axlUSDC"
+      },
+      "written_at": 1784470884
+    },
+    {
+      "candidate": {
+        "address": "0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x50a36bdb2a7c36518cefedcaac2c2b4c3e5ab8be"
+        ],
+        "name": "Curve USD-BTC-ETH",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x50a36bdb2a7c36518cefedcaac2c2b4c3e5ab8be"
+        ],
+        "symbol": "crvUSDBTCETH"
+      },
+      "case": {
+        "address": "0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_1_CRV_crvUSDBTCETH_268Fa7",
+          "CURVE_factory_crypto_factory_crypto_83_WPOL_crvUSDBTCETH_1E50c6",
+          "CURVE_factory_crypto_factory_crypto_6_ARTH_poly_crvUSDBTCETH_7476C7"
+        ],
+        "symbol": "crvUSDBTCETH"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xdAD97F7713Ae9437fa9249920eC8507e5FbB23d3",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x50a36bdb2a7c36518cefedcaac2c2b4c3e5ab8be"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "crvUSDBTCETH"
+      },
+      "written_at": 1784292817
+    },
+    {
+      "candidate": {
+        "address": "0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x2534d68f97c0cdce5fb51347cea680f9ef4429f9"
+        ],
+        "name": "Wrapped liquid staked Ether 2.0 (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x2534d68f97c0cdce5fb51347cea680f9ef4429f9"
+        ],
+        "symbol": "wstETH"
+      },
+      "case": {
+        "address": "0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "wstETH"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x03b54A6e9a984069379fae1a4fC4dBAE93B3bCCD",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x2534d68f97c0cdce5fb51347cea680f9ef4429f9"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "wstETH"
+      },
+      "written_at": 1784470895
+    },
+    {
+      "candidate": {
+        "address": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfa83a1e180fe060ad51d855f3315e7079f66245c"
+        ],
+        "name": "Curve.fi amDAI/amUSDC/amUSDT",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xfa83a1e180fe060ad51d855f3315e7079f66245c"
+        ],
+        "symbol": "am3CRV"
+      },
+      "case": {
+        "address": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_152_TUSD_am3CRV_2Da263",
+          "CURVE_factory_factory_v2_107_CURVE_miMATIC_A3FA99_am3CRV_F09308",
+          "CURVE_factory_factory_v2_32_moUSD_am3CRV_D2A8Db",
+          "CURVE_factory_factory_v2_456_L3USD_am3CRV_cBB6ae",
+          "CURVE_factory_factory_v2_339_USDR_am3CRV_e13e1F",
+          "CURVE_factory_factory_v2_182_ARTH_usd_am3CRV_b3d633",
+          "CURVE_factory_factory_v2_69_PYD_am3CRV_282789",
+          "CURVE_factory_factory_v2_111_deUSDC_am3CRV_74c0d2",
+          "CURVE_factory_factory_v2_11_FRAX_am3CRV_c9e9ac",
+          "CURVE_factory_factory_v2_270_USDS_am3CRV_3AFaBf",
+          "CURVE_factory_factory_v2_216_deFRAX_am3CRV_a26A5c",
+          "CURVE_factory_factory_v2_74_LUK_am3CRV_995Be0",
+          "CURVE_factory_factory_v2_314_sUSDR_am3CRV_84B7D9",
+          "CURVE_factory_factory_v2_117_am3CRV_SoHe_91DCC7",
+          "CURVE_factory_factory_v2_109_CURVE_miMATIC_A3FA99_am3CRV_e2bD26",
+          "CURVE_factory_factory_v2_101_CORIN_am3CRV_3b87d9",
+          "CURVE_factory_factory_v2_215_am3CRV_EXIT_f_1b3c20",
+          "CURVE_factory_factory_v2_140_Lithereum_f_am3CRV_76E52c",
+          "CURVE_factory_factory_v2_200_CRV_Miner_f_am3CRV_26D087",
+          "CURVE_factory_factory_v2_330_USDR_f_am3CRV_781a6d",
+          "CURVE_factory_factory_v2_141_PSOL_am3CRV_dff3e4"
+        ],
+        "symbol": "am3CRV"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfa83a1e180fe060ad51d855f3315e7079f66245c"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "am3CRV"
+      },
+      "written_at": 1784470878
+    },
+    {
+      "candidate": {
+        "address": "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfeadd389a5c427952d8fdb8057d6c8ba1156cc56"
+        ],
+        "name": "renBTC",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xfeadd389a5c427952d8fdb8057d6c8ba1156cc56"
+        ],
+        "symbol": "renBTC"
+      },
+      "case": {
+        "address": "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_main_0_CURVE_amWBTC_5C2ED8_renBTC_117C67"
+        ],
+        "symbol": "renBTC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xDBf31dF14B66535aF65AaC99C32e9eA844e14501",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xfeadd389a5c427952d8fdb8057d6c8ba1156cc56"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "renBTC"
+      },
+      "written_at": 1784470893
+    },
+    {
+      "candidate": {
+        "address": "0x64ca1571d1476b7a21C5aaf9f1a750A193A103C0",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x4a32b3b75691c090876e32d9937636dad77ec5e3"
+        ],
+        "name": "Bondly (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x4a32b3b75691c090876e32d9937636dad77ec5e3"
+        ],
+        "symbol": "BONDLY"
+      },
+      "case": {
+        "address": "0x64ca1571d1476b7a21c5aaf9f1a750a193a103c0",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BONDLY"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x64ca1571d1476b7a21C5aaf9f1a750A193A103C0",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x4a32b3b75691c090876e32d9937636dad77ec5e3"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BONDLY"
+      },
+      "written_at": 1784292738
+    },
+    {
+      "candidate": {
+        "address": "0xC298812164BD558268f51cc6E3B8b5daAf0b6341",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "PLT"
+      },
+      "case": {
+        "address": "0xC298812164BD558268f51cc6E3B8b5daAf0b6341",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_150_PLT_WPOL_EB8E01"
+        ],
+        "symbol": "PLT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xC298812164BD558268f51cc6E3B8b5daAf0b6341",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "PLT"
+      },
+      "written_at": 1784425276
+    },
+    {
+      "candidate": {
+        "address": "0x444DBcb15Ea0d706C04DaB615374a11759E07A25",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7340d13bc14ebafdb5057b95fcff42de128a6a1c"
+        ],
+        "name": "CryptoChefs AROMA Token",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x7340d13bc14ebafdb5057b95fcff42de128a6a1c"
+        ],
+        "symbol": "AROMA"
+      },
+      "case": {
+        "address": "0x444DBcb15Ea0d706C04DaB615374a11759E07A25",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AROMA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x444DBcb15Ea0d706C04DaB615374a11759E07A25",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x7340d13bc14ebafdb5057b95fcff42de128a6a1c"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AROMA"
+      },
+      "written_at": 1784292652
+    },
+    {
+      "candidate": {
+        "address": "0x622703d6517BdeDF1FA5d076D30dcbB00ee18d5C",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x961ee05563137cae69237e87516e17aae74ceb99"
+        ],
+        "name": "Curve.fi Factory Plain Pool: SOL+LUNA+AAVE+maUSD",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x961ee05563137cae69237e87516e17aae74ceb99"
+        ],
+        "symbol": "Lithereum-f"
+      },
+      "case": {
+        "address": "0x622703d6517BdeDF1FA5d076D30dcbB00ee18d5C",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_140_Lithereum_f_am3CRV_76E52c"
+        ],
+        "symbol": "Lithereum_f"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x622703d6517BdeDF1FA5d076D30dcbB00ee18d5C",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x961ee05563137cae69237e87516e17aae74ceb99"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "Lithereum-f"
+      },
+      "written_at": 1784292775
+    },
+    {
+      "candidate": {
+        "address": "0x6a9d92f366f01b1980c4e75f0d9fa54db658105d",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "aDAI"
+      },
+      "case": {
+        "address": "0x6a9d92f366f01b1980c4e75f0d9fa54db658105d",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "aDAI"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x6a9d92f366f01b1980c4e75f0d9fa54db658105d",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "aDAI"
+      },
+      "written_at": 1784291175
+    },
+    {
+      "candidate": {
+        "address": "0xE0B52e49357FD4DAf2C15e02058Dce6b20E4F9B7",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "agEUR"
+      },
+      "case": {
+        "address": "0xE0B52e49357FD4DAf2C15e02058Dce6b20E4F9B7",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "agEUR"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xE0B52e49357FD4DAf2C15e02058Dce6b20E4F9B7",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "agEUR"
+      },
+      "written_at": 1784291192
+    },
+    {
+      "candidate": {
+        "address": "0xa041544fe2be56cce31ebb69102b965e06aace80",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "BOND"
+      },
+      "case": {
+        "address": "0xa041544fe2be56cce31ebb69102b965e06aace80",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BOND"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xa041544fe2be56cce31ebb69102b965e06aace80",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BOND"
+      },
+      "written_at": 1784291363
+    },
+    {
+      "candidate": {
+        "address": "0x3Cef98bb43d732E2F285eE605a8158cDE967D219",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x111bc78ae824d5668ecf7224f34dedc3c6bd45e1"
+        ],
+        "name": "Basic Attention Token (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x111bc78ae824d5668ecf7224f34dedc3c6bd45e1"
+        ],
+        "symbol": "BAT"
+      },
+      "case": {
+        "address": "0x3cef98bb43d732e2f285ee605a8158cde967d219",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BAT"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x3Cef98bb43d732E2F285eE605a8158cDE967D219",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x111bc78ae824d5668ecf7224f34dedc3c6bd45e1"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BAT"
+      },
+      "written_at": 1784470994
+    },
+    {
+      "candidate": {
+        "address": "0x28C388FB1F4fa9F9eB445f0579666849EE5eeb42",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x5eb87360c19895eee30307c2346e287b880a7856"
+        ],
+        "name": "Bella (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x5eb87360c19895eee30307c2346e287b880a7856"
+        ],
+        "symbol": "BEL"
+      },
+      "case": {
+        "address": "0x28c388fb1f4fa9f9eb445f0579666849ee5eeb42",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BEL"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x28C388FB1F4fa9F9eB445f0579666849EE5eeb42",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x5eb87360c19895eee30307c2346e287b880a7856"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BEL"
+      },
+      "written_at": 1784471004
+    },
+    {
+      "candidate": {
+        "address": "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x59377dbd9f550568540cae0b21412bee1cc3f439"
+        ],
+        "name": "JPY Coin",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x59377dbd9f550568540cae0b21412bee1cc3f439"
+        ],
+        "symbol": "JPYC"
+      },
+      "case": {
+        "address": "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_255_jJPY_CURVE_JPYC_431D5D_Af1bdc"
+        ],
+        "symbol": "CURVE_JPYC_431D5D"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x431D5dfF03120AFA4bDf332c61A6e1766eF37BDB",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x59377dbd9f550568540cae0b21412bee1cc3f439"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "JPYC"
+      },
+      "written_at": 1784420538
+    },
+    {
+      "candidate": {
+        "address": "0x1a3acf6D19267E2d3e7f898f42803e90C9219062",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb234c8d1394a717f602a6bcc2405b1039ae2c7d4"
+        ],
+        "name": "Frax Share",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xb234c8d1394a717f602a6bcc2405b1039ae2c7d4"
+        ],
+        "symbol": "FXS"
+      },
+      "case": {
+        "address": "0x1a3acf6D19267E2d3e7f898f42803e90C9219062",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:pools_dynamic_json",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "DYN_UniswapV2_WPOL_FXS_30_f11D94",
+          "DYN_UniswapV2_USDC_e_FXS_30_549E11",
+          "DYN_UniswapV3_WPOL_FXS_30_338e85",
+          "DYN_UniswapV3_WETH_FXS_100_3b5E16"
+        ],
+        "symbol": "FXS"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x1a3acf6D19267E2d3e7f898f42803e90C9219062",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xb234c8d1394a717f602a6bcc2405b1039ae2c7d4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "FXS"
+      },
+      "written_at": 1784434121
+    },
+    {
+      "candidate": {
+        "address": "0x3066818837c5e6eD6601bd5a91B0762877A6B731",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6be10c5c7178af8c49997d07d6a5444c15e58170"
+        ],
+        "name": "UMA Voting Token v1 (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x6be10c5c7178af8c49997d07d6a5444c15e58170"
+        ],
+        "symbol": "UMA"
+      },
+      "case": {
+        "address": "0x3066818837c5e6eD6601bd5a91B0762877A6B731",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "UMA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x3066818837c5e6eD6601bd5a91B0762877A6B731",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x6be10c5c7178af8c49997d07d6a5444c15e58170"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "UMA"
+      },
+      "written_at": 1784470862
+    },
+    {
+      "candidate": {
+        "address": "0x2f1b1662A895C6Ba01a99DcAf56778E7d77e5609",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3f20b4ae47cbfbb50942ea2e8822d2a71183faa1"
+        ],
+        "name": "Spice USD",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x3f20b4ae47cbfbb50942ea2e8822d2a71183faa1"
+        ],
+        "symbol": "USDS"
+      },
+      "case": {
+        "address": "0x2f1b1662A895C6Ba01a99DcAf56778E7d77e5609",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_270_USDS_am3CRV_3AFaBf"
+        ],
+        "symbol": "USDS"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x2f1b1662A895C6Ba01a99DcAf56778E7d77e5609",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x3f20b4ae47cbfbb50942ea2e8822d2a71183faa1"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "USDS"
+      },
+      "written_at": 1784449320
+    },
+    {
+      "candidate": {
+        "address": "0xEb935614447185eeea0aBC756Ff2ddC99FBB9047",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0af5ae68ff92f43854e186a6d44f97961180747e"
+        ],
+        "name": "AlphaKlima (PoS)",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x0af5ae68ff92f43854e186a6d44f97961180747e"
+        ],
+        "symbol": "aKLIMA"
+      },
+      "case": {
+        "address": "0xEb935614447185eeea0aBC756Ff2ddC99FBB9047",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "aKLIMA"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xEb935614447185eeea0aBC756Ff2ddC99FBB9047",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0af5ae68ff92f43854e186a6d44f97961180747e"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "aKLIMA"
+      },
+      "written_at": 1784446835
+    },
+    {
+      "candidate": {
+        "address": "0x28424507fef75107f80ED07c7569192e44b66501",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "amWETH"
+      },
+      "case": {
+        "address": "0x28424507fef75107f80ED07c7569192e44b66501",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "amWETH"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x28424507fef75107f80ED07c7569192e44b66501",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "amWETH"
+      },
+      "written_at": 1784421836
+    },
+    {
+      "candidate": {
+        "address": "0x37149a67A088848738a2427c2B1c42CbbeF9E403",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "PSOL"
+      },
+      "case": {
+        "address": "0x37149a67A088848738a2427c2B1c42CbbeF9E403",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_136_WETH_PSOL_3c6F82",
+          "CURVE_factory_factory_v2_141_PSOL_am3CRV_dff3e4"
+        ],
+        "symbol": "PSOL"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x37149a67A088848738a2427c2B1c42CbbeF9E403",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "PSOL"
+      },
+      "written_at": 1784425277
+    },
+    {
+      "candidate": {
+        "address": "0x0527c8C43250279D6Eb74dA1078193f5316fc9a0",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "PYD"
+      },
+      "case": {
+        "address": "0x0527c8C43250279D6Eb74dA1078193f5316fc9a0",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_69_PYD_am3CRV_282789"
+        ],
+        "symbol": "PYD"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x0527c8C43250279D6Eb74dA1078193f5316fc9a0",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "PYD"
+      },
+      "written_at": 1784425278
+    },
+    {
+      "candidate": {
+        "address": "0xbFA71C79C83fCC30fF23b1603769965Fd12ce078",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "RETRO"
+      },
+      "case": {
+        "address": "0xbFA71C79C83fCC30fF23b1603769965Fd12ce078",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "RETRO"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xbFA71C79C83fCC30fF23b1603769965Fd12ce078",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "RETRO"
+      },
+      "written_at": 1784425278
+    },
+    {
+      "candidate": {
+        "address": "0x24bCb624082325EFF357621A07353A0e38c054F0",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "SME"
+      },
+      "case": {
+        "address": "0x24bCb624082325EFF357621A07353A0e38c054F0",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_crypto_factory_crypto_163_USDC_e_SME_359e95"
+        ],
+        "symbol": "SME"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x24bCb624082325EFF357621A07353A0e38c054F0",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "SME"
+      },
+      "written_at": 1784425279
+    },
+    {
+      "candidate": {
+        "address": "0xaE14b0AFBa354050c58aea291615a6d85bbc5fa3",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "SoHe"
+      },
+      "case": {
+        "address": "0xaE14b0AFBa354050c58aea291615a6d85bbc5fa3",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_117_am3CRV_SoHe_91DCC7"
+        ],
+        "symbol": "SoHe"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xaE14b0AFBa354050c58aea291615a6d85bbc5fa3",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "SoHe"
+      },
+      "written_at": 1784425280
+    },
+    {
+      "candidate": {
+        "address": "0x50a4a434247089848991DD8f09b889D4e2870aB6",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "TBTC"
+      },
+      "case": {
+        "address": "0x50a4a434247089848991DD8f09b889D4e2870aB6",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "TBTC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x50a4a434247089848991DD8f09b889D4e2870aB6",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "TBTC"
+      },
+      "written_at": 1784425280
+    },
+    {
+      "candidate": {
+        "address": "0x1a763170B96F23f15576D0fa0b2619d1254c437d",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xc47c0fcad14d4458f6b41da58468a8ea2751a1d5"
+        ],
+        "name": "AurusX",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xc47c0fcad14d4458f6b41da58468a8ea2751a1d5"
+        ],
+        "symbol": "AX"
+      },
+      "case": {
+        "address": "0x1a763170b96f23f15576d0fa0b2619d1254c437d",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "AX"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x1a763170B96F23f15576D0fa0b2619d1254c437d",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xc47c0fcad14d4458f6b41da58468a8ea2751a1d5"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "AX"
+      },
+      "written_at": 1784470977
+    },
+    {
+      "candidate": {
+        "address": "0xb8518867a55065b362a4c5022b7672638c82f5ac",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "name": "",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          ""
+        ],
+        "symbol": "BFC"
+      },
+      "case": {
+        "address": "0xb8518867a55065b362a4c5022b7672638c82f5ac",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "BFC"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0xb8518867a55065b362a4c5022b7672638c82f5ac",
+        "decimals": null,
+        "evidence_urls": [
+          ""
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "BFC"
+      },
+      "written_at": 1784448984
+    },
+    {
+      "candidate": {
+        "address": "0x7Ecb5699D8E0a6572E549Dc86dDe5A785B8c29BC",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0bdbec9574e56c362e79fa5d0d364258d37964a4"
+        ],
+        "name": "Shomori",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0x0bdbec9574e56c362e79fa5d0d364258d37964a4"
+        ],
+        "symbol": "MORI"
+      },
+      "case": {
+        "address": "0xbfc70507384047aa74c29cdc8c5cb88d0f7213ac",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [],
+        "symbol": "ALI"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x7Ecb5699D8E0a6572E549Dc86dDe5A785B8c29BC",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0x0bdbec9574e56c362e79fa5d0d364258d37964a4"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "MORI"
+      },
+      "written_at": 1784468832
+    },
+    {
+      "candidate": {
+        "address": "0x7D645CBbCAdE2A130bF1bf0528b8541d32D3f8Cf",
+        "confidence": 0.55,
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xc2a09231b14245aba6ad7898fbedd708f24d0689"
+        ],
+        "name": "Alerto",
+        "notes": "Public market source can support identity/price discovery, but decimals still require deterministic validation.",
+        "price_sources": [
+          "https://dexscreener.com/polygon/0xc2a09231b14245aba6ad7898fbedd708f24d0689"
+        ],
+        "symbol": "ALRTO"
+      },
+      "case": {
+        "address": "0x7D645CBbCAdE2A130bF1bf0528b8541d32D3f8Cf",
+        "attempted_sources": [
+          "runtime_registry",
+          "polygon_token_list_cache",
+          "live_pool_metadata:curve_official_api",
+          "onchain_erc20_metadata"
+        ],
+        "blockers": [
+          "price_unavailable_requires_external_research"
+        ],
+        "pool_ids": [
+          "CURVE_factory_factory_v2_113_CRV_ALRTO_56D07e",
+          "CURVE_factory_factory_v2_368_BOB_CURVE_miMATIC_A3FA99_074eAC"
+        ],
+        "symbol": "ALRTO"
+      },
+      "registry_policy": "apprentice proposal only; discovery promotion review required",
+      "runner": "public_market_apprentice",
+      "status": "pending_review",
+      "validation": {
+        "address": "0x7D645CBbCAdE2A130bF1bf0528b8541d32D3f8Cf",
+        "decimals": null,
+        "evidence_urls": [
+          "https://dexscreener.com/polygon/0xc2a09231b14245aba6ad7898fbedd708f24d0689"
+        ],
+        "failures": [
+          "candidate_decimals_missing"
+        ],
+        "onchain": {
+          "reason": "rpc_not_connected",
+          "status": "skipped"
+        },
+        "promotion_policy": "proposal_only_discovery_review_required",
+        "status": "rejected",
+        "symbol": "ALRTO"
+      },
+      "written_at": 1784470938
+    }
+  ],
+  "updated_at": 1784471044
+}

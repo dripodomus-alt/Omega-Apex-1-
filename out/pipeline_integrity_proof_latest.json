@@ -1,0 +1,940 @@
+{
+  "audit_extracts": {
+    "high_risk_mutation_points": [
+      {
+        "category": "high_risk_assignment",
+        "detail": "['dynamic_size_optimizer', 'optimize_principal_with_dynamic', 'optimize_size_for_max_net', 'score_opportunities', 'score_cross_pool_spreads', 'score_pegged_stable_spreads', 'detect_pegged_stable_spreads', 'expand_cycle_shape', 'normalized_cycle_surplus', 'tag_cycle_dict', 'FlashCycleShape', 'LiveOpportunity', 'SHAPE_FORMULA', 'STABLE_MIN_NET_PROFIT_USD', 'STABLE_RISK_BUFFER_USD']",
+        "file": "omega_v5/__init__.py",
+        "function": "<module>",
+        "line": 33,
+        "name": "__all__"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('1e18')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 31,
+        "name": "WAD"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('1')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 32,
+        "name": "HEALTH_FACTOR_LIQUIDATION_THRESHOLD"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('0.95')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 33,
+        "name": "MAX_CLOSE_FACTOR_HF_THRESHOLD"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('0.5')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 34,
+        "name": "DEFAULT_CLOSE_FACTOR"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('1')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 35,
+        "name": "MAX_CLOSE_FACTOR"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[{'name': 'getPool', 'type': 'function', 'stateMutability': 'view', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}, {'name': 'getPoolDataProvider', 'type': 'function', 'stateMutability': 'view', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}]",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 41,
+        "name": "_PROVIDER_ABI"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[{'name': 'getUserAccountData', 'type': 'function', 'stateMutability': 'view', 'inputs': [{'name': 'user', 'type': 'address'}], 'outputs': [{'name': 'totalCollateralBase', 'type': 'uint256'}, {'name': 'totalDebtBase', 'type': 'uint256'}, {'name': 'availableBorrowsBase', 'type': 'uint256'}, {'name': 'currentLiquidationThreshold', 'type': 'uint256'}, {'name': 'ltv', 'type': 'uint256'}, {'name': 'healthFactor', 'type': 'uint256'}]}, {'name': 'getReservesList', 'type': 'function', 'stateMutability':",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 58,
+        "name": "_POOL_ABI"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 117,
+        "name": "decimals"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "''",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 167,
+        "name": "pool_id"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 198,
+        "name": "gross_profit_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "<module>",
+        "line": 199,
+        "name": "expected_net_profit_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "raw >> 48 & 255",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "_decode_configuration",
+        "line": 227,
+        "name": "decimals"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pools or {}",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "__init__",
+        "line": 247,
+        "name": "self.pools"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "self.w3.eth.contract(address=Web3.to_checksum_address(AAVE_V3_POOL_ADDRESSES_PROVIDER), abi=_PROVIDER_ABI)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "__init__",
+        "line": 248,
+        "name": "provider"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Web3.to_checksum_address(provider.functions.getPool().call())",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "__init__",
+        "line": 252,
+        "name": "self.aave_pool_address"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "AAVE_V3_PROTOCOL_DATA_PROVIDER or provider.functions.getPoolDataProvider().call()",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "__init__",
+        "line": 253,
+        "name": "data_provider"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "self.w3.eth.contract(address=self.aave_pool_address, abi=_POOL_ABI)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "__init__",
+        "line": 255,
+        "name": "self.pool"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "self.w3.eth.get_logs({'address': self.aave_pool_address, 'fromBlock': from_block, 'toBlock': block_number, 'topics': [BORROW_EVENT_TOPIC]})",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "discover_recent_borrowers",
+        "line": 269,
+        "name": "logs"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "self.pool.functions.getReservesList().call(block_identifier=block_number)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "reserve_risks",
+        "line": 287,
+        "name": "reserves"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "self.pool.functions.getConfiguration(Web3.to_checksum_address(asset)).call(block_identifier=block_number)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "reserve_risks",
+        "line": 292,
+        "name": "config_result"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "self.pool.functions.getUserAccountData(Web3.to_checksum_address(borrower)).call(block_identifier=block_number)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "account_health",
+        "line": 325,
+        "name": "data"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool.get('tokens', [])",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "_exit_quote",
+        "line": 350,
+        "name": "toks"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "ExitQuote(ok=True, debt_symbol=debt_symbol, collateral_symbol=collateral_symbol, collateral_amount=collateral_amount, debt_out=quote.amount_out, pool_id=pool_id, protocol=pool.get('protocol', ''), route=[collateral_symbol, debt_symbol])",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "_exit_quote",
+        "line": 355,
+        "name": "best"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "{t for p in self.pools.values() for t in p.get('tokens', [])}",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "_exit_quote",
+        "line": 362,
+        "name": "all_tokens"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "max((q for p in self.pools.values() for q in quote_pool(p, collateral_amount, collateral_symbol, mid_symbol)), key=lambda q: q.amount_out, default=None)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "_exit_quote",
+        "line": 367,
+        "name": "best_leg1_quote"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "max((q for p in self.pools.values() for q in quote_pool(p, best_leg1_quote.amount_out, mid_symbol, debt_symbol)), key=lambda q: q.amount_out, default=None)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "_exit_quote",
+        "line": 374,
+        "name": "best_leg2_quote"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "token_price_usd(debt.symbol)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 417,
+        "name": "debt_price"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "int(Decimal(debt.raw_debt) * close_factor)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 420,
+        "name": "debt_to_cover_raw"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal(debt_to_cover_raw) / Decimal(10) ** debt.risk.decimals",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 423,
+        "name": "debt_to_cover"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "debt_to_cover * debt_price",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 424,
+        "name": "debt_to_cover_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "token_price_usd(collateral.symbol)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 433,
+        "name": "collateral_price"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal(collateral.risk.liquidation_bonus_bps) / Decimal('10000')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 436,
+        "name": "bonus"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal(collateral.risk.liquidation_protocol_fee_bps) / Decimal('10000')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 437,
+        "name": "protocol_fee"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "debt_to_cover_usd * bonus * (Decimal('1') - protocol_fee)",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 438,
+        "name": "seized_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "seized_usd / collateral_price if collateral_price > 0 else Decimal('0')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 439,
+        "name": "seized_amount"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "exit_quote.debt_out * debt_price if exit_quote.ok else Decimal('0')",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 445,
+        "name": "gross_out_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "evaluate_profitability(gross_out_usd, debt_to_cover_usd, hops=2, flash_source=FlashSource.AAVE, asset=debt.symbol, gas_units_override=Decimal('900000'))",
+        "file": "omega_v5/aave_liquidations.py",
+        "function": "scan",
+        "line": 446,
+        "name": "prof"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('1000000000000000000')",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 13,
+        "name": "WEI_PER_POL"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Decimal('1000000000')",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 14,
+        "name": "WEI_PER_GWEI"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(amount) * Decimal(10) ** int(decimals)",
+        "file": "omega_v5/accounting.py",
+        "function": "token_units_to_raw_floor",
+        "line": 41,
+        "name": "units"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(price_usd)",
+        "file": "omega_v5/accounting.py",
+        "function": "usd_to_token_raw_floor",
+        "line": 50,
+        "name": "price"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(usd_amount) / price",
+        "file": "omega_v5/accounting.py",
+        "function": "usd_to_token_raw_floor",
+        "line": 53,
+        "name": "amount"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 59,
+        "name": "gas_units"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 60,
+        "name": "gas_price_wei"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 61,
+        "name": "gas_price_gwei"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 64,
+        "name": "native_price_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 65,
+        "name": "native_price_source"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 66,
+        "name": "gas_cost_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "'user_wallet'",
+        "file": "omega_v5/accounting.py",
+        "function": "<module>",
+        "line": 67,
+        "name": "gas_payer"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(gas_units)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_gwei",
+        "line": 91,
+        "name": "units"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(gas_price_gwei)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_gwei",
+        "line": 92,
+        "name": "gwei"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "gwei_to_wei(gwei)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_gwei",
+        "line": 93,
+        "name": "gas_price_wei"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "units * gwei_to_native_per_gas(gwei)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_gwei",
+        "line": 94,
+        "name": "native_amount"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(native_price_usd)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_gwei",
+        "line": 95,
+        "name": "native_price"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(gas_units)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_wei",
+        "line": 116,
+        "name": "units"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "int(decimal_value(gas_price_wei).to_integral_value(rounding=ROUND_FLOOR))",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_wei",
+        "line": 117,
+        "name": "wei"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "decimal_value(native_price_usd)",
+        "file": "omega_v5/accounting.py",
+        "function": "gas_cost_from_wei",
+        "line": 119,
+        "name": "native_price"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "{'UniswapV2': 1, 'UniswapV3': 2, 'QuickSwapV3': 3, 'Algebra': 3, 'Curve': 4, 'Balancer': 5}",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "<module>",
+        "line": 31,
+        "name": "ROUTE_POOL_KIND"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[{'name': 'routePoolKindEnforced', 'type': 'function', 'stateMutability': 'view', 'inputs': [], 'outputs': [{'name': '', 'type': 'bool'}]}, {'name': 'routePoolKind', 'type': 'function', 'stateMutability': 'view', 'inputs': [{'name': 'pool', 'type': 'address'}], 'outputs': [{'name': '', 'type': 'uint8'}]}]",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "<module>",
+        "line": 75,
+        "name": "ROUTE_POOL_KIND_ABI"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "rpc_layer.w3.eth.contract(address=Web3.to_checksum_address(EXECUTOR_CONTRACT), abi=ADAPTER_FOR_SOURCE_ABI)",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "_read_onchain_adapter",
+        "line": 179,
+        "name": "contract"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pools or {}",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "resolve_route_pool_addresses",
+        "line": 278,
+        "name": "pools"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pools.get(pool_id)",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "resolve_route_pool_addresses",
+        "line": 282,
+        "name": "pool"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "DEEP_POOL_REGISTRY.get(pool_id)",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "resolve_route_pool_addresses",
+        "line": 286,
+        "name": "pool"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "None",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "resolve_route_pool_addresses",
+        "line": 288,
+        "name": "pool"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "(pool or {}).get('address', '')",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "resolve_route_pool_addresses",
+        "line": 289,
+        "name": "address"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "rpc_layer.w3.eth.contract(address=Web3.to_checksum_address(adapter_address), abi=ROUTE_POOL_KIND_ABI)",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "validate_onchain_route_pool_kinds",
+        "line": 323,
+        "name": "contract"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "bool(contract.functions.routePoolKindEnforced().call())",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "validate_onchain_route_pool_kinds",
+        "line": 328,
+        "name": "enforced"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "ROUTE_POOL_KIND.get(protocol)",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "validate_onchain_route_pool_kinds",
+        "line": 337,
+        "name": "expected"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "int(contract.functions.routePoolKind(Web3.to_checksum_address(pool)).call())",
+        "file": "omega_v5/adapter_registry.py",
+        "function": "validate_onchain_route_pool_kinds",
+        "line": 341,
+        "name": "actual"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "Callable[[dict, Decimal], list[Quote]]",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "<module>",
+        "line": 25,
+        "name": "QuoteFn"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "adapter_for(pool.get('protocol', ''))",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "quote_pool",
+        "line": 47,
+        "name": "adapter"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['tokens']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_v2",
+        "line": 56,
+        "name": "tokens"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['reserves']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_v2",
+        "line": 57,
+        "name": "reserves"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['fee']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_v2",
+        "line": 58,
+        "name": "fee"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['tokens']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_v3",
+        "line": 68,
+        "name": "tokens"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "str(pool.get('pool_id') or pool.get('registry_id') or pool.get('address') or '')",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_v3",
+        "line": 70,
+        "name": "pool_id"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "quote_route_for_executor([tokens[i], tokens[j]], [pool_id], {pool_id: pool}, amount_in)",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_v3",
+        "line": 72,
+        "name": "executable_quote"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['tokens']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_curve",
+        "line": 84,
+        "name": "tokens"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['reserves']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_curve",
+        "line": 85,
+        "name": "reserves"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['A']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_curve",
+        "line": 86,
+        "name": "amp"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[Decimal('0')] * len(tokens)",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_curve",
+        "line": 92,
+        "name": "amounts_in"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['tokens']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_balancer",
+        "line": 101,
+        "name": "tokens"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['reserves']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_balancer",
+        "line": 102,
+        "name": "reserves"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['weights']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_balancer",
+        "line": 103,
+        "name": "weights"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "pool['swap_fee']",
+        "file": "omega_v5/amm_adapters.py",
+        "function": "_quote_balancer",
+        "line": 104,
+        "name": "swap_fee"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[{'concept': '32-lane operations grid', 'runtime_mapping': 'omega_v5.transport_lanes.LANES', 'integration': 'accepted_existing_live_redis_transport'}, {'concept': 'C1/C2 execution observability', 'runtime_mapping': 'omega_v5.execution_trace and omega_v5.pnl_tracker', 'integration': 'accepted_existing_receipt_trace_pnl_surfaces'}, {'concept': 'normalized executable quote display', 'runtime_mapping': 'LiveOpportunity.metadata.raw_spread_engine.normalized_quote', 'integration': 'accepted_live_quote",
+        "file": "omega_v5/apex_live_design.py",
+        "function": "<module>",
+        "line": 22,
+        "name": "ACCEPTED_CONCEPTS"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[{'surface': 'ExecutionManager.ts fake transaction hashes', 'reason': 'uses Math.random to create non-retrievable hashes'}, {'surface': 'server.ts dummy pool generation and fallback reserves', 'reason': 'creates synthetic pools/reserves instead of live on-chain state'}, {'surface': 'server.ts /api/arbitrage/simulate route', 'reason': 'mixes live reads with fallback reserve execution estimates'}, {'surface': 'server.ts C2 random profit and random route IDs', 'reason': 'not sourced from C1 receipt",
+        "file": "omega_v5/apex_live_design.py",
+        "function": "<module>",
+        "line": 75,
+        "name": "REJECTED_ARCHIVE_SURFACES"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "['schema', 'accounting', 'baseToken', 'midToken', 'flashPrincipalRaw', 'buyAmountInRaw', 'buyAmountOutRaw', 'sellAmountInRaw', 'sellAmountOutRaw', 'sellAmountInEqualsBuyAmountOut', 'executableBuyPriceUsdPerMid', 'executableSellPriceUsdPerMid', 'priceDeltaUsdPerMid', 'grossProfitRaw', 'flashFeeRaw', 'gasCostRaw', 'relayCostRaw', 'safetyBufferRaw', 'otherCostsRaw', 'minimumProfitRaw', 'netProfitRaw', 'executableInequalityPass']",
+        "file": "omega_v5/apex_live_design.py",
+        "function": "<module>",
+        "line": 114,
+        "name": "NORMALIZED_QUOTE_REQUIRED_FIELDS"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "['route', 'principal', 'leg1_buy', 'leg2_sell', 'spread', 'delta', 'expenses', 'raw_execution_gate', 'raw_profit']",
+        "file": "omega_v5/apex_live_design.py",
+        "function": "<module>",
+        "line": 139,
+        "name": "ACCOUNTING_V2_REQUIRED_SECTIONS"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "ROOT / 'out' / 'live_pool_scan_report.json'",
+        "file": "omega_v5/api.py",
+        "function": "<module>",
+        "line": 53,
+        "name": "LIVE_POOL_SCAN_REPORT"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "'<!doctype html>\\n<html lang=\"en\">\\n<head>\\n  <meta charset=\"utf-8\" />\\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\\n  <title>Omega V5 Runtime</title>\\n  <style>\\n    :root { color-scheme: dark; font-family: Segoe UI, Arial, sans-serif; }\\n    body { margin: 0; background: #0e1116; color: #e8edf2; }\\n    main { max-width: 1180px; margin: 0 auto; padding: 24px; }\\n    header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom",
+        "file": "omega_v5/api.py",
+        "function": "<module>",
+        "line": 111,
+        "name": "UI_HTML"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "json.loads(LIVE_POOL_SCAN_REPORT.read_text(encoding='utf-8'))",
+        "file": "omega_v5/api.py",
+        "function": "_latest_pool_scan_report",
+        "line": 471,
+        "name": "payload"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "str(LIVE_POOL_SCAN_REPORT)",
+        "file": "omega_v5/api.py",
+        "function": "_latest_pool_scan_report",
+        "line": 473,
+        "name": "payload[]"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "executor_code_status() if probe and rpc_connected else (False, 'probe_disabled' if not probe else 'rpc_unavailable')",
+        "file": "omega_v5/api.py",
+        "function": "runtime_status",
+        "line": 635,
+        "name": "(code_ok, code_detail)"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "max(Decimal('1'), Decimal(str(alert_health_factor)))",
+        "file": "omega_v5/api.py",
+        "function": "liquidation_tracker",
+        "line": 840,
+        "name": "alert_hf"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "sum((_usd_value(p.symbol, p.normalized_debt()) for p in positions), Decimal('0'))",
+        "file": "omega_v5/api.py",
+        "function": "liquidation_tracker",
+        "line": 873,
+        "name": "total_debt_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "sum((_usd_value(p.symbol, p.normalized_collateral()) for p in positions if p.usage_as_collateral), Decimal('0'))",
+        "file": "omega_v5/api.py",
+        "function": "liquidation_tracker",
+        "line": 874,
+        "name": "total_collateral_usd"
+      },
+      {
+        "category": "high_risk_assignment",
+        "detail": "[{'symbol': symbol, 'price_usd': str(price), 'source': TOKEN_USD_SOURCE.get(symbol, 'unknown')} for symbol, price in sorted(TOKEN_USD_PRICE.items())]",
+        "file": "omega_v5/api.py",
+        "function": "oracle_prices",
+        "line": 929,
+        "name": "rows"
+      },
+      {
+        "category": "runtime_control_mutation",
+        "detail": "set_runtime_mode(req.mode, actor=req.actor)",
+        "file": "omega_v5/api.py",
+        "function": "runtime_mode_update",
+        "line": 1046,
+        "name": "set_runtime_mode"
+      }
+    ],
+    "top_category_counts": {
+      "broadcast_write": 19,
+      "critical_return": 576,
+      "external_library_import": 55,
+      "file_import": 74,
+      "file_report_write": 25,
+      "high_risk_assignment": 1404,
+      "http_read": 13,
+      "http_write_or_probe": 8,
+      "json_import": 52,
+      "json_write": 94,
+      "live_state_read": 135,
+      "math_op_add": 73,
+      "math_op_div": 114,
+      "math_op_mult": 104,
+      "math_op_pow": 19,
+      "math_op_sub": 97,
+      "math_sensitive_assignment": 634,
+      "math_sensitive_call": 4906,
+      "redis_cache_write": 3,
+      "redis_stream_write": 13,
+      "rpc_provider": 34,
+      "runtime_control_mutation": 12,
+      "signing_operation": 10,
+      "websocket_read": 3
+    }
+  },
+  "blockers": [],
+  "canonical_route_math": [
+    {
+      "equation": "raw_spread_usd_per_mid = executable_sell_price_usd_per_mid - executable_buy_price_usd_per_mid",
+      "name": "directional_mid_token_spread"
+    },
+    {
+      "equation": "mid_units_min_in = base_capital_usd / executable_buy_price_usd_per_mid",
+      "name": "buy_leg_mid_units"
+    },
+    {
+      "equation": "base_out_usd = mid_units_min_in * executable_sell_price_usd_per_mid",
+      "name": "sell_leg_base_out"
+    },
+    {
+      "equation": "raw_delta_usd = base_out_usd - base_capital_usd",
+      "name": "raw_delta"
+    },
+    {
+      "equation": "net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd - relay_or_private_submit_cost_usd - risk_buffer_usd - extra_slippage_buffer_usd",
+      "name": "net_gain"
+    },
+    {
+      "equation": "executable = exact_call_pass and net_gain_usd > minimum_profit_usd and calldata_semantics_valid",
+      "name": "executor_truth_gate"
+    }
+  ],
+  "critical_debugging_areas": [
+    {
+      "area": "time_and_state_freshness",
+      "proof_focus": "block numbers, quote timestamps, Redis TTLs, report freshness, fork upstream block.",
+      "why_it_matters": "Arbitrage and AI decisions decay when block, cache, quote, or model state is stale."
+    },
+    {
+      "area": "units_decimals_and_rounding",
+      "proof_focus": "Decimal usage, floor conversions, raw/unit transforms, gas native/USD accounting.",
+      "why_it_matters": "Wei, gwei, POL, token decimals, USD, raw units, and rounding direction decide whether calldata reverts."
+    },
+    {
+      "area": "token_identity_and_metadata",
+      "proof_focus": "TOKEN_ADDRESSES, TOKEN_DECIMALS, apprentice promotions, token calibration, on-chain ERC20 checks.",
+      "why_it_matters": "Symbol collisions, bridged variants, stale decimals, and bad pool metadata can create false spreads."
+    },
+    {
+      "area": "liquidity_quality_and_duplicate_edges",
+      "proof_focus": "pool quality filters, route signatures, protocol family semantics, pool hydration completeness.",
+      "why_it_matters": "Raw-positive routes collapse when duplicate or shallow liquidity is counted as executable depth."
+    },
+    {
+      "area": "expense_accounting",
+      "proof_focus": "net_profit_usd, gas_cost_usd, flashloan_fee_usd, extra_slippage_buffer_usd, min profit floors.",
+      "why_it_matters": "Flash fee, swap fee, gas, relay cost, slippage, and risk buffers must be subtracted before execution."
+    },
+    {
+      "area": "rpc_oracle_and_cache_boundaries",
+      "proof_focus": "requests/httpx/aiohttp, Web3 providers, redis writes, JSON report imports, fallback sources.",
+      "why_it_matters": "RPC, oracle, Redis, subgraph, and file snapshots are separate trust boundaries with different failure modes."
+    },
+    {
+      "area": "calldata_and_executor_semantics",
+      "proof_focus": "payload envelopes, exact-call simulation, adapter source IDs, ABI encoding, revert decoding.",
+      "why_it_matters": "A profitable quote is not executable unless adapter semantics and encoded route calldata match the executor."
+    },
+    {
+      "area": "async_background_mutation",
+      "proof_focus": "background loops, Redis streams, JSON writes, runtime settings, registry mutation points.",
+      "why_it_matters": "Discovery, metadata runners, watchers, API controls, and engine loops can race over shared registries."
+    },
+    {
+      "area": "wallet_nonce_and_broadcast_control",
+      "proof_focus": "sign_transaction, send_raw_transaction, receipt gas, owner checks, canary mode, live acknowledgements.",
+      "why_it_matters": "Only the user wallet pays gas; nonce, balance, signing key, and broadcast lane mistakes are live-risk events."
+    },
+    {
+      "area": "ml_decision_feedback",
+      "proof_focus": "feature inputs, labels, model version, fail-closed status, ranker overrides versus hard gates.",
+      "why_it_matters": "ML can improve prioritization, but stale labels or leakage can promote routes that fail executor truth."
+    }
+  ],
+  "design_policy": {
+    "archive_code_executed": false,
+    "mock_data_imported": false,
+    "rejected_archive_surface_count": 9,
+    "runtime_source_of_truth": "live Polygon RPC state plus exact-call/payload proofs"
+  },
+  "generated_at": 1784437730,
+  "logic_data_audit_report": "C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\out\\logic_data_audit_latest.json",
+  "logic_data_audit_summary": {
+    "external_import_points": 239,
+    "files_scanned": 98,
+    "high_risk_mutation_points": 1445,
+    "live_state_points": 135,
+    "math_sensitive_points": 5947,
+    "mutation_points": 1580,
+    "parse_errors": 0,
+    "return_points": 576
+  },
+  "ok": true,
+  "required_runtime_modules": {
+    "omega_v5/accounting.py": true,
+    "omega_v5/execution_truth.py": true,
+    "omega_v5/pipeline_validation.py": true,
+    "omega_v5/route_execution_stager.py": true,
+    "omega_v5/stable_swap_pricer.py": true,
+    "omega_v5/token_calibration.py": true,
+    "omega_v5/wallet_config_verification.py": true
+  },
+  "schema_version": "omega_v5.pipeline_integrity_proof.v1"
+}

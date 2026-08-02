@@ -1,0 +1,52 @@
+Omega V5 pipeline validation
+target_rpc=https://polygon-bor-rpc.publicnode.com
+env_live_intent=True exec_mode=live live_flag=1 confirm_ok=True effective_runtime_mode=dry_run
+runtime_execution_settings=execute_top:5 canary_mode:True effective_execution_cap:1
+redis_cache_ok=True detail=connected
+✅ HTTP connected  →  polygon-bor-rpc.publicnode.com  block #90,235,447
+rpc_connect=True chain_id=137 block=90235447
+executor_code_ok=True detail=bytecode present and selector 0x626482a3 found
+executor_owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+simulation_from=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+loading_pools=True
+🔎 Factory discovery promoted 96 live pool(s) (251 live found).
+   🧭 tickSpacing cached: 61/61
+   🧩 Balancer poolIds cached: 1/1
+🌐 Loading live state for 115 registered pools...
+   ✅ 115 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 1
+   🧭 V3/Algebra orientation+decimals audit: passed=58/61 failed=3 filtered_out=3
+      reject_reasons={'non_positive_liquidity': 3}
+   📊 V3 TVL state hydrated: 47/58
+factory_discovery_stats={'enabled': True, 'live_candidates': 251, 'promoted': 96, 'live_by_protocol': {'UniswapV2': 53, 'UniswapV3': 190, 'QuickSwapV3': 8}, 'promoted_by_protocol': {'UniswapV2': 45, 'UniswapV3': 43, 'QuickSwapV3': 8}, 'active_limit': 96, 'pair_scan_limit': 80, 'v2_anchor': 'USDC.e', 'bridge_variants': ['USDC', 'USDC.e']}
+pools_loaded=112 base_registry_size=19 active_registry_size=112
+pool_quality_stats={'v3_algebra_orientation_decimals': {'clmm_total': 61, 'clmm_passed': 58, 'clmm_failed': 3, 'reject_reasons': {'non_positive_liquidity': 3}, 'filtered_out': 3, 'rankable_pools': 112}}
+v2_usdc_variants={'bridged_usdc': 12, 'none': 41} v2_composition_mismatches=0
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+prices_loaded=32
+verified_pool_registry_rows=112 hot=36 warm=69 discovery=7 execution_statuses={'SIM_ELIGIBLE': 101, 'REJECT_DEPTH_UNAVAILABLE': 11}
+rate_pairs=116 directional_quotes=212
+two_leg_spreads=4 cross_dex=0 cross_invariant=0
+stable_spreads=0 stable_cross_invariant=0
+📐 Graph built: 37 nodes (tokens), 212 edges (pool routes)
+cycles_detected=92 bellman_cycles=1 three_leg_cycles=27 four_leg_cycles=64
+gate_passed_stable=0
+gate_passed_two_leg=4
+gate_passed_merged_cycles=50
+gate_passed_by_hop=2:4 3:18 4:32
+gate_passed_opportunities=54
+liquidation_packets=0 liquidation_ready=0 rejected=0
+ranked_candidate_1=opp_id:XPOOL-0001 net_usd:1244.778714888714811471871080 path:WBTC->USDC.e->WBTC strategy:CROSS_POOL_TWO_LEG
+ranked_candidate_2=opp_id:XPOOL-0002 net_usd:1244.778714888714811471871080 path:USDC.e->WBTC->USDC.e strategy:CROSS_POOL_TWO_LEG
+ranked_candidate_3=opp_id:OPP-0041 net_usd:1141.376366629518146055174713 path:WBTC->WETH->USDC.e->WBTC strategy:THREE_LEG_TRIANGLE
+payload_source=ranked opp_id=XPOOL-0001
+schema_version=omega_v5.opportunity.v2 pricing_steps=['BUY_LEG1_PRICE', 'SELL_LEG2_PRICE'] flash_principal_usd=1469.71035
+capital_source_adapter_ok=True capital_source_executable=True flash_source_id=1 target_mode=capital_source_adapter configured_source_envs=['AAVE_V3_CAPITAL_ADAPTER', 'BALANCER_VAULT_CAPITAL_ADAPTER'] detail=BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present
+payload_ok=True to=0x409ece3Fd71DFBd8f692B600f36A89301cb37346 selector=0x626482a3 calldata_bytes=420
+c1_envelope_id=f36547d7768db249a754f2c85e1e2f4a32763517498613afd087899e809f5e41 domain=omega_v5.envelope.arbitrage_c1.v1 selector=0x626482a3
+c2_envelope_id=e63a29310daef8ac1f369d70147f4514f184ffa7206a0e2ec7ca6fb80df80eda domain=omega_v5.envelope.arbitrage_c2.v1 parent=f36547d7768db249a754f2c85e1e2f4a32763517498613afd087899e809f5e41 selector=0x00000000
+eth_call_ok=False detail=ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+payload_execution_eligible=False exact_call_gate=REJECTED_PRE_BROADCAST
+execution_armed=False guards={'runtime_mode=live': False, 'RPC_LIVE': True, 'EXECUTOR_PRIVATE_KEY valid': True, 'EXECUTOR_CONTRACT_ADDR set': True, 'BROADCAST_RPC configured': True}
+pipeline_validation=PASS

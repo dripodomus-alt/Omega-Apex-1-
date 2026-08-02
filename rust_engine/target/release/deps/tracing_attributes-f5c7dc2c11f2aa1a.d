@@ -1,0 +1,7 @@
+C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\rust_engine\target\release\deps\tracing_attributes-f5c7dc2c11f2aa1a.d: C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\lib.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\attr.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\expand.rs
+
+C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\rust_engine\target\release\deps\tracing_attributes-f5c7dc2c11f2aa1a.dll: C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\lib.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\attr.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\expand.rs
+
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\lib.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\attr.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\tracing-attributes-0.1.31\src\expand.rs:

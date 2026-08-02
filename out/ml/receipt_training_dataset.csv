@@ -1,0 +1,1 @@
+trace_hash,stage,status,mode,opp_id,tx_hash,block_number,route,hop_count,pool_count,expected_net_usd,realized_net_usd,gas_cost_usd,gas_used,receipt_status,positive_realized,reverted

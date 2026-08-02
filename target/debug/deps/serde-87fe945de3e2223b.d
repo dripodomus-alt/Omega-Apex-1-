@@ -1,0 +1,12 @@
+C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\Apex-OmegaV5\target\debug\deps\serde-87fe945de3e2223b.d: C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs C:\Users\The\ Urban\ Genius\Documents\DO\ OBVER\ ARBITRAGE\Apex-OmegaV5\target\debug\build\serde-0ceca3e0b393d465\out/private.rs
+
+C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\Apex-OmegaV5\target\debug\deps\libserde-87fe945de3e2223b.rmeta: C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs C:\Users\The\ Urban\ Genius\Documents\DO\ OBVER\ ARBITRAGE\Apex-OmegaV5\target\debug\build\serde-0ceca3e0b393d465\out/private.rs
+
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\lib.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\integer128.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\mod.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\de.rs:
+C:\Users\The\ Urban\ Genius\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.229\src\private\ser.rs:
+C:\Users\The\ Urban\ Genius\Documents\DO\ OBVER\ ARBITRAGE\Apex-OmegaV5\target\debug\build\serde-0ceca3e0b393d465\out/private.rs:
+
+# env-dep:OUT_DIR=C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\Apex-OmegaV5\\target\\debug\\build\\serde-0ceca3e0b393d465\\out

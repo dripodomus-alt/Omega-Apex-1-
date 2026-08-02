@@ -1,0 +1,1376 @@
+
+==========================================================================================
+🚀  OMEGA V5  —  Autonomous Multi-Protocol DeFi Arbitrage Engine  (Chain 137)
+==========================================================================================
+
+── STEP 1: RPC Connection ──────────────────────────────────────────────────────
+✅ WSS connected  →  lb.drpc.live  block #90,246,554
+
+── STEP 2: Deep Pool State Load ────────────────────────────────────────────────
+🔎 Factory discovery promoted 84 live pool(s) (101 live found).
+   🧬 Polygon token-list discovery staged 143 candidate token(s) against bases USDC.e,WETH,WPOL,WBTC,USDT,DAI,USDC.
+   🧭 tickSpacing cached: 77/77
+   🧩 Balancer poolIds cached: 1/1
+🌐 Loading live state for 103 registered pools...
+   ✅ 103 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 1
+   🧭 V3/Algebra orientation+decimals audit: passed=65/77 failed=12 filtered_out=12
+      reject_reasons={'non_positive_liquidity': 12}
+   📊 V3 TVL state hydrated: 50/65
+📦 LIVE_POOLS ready: 91 pools across 4 protocol families
+
+── STEP 3: Token Price Oracle Refresh ──────────────────────────────────────────
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+   WETH     $1,883.25
+   WBTC     $64,848.07
+   WPOL     $0.08
+   LINK     $8.32
+   AAVE     $99.23
+
+── STEP 3B: Targeted Liquidity Registry ───────────────────────────────────────
+   rows=91 hot=36 warm=55 discovery=0 execution_statuses={'SIM_ELIGIBLE': 76, 'REJECT_DEPTH_UNAVAILABLE': 15}
+
+── STEP 3C: Parallel Liquidation Scanner Dispatch ─────────────────────────────
+   liquidation_lane=DISPATCHED authority=SCANNER_ONLY
+
+── STEP 4: Real-Time Matrix Scanner ────────────────────────────────────────────
+🦅 [MACRO-SCANNER] Deep Matrix Black Scan Loop Online. Interval: 15.0s.
+📡 [LIVE-REFRESH] Mounted Chain 137 live state refresh pipeline...
+   liquidation_lane=BLOCKED detail=ConnectionClosedOK: sent 1000 (OK); then received 1000 (OK)
+
+⏱️  [BLACK SCAN TICK #1] Evaluating Core Trailing Window...
+  ↳ [PROCESSING] 1 cross-protocol pipeline mutations...
+    🌟 [UniswapV3   ] V3_USDC_e_WETH_500                       WETH->USDC.e Out: 1790137.8942 | Age: 1.43s
+
+🏁 [EVALUATION COMPLETE] Macro intervals traced and analysed.
+
+── STEP 5: Cross-Pool Price Ranking ────────────────────────────────────────────
+📊 CROSS-POOL PRICE RANKING REPORT
+   Pairs with multi-pool coverage: 34 | Total directional quotes: 162
+==========================================================================================
+
+          AAVE → WETH          [4 pools | spread: +476.3033%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_AAVE                   QuickSwapV3      0.052348     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_AAVE_500                    UniswapV3        0.049984     -4.5162%  
+  #3    V3_AAVE_WETH_3000                        UniswapV3        0.036757    -29.7834%  
+  #4    QS_AAVE_WETH                             UniswapV2        0.009083    -82.6480%  ▼ WORST
+
+           BAL → WETH          [3 pools | spread: +613314795811.4059%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    BAL_WPOL_WETH_USDC                       Balancer         0.000051     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_BAL_3000                    UniswapV3        0.000034    -33.3383%  
+  #3    DISC_QS_WETH_BAL                         UniswapV2        0.000000   -100.0000%  ▼ WORST
+
+           CRV → WETH          [2 pools | spread: +56.1216%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    V3_CRV_WETH_3000                         UniswapV3        0.000083     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_CRV                         UniswapV2        0.000053    -35.9474%  ▼ WORST
+
+           DAI → USDC          [4 pools | spread: +42.8915%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_DAI                    QuickSwapV3      0.999935     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_DAI_100                     UniswapV3        0.989904     -1.0032%  
+  #3    DISC_V3_USDC_DAI_500                     UniswapV3        0.950182     -4.9756%  
+  #4    DISC_V3_USDC_DAI_3000                    UniswapV3        0.699786    -30.0169%  ▼ WORST
+
+           DAI → USDC.e        [4 pools | spread: +41.7356%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    V3_USDC_e_DAI_100                        UniswapV3        0.990274     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_DAI_100                   UniswapV3        0.990079     -0.0197%  
+  #3    QS_USDC_e_DAI                            UniswapV2        0.988115     -0.2181%  
+  #4    DISC_V3_USDC_e_DAI_3000                  UniswapV3        0.698677    -29.4461%  ▼ WORST
+
+          LINK → WETH          [4 pools | spread: +43.0022%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_LINK                   QuickSwapV3      0.004412     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_LINK_500                    UniswapV3        0.004193     -4.9719%  
+  #3    QS_LINK_WETH                             UniswapV2        0.003917    -11.2226%  
+  #4    V3_LINK_WETH_3000                        UniswapV3        0.003085    -30.0710%  ▼ WORST
+
+           UNI → WETH          [2 pools | spread: +13.3718%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_WETH_UNI_3000                    UniswapV3        0.001365     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_UNI                         UniswapV2        0.001204    -11.7947%  ▼ WORST
+
+          USDC → DAI           [4 pools | spread: +42.8199%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_DAI                    QuickSwapV3      1.000045     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_DAI_100                     UniswapV3        0.990096     -0.9948%  
+  #3    DISC_V3_USDC_DAI_500                     UniswapV3        0.949818     -5.0225%  
+  #4    DISC_V3_USDC_DAI_3000                    UniswapV3        0.700214    -29.9817%  ▼ WORST
+
+          USDC → USDC.e        [4 pools | spread: +4448.3384%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDC_e_100                  UniswapV3        0.990125     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDC_e_500                  UniswapV3        0.950458     -4.0063%  
+  #3    DISC_V3_USDC_USDC_e_3000                 UniswapV3        0.698396    -29.4639%  
+  #4    DISC_QS_USDC_USDC_e                      UniswapV2        0.021769    -97.8014%  ▼ WORST
+
+          USDC → USDT          [3 pools | spread: +41.6750%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDT_100                    UniswapV3        0.990575     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDT_500                    UniswapV3        0.950764     -4.0190%  
+  #3    DISC_V3_USDC_USDT_3000                   UniswapV3        0.699189    -29.4159%  ▼ WORST
+
+          USDC → WETH          [3 pools | spread: +42.2470%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_WETH_100                    UniswapV3        0.000528     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_WETH_500                    UniswapV3        0.000504     -4.5645%  
+  #3    DISC_V3_USDC_WETH_3000                   UniswapV3        0.000371    -29.6997%  ▼ WORST
+
+          USDC → WPOL          [4 pools | spread: +42.4031%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_USDC                   QuickSwapV3     11.756194     +0.0000%  ★ BEST
+  #2    DISC_V3_WPOL_USDC_100                    UniswapV3       11.672452     -0.7123%  
+  #3    DISC_V3_WPOL_USDC_500                    UniswapV3       11.177294     -4.9242%  
+  #4    DISC_V3_WPOL_USDC_3000                   UniswapV3        8.255575    -29.7768%  ▼ WORST
+
+        USDC.e → DAI           [4 pools | spread: +41.5610%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    QS_USDC_e_DAI                            UniswapV2        0.992803     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_DAI_100                   UniswapV3        0.989921     -0.2904%  
+  #3    V3_USDC_e_DAI_100                        UniswapV3        0.989726     -0.3100%  
+  #4    DISC_V3_USDC_e_DAI_3000                  UniswapV3        0.701325    -29.3591%  ▼ WORST
+
+        USDC.e → USDC          [4 pools | spread: +4459.7889%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDC_e_100                  UniswapV3        0.989875     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDC_e_500                  UniswapV3        0.949542     -4.0745%  
+  #3    DISC_V3_USDC_USDC_e_3000                 UniswapV3        0.701608    -29.1216%  
+  #4    DISC_QS_USDC_USDC_e                      UniswapV2        0.021709    -97.8069%  ▼ WORST
+
+        USDC.e → USDT          [5 pools | spread: +42.6928%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_USDT                 QuickSwapV3      1.000549     +0.0000%  ★ BEST
+  #2    QS_USDC_e_USDT                           UniswapV2        0.996050     -0.4497%  
+  #3    V3_USDC_e_USDT_100                       UniswapV3        0.990448     -1.0096%  
+  #4    DISC_V3_USDC_e_USDT_500                  UniswapV3        0.950107     -5.0415%  
+  #5    DISC_V3_USDC_e_USDT_3000                 UniswapV3        0.701191    -29.9194%  ▼ WORST
+
+        USDC.e → WBTC          [4 pools | spread: +179.3113%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_e_WBTC_100                  UniswapV3        0.000030     +0.0000%  ★ BEST
+  #2    DISC_QS_USDC_e_WBTC                      UniswapV2        0.000015    -49.6636%  
+  #3    DISC_V3_USDC_e_WBTC_500                  UniswapV3        0.000015    -51.4353%  
+  #4    DISC_V3_USDC_e_WBTC_3000                 UniswapV3        0.000011    -64.1976%  ▼ WORST
+
+        USDC.e → WETH          [6 pools | spread: +42.7920%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_WETH                 QuickSwapV3      0.000530     +0.0000%  ★ BEST
+  #2    QS_WETH_USDC_e                           UniswapV2        0.000528     -0.3531%  
+  #3    DISC_V3_USDC_e_WETH_100                  UniswapV3        0.000525     -0.8824%  
+  #4    BAL_WPOL_WETH_USDC                       Balancer         0.000507     -4.2281%  
+  #5    V3_USDC_e_WETH_500                       UniswapV3        0.000504     -4.8463%  ▼ WORST
+
+        USDC.e → WPOL          [3 pools | spread: +4.8256%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    QS_WPOL_USDC_e                           UniswapV2       11.717359     +0.0000%  ★ BEST
+  #2    BAL_WPOL_WETH_USDC                       Balancer        11.277000     -3.7582%  
+  #3    V3_WPOL_USDC_e_500                       UniswapV3       11.177956     -4.6035%  ▼ WORST
+
+          USDT → USDC          [3 pools | spread: +41.1826%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDT_100                    UniswapV3        0.989425     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDT_500                    UniswapV3        0.949237     -4.0618%  
+  #3    DISC_V3_USDC_USDT_3000                   UniswapV3        0.700812    -29.1697%  ▼ WORST
+
+          USDT → USDC.e        [5 pools | spread: +43.0188%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_USDT                 QuickSwapV3      0.999431     +0.0000%  ★ BEST
+  #2    QS_USDC_e_USDT                           UniswapV2        0.991610     -0.7825%  
+  #3    V3_USDC_e_USDT_100                       UniswapV3        0.989552     -0.9884%  
+  #4    DISC_V3_USDC_e_USDT_500                  UniswapV3        0.949893     -4.9566%  
+  #5    DISC_V3_USDC_e_USDT_3000                 UniswapV3        0.698811    -30.0791%  ▼ WORST
+
+          WBTC → USDC.e        [4 pools | spread: +82023.0476%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_e_WBTC_500                  UniswapV3    61624.360647     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_WBTC_3000                 UniswapV3    45384.807520    -26.3525%  
+  #3    DISC_V3_USDC_e_WBTC_100                  UniswapV3    32500.973551    -47.2595%  
+  #4    DISC_QS_USDC_e_WBTC                      UniswapV2       75.039057    -99.8782%  ▼ WORST
+
+          WBTC → WETH          [5 pools | spread: +35856.7864%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WBTC_WETH                   QuickSwapV3     34.366145     +0.0000%  ★ BEST
+  #2    DISC_V3_WBTC_WETH_100                    UniswapV3       34.073866     -0.8505%  
+  #3    V3_WBTC_WETH_500                         UniswapV3       32.671659     -4.9307%  
+  #4    DISC_V3_WBTC_WETH_3000                   UniswapV3       24.094151    -29.8899%  
+  #5    QS_WBTC_WETH                             UniswapV2        0.095576    -99.7219%  ▼ WORST
+
+          WETH → AAVE          [4 pools | spread: +9075.7538%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_AAVE                   QuickSwapV3     18.997830     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_AAVE_500                    UniswapV3       18.055812     -4.9586%  
+  #3    V3_AAVE_WETH_3000                        UniswapV3       13.330779    -29.8300%  
+  #4    QS_AAVE_WETH                             UniswapV2        0.207044    -98.9102%  ▼ WORST
+
+          WETH → BAL           [3 pools | spread: +8001632975631735.0000%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_WETH_BAL_3000                    UniswapV3    14287.350806     +0.0000%  ★ BEST
+  #2    BAL_WPOL_WETH_USDC                       Balancer       239.795809    -98.3216%  
+  #3    DISC_QS_WETH_BAL                         UniswapV2        0.000000   -100.0000%  ▼ WORST
+
+          WETH → CRV           [2 pools | spread: +731138.6303%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    V3_CRV_WETH_3000                         UniswapV3     5912.935279     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_CRV                         UniswapV2        0.808619    -99.9863%  ▼ WORST
+
+          WETH → LINK          [4 pools | spread: +2771.2450%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_LINK                   QuickSwapV3    226.576447     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_LINK_500                    UniswapV3      215.249506     -4.9992%  
+  #3    V3_LINK_WETH_3000                        UniswapV3      158.812854    -29.9076%  
+  #4    QS_LINK_WETH                             UniswapV2        7.891226    -96.5172%  ▼ WORST
+
+          WETH → UNI           [2 pools | spread: +21877.8587%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_WETH_UNI_3000                    UniswapV3      359.072124     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_UNI                         UniswapV2        1.633790    -99.5450%  ▼ WORST
+
+          WETH → USDC          [3 pools | spread: +40.6149%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_WETH_100                    UniswapV3     1855.993845     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_WETH_500                    UniswapV3     1790.784060     -3.5135%  
+  #3    DISC_V3_USDC_WETH_3000                   UniswapV3     1319.912735    -28.8838%  ▼ WORST
+
+          WETH → USDC.e        [6 pools | spread: +7942.5272%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_WETH                 QuickSwapV3   1883.947005     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_WETH_100                  UniswapV3     1866.095944     -0.9475%  
+  #3    V3_USDC_e_WETH_500                       UniswapV3     1789.928949     -4.9905%  
+  #4    V3_USDC_e_WETH_3000                      UniswapV3     1320.426300    -29.9117%  
+  #5    QS_WETH_USDC_e                           UniswapV2      647.077362    -65.6531%  ▼ WORST
+
+          WETH → WBTC          [5 pools | spread: +1043.4959%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WBTC_WETH                   QuickSwapV3      0.029053     +0.0000%  ★ BEST
+  #2    DISC_V3_WBTC_WETH_100                    UniswapV3        0.028764     -0.9951%  
+  #3    V3_WBTC_WETH_500                         UniswapV3        0.027623     -4.9212%  
+  #4    DISC_V3_WBTC_WETH_3000                   UniswapV3        0.020337    -30.0009%  
+  #5    QS_WBTC_WETH                             UniswapV2        0.002541    -91.2549%  ▼ WORST
+
+          WETH → WPOL          [6 pools | spread: +7926.7530%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_WETH                   QuickSwapV3  22150.650784     +0.0000%  ★ BEST
+  #2    DISC_V3_WPOL_WETH_100                    UniswapV3    22011.984194     -0.6260%  
+  #3    V3_WPOL_WETH_500                         UniswapV3    21074.852621     -4.8567%  
+  #4    DISC_V3_WPOL_WETH_3000                   UniswapV3    15563.208685    -29.7393%  
+  #5    QS_WPOL_WETH                             UniswapV2     2177.364485    -90.1702%  ▼ WORST
+
+          WPOL → USDC          [4 pools | spread: +43.0405%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_USDC                   QuickSwapV3      0.084900     +0.0000%  ★ BEST
+  #2    DISC_V3_WPOL_USDC_100                    UniswapV3        0.083967     -1.0990%  
+  #3    DISC_V3_WPOL_USDC_500                    UniswapV3        0.080744     -4.8951%  
+  #4    DISC_V3_WPOL_USDC_3000                   UniswapV3        0.059354    -30.0897%  ▼ WORST
+
+          WPOL → USDC.e        [3 pools | spread: +4.6627%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    QS_WPOL_USDC_e                           UniswapV2        0.084504     +0.0000%  ★ BEST
+  #2    BAL_WPOL_WETH_USDC                       Balancer         0.084371     -0.1568%  
+  #3    V3_WPOL_USDC_e_500                       UniswapV3        0.080739     -4.4549%  ▼ WORST
+
+          WPOL → WETH          [6 pools | spread: +43.1396%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_WETH                   QuickSwapV3      0.000045     +0.0000%  ★ BEST
+  #2    QS_WPOL_WETH                             UniswapV2        0.000045     -0.5709%  
+  #3    BAL_WPOL_WETH_USDC                       Balancer         0.000045     -0.7480%  
+  #4    DISC_V3_WPOL_WETH_100                    UniswapV3        0.000045     -1.2005%  
+  #5    V3_WPOL_WETH_500                         UniswapV3        0.000043     -4.9776%  ▼ WORST
+
+==========================================================================================
+✅ Price ranking complete across 64 directional token-pair routes.
+
+── STEP 6: Two-Leg Cross-Pool / Cross-DEX Spread Detection ─────────────────────
+🔁 TWO-LEG CROSS-POOL SPREAD REPORT
+   Buy-leg lower than sell-leg opportunities: 4
+==========================================================================================
+
+  #1   WBTC → USDC.e → WBTC  gross=+85.834544%  cross_dex=False cross_invariant=False
+       BUY  USDC.e with WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_500  price=0.000016227349
+       SELL USDC.e for WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=0.000030156020
+
+  #2   USDC.e → WBTC → USDC.e  gross=+85.834544%  cross_dex=False cross_invariant=False
+       BUY  WBTC with USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=33160.874962431829
+       SELL WBTC for USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_500  price=61624.360646627633
+
+  #3   WBTC → USDC.e → WBTC  gross=+36.862515%  cross_dex=False cross_invariant=False
+       BUY  USDC.e with WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_3000  price=0.000022033805
+       SELL USDC.e for WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=0.000030156020
+
+  #4   USDC.e → WBTC → USDC.e  gross=+36.862515%  cross_dex=False cross_invariant=False
+       BUY  WBTC with USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=33160.874962431829
+       SELL WBTC for USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_3000  price=45384.807520408100
+==========================================================================================
+
+── STEP 7: Pegged / Stable Swap Strategy Detection ─────────────────────────────
+💱 PEGGED / STABLE TWO-LEG STRATEGY REPORT
+   Same-peg stable candidates: 0
+==========================================================================================
+  ↳ No same-peg stable routes pass the current spread and peg-deviation bounds.
+==========================================================================================
+
+── STEP 8: Arbitrage Path Graph & Bellman-Ford Negative-Cycle Detection ────────
+🕸️  Constructing Arbitrage Path Graph from cross-pool rate matrix...
+📐 Graph built: 17 nodes (tokens), 162 edges (pool routes)
+🦀 Rust Bellman-Ford engine returned 1 negative-cycle candidate(s)
+
+✅ Detection complete. 92 arbitrage cycle(s) found (1 Bellman-Ford, 27 explicit 3-leg, 64 explicit 4-leg).
+
+==========================================================================================
+🔥 ARBITRAGE OPPORTUNITY REPORT  —  92 unique cycle(s) detected
+==========================================================================================
+
+  #  1  🟢 STRONG
+       Path (3 hops): USDC.e → WBTC → WETH → USDC.e
+       Cumulative Rate: 1.95242121   Gross Profit: +95.242121%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1883.947005
+
+  #  2  🟢 STRONG
+       Path (3 hops): WBTC → WETH → USDC.e → WBTC
+       Cumulative Rate: 1.95242121   Gross Profit: +95.242121%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1883.947005
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  #  3  🟢 STRONG
+       Path (3 hops): WETH → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.95242121   Gross Profit: +95.242121%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1883.947005
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+
+  #  4  🟢 STRONG
+       Path (4 hops): USDC.e → WBTC → WETH → WPOL → USDC.e
+       Cumulative Rate: 1.93984894   Gross Profit: +93.984894%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+
+  #  5  🟢 STRONG
+       Path (4 hops): WBTC → WETH → WPOL → USDC.e → WBTC
+       Cumulative Rate: 1.93984894   Gross Profit: +93.984894%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  #  6  🟢 STRONG
+       Path (4 hops): WETH → WPOL → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.93984894   Gross Profit: +93.984894%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+
+  #  7  🟢 STRONG
+       Path (4 hops): WPOL → USDC.e → WBTC → WETH → WPOL
+       Cumulative Rate: 1.93984894   Gross Profit: +93.984894%
+       Pool Sequence:
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+
+  #  8  🟢 STRONG
+       Path (4 hops): WBTC → WETH → WPOL → USDC.e → WBTC
+       Cumulative Rate: 1.93680664   Gross Profit: +93.680664%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084371
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  #  9  🟢 STRONG
+       Path (4 hops): USDC.e → WBTC → WETH → WPOL → USDC.e
+       Cumulative Rate: 1.93680664   Gross Profit: +93.680664%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084371
+
+  # 10  🟢 STRONG
+       Path (4 hops): WETH → WPOL → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.93680664   Gross Profit: +93.680664%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084371
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+
+  # 11  🟢 STRONG
+       Path (4 hops): WPOL → USDC.e → WBTC → WETH → WPOL
+       Cumulative Rate: 1.93680664   Gross Profit: +93.680664%
+       Pool Sequence:
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084371
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22150.650784
+
+  # 12  🟢 STRONG
+       Path (3 hops): USDC.e → WBTC → WETH → USDC.e
+       Cumulative Rate: 1.93581614   Gross Profit: +93.581614%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.073866
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1883.947005
+
+  # 13  🟢 STRONG
+       Path (3 hops): WBTC → WETH → USDC.e → WBTC
+       Cumulative Rate: 1.93581614   Gross Profit: +93.581614%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.073866
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1883.947005
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  # 14  🟢 STRONG
+       Path (3 hops): WETH → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.93581614   Gross Profit: +93.581614%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1883.947005
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.073866
+
+  # 15  🟢 STRONG
+       Path (3 hops): USDC.e → WBTC → WETH → USDC.e
+       Cumulative Rate: 1.93392133   Gross Profit: +93.392133%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WETH_100  rate=1866.095944
+
+  # 16  🟢 STRONG
+       Path (3 hops): WBTC → WETH → USDC.e → WBTC
+       Cumulative Rate: 1.93392133   Gross Profit: +93.392133%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WETH_100  rate=1866.095944
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  # 17  🟢 STRONG
+       Path (3 hops): WETH → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.93392133   Gross Profit: +93.392133%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WETH_100  rate=1866.095944
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+
+  # 18  🟢 STRONG
+       Path (4 hops): USDC.e → WBTC → WETH → WPOL → USDC.e
+       Cumulative Rate: 1.92770517   Gross Profit: +92.770517%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [UniswapV3   ] DISC_V3_WPOL_WETH_100  rate=22011.984194
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+
+  # 19  🟢 STRONG
+       Path (4 hops): WBTC → WETH → WPOL → USDC.e → WBTC
+       Cumulative Rate: 1.92770517   Gross Profit: +92.770517%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [UniswapV3   ] DISC_V3_WPOL_WETH_100  rate=22011.984194
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  # 20  🟢 STRONG
+       Path (4 hops): WPOL → USDC.e → WBTC → WETH → WPOL
+       Cumulative Rate: 1.92770517   Gross Profit: +92.770517%
+       Pool Sequence:
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084504
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.366145
+         ├─ [UniswapV3   ] DISC_V3_WPOL_WETH_100  rate=22011.984194
+
+  … and 72 additional cycles (truncated).
+
+==========================================================================================
+  ★  Best gross opportunity: +95.242121% on path: USDC.e → WBTC → WETH → USDC.e
+     ⚠️  Note: gross profit does not account for gas costs, slippage, or MEV.
+==========================================================================================
+
+
+── STEP 9: Net-Profit Gated Opportunity Ranking ────────────────────────────────
+   ↳ 0 pegged stable opportunities pass the profitability gate
+   ↳ 4 two-leg cross-pool opportunities pass the profitability gate
+   ↳ 50 merged cycle opportunities pass the profitability gate
+   ↳ hop coverage 2=4 3=18 4=32
+   ↳ 54 opportunities pass the profitability gate
+
+==========================================================================================
+💰 LIVE RANKED OPPORTUNITIES — showing top 50 of 54 passed profitability gate
+   Sorted highest net positive profit → lowest within printed set
+==========================================================================================
+
+  #01 XPOOL-0001  🟢 STRONG
+  Path       : WBTC → USDC.e → WBTC
+  Strategy   : CROSS_POOL_TWO_LEG
+  Pools      : DISC_V3_USDC_e_WBTC_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xeef1a9507b3d505f0062f2be9453981255b503c8 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  BUY_LEG1_PRICE  : 0.00001622734888454740622925317694 (WBTC per USDC.e)
+  SELL_LEG2_PRICE : 0.00003015601974112282911169518502 (WBTC per USDC.e)
+  Flash Src  : Balancer_Vault  (1.858345x gross rate)
+  Principal  : $1,485.73  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $2,761.0039
+  Gas        : $0.0086  |  Units: 350,000  |  Gas Px: 289.203 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1273.7630  |  Profit/Gas: 148063.917x
+  Block      : #90,246,554
+
+  #02 XPOOL-0002  🟢 STRONG
+  Path       : USDC.e → WBTC → USDC.e
+  Strategy   : CROSS_POOL_TWO_LEG
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_USDC_e_WBTC_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xeef1a9507b3d505f0062f2be9453981255b503c8
+  BUY_LEG1_PRICE  : 33160.87496243182934800988982 (USDC.e per WBTC)
+  SELL_LEG2_PRICE : 61624.36064662763314680032725 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.858345x gross rate)
+  Principal  : $1,485.73  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $2,761.0039
+  Gas        : $0.0086  |  Units: 350,000  |  Gas Px: 289.203 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1273.7630  |  Profit/Gas: 148063.917x
+  Block      : #90,246,554
+
+  #03 OPP-0046  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_WBTC_WETH_500 → V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x50eaEDB835021E4A108B7290636d62E9765cc6d7 → 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.03060756688292152482532629756 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005586813939145887454567710089 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.763522x gross rate)
+  Principal  : $1,515.35  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $2,672.3549
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 285.660 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1155.4921  |  Profit/Gas: 95187.623x
+  Block      : #90,246,554
+
+  #04 OPP-0044  🟢 STRONG
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100 → V3_WBTC_WETH_500
+  Pool addrs : 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x50eaEDB835021E4A108B7290636d62E9765cc6d7
+  CYCLE_HOP_1_PRICE: 0.0005586813939145887454567710089 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.763522x gross rate)
+  Principal  : $1,515.35  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $2,672.3549
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 285.660 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1155.4921  |  Profit/Gas: 95187.623x
+  Block      : #90,246,554
+
+  #05 OPP-0045  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → V3_WBTC_WETH_500 → V3_USDC_e_WETH_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x50eaEDB835021E4A108B7290636d62E9765cc6d7 → 0x45dDa9cb7c25131DF268515131f647d726f50608
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.03060756688292152482532629756 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.763522x gross rate)
+  Principal  : $1,515.35  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $2,672.3549
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 285.660 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1155.4921  |  Profit/Gas: 95187.623x
+  Block      : #90,246,554
+
+  #06 OPP-0002  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005308004935196270958831396322 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.952421x gross rate)
+  Principal  : $431.60  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $842.6563
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 283.050 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $409.5487  |  Profit/Gas: 34048.993x
+  Block      : #90,246,554
+
+  #07 OPP-0001  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_USDC_e_WETH
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.952421x gross rate)
+  Principal  : $431.60  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage  |  Fee Block: 90246607
+  Gross Out  : $842.6563
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 283.050 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $409.5487  |  Profit/Gas: 34048.993x
+  Block      : #90,246,554
+
+  #08 OPP-0003  🟢 STRONG
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.0005308004935196270958831396322 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.952421x gross rate)
+  Principal  : $431.60  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $842.6563
+  Gas        : $0.0125  |  Units: 500,000  |  Gas Px: 293.711 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $409.5483  |  Profit/Gas: 32813.099x
+  Block      : #90,246,554
+
+  #09 OPP-0027  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005586813939145887454567710089 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.854986x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $834.0236
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 281.529 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $382.8998  |  Profit/Gas: 32005.424x
+  Block      : #90,246,554
+
+  #10 OPP-0028  🟢 STRONG
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.0005586813939145887454567710089 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.854986x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $834.0236
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 281.529 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $382.8998  |  Profit/Gas: 32005.424x
+  Block      : #90,246,554
+
+  #11 OPP-0026  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → V3_USDC_e_WETH_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x45dDa9cb7c25131DF268515131f647d726f50608
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.854986x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $834.0236
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 281.692 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $382.8998  |  Profit/Gas: 31986.914x
+  Block      : #90,246,554
+
+  #12 OPP-0034  🟢 STRONG
+  Path       : WBTC → WETH → USDC → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_100 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd36ec33c8bed5a9f7b6630855f1533455b98a418 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005584146197159080829797038055 (WETH per USDC)
+  Flash Src  : Balancer_Vault  (1.837545x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage  |  Fee Block: 90246635
+  Gross Out  : $826.1819
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 281.684 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $375.0545  |  Profit/Gas: 24101.873x
+  Block      : #90,246,554
+
+  #13 OPP-0035  🟢 STRONG
+  Path       : WETH → USDC → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_100 → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd36ec33c8bed5a9f7b6630855f1533455b98a418 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.0005584146197159080829797038055 (WETH per USDC)
+  CYCLE_HOP_2_PRICE: 1.009973757436363732291866831 (USDC per USDC.e)
+  Flash Src  : Balancer_Vault  (1.837545x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $826.1819
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 281.684 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $375.0545  |  Profit/Gas: 24101.873x
+  Block      : #90,246,554
+
+  #14 OPP-0033  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_100
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd36ec33c8bed5a9f7b6630855f1533455b98a418
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.837545x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $826.1819
+  Gas        : $0.0157  |  Units: 650,000  |  Gas Px: 284.665 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $375.0544  |  Profit/Gas: 23849.499x
+  Block      : #90,246,554
+
+  #15 OPP-0032  🟢 STRONG
+  Path       : USDC → USDC.e → WBTC → WETH → USDC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_USDC_e_100 → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_V3_USDC_WETH_500
+  Pool addrs : 0xd36ec33c8bed5a9f7b6630855f1533455b98a418 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9
+  CYCLE_HOP_1_PRICE: 1.009973757436363732291866831 (USDC per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.837545x gross rate)
+  Principal  : $449.61  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $826.1819
+  Gas        : $0.0157  |  Units: 650,000  |  Gas Px: 284.665 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $375.0544  |  Profit/Gas: 23849.499x
+  Block      : #90,246,554
+
+  #16 OPP-0025  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → V3_WBTC_WETH_500 → DISC_ALGEBRA_USDC_e_WETH
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x50eaEDB835021E4A108B7290636d62E9765cc6d7 → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.03060756688292152482532629756 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.856154x gross rate)
+  Principal  : $431.60  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $801.1076
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 281.692 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $368.0001  |  Profit/Gas: 30742.213x
+  Block      : #90,246,554
+
+  #17 OPP-0024  🟢 STRONG
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100 → V3_WBTC_WETH_500
+  Pool addrs : 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x50eaEDB835021E4A108B7290636d62E9765cc6d7
+  CYCLE_HOP_1_PRICE: 0.0005308004935196270958831396322 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.856154x gross rate)
+  Principal  : $431.60  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $801.1076
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 281.692 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $368.0001  |  Profit/Gas: 30742.213x
+  Block      : #90,246,554
+
+  #18 OPP-0023  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_WBTC_WETH_500 → DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x50eaEDB835021E4A108B7290636d62E9765cc6d7 → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.03060756688292152482532629756 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005308004935196270958831396322 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.856154x gross rate)
+  Principal  : $431.60  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $801.1076
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 284.683 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $368.0000  |  Profit/Gas: 30419.204x
+  Block      : #90,246,554
+
+  #19 OPP-0042  🟢 STRONG
+  Path       : WBTC → WETH → USDC → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd9abecb39a5885d1e531ed3599adfed620e2fc8a → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005584146197159080829797038055 (WETH per USDC)
+  Flash Src  : Balancer_Vault  (1.763928x gross rate)
+  Principal  : $410.07  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $723.3324
+  Gas        : $0.0157  |  Units: 650,000  |  Gas Px: 284.414 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $311.7476  |  Profit/Gas: 19841.344x
+  Block      : #90,246,554
+
+  #20 OPP-0043  🟢 STRONG
+  Path       : WETH → USDC → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_500 → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd9abecb39a5885d1e531ed3599adfed620e2fc8a → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.0005584146197159080829797038055 (WETH per USDC)
+  CYCLE_HOP_2_PRICE: 1.052124523922585425105197488 (USDC per USDC.e)
+  Flash Src  : Balancer_Vault  (1.763928x gross rate)
+  Principal  : $410.07  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $723.3324
+  Gas        : $0.0157  |  Units: 650,000  |  Gas Px: 284.414 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $311.7476  |  Profit/Gas: 19841.344x
+  Block      : #90,246,554
+
+  #21 OPP-0040  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd9abecb39a5885d1e531ed3599adfed620e2fc8a
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.763928x gross rate)
+  Principal  : $410.07  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $723.3324
+  Gas        : $0.0159  |  Units: 650,000  |  Gas Px: 287.447 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $311.7475  |  Profit/Gas: 19632.005x
+  Block      : #90,246,554
+
+  #22 OPP-0041  🟢 STRONG
+  Path       : USDC → USDC.e → WBTC → WETH → USDC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_USDC_e_500 → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_V3_USDC_WETH_500
+  Pool addrs : 0xd9abecb39a5885d1e531ed3599adfed620e2fc8a → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9
+  CYCLE_HOP_1_PRICE: 1.052124523922585425105197488 (USDC per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.763928x gross rate)
+  Principal  : $410.07  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $723.3324
+  Gas        : $0.0159  |  Units: 650,000  |  Gas Px: 287.447 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $311.7475  |  Profit/Gas: 19632.005x
+  Block      : #90,246,554
+
+  #23 OPP-0005  🟢 STRONG
+  Path       : WBTC → WETH → WPOL → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_WPOL_WETH → QS_WPOL_USDC_e → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  Flash Src  : Balancer_Vault  (1.938880x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $437.2344
+  Gas        : $0.0161  |  Units: 650,000  |  Gas Px: 291.903 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $210.2095  |  Profit/Gas: 13035.637x
+  Block      : #90,246,554
+
+  #24 OPP-0006  🟢 STRONG
+  Path       : WETH → WPOL → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WPOL_WETH → QS_WPOL_USDC_e → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  CYCLE_HOP_2_PRICE: 11.83377790462158039620412338 (WPOL per USDC.e)
+  Flash Src  : Balancer_Vault  (1.938877x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $437.2337
+  Gas        : $0.0160  |  Units: 650,000  |  Gas Px: 289.569 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $210.2089  |  Profit/Gas: 13140.693x
+  Block      : #90,246,554
+
+  #25 OPP-0007  🟢 STRONG
+  Path       : WPOL → USDC.e → WBTC → WETH → WPOL
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : QS_WPOL_USDC_e → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_WPOL_WETH
+  Pool addrs : 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0
+  CYCLE_HOP_1_PRICE: 11.83377790462158039620412338 (WPOL per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.938876x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $437.2336
+  Gas        : $0.0160  |  Units: 650,000  |  Gas Px: 289.569 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $210.2088  |  Profit/Gas: 13140.686x
+  Block      : #90,246,554
+
+  #26 OPP-0004  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → WPOL → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_WPOL_WETH → QS_WPOL_USDC_e
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.937393x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $436.8991
+  Gas        : $0.0161  |  Units: 650,000  |  Gas Px: 291.903 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $209.8742  |  Profit/Gas: 13014.846x
+  Block      : #90,246,554
+
+  #27 OPP-0008  🟢 STRONG
+  Path       : WBTC → WETH → WPOL → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_WPOL_WETH → BAL_WPOL_WETH_USDC → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  Flash Src  : Balancer_Vault  (1.925525x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $434.2228
+  Gas        : $0.0160  |  Units: 650,000  |  Gas Px: 289.569 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $207.1980  |  Profit/Gas: 12952.475x
+  Block      : #90,246,554
+
+  #28 OPP-0010  🟢 STRONG
+  Path       : WETH → WPOL → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WPOL_WETH → BAL_WPOL_WETH_USDC → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  CYCLE_HOP_2_PRICE: 11.85236615619317508024150544 (WPOL per USDC.e)
+  Flash Src  : Balancer_Vault  (1.925489x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $434.2148
+  Gas        : $0.0158  |  Units: 650,000  |  Gas Px: 286.559 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $207.1902  |  Profit/Gas: 13088.027x
+  Block      : #90,246,554
+
+  #29 OPP-0011  🟢 STRONG
+  Path       : WPOL → USDC.e → WBTC → WETH → WPOL
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : BAL_WPOL_WETH_USDC → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_WPOL_WETH
+  Pool addrs : 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0
+  CYCLE_HOP_1_PRICE: 11.85236615619317508024150544 (WPOL per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.925483x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $434.2133
+  Gas        : $0.0158  |  Units: 650,000  |  Gas Px: 286.559 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $207.1887  |  Profit/Gas: 13087.936x
+  Block      : #90,246,554
+
+  #30 OPP-0009  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → WPOL → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_WPOL_WETH → BAL_WPOL_WETH_USDC
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02909840497687652330042175812 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.908451x gross rate)
+  Principal  : $225.51  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $430.3723
+  Gas        : $0.0158  |  Units: 650,000  |  Gas Px: 286.559 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $203.3477  |  Profit/Gas: 12845.305x
+  Block      : #90,246,554
+
+  #31 XPOOL-0003  🟢 STRONG
+  Path       : WBTC → USDC.e → WBTC
+  Strategy   : CROSS_POOL_TWO_LEG
+  Pools      : DISC_V3_USDC_e_WBTC_3000 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  BUY_LEG1_PRICE  : 0.00002203380502495977080046414202 (WBTC per USDC.e)
+  SELL_LEG2_PRICE : 0.00003015601974112282911169518502 (WBTC per USDC.e)
+  Flash Src  : Balancer_Vault  (1.368625x gross rate)
+  Principal  : $106.33  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $145.5233
+  Gas        : $0.0085  |  Units: 350,000  |  Gas Px: 286.152 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $37.6867  |  Profit/Gas: 4427.472x
+  Block      : #90,246,554
+
+  #32 XPOOL-0004  🟢 STRONG
+  Path       : USDC.e → WBTC → USDC.e
+  Strategy   : CROSS_POOL_TWO_LEG
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_USDC_e_WBTC_3000
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5
+  BUY_LEG1_PRICE  : 33160.87496243182934800988982 (USDC.e per WBTC)
+  SELL_LEG2_PRICE : 45384.80752040810048320898244 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.368625x gross rate)
+  Principal  : $106.33  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $145.5233
+  Gas        : $0.0085  |  Units: 350,000  |  Gas Px: 286.152 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $37.6867  |  Profit/Gas: 4427.472x
+  Block      : #90,246,554
+
+  #33 OPP-0014  🟡 MARGINAL
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100
+  Pool addrs : 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b
+  CYCLE_HOP_1_PRICE: 0.0005308004935196270958831396322 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.935816x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.4484
+  Gas        : $0.0120  |  Units: 500,000  |  Gas Px: 281.547 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.6909  |  Profit/Gas: 1144.307x
+  Block      : #90,246,554
+
+  #34 OPP-0012  🟡 MARGINAL
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_USDC_e_WETH
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.935816x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.4484
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 284.072 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.6908  |  Profit/Gas: 1134.127x
+  Block      : #90,246,554
+
+  #35 OPP-0013  🟡 MARGINAL
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005308004935196270958831396322 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.935816x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.4484
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 284.072 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.6908  |  Profit/Gas: 1134.127x
+  Block      : #90,246,554
+
+  #36 OPP-0020  🟡 MARGINAL
+  Path       : WBTC → WETH → WPOL → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_WPOL_WETH → BAL_WPOL_WETH_USDC → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  Flash Src  : Balancer_Vault  (1.925889x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2871
+  Gas        : $0.0157  |  Units: 650,000  |  Gas Px: 284.064 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.5259  |  Profit/Gas: 861.921x
+  Block      : #90,246,554
+
+  #37 OPP-0022  🟡 MARGINAL
+  Path       : WPOL → USDC.e → WBTC → WETH → WPOL
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : BAL_WPOL_WETH_USDC → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_WPOL_WETH
+  Pool addrs : 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0
+  CYCLE_HOP_1_PRICE: 11.85236615619317508024150544 (WPOL per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.925875x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2869
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 282.491 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.5257  |  Profit/Gas: 866.714x
+  Block      : #90,246,554
+
+  #38 OPP-0021  🟡 MARGINAL
+  Path       : WETH → WPOL → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WPOL_WETH → BAL_WPOL_WETH_USDC → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100
+  Pool addrs : 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b
+  CYCLE_HOP_1_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  CYCLE_HOP_2_PRICE: 11.85236615619317508024150544 (WPOL per USDC.e)
+  Flash Src  : Balancer_Vault  (1.925876x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2869
+  Gas        : $0.0157  |  Units: 650,000  |  Gas Px: 284.064 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.5257  |  Profit/Gas: 861.907x
+  Block      : #90,246,554
+
+  #39 OPP-0019  🟡 MARGINAL
+  Path       : USDC.e → WBTC → WETH → WPOL → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_WPOL_WETH → BAL_WPOL_WETH_USDC
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.924649x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2670
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 281.651 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.5059  |  Profit/Gas: 868.019x
+  Block      : #90,246,554
+
+  #40 OPP-0017  🟡 MARGINAL
+  Path       : WBTC → WETH → WPOL → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_WPOL_WETH → QS_WPOL_USDC_e → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  Flash Src  : Balancer_Vault  (1.923824x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2536
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 281.651 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.4925  |  Profit/Gas: 867.158x
+  Block      : #90,246,554
+
+  #41 OPP-0018  🟡 MARGINAL
+  Path       : WPOL → USDC.e → WBTC → WETH → WPOL
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : QS_WPOL_USDC_e → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_WPOL_WETH
+  Pool addrs : 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0
+  CYCLE_HOP_1_PRICE: 11.83377790462158039620412338 (WPOL per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.923823x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2535
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 281.651 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.4924  |  Profit/Gas: 867.157x
+  Block      : #90,246,554
+
+  #42 OPP-0015  🟡 MARGINAL
+  Path       : WETH → WPOL → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_ALGEBRA_WPOL_WETH → QS_WPOL_USDC_e → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100
+  Pool addrs : 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b
+  CYCLE_HOP_1_PRICE: 0.00004514540045538339119060123205 (WETH per WPOL)
+  CYCLE_HOP_2_PRICE: 11.83377790462158039620412338 (WPOL per USDC.e)
+  Flash Src  : Balancer_Vault  (1.923823x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2535
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 282.587 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.4924  |  Profit/Gas: 864.282x
+  Block      : #90,246,554
+
+  #43 OPP-0016  🟡 MARGINAL
+  Path       : USDC.e → WBTC → WETH → WPOL → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_ALGEBRA_WPOL_WETH → QS_WPOL_USDC_e
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x479e1B71A702a595e19b6d5932CD5c863ab57ee0 → 0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.923719x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246607
+  Gross Out  : $31.2518
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 281.651 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $13.4907  |  Profit/Gas: 867.048x
+  Block      : #90,246,554
+
+  #44 OPP-0030  🟡 MARGINAL
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_WBTC_WETH_100 → V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005586813939145887454567710089 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.839210x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $29.8790
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 283.748 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $12.1214  |  Profit/Gas: 1005.266x
+  Block      : #90,246,554
+
+  #45 OPP-0031  🟡 MARGINAL
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100
+  Pool addrs : 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b
+  CYCLE_HOP_1_PRICE: 0.0005586813939145887454567710089 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.839210x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $29.8790
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 283.748 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $12.1214  |  Profit/Gas: 1005.266x
+  Block      : #90,246,554
+
+  #46 OPP-0029  🟡 MARGINAL
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → V3_USDC_e_WETH_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0x45dDa9cb7c25131DF268515131f647d726f50608
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.839210x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246621
+  Gross Out  : $29.8790
+  Gas        : $0.0121  |  Units: 500,000  |  Gas Px: 283.748 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $12.1214  |  Profit/Gas: 1005.266x
+  Block      : #90,246,554
+
+  #47 OPP-0037  🟡 MARGINAL
+  Path       : WBTC → WETH → USDC → USDC.e → WBTC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_WBTC_WETH_100 → DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_100 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd36ec33c8bed5a9f7b6630855f1533455b98a418 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005584146197159080829797038055 (WETH per USDC)
+  Flash Src  : Balancer_Vault  (1.821917x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $29.5980
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 283.218 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $11.8368  |  Profit/Gas: 756.544x
+  Block      : #90,246,554
+
+  #48 OPP-0036  🟡 MARGINAL
+  Path       : USDC.e → WBTC → WETH → USDC → USDC.e
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_100
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd36ec33c8bed5a9f7b6630855f1533455b98a418
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02934800570107586598484066664 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.821917x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $29.5980
+  Gas        : $0.0156  |  Units: 650,000  |  Gas Px: 283.218 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $11.8368  |  Profit/Gas: 756.544x
+  Block      : #90,246,554
+
+  #49 OPP-0038  🟡 MARGINAL
+  Path       : WETH → USDC → USDC.e → WBTC → WETH
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_WETH_500 → DISC_V3_USDC_USDC_e_100 → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100
+  Pool addrs : 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9 → 0xd36ec33c8bed5a9f7b6630855f1533455b98a418 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b
+  CYCLE_HOP_1_PRICE: 0.0005584146197159080829797038055 (WETH per USDC)
+  CYCLE_HOP_2_PRICE: 1.009973757436363732291866831 (USDC per USDC.e)
+  Flash Src  : Balancer_Vault  (1.821917x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $29.5980
+  Gas        : $0.0158  |  Units: 650,000  |  Gas Px: 286.623 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $11.8366  |  Profit/Gas: 747.544x
+  Block      : #90,246,554
+
+  #50 OPP-0039  🟡 MARGINAL
+  Path       : USDC → USDC.e → WBTC → WETH → USDC
+  Strategy   : FOUR_LEG_CYCLE
+  Pools      : DISC_V3_USDC_USDC_e_100 → DISC_V3_USDC_e_WBTC_100 → DISC_V3_WBTC_WETH_100 → DISC_V3_USDC_WETH_500
+  Pool addrs : 0xd36ec33c8bed5a9f7b6630855f1533455b98a418 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x960fc6489c9b44da6ba330883dc1898b75a7b27b → 0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9
+  CYCLE_HOP_1_PRICE: 1.009973757436363732291866831 (USDC per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.821917x gross rate)
+  Principal  : $16.25  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90246635
+  Gross Out  : $29.5980
+  Gas        : $0.0158  |  Units: 650,000  |  Gas Px: 286.623 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $11.8366  |  Profit/Gas: 747.544x
+  Block      : #90,246,554
+
+  … 4 lower-ranked route(s) suppressed by print limit.
+
+==========================================================================================
+
+── STEP 9A: Executor-Truth Final Ranking ─────────────────────────────────────
+   inspected=15 executor_truth_executable=0 rejection_classes={'slippage_or_profit_floor': 15}
+   ↳ No route passed executor exact-call truth at any tested size this cycle.
+
+── STEP 9B: Liquidation Candidate Queue ───────────────────────────────────────
+   packets=0 liquidation_ready=0 rejected=0
+   ↳ No unhealthy Aave borrower packets discovered in the configured block window.
+
+── STEP 11: Execution Loop ─────────────────────────────────────────────────────
+
+==========================================================================================
+🚀 EXECUTION LOOP  |  Mode: 🔬 DRY-RUN  |  Wallet: 0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+   Execution cap this cycle: top 5 route(s)
+==========================================================================================
+  ↳ No opportunities in queue.
+
+==========================================================================================
+
+==========================================================================================
+✅  OMEGA V5  —  Full autonomous cycle complete.
+==========================================================================================
+

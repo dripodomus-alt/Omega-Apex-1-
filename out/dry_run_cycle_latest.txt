@@ -1,0 +1,1527 @@
+
+==========================================================================================
+🚀  OMEGA V5  —  Autonomous Multi-Protocol DeFi Arbitrage Engine  (Chain 137)
+==========================================================================================
+
+── STEP 1: RPC Connection ──────────────────────────────────────────────────────
+✅ HTTP connected  →  polygon-bor-rpc.publicnode.com  block #90,235,582
+
+── STEP 2: Deep Pool State Load ────────────────────────────────────────────────
+🔎 Factory discovery promoted 96 live pool(s) (251 live found).
+   🧭 tickSpacing cached: 61/61
+   🧩 Balancer poolIds cached: 1/1
+🌐 Loading live state for 115 registered pools...
+   ✅ 115 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 1
+   🧭 V3/Algebra orientation+decimals audit: passed=58/61 failed=3 filtered_out=3
+      reject_reasons={'non_positive_liquidity': 3}
+   📊 V3 TVL state hydrated: 47/58
+📦 LIVE_POOLS ready: 112 pools across 4 protocol families
+
+── STEP 3: Token Price Oracle Refresh ──────────────────────────────────────────
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+   WETH     $1,879.80
+   WBTC     $64,554.56
+   WPOL     $0.08
+   LINK     $8.29
+   AAVE     $98.60
+
+── STEP 3B: Targeted Liquidity Registry ───────────────────────────────────────
+   rows=112 hot=36 warm=69 discovery=7 execution_statuses={'SIM_ELIGIBLE': 101, 'REJECT_DEPTH_UNAVAILABLE': 11}
+
+── STEP 3C: Parallel Liquidation Scanner Dispatch ─────────────────────────────
+   liquidation_lane=DISPATCHED authority=SCANNER_ONLY
+
+── STEP 5: Cross-Pool Price Ranking ────────────────────────────────────────────
+📊 CROSS-POOL PRICE RANKING REPORT
+   Pairs with multi-pool coverage: 34 | Total directional quotes: 212
+==========================================================================================
+
+          AAVE → WETH          [4 pools | spread: +476.8555%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_AAVE                   QuickSwapV3      0.052495     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_AAVE_500                    UniswapV3        0.049908     -4.9291%  
+  #3    V3_AAVE_WETH_3000                        UniswapV3        0.036848    -29.8064%  
+  #4    QS_AAVE_WETH                             UniswapV2        0.009100    -82.6646%  ▼ WORST
+
+           BAL → WETH          [2 pools | spread: +615044562266.8828%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    BAL_WPOL_WETH_USDC                       Balancer         0.000052     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_BAL                         UniswapV2        0.000000   -100.0000%  ▼ WORST
+
+           BAL → WPOL          [2 pools | spread: +16159.2259%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    BAL_WPOL_WETH_USDC                       Balancer         1.143753     +0.0000%  ★ BEST
+  #2    DISC_QS_WPOL_BAL                         UniswapV2        0.007034    -99.3850%  ▼ WORST
+
+           CRV → WETH          [2 pools | spread: +56.9432%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    V3_CRV_WETH_3000                         UniswapV3        0.000083     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_CRV                         UniswapV2        0.000053    -36.2827%  ▼ WORST
+
+           DAI → USDC          [4 pools | spread: +42.8973%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_DAI                    QuickSwapV3      0.999975     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_DAI_100                     UniswapV3        0.989972     -1.0004%  
+  #3    DISC_V3_USDC_DAI_500                     UniswapV3        0.950182     -4.9794%  
+  #4    DISC_V3_USDC_DAI_3000                    UniswapV3        0.699786    -30.0197%  ▼ WORST
+
+           DAI → USDC.e        [4 pools | spread: +41.7356%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    V3_USDC_e_DAI_100                        UniswapV3        0.990274     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_DAI_100                   UniswapV3        0.989975     -0.0302%  
+  #3    QS_USDC_e_DAI                            UniswapV2        0.988115     -0.2181%  
+  #4    DISC_V3_USDC_e_DAI_3000                  UniswapV3        0.698677    -29.4461%  ▼ WORST
+
+          LINK → WETH          [4 pools | spread: +42.5583%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_LINK                   QuickSwapV3      0.004410     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_LINK_500                    UniswapV3        0.004190     -4.9777%  
+  #3    QS_LINK_WETH                             UniswapV2        0.003924    -11.0140%  
+  #4    V3_LINK_WETH_3000                        UniswapV3        0.003093    -29.8532%  ▼ WORST
+
+          USDC → DAI           [4 pools | spread: +42.8142%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_DAI                    QuickSwapV3      1.000005     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_DAI_100                     UniswapV3        0.990028     -0.9977%  
+  #3    DISC_V3_USDC_DAI_500                     UniswapV3        0.949818     -5.0187%  
+  #4    DISC_V3_USDC_DAI_3000                    UniswapV3        0.700214    -29.9789%  ▼ WORST
+
+          USDC → USDC.e        [4 pools | spread: +4447.8038%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDC_e_100                  UniswapV3        0.990008     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDC_e_500                  UniswapV3        0.950311     -4.0098%  
+  #3    DISC_V3_USDC_USDC_e_3000                 UniswapV3        0.697989    -29.4967%  
+  #4    DISC_QS_USDC_USDC_e                      UniswapV2        0.021769    -97.8011%  ▼ WORST
+
+          USDC → USDT          [3 pools | spread: +41.6648%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDT_100                    UniswapV3        0.990505     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDT_500                    UniswapV3        0.950768     -4.0118%  
+  #3    DISC_V3_USDC_USDT_3000                   UniswapV3        0.699189    -29.4109%  ▼ WORST
+
+          USDC → WETH          [3 pools | spread: +41.3978%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_WETH_100                    UniswapV3        0.000528     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_WETH_500                    UniswapV3        0.000506     -4.2573%  
+  #3    DISC_V3_USDC_WETH_3000                   UniswapV3        0.000373    -29.2776%  ▼ WORST
+
+          USDC → WPOL          [4 pools | spread: +42.3958%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_USDC                   QuickSwapV3     11.786543     +0.0000%  ★ BEST
+  #2    DISC_V3_WPOL_USDC_100                    UniswapV3       11.713576     -0.6191%  
+  #3    DISC_V3_WPOL_USDC_500                    UniswapV3       11.204543     -4.9378%  
+  #4    DISC_V3_WPOL_USDC_3000                   UniswapV3        8.277313    -29.7732%  ▼ WORST
+
+        USDC.e → DAI           [4 pools | spread: +41.5610%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    QS_USDC_e_DAI                            UniswapV2        0.992803     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_DAI_100                   UniswapV3        0.990025     -0.2799%  
+  #3    V3_USDC_e_DAI_100                        UniswapV3        0.989726     -0.3100%  
+  #4    DISC_V3_USDC_e_DAI_3000                  UniswapV3        0.701325    -29.3591%  ▼ WORST
+
+        USDC.e → USDC          [4 pools | spread: +4460.3249%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDC_e_100                  UniswapV3        0.989992     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDC_e_500                  UniswapV3        0.949689     -4.0710%  
+  #3    DISC_V3_USDC_USDC_e_3000                 UniswapV3        0.702017    -29.0886%  
+  #4    DISC_QS_USDC_USDC_e                      UniswapV2        0.021709    -97.8072%  ▼ WORST
+
+        USDC.e → USDT          [5 pools | spread: +42.4512%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_USDT                 QuickSwapV3      1.000558     +0.0000%  ★ BEST
+  #2    QS_USDC_e_USDT                           UniswapV2        0.996051     -0.4505%  
+  #3    V3_USDC_e_USDT_100                       UniswapV3        0.990557     -0.9996%  
+  #4    DISC_V3_USDC_e_USDT_500                  UniswapV3        0.950816     -4.9714%  
+  #5    DISC_V3_USDC_e_USDT_3000                 UniswapV3        0.702387    -29.8005%  ▼ WORST
+
+        USDC.e → WBTC          [4 pools | spread: +177.9557%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_e_WBTC_100                  UniswapV3        0.000030     +0.0000%  ★ BEST
+  #2    DISC_QS_USDC_e_WBTC                      UniswapV2        0.000015    -49.3836%  
+  #3    DISC_V3_USDC_e_WBTC_500                  UniswapV3        0.000015    -51.1817%  
+  #4    DISC_V3_USDC_e_WBTC_3000                 UniswapV3        0.000011    -64.0230%  ▼ WORST
+
+        USDC.e → WETH          [6 pools | spread: +42.5525%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_WETH                 QuickSwapV3      0.000532     +0.0000%  ★ BEST
+  #2    QS_WETH_USDC_e                           UniswapV2        0.000531     -0.1880%  
+  #3    DISC_V3_USDC_e_WETH_100                  UniswapV3        0.000529     -0.6219%  
+  #4    BAL_WPOL_WETH_USDC                       Balancer         0.000511     -4.0704%  
+  #5    V3_USDC_e_WETH_500                       UniswapV3        0.000506     -4.9949%  ▼ WORST
+
+        USDC.e → WPOL          [3 pools | spread: +4.8168%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    QS_WPOL_USDC_e                           UniswapV2       11.747680     +0.0000%  ★ BEST
+  #2    BAL_WPOL_WETH_USDC                       Balancer        11.317854     -3.6588%  
+  #3    V3_WPOL_USDC_e_500                       UniswapV3       11.207821     -4.5954%  ▼ WORST
+
+          USDT → USDC          [3 pools | spread: +41.1927%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_USDT_100                    UniswapV3        0.989496     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_USDT_500                    UniswapV3        0.949233     -4.0690%  
+  #3    DISC_V3_USDC_USDT_3000                   UniswapV3        0.700812    -29.1748%  ▼ WORST
+
+          USDT → USDC.e        [5 pools | spread: +43.2614%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_USDT                 QuickSwapV3      0.999422     +0.0000%  ★ BEST
+  #2    QS_USDC_e_USDT                           UniswapV2        0.991609     -0.7817%  
+  #3    V3_USDC_e_USDT_100                       UniswapV3        0.989444     -0.9984%  
+  #4    DISC_V3_USDC_e_USDT_500                  UniswapV3        0.949184     -5.0267%  
+  #5    DISC_V3_USDC_e_USDT_3000                 UniswapV3        0.697621    -30.1975%  ▼ WORST
+
+          WBTC → USDC.e        [4 pools | spread: +81825.4272%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_e_WBTC_500                  UniswapV3    61304.213340     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_WBTC_3000                 UniswapV3    45164.550197    -26.3272%  
+  #3    DISC_V3_USDC_e_WBTC_100                  UniswapV3    32500.973551    -46.9841%  
+  #4    DISC_QS_USDC_e_WBTC                      UniswapV2       74.829287    -99.8779%  ▼ WORST
+
+          WBTC → WETH          [5 pools | spread: +35806.2645%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WBTC_WETH                   QuickSwapV3     34.340200     +0.0000%  ★ BEST
+  #2    DISC_V3_WBTC_WETH_100                    UniswapV3       34.085817     -0.7408%  
+  #3    V3_WBTC_WETH_500                         UniswapV3       32.647737     -4.9285%  
+  #4    DISC_V3_WBTC_WETH_3000                   UniswapV3       24.123812    -29.7505%  
+  #5    QS_WBTC_WETH                             UniswapV2        0.095638    -99.7215%  ▼ WORST
+
+          WETH → AAVE          [4 pools | spread: +9103.3493%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_AAVE                   QuickSwapV3     19.024290     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_AAVE_500                    UniswapV3       18.083354     -4.9460%  
+  #3    V3_AAVE_WETH_3000                        UniswapV3       13.297732    -30.1013%  
+  #4    QS_AAVE_WETH                             UniswapV2        0.206711    -98.9134%  ▼ WORST
+
+          WETH → BAL           [2 pools | spread: +134292963469758.9219%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    BAL_WPOL_WETH_USDC                       Balancer       239.787389     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_BAL                         UniswapV2        0.000000   -100.0000%  ▼ WORST
+
+          WETH → CRV           [2 pools | spread: +727310.9172%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    V3_CRV_WETH_3000                         UniswapV3     5881.983660     +0.0000%  ★ BEST
+  #2    DISC_QS_WETH_CRV                         UniswapV2        0.808619    -99.9863%  ▼ WORST
+
+          WETH → LINK          [4 pools | spread: +2775.8298%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WETH_LINK                   QuickSwapV3    226.719610     +0.0000%  ★ BEST
+  #2    DISC_V3_WETH_LINK_500                    UniswapV3      215.389184     -4.9976%  
+  #3    V3_LINK_WETH_3000                        UniswapV3      158.412882    -30.1283%  
+  #4    QS_LINK_WETH                             UniswapV2        7.883624    -96.5227%  ▼ WORST
+
+          WETH → USDC          [3 pools | spread: +41.4593%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_V3_USDC_WETH_100                    UniswapV3     1855.993845     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_WETH_500                    UniswapV3     1785.038411     -3.8230%  
+  #3    DISC_V3_USDC_WETH_3000                   UniswapV3     1312.033632    -29.3083%  ▼ WORST
+
+          WETH → USDC.e        [6 pools | spread: +7934.5322%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_USDC_e_WETH                 QuickSwapV3   1875.805568     +0.0000%  ★ BEST
+  #2    DISC_V3_USDC_e_WETH_100                  UniswapV3     1853.145880     -1.2080%  
+  #3    V3_USDC_e_WETH_500                       UniswapV3     1784.967762     -4.8426%  
+  #4    V3_USDC_e_WETH_3000                      UniswapV3     1312.504192    -30.0298%  
+  #5    QS_WETH_USDC_e                           UniswapV2      644.464115    -65.6433%  ▼ WORST
+
+          WETH → WBTC          [5 pools | spread: +1045.2253%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WBTC_WETH                   QuickSwapV3      0.029076     +0.0000%  ★ BEST
+  #2    DISC_V3_WBTC_WETH_100                    UniswapV3        0.028754     -1.1093%  
+  #3    V3_WBTC_WETH_500                         UniswapV3        0.027644     -4.9279%  
+  #4    DISC_V3_WBTC_WETH_3000                   UniswapV3        0.020312    -30.1432%  
+  #5    QS_WBTC_WETH                             UniswapV2        0.002539    -91.2681%  ▼ WORST
+
+          WETH → WPOL          [6 pools | spread: +7920.5707%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_WETH                   QuickSwapV3  22142.740757     +0.0000%  ★ BEST
+  #2    DISC_V3_WPOL_WETH_100                    UniswapV3    21865.005786     -1.2543%  
+  #3    V3_WPOL_WETH_500                         UniswapV3    21055.305780     -4.9110%  
+  #4    DISC_V3_WPOL_WETH_3000                   UniswapV3    15539.279834    -29.8222%  
+  #5    QS_WPOL_WETH                             UniswapV2     2175.374228    -90.1757%  ▼ WORST
+
+          WPOL → BAL           [2 pools | spread: +13567.9525%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    BAL_WPOL_WETH_USDC                       Balancer         0.863309     +0.0000%  ★ BEST
+  #2    DISC_QS_WPOL_BAL                         UniswapV2        0.006316    -99.2684%  ▼ WORST
+
+          WPOL → USDC          [4 pools | spread: +43.0467%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_USDC                   QuickSwapV3      0.084681     +0.0000%  ★ BEST
+  #2    DISC_V3_WPOL_USDC_100                    UniswapV3        0.083672     -1.1910%  
+  #3    DISC_V3_WPOL_USDC_500                    UniswapV3        0.080548     -4.8807%  
+  #4    DISC_V3_WPOL_USDC_3000                   UniswapV3        0.059198    -30.0928%  ▼ WORST
+
+          WPOL → USDC.e        [3 pools | spread: +4.6710%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    QS_WPOL_USDC_e                           UniswapV2        0.084285     +0.0000%  ★ BEST
+  #2    BAL_WPOL_WETH_USDC                       Balancer         0.084056     -0.2725%  
+  #3    V3_WPOL_USDC_e_500                       UniswapV3        0.080524     -4.4626%  ▼ WORST
+
+          WPOL → WETH          [6 pools | spread: +42.9700%]
+  Rank  Pool ID                                  Protocol             Rate    Δ vs Best
+  -------------------------------------------------------------------------------------
+  #1    DISC_ALGEBRA_WPOL_WETH                   QuickSwapV3      0.000045     +0.0000%  ★ BEST
+  #2    QS_WPOL_WETH                             UniswapV2        0.000045     -0.4420%  
+  #3    BAL_WPOL_WETH_USDC                       Balancer         0.000045     -0.5477%  
+  #4    DISC_V3_WPOL_WETH_100                    UniswapV3        0.000045     -0.5715%  
+  #5    V3_WPOL_WETH_500                         UniswapV3        0.000043     -4.9230%  ▼ WORST
+
+==========================================================================================
+✅ Price ranking complete across 116 directional token-pair routes.
+
+── STEP 6: Two-Leg Cross-Pool / Cross-DEX Spread Detection ─────────────────────
+🔁 TWO-LEG CROSS-POOL SPREAD REPORT
+   Buy-leg lower than sell-leg opportunities: 4
+==========================================================================================
+
+  #1   WBTC → USDC.e → WBTC  gross=+84.869107%  cross_dex=False cross_invariant=False
+       BUY  USDC.e with WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_500  price=0.000016312093
+       SELL USDC.e for WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=0.000030156020
+
+  #2   USDC.e → WBTC → USDC.e  gross=+84.869107%  cross_dex=False cross_invariant=False
+       BUY  WBTC with USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=33160.874962431829
+       SELL WBTC for USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_500  price=61304.213340348032
+
+  #3   WBTC → USDC.e → WBTC  gross=+36.198307%  cross_dex=False cross_invariant=False
+       BUY  USDC.e with WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_3000  price=0.000022141259
+       SELL USDC.e for WBTC on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=0.000030156020
+
+  #4   USDC.e → WBTC → USDC.e  gross=+36.198307%  cross_dex=False cross_invariant=False
+       BUY  WBTC with USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_100  price=33160.874962431829
+       SELL WBTC for USDC.e on UniswapV3    DISC_V3_USDC_e_WBTC_3000  price=45164.550196771824
+==========================================================================================
+
+── STEP 7: Pegged / Stable Swap Strategy Detection ─────────────────────────────
+💱 PEGGED / STABLE TWO-LEG STRATEGY REPORT
+   Same-peg stable candidates: 0
+==========================================================================================
+  ↳ No same-peg stable routes pass the current spread and peg-deviation bounds.
+==========================================================================================
+
+── STEP 8: Arbitrage Path Graph & Bellman-Ford Negative-Cycle Detection ────────
+🕸️  Constructing Arbitrage Path Graph from cross-pool rate matrix...
+📐 Graph built: 37 nodes (tokens), 212 edges (pool routes)
+
+✅ Detection complete. 92 arbitrage cycle(s) found (1 Bellman-Ford, 27 explicit 3-leg, 64 explicit 4-leg).
+
+==========================================================================================
+🔥 ARBITRAGE OPPORTUNITY REPORT  —  92 unique cycle(s) detected
+==========================================================================================
+
+  #  1  🟢 STRONG
+       Path (3 hops): WBTC → WETH → USDC.e → WBTC
+       Cumulative Rate: 1.94251627   Gross Profit: +94.251627%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1875.805568
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  #  2  🟢 STRONG
+       Path (3 hops): WETH → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.94251627   Gross Profit: +94.251627%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1875.805568
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+
+  #  3  🟢 STRONG
+       Path (3 hops): USDC.e → WBTC → WETH → USDC.e
+       Cumulative Rate: 1.94251627   Gross Profit: +94.251627%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1875.805568
+
+  #  4  🟢 STRONG
+       Path (4 hops): USDC.e → WBTC → WETH → WPOL → USDC.e
+       Cumulative Rate: 1.93268289   Gross Profit: +93.268289%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+
+  #  5  🟢 STRONG
+       Path (4 hops): WETH → WPOL → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.93268289   Gross Profit: +93.268289%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+
+  #  6  🟢 STRONG
+       Path (4 hops): WPOL → USDC.e → WBTC → WETH → WPOL
+       Cumulative Rate: 1.93268289   Gross Profit: +93.268289%
+       Pool Sequence:
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+
+  #  7  🟢 STRONG
+       Path (4 hops): WBTC → WETH → WPOL → USDC.e → WBTC
+       Cumulative Rate: 1.93268289   Gross Profit: +93.268289%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  #  8  🟢 STRONG
+       Path (3 hops): USDC.e → WBTC → WETH → USDC.e
+       Cumulative Rate: 1.92812660   Gross Profit: +92.812660%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.085817
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1875.805568
+
+  #  9  🟢 STRONG
+       Path (3 hops): WBTC → WETH → USDC.e → WBTC
+       Cumulative Rate: 1.92812660   Gross Profit: +92.812660%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.085817
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1875.805568
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  # 10  🟢 STRONG
+       Path (3 hops): WETH → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.92812660   Gross Profit: +92.812660%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_USDC_e_WETH  rate=1875.805568
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.085817
+
+  # 11  🟢 STRONG
+       Path (4 hops): USDC.e → WBTC → WETH → WPOL → USDC.e
+       Cumulative Rate: 1.92741581   Gross Profit: +92.741581%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084056
+
+  # 12  🟢 STRONG
+       Path (4 hops): WBTC → WETH → WPOL → USDC.e → WBTC
+       Cumulative Rate: 1.92741581   Gross Profit: +92.741581%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084056
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  # 13  🟢 STRONG
+       Path (4 hops): WETH → WPOL → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.92741581   Gross Profit: +92.741581%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084056
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+
+  # 14  🟢 STRONG
+       Path (4 hops): WPOL → USDC.e → WBTC → WETH → WPOL
+       Cumulative Rate: 1.92741581   Gross Profit: +92.741581%
+       Pool Sequence:
+         ├─ [Balancer    ] BAL_WPOL_WETH_USDC  rate=0.084056
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+
+  # 15  🟢 STRONG
+       Path (3 hops): WETH → USDC.e → WBTC → WETH
+       Cumulative Rate: 1.91905071   Gross Profit: +91.905071%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WETH_100  rate=1853.145880
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+
+  # 16  🟢 STRONG
+       Path (3 hops): USDC.e → WBTC → WETH → USDC.e
+       Cumulative Rate: 1.91905071   Gross Profit: +91.905071%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WETH_100  rate=1853.145880
+
+  # 17  🟢 STRONG
+       Path (3 hops): WBTC → WETH → USDC.e → WBTC
+       Cumulative Rate: 1.91905071   Gross Profit: +91.905071%
+       Pool Sequence:
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WBTC_WETH  rate=34.340200
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WETH_100  rate=1853.145880
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  # 18  🟢 STRONG
+       Path (4 hops): USDC.e → WBTC → WETH → WPOL → USDC.e
+       Cumulative Rate: 1.91836607   Gross Profit: +91.836607%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.085817
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+
+  # 19  🟢 STRONG
+       Path (4 hops): WPOL → USDC.e → WBTC → WETH → WPOL
+       Cumulative Rate: 1.91836607   Gross Profit: +91.836607%
+       Pool Sequence:
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.085817
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+
+  # 20  🟢 STRONG
+       Path (4 hops): WBTC → WETH → WPOL → USDC.e → WBTC
+       Cumulative Rate: 1.91836607   Gross Profit: +91.836607%
+       Pool Sequence:
+         ├─ [UniswapV3   ] DISC_V3_WBTC_WETH_100  rate=34.085817
+         ├─ [QuickSwapV3 ] DISC_ALGEBRA_WPOL_WETH  rate=22142.740757
+         ├─ [UniswapV2   ] QS_WPOL_USDC_e  rate=0.084285
+         ├─ [UniswapV3   ] DISC_V3_USDC_e_WBTC_100  rate=0.000030
+
+  … and 72 additional cycles (truncated).
+
+==========================================================================================
+  ★  Best gross opportunity: +94.251627% on path: WBTC → WETH → USDC.e → WBTC
+     ⚠️  Note: gross profit does not account for gas costs, slippage, or MEV.
+==========================================================================================
+
+
+── STEP 9: Net-Profit Gated Opportunity Ranking ────────────────────────────────
+   ↳ 0 pegged stable opportunities pass the profitability gate
+   ↳ 4 two-leg cross-pool opportunities pass the profitability gate
+   ↳ 50 merged cycle opportunities pass the profitability gate
+   ↳ hop coverage 2=4 3=18 4=32
+   ↳ 54 opportunities pass the profitability gate
+
+==========================================================================================
+💰 LIVE RANKED OPPORTUNITIES — showing top 10 of 54 passed profitability gate
+   Sorted highest net positive profit → lowest within printed set
+==========================================================================================
+
+  #01 XPOOL-0001  🟢 STRONG
+  Path       : WBTC → USDC.e → WBTC
+  Strategy   : CROSS_POOL_TWO_LEG
+  Pools      : DISC_V3_USDC_e_WBTC_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xeef1a9507b3d505f0062f2be9453981255b503c8 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  BUY_LEG1_PRICE  : 0.00001631209252206225058688750388 (WBTC per USDC.e)
+  SELL_LEG2_PRICE : 0.00003015601974112282911169518502 (WBTC per USDC.e)
+  Flash Src  : Balancer_Vault  (1.848691x gross rate)
+  Principal  : $1,470.08  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235684
+  Gross Out  : $2,717.7211
+  Gas        : $0.0082  |  Units: 350,000  |  Gas Px: 277.739 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1246.1343  |  Profit/Gas: 151277.100x
+  Block      : #90,235,582
+
+  #02 XPOOL-0002  🟢 STRONG
+  Path       : USDC.e → WBTC → USDC.e
+  Strategy   : CROSS_POOL_TWO_LEG
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_V3_USDC_e_WBTC_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xeef1a9507b3d505f0062f2be9453981255b503c8
+  BUY_LEG1_PRICE  : 33160.87496243182934800988982 (USDC.e per WBTC)
+  SELL_LEG2_PRICE : 61304.2133403480321885883054 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.848691x gross rate)
+  Principal  : $1,470.08  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235684
+  Gross Out  : $2,717.7211
+  Gas        : $0.0083  |  Units: 350,000  |  Gas Px: 278.694 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1246.1343  |  Profit/Gas: 150758.978x
+  Block      : #90,235,582
+
+  #03 OPP-0040  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → V3_WBTC_WETH_500 → V3_USDC_e_WETH_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x50eaEDB835021E4A108B7290636d62E9765cc6d7 → 0x45dDa9cb7c25131DF268515131f647d726f50608
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.03062999470904812612982230896 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.757347x gross rate)
+  Principal  : $1,512.00  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235684
+  Gross Out  : $2,657.1143
+  Gas        : $0.0118  |  Units: 500,000  |  Gas Px: 278.610 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1143.5991  |  Profit/Gas: 96877.230x
+  Block      : #90,235,582
+
+  #04 OPP-0041  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_WBTC_WETH_500 → V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0x50eaEDB835021E4A108B7290636d62E9765cc6d7 → 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.03062999470904812612982230896 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.757347x gross rate)
+  Principal  : $1,512.00  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235684
+  Gross Out  : $2,657.1143
+  Gas        : $0.0119  |  Units: 500,000  |  Gas Px: 280.741 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1143.5990  |  Profit/Gas: 96141.690x
+  Block      : #90,235,582
+
+  #05 OPP-0042  🟢 STRONG
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100 → V3_WBTC_WETH_500
+  Pool addrs : 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0x50eaEDB835021E4A108B7290636d62E9765cc6d7
+  CYCLE_HOP_1_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.757347x gross rate)
+  Principal  : $1,512.00  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235684
+  Gross Out  : $2,657.1143
+  Gas        : $0.0119  |  Units: 500,000  |  Gas Px: 280.741 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $1143.5990  |  Profit/Gas: 96141.690x
+  Block      : #90,235,582
+
+  #06 OPP-0003  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_USDC_e_WETH
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.942516x gross rate)
+  Principal  : $430.42  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235657
+  Gross Out  : $836.0889
+  Gas        : $0.0118  |  Units: 500,000  |  Gas Px: 278.110 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $404.1617  |  Profit/Gas: 34299.025x
+  Block      : #90,235,582
+
+  #07 OPP-0002  🟢 STRONG
+  Path       : WETH → USDC.e → WBTC → WETH
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH
+  Pool addrs : 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC
+  CYCLE_HOP_1_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+  CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  Flash Src  : Balancer_Vault  (1.942516x gross rate)
+  Principal  : $430.42  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235657
+  Gross Out  : $836.0889
+  Gas        : $0.0118  |  Units: 500,000  |  Gas Px: 278.110 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $404.1617  |  Profit/Gas: 34299.025x
+  Block      : #90,235,582
+
+  #08 OPP-0001  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → DISC_ALGEBRA_USDC_e_WETH → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.942516x gross rate)
+  Principal  : $430.42  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage  |  Fee Block: 90235657
+  Gross Out  : $836.0889
+  Gas        : $0.0118  |  Units: 500,000  |  Gas Px: 278.110 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $404.1617  |  Profit/Gas: 34299.025x
+  Block      : #90,235,582
+
+  #09 OPP-0025  🟢 STRONG
+  Path       : USDC.e → WBTC → WETH → USDC.e
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_V3_USDC_e_WBTC_100 → DISC_ALGEBRA_WBTC_WETH → V3_USDC_e_WETH_500
+  Pool addrs : 0xba91ae7312ace1137c15786177cbe687fd2d73d0 → 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x45dDa9cb7c25131DF268515131f647d726f50608
+  CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+  CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+  Flash Src  : Balancer_Vault  (1.848448x gross rate)
+  Principal  : $446.71  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235670
+  Gross Out  : $825.7277
+  Gas        : $0.0118  |  Units: 500,000  |  Gas Px: 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $377.5019  |  Profit/Gas: 32126.196x
+  Block      : #90,235,582
+
+  #10 OPP-0023  🟢 STRONG
+  Path       : WBTC → WETH → USDC.e → WBTC
+  Strategy   : THREE_LEG_TRIANGLE
+  Pools      : DISC_ALGEBRA_WBTC_WETH → V3_USDC_e_WETH_500 → DISC_V3_USDC_e_WBTC_100
+  Pool addrs : 0xAC4494e30a85369e332BDB5230d6d694d4259DbC → 0x45dDa9cb7c25131DF268515131f647d726f50608 → 0xba91ae7312ace1137c15786177cbe687fd2d73d0
+  CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+  CYCLE_HOP_2_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+  Flash Src  : Balancer_Vault  (1.848448x gross rate)
+  Principal  : $446.71  |  Flash Fee : $0.0000 (0E-18 bps, verified=True)
+  Fee Source : balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached  |  Fee Block: 90235670
+  Gross Out  : $825.7277
+  Gas        : $0.0119  |  Units: 500,000  |  Gas Px: 280.273 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+  Relay      : $0.50  |  Risk Buffer: $1.00
+  NET PROFIT : $377.5018  |  Profit/Gas: 31789.388x
+  Block      : #90,235,582
+
+  … 44 lower-ranked route(s) suppressed by print limit.
+
+==========================================================================================
+
+── STEP 9B: Liquidation Candidate Queue ───────────────────────────────────────
+   packets=0 liquidation_ready=0 rejected=0
+   ↳ No unhealthy Aave borrower packets discovered in the configured block window.
+
+── STEP 10: C1/C2 State Machine ────────────────────────────────────────────────
+  C1 pre-state prepared for XPOOL-0001
+  Path          : WBTC → USDC.e → WBTC
+  Status        : PRE_CHECK
+  Pre-snapshots : ['DISC_V3_USDC_e_WBTC_500', 'DISC_V3_USDC_e_WBTC_100']
+  C2 recomputation waits for a real C1 receipt; no synthetic confirmation is generated.
+
+── STEP 11: Execution Loop ─────────────────────────────────────────────────────
+
+==========================================================================================
+🚀 EXECUTION LOOP  |  Mode: 🔬 DRY-RUN  |  Wallet: 0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+   Execution cap this cycle: top 1 route(s)
+   Canary mode: enabled (configured execute_top=5, effective cap=1)
+==========================================================================================
+
+  [1] XPOOL-0001  |  Net: $1246.1343  |  Path: WBTC → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_500', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xeef1a9507b3d505f0062f2be9453981255b503c8', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       BUY_LEG1_PRICE  : 0.00001631209252206225058688750388 (WBTC per USDC.e)
+       SELL_LEG2_PRICE : 0.00003015601974112282911169518502 (WBTC per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 350,000 units @ 277.739 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 420,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 307.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=072c9815ba6b211811c8...
+
+  [2] XPOOL-0002  |  Net: $1246.1343  |  Path: USDC.e → WBTC → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_USDC_e_WBTC_500']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xeef1a9507b3d505f0062f2be9453981255b503c8']
+       Schema meta  : omega_v5.opportunity.v2
+       BUY_LEG1_PRICE  : 33160.87496243182934800988982 (USDC.e per WBTC)
+       SELL_LEG2_PRICE : 61304.2133403480321885883054 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 350,000 units @ 278.694 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 420,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 308.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=5fb4669cb3c1e56c501c...
+
+  [3] OPP-0040  |  Net: $1143.5991  |  Path: USDC.e → WBTC → WETH → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500', 'V3_USDC_e_WETH_500']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x50eaEDB835021E4A108B7290636d62E9765cc6d7', '0x45dDa9cb7c25131DF268515131f647d726f50608']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.03062999470904812612982230896 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 278.610 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 308.6 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=3a691da7fd678e69c31e...
+
+  [4] OPP-0041  |  Net: $1143.5990  |  Path: WBTC → WETH → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['V3_WBTC_WETH_500', 'V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x50eaEDB835021E4A108B7290636d62E9765cc6d7', '0x45dDa9cb7c25131DF268515131f647d726f50608', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.03062999470904812612982230896 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 280.741 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 310.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=ebe4844fabb45f6cf6f0...
+
+  [5] OPP-0042  |  Net: $1143.5990  |  Path: WETH → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500']
+       Pool addrs   : ['0x45dDa9cb7c25131DF268515131f647d726f50608', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x50eaEDB835021E4A108B7290636d62E9765cc6d7']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 280.741 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 310.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=056feb47d5c7316b27be...
+
+  [6] OPP-0003  |  Net: $404.1617  |  Path: USDC.e → WBTC → WETH → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_USDC_e_WETH']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 278.110 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 308.1 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=da8b07bda1c4800457f7...
+
+  [7] OPP-0002  |  Net: $404.1617  |  Path: WETH → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH']
+       Pool addrs   : ['0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 278.110 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 308.1 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=015a6bccb45221e81d4d...
+
+  [8] OPP-0001  |  Net: $404.1617  |  Path: WBTC → WETH → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 278.110 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage block=90235657
+       Max fee      : 308.1 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=ab7c13945f76669d29f9...
+
+  [9] OPP-0025  |  Net: $377.5019  |  Path: USDC.e → WBTC → WETH → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'V3_USDC_e_WETH_500']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x45dDa9cb7c25131DF268515131f647d726f50608']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=311e3c41483458be950a...
+
+  [10] OPP-0023  |  Net: $377.5018  |  Path: WBTC → WETH → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WBTC_WETH', 'V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x45dDa9cb7c25131DF268515131f647d726f50608', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 280.273 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 310.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=6fbf8d17578281fa11b0...
+
+  [11] OPP-0024  |  Net: $377.5018  |  Path: WETH → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH']
+       Pool addrs   : ['0x45dDa9cb7c25131DF268515131f647d726f50608', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 280.273 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 310.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=f7d2b4c0c41614f0c98c...
+
+  [12] OPP-0032  |  Net: $369.2803  |  Path: USDC → USDC.e → WBTC → WETH → USDC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500']
+       Pool addrs   : ['0xd36ec33c8bed5a9f7b6630855f1533455b98a418', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 1.010092496461044453913992371 (USDC per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=2b5bc86a0e2b5ce82ea8...
+
+  [13] OPP-0033  |  Net: $369.2803  |  Path: WETH → USDC → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH']
+       Pool addrs   : ['0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd36ec33c8bed5a9f7b6630855f1533455b98a418', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005602120344093054248011300173 (WETH per USDC)
+       CYCLE_HOP_2_PRICE: 1.010092496461044453913992371 (USDC per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=def61a479831f452c080...
+
+  [14] OPP-0034  |  Net: $369.2802  |  Path: WBTC → WETH → USDC → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd36ec33c8bed5a9f7b6630855f1533455b98a418', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005602120344093054248011300173 (WETH per USDC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 279.716 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 309.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=b5c0886e4ee4da36a312...
+
+  [15] OPP-0035  |  Net: $369.2802  |  Path: USDC.e → WBTC → WETH → USDC → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd36ec33c8bed5a9f7b6630855f1533455b98a418']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 279.716 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 309.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=3940a3e6e1a960dad1f8...
+
+  [16] OPP-0026  |  Net: $362.9549  |  Path: WBTC → WETH → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['V3_WBTC_WETH_500', 'DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x50eaEDB835021E4A108B7290636d62E9765cc6d7', '0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.03062999470904812612982230896 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=57ec1c718cd08060687f...
+
+  [17] OPP-0027  |  Net: $362.9549  |  Path: WETH → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500']
+       Pool addrs   : ['0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x50eaEDB835021E4A108B7290636d62E9765cc6d7']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=07ab77319dd01ff756fc...
+
+  [18] OPP-0028  |  Net: $362.9549  |  Path: USDC.e → WBTC → WETH → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'V3_WBTC_WETH_500', 'DISC_ALGEBRA_USDC_e_WETH']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x50eaEDB835021E4A108B7290636d62E9765cc6d7', '0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.03062999470904812612982230896 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.578 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.6 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=83e05a27a9a6942eda60...
+
+  [19] OPP-0046  |  Net: $308.7287  |  Path: WETH → USDC → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH']
+       Pool addrs   : ['0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd9abecb39a5885d1e531ed3599adfed620e2fc8a', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005602120344093054248011300173 (WETH per USDC)
+       CYCLE_HOP_2_PRICE: 1.052287056313080921830247260 (USDC per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 276.959 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 307.0 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=67b07b2a7633d55ae8bd...
+
+  [20] OPP-0044  |  Net: $308.7287  |  Path: USDC.e → WBTC → WETH → USDC → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_500']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd9abecb39a5885d1e531ed3599adfed620e2fc8a']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 277.799 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 307.8 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=78ff2703622403465b6e...
+
+  [21] OPP-0045  |  Net: $308.7287  |  Path: WBTC → WETH → USDC → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_500', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd9abecb39a5885d1e531ed3599adfed620e2fc8a', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005602120344093054248011300173 (WETH per USDC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 277.799 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 307.8 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=bf81df867f637e09e926...
+
+  [22] OPP-0043  |  Net: $308.7285  |  Path: USDC → USDC.e → WBTC → WETH → USDC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_USDC_e_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_V3_USDC_WETH_500']
+       Pool addrs   : ['0xd9abecb39a5885d1e531ed3599adfed620e2fc8a', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 1.052287056313080921830247260 (USDC per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 280.741 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 310.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=48aad54ebf33ce2ae78d...
+
+  [23] OPP-0005  |  Net: $207.6349  |  Path: WETH → WPOL → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH']
+       Pool addrs   : ['0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       CYCLE_HOP_2_PRICE: 11.86445018756379543034275039 (WPOL per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 279.886 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 309.9 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=8e826175ca6b1f0b5024...
+
+  [24] OPP-0007  |  Net: $207.6347  |  Path: WBTC → WETH → WPOL → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 283.392 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 313.4 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=458aa48582a5f28bfb26...
+
+  [25] OPP-0006  |  Net: $207.6343  |  Path: WPOL → USDC.e → WBTC → WETH → WPOL
+       Flash source : Balancer_Vault
+       Pool sequence: ['QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH']
+       Pool addrs   : ['0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 11.86445018756379543034275039 (WPOL per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 279.886 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 309.9 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=1cd6109240a98f82c090...
+
+  [26] OPP-0004  |  Net: $207.3062  |  Path: USDC.e → WBTC → WETH → WPOL → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 279.886 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 309.9 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=5a74eb7ad9d0da43f4ea...
+
+  [27] OPP-0013  |  Net: $204.1542  |  Path: WETH → WPOL → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH']
+       Pool addrs   : ['0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       CYCLE_HOP_2_PRICE: 11.89687237761031476419205866 (WPOL per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 278.497 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 308.5 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractLogicError: unknown_custom_error selector=0x08c379a0
+       🧯 Simulation rejected route before signing. trace=c4d31b0ba031d821961e...
+
+  [28] OPP-0012  |  Net: $204.1542  |  Path: WBTC → WETH → WPOL → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 281.002 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 311.0 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractLogicError: unknown_custom_error selector=0x08c379a0
+       🧯 Simulation rejected route before signing. trace=9612014743f6ed4a056b...
+
+  [29] OPP-0014  |  Net: $204.1469  |  Path: WPOL → USDC.e → WBTC → WETH → WPOL
+       Flash source : Balancer_Vault
+       Pool sequence: ['BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH']
+       Pool addrs   : ['0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 11.89687237761031476419205866 (WPOL per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 278.497 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 308.5 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractLogicError: unknown_custom_error selector=0x08c379a0
+       🧯 Simulation rejected route before signing. trace=3b5a040ddca0c7812b51...
+
+  [30] OPP-0011  |  Net: $200.3803  |  Path: USDC.e → WBTC → WETH → WPOL → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_ALGEBRA_WBTC_WETH', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0xAC4494e30a85369e332BDB5230d6d694d4259DbC', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02912038923504187523305268838 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 281.002 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 311.0 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=b2a6b2bc34a424c08e56...
+
+  [31] XPOOL-0003  |  Net: $36.9058  |  Path: WBTC → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_3000', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       BUY_LEG1_PRICE  : 0.00002214125892194706002474847279 (WBTC per USDC.e)
+       SELL_LEG2_PRICE : 0.00003015601974112282911169518502 (WBTC per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 350,000 units @ 278.694 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 420,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 308.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=920e1f308592a189cab4...
+
+  [32] XPOOL-0004  |  Net: $36.9058  |  Path: USDC.e → WBTC → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_USDC_e_WBTC_3000']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5']
+       Schema meta  : omega_v5.opportunity.v2
+       BUY_LEG1_PRICE  : 33160.87496243182934800988982 (USDC.e per WBTC)
+       SELL_LEG2_PRICE : 45164.5501967718242904735342 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 350,000 units @ 279.441 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 420,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 309.4 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=76f02b0ee25bd34b8bd2...
+
+  [33] OPP-0008  |  Net: $13.4311  |  Path: USDC.e → WBTC → WETH → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_USDC_e_WETH']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 283.392 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 313.4 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=e38c5de16591755c7ed5...
+
+  [34] OPP-0010  |  Net: $13.4311  |  Path: WETH → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100']
+       Pool addrs   : ['0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 283.392 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 313.4 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=902edb436a05df1b0baa...
+
+  [35] OPP-0009  |  Net: $13.4311  |  Path: WBTC → WETH → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_USDC_e_WETH', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005331042923357641273781004985 (WETH per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 283.392 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 313.4 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=06c7e4b794afe1e1b38a...
+
+  [36] OPP-0016  |  Net: $13.2782  |  Path: WPOL → USDC.e → WBTC → WETH → WPOL
+       Flash source : Balancer_Vault
+       Pool sequence: ['QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH']
+       Pool addrs   : ['0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 11.86445018756379543034275039 (WPOL per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 278.497 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 308.5 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=2aabc5d1d97af378386a...
+
+  [37] OPP-0017  |  Net: $13.2780  |  Path: WBTC → WETH → WPOL → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 282.848 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 312.8 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=fe993ff06da90309e809...
+
+  [38] OPP-0018  |  Net: $13.2780  |  Path: WETH → WPOL → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100']
+       Pool addrs   : ['0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       CYCLE_HOP_2_PRICE: 11.86445018756379543034275039 (WPOL per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 282.848 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 312.8 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=38fe5cf56dfbf82a4729...
+
+  [39] OPP-0015  |  Net: $13.2764  |  Path: USDC.e → WBTC → WETH → WPOL → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'QS_WPOL_USDC_e']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 280.863 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 310.9 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=872245648452ffc64582...
+
+  [40] OPP-0021  |  Net: $13.2755  |  Path: WBTC → WETH → WPOL → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 280.135 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 310.1 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractLogicError: unknown_custom_error selector=0x08c379a0
+       🧯 Simulation rejected route before signing. trace=aaf0e8279ba6cadc8a39...
+
+  [41] OPP-0022  |  Net: $13.2753  |  Path: WPOL → USDC.e → WBTC → WETH → WPOL
+       Flash source : Balancer_Vault
+       Pool sequence: ['BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH']
+       Pool addrs   : ['0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 11.89687237761031476419205866 (WPOL per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 280.135 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 310.1 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractLogicError: unknown_custom_error selector=0x08c379a0
+       🧯 Simulation rejected route before signing. trace=5be5f5ada1f553d58a44...
+
+  [42] OPP-0020  |  Net: $13.2752  |  Path: WETH → WPOL → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100']
+       Pool addrs   : ['0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.00004516152769754325665509493842 (WETH per WPOL)
+       CYCLE_HOP_2_PRICE: 11.89687237761031476419205866 (WPOL per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 282.848 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 312.8 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractLogicError: unknown_custom_error selector=0x08c379a0
+       🧯 Simulation rejected route before signing. trace=388750e4d0d262bb0179...
+
+  [43] OPP-0019  |  Net: $13.2557  |  Path: USDC.e → WBTC → WETH → WPOL → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_ALGEBRA_WPOL_WETH', 'BAL_WPOL_WETH_USDC']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x479e1B71A702a595e19b6d5932CD5c863ab57ee0', '0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 282.848 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235657
+       Max fee      : 312.8 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=93c3bc705d6ee898b670...
+
+  [44] OPP-0031  |  Net: $11.9280  |  Path: WETH → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100']
+       Pool addrs   : ['0x45dDa9cb7c25131DF268515131f647d726f50608', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.334 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.3 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=4c95e7b6e1efe008355d...
+
+  [45] OPP-0030  |  Net: $11.9280  |  Path: WBTC → WETH → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_WBTC_WETH_100', 'V3_USDC_e_WETH_500', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x45dDa9cb7c25131DF268515131f647d726f50608', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005602342076036487408699511598 (WETH per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.578 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.6 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=5c95b20ac55f80a6318b...
+
+  [46] OPP-0029  |  Net: $11.9280  |  Path: USDC.e → WBTC → WETH → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'V3_USDC_e_WETH_500']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0x45dDa9cb7c25131DF268515131f647d726f50608']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 500,000 units @ 277.578 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 600,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.6 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=a749aed19944e0035b65...
+
+  [47] OPP-0039  |  Net: $11.6305  |  Path: WBTC → WETH → USDC → USDC.e → WBTC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_WBTC_WETH_100', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100']
+       Pool addrs   : ['0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd36ec33c8bed5a9f7b6630855f1533455b98a418', '0xba91ae7312ace1137c15786177cbe687fd2d73d0']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       CYCLE_HOP_2_PRICE: 0.0005602120344093054248011300173 (WETH per USDC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 277.438 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 307.4 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=27d62ef0ed6112882737...
+
+  [48] OPP-0036  |  Net: $11.6305  |  Path: USDC → USDC.e → WBTC → WETH → USDC
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_V3_USDC_WETH_500']
+       Pool addrs   : ['0xd36ec33c8bed5a9f7b6630855f1533455b98a418', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 1.010092496461044453913992371 (USDC per USDC.e)
+       CYCLE_HOP_2_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 277.710 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235670
+       Max fee      : 307.7 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=597403cbc2596a94e45e...
+
+  [49] OPP-0037  |  Net: $11.6304  |  Path: USDC.e → WBTC → WETH → USDC → USDC.e
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100', 'DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100']
+       Pool addrs   : ['0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b', '0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd36ec33c8bed5a9f7b6630855f1533455b98a418']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 33160.87496243182934800988982 (USDC.e per WBTC)
+       CYCLE_HOP_2_PRICE: 0.02933771555371308627343659622 (WBTC per WETH)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 280.205 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage block=90235684
+       Max fee      : 310.2 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=c82c18dd74cf8bf5dc7e...
+
+  [50] OPP-0038  |  Net: $11.6304  |  Path: WETH → USDC → USDC.e → WBTC → WETH
+       Flash source : Balancer_Vault
+       Pool sequence: ['DISC_V3_USDC_WETH_500', 'DISC_V3_USDC_USDC_e_100', 'DISC_V3_USDC_e_WBTC_100', 'DISC_V3_WBTC_WETH_100']
+       Pool addrs   : ['0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9', '0xd36ec33c8bed5a9f7b6630855f1533455b98a418', '0xba91ae7312ace1137c15786177cbe687fd2d73d0', '0x960fc6489c9b44da6ba330883dc1898b75a7b27b']
+       Schema meta  : omega_v5.opportunity.v2
+       CYCLE_HOP_1_PRICE: 0.0005602120344093054248011300173 (WETH per USDC)
+       CYCLE_HOP_2_PRICE: 1.010092496461044453913992371 (USDC per USDC.e)
+       Source adapter: adapterForSource[1] 0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE (BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present)
+       Gas model    : 650,000 units @ 280.205 gwei (polygon_rpc_gas_price|oracle_layer.WPOL)
+       Gas limit    : 780,000
+       Flash fee    : 0E-18 bps verified=True source=balancer_vault.protocolFeesCollector.flashLoanFeePercentage_cached block=90235684
+       Max fee      : 310.2 gwei
+       Calldata     : 0x626482a300000000000000000000000000000000000000000000000000000000...
+       Exact eth_call: FAIL ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+       🧯 Simulation rejected route before signing. trace=0fb0d0b3bf8fe39c41e3...
+
+==========================================================================================
+✅ Execution loop complete.
+==========================================================================================
+
+
+==========================================================================================
+✅  OMEGA V5  —  Full autonomous cycle complete.
+==========================================================================================
+

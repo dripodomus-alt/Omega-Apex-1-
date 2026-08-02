@@ -1,0 +1,30 @@
+{
+  "enabled": true,
+  "chain_id": 137,
+  "lane_count": 32,
+  "redis_ok": true,
+  "redis_detail": "connected",
+  "streams": [
+    "omega:rpc:health",
+    "omega:rpc:endpoints",
+    "omega:signals:blockheads",
+    "omega:signals:pool_updates",
+    "omega:queue:truth_candidates",
+    "omega:queue:executable_routes",
+    "omega:queue:broadcast",
+    "omega:receipts:pending",
+    "omega:pnl:live",
+    "omega:pnl:dry_run"
+  ],
+  "selected_endpoints": {
+    "wss_block_heads": "wss://polygon.drpc.org/...",
+    "v2_reserves_multicall": "https://polygon-mainnet.infura.io/...",
+    "clmm_final_quoter_sizing": "https://polygon-bor-rpc.publicnode.com/...",
+    "exact_c1_eth_call": "https://polygon-bor-rpc.publicnode.com/...",
+    "live_broadcast_private_primary": "",
+    "receipt_watcher": "https://polygon-bor-rpc.publicnode.com/..."
+  },
+  "dodo_endpoint_metadata_count": 38,
+  "rotation_http_candidate_count": 13,
+  "rotation_wss_candidate_count": 6
+}

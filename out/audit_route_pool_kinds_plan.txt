@@ -1,0 +1,7 @@
+✅ HTTP connected  →  polygon-bor-rpc.publicnode.com  block #90,237,892
+route_pool_kind_rows=19 live_registry=False protocol_counts={'Balancer': 1, 'UniswapV2': 8, 'UniswapV3': 10}
+adapter=aave address=0x766346f18B7646f6044F88Dfc903D92D9AbF70e1 owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+configure_plan adapter=aave pools=19 kinds={1: 8, 2: 10, 5: 1}
+adapter=balancer address=0xBFB563CB388E4cdB34C2Db3cEfcb35D7Ce48a9DE owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+configure_plan adapter=balancer pools=19 kinds={1: 8, 2: 10, 5: 1}
+configure_route_pool_kinds=DRY_RUN send=false

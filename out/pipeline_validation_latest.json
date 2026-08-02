@@ -1,0 +1,469 @@
+{
+  "chain_id": 137,
+  "elapsed_seconds": "967.638",
+  "exact_call_gate": "NO_EXECUTOR_TRUTH_ROUTE",
+  "execution_armed": false,
+  "executor_truth": {
+    "diagnostics": [
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "XPOOL-0016",
+        "path": [
+          "WBTC",
+          "WPOL",
+          "WBTC"
+        ],
+        "protocols": [
+          "UniswapV2",
+          "Curve"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "9d9fd3826ee0fbed",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0039",
+        "path": [
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "WETH"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "Curve",
+          "UniswapV3"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "cafa5d9d2c2e3273",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0047",
+        "path": [
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "WETH"
+        ],
+        "protocols": [
+          "QuickSwapV3",
+          "Curve",
+          "UniswapV3"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "f794476114cc1b47",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0033",
+        "path": [
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "WETH"
+        ],
+        "protocols": [
+          "UniswapV2",
+          "Curve",
+          "UniswapV3"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "256377431acbc24a",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0013",
+        "path": [
+          "USDC.e",
+          "WPOL",
+          "WBTC",
+          "WETH",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "Curve",
+          "UniswapV3",
+          "UniswapV2"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "913a3208bbafca9b",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0012",
+        "path": [
+          "USDC.e",
+          "WPOL",
+          "WBTC",
+          "WETH",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV2",
+          "Curve",
+          "UniswapV3",
+          "UniswapV2"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "dccbec672cedd1ac",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0001",
+        "path": [
+          "USDC.e",
+          "USDT",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "Curve",
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "252d852cd319265a",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0002",
+        "path": [
+          "USDC.e",
+          "USDT",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "Curve",
+          "QuickSwapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "a428343cc9f5136d",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0051",
+        "path": [
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "WETH"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "42fa82adc25a8bf2",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0003",
+        "path": [
+          "USDC.e",
+          "USDT",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "535d9c93810272d7",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0004",
+        "path": [
+          "USDC.e",
+          "USDC",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "dc82c7d24503be76",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0010",
+        "path": [
+          "USDC.e",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "a417a4177aae9e7e",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0062",
+        "path": [
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "WETH"
+        ],
+        "protocols": [
+          "QuickSwapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "4c2219e782f73e0f",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0052",
+        "path": [
+          "USDC.e",
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "QuickSwapV3",
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "d3eecf684921ce3e",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0053",
+        "path": [
+          "USDC.e",
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "80f9aad871a44a55",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0007",
+        "path": [
+          "USDC.e",
+          "USDC",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "QuickSwapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "55a96ba464c24fbd",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0005",
+        "path": [
+          "USDC.e",
+          "USDC",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "UniswapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "f9b7882129e4283c",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0008",
+        "path": [
+          "USDC.e",
+          "USDC",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "QuickSwapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "4ac11adb7fe7441c",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0009",
+        "path": [
+          "USDC.e",
+          "USDT",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "UniswapV3",
+          "QuickSwapV3",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "679b63947dfe72df",
+        "tested_sizes_usd": []
+      },
+      {
+        "detail": "",
+        "exact_calls": 0,
+        "executable": false,
+        "opp_id": "OPP-0011",
+        "path": [
+          "USDC.e",
+          "WPOL",
+          "WBTC",
+          "USDC.e"
+        ],
+        "protocols": [
+          "Balancer",
+          "Curve",
+          "Balancer"
+        ],
+        "rejection_class": "no_candidate_size_passed",
+        "route_signature": "2554283a180c11ca",
+        "tested_sizes_usd": []
+      }
+    ],
+    "exact_calls": 0,
+    "executable": 0,
+    "inspected": 50,
+    "rejection_classes": {
+      "no_candidate_size_passed": 50
+    },
+    "skipped_bad_route_signatures": 0,
+    "unique_route_signatures": 50
+  },
+  "failures": [],
+  "guards": {
+    "BROADCAST_RPC configured": true,
+    "BROADCAST_RPC healthy": true,
+    "EXACT_CALL_RPC healthy": true,
+    "EXECUTOR_CONTRACT_ADDR set": true,
+    "EXECUTOR_PRIVATE_KEY valid": true,
+    "RPC_LIVE": true,
+    "runtime_mode=live": false
+  },
+  "max_opps": 50,
+  "ok": true,
+  "payload_execution_eligible": false,
+  "runtime": {
+    "canary_mode": false,
+    "effective_execution_cap": 5,
+    "effective_runtime_mode": "dry_run",
+    "settings": {
+      "canary_mode": false,
+      "execute_top": 5,
+      "interval_seconds": 60,
+      "no_scan": false,
+      "principal_usd": "50000",
+      "print_top_routes": 100,
+      "ticks": 1
+    }
+  },
+  "simulate_call": true,
+  "target_rpc": "https://rpc-mainnet.matic.quiknode.pro"
+}

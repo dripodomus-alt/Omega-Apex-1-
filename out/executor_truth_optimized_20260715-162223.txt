@@ -1,0 +1,57 @@
+Omega V5 pipeline validation
+target_rpc=https://rpc-mainnet.matic.quiknode.pro
+env_live_intent=True exec_mode=live live_flag=1 confirm_ok=True effective_runtime_mode=dry_run
+runtime_execution_settings=execute_top:5 canary_mode:False effective_execution_cap:5
+redis_cache_ok=True detail=connected
+✅ HTTP connected  →  rpc-mainnet.matic.quiknode.pro  block #90,301,837
+rpc_connect=True chain_id=137 block=90301837
+executor_code_ok=True detail=bytecode present and selector 0x626482a3 found
+executor_owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+simulation_from=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+loading_pools=True
+🔎 Factory discovery promoted 100 live pool(s) (160 live found).
+   🧬 Polygon token-list discovery staged 146 candidate token(s) against bases USDC.e,WETH,WPOL,WBTC,USDT,DAI,USDC.
+   🗂️  Dynamic pool registry staged 256 metadata pool(s) for live RPC verification.
+   🌀 Curve official registry staged 76 pool(s) across {'main': 2, 'factory': 52, 'factory-crypto': 22}.
+   🧭 tickSpacing cached: 241/241
+   🧩 Balancer poolIds cached: 2/2
+🌐 Loading live state for 486 registered pools...
+   ✅ 486 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 2
+   🧭 V3/Algebra orientation+decimals audit: passed=147/241 failed=94 filtered_out=94
+      reject_reasons={'invalid_onchain_token_pair': 4, 'non_positive_liquidity': 76, 'registered_pair_does_not_match_onchain_pair': 17, 'token0_address_symbol_mismatch': 32, 'token1_address_symbol_mismatch': 3}
+   📊 V3 TVL state hydrated: 97/147
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+   🧮 Total executable liquidity hydrated: 383/392 pools  |  unavailable=9
+factory_discovery_stats={'enabled': True, 'live_candidates': 160, 'promoted': 100, 'live_by_protocol': {'UniswapV2': 36, 'UniswapV3': 110, 'QuickSwapV3': 14}, 'promoted_by_protocol': {'UniswapV2': 15, 'UniswapV3': 81, 'QuickSwapV3': 4}, 'active_limit': 192, 'pair_scan_limit': 160, 'v2_anchor': 'USDC.e', 'bridge_variants': ['USDC', 'USDC.e'], 'polygon_token_list': {'enabled': True, 'source': '0xPolygon/polygon-token-list', 'branch': 'dev', 'wrapped_pos_seen': 979, 'unique_candidates': 951, 'returned': 160, 'max_candidates': 160, 'skipped': {'known_address': 1300, 'symbol_conflict': 116, 'zero_or_native_sentinel': 5, 'non_pos': 236, 'blocked_bridge_tags': 13, 'bad_symbol': 47, 'bad_shape': 4}, 'cache': 'hit', 'runtime_added': 146, 'base_pair_bias': ['USDC.e', 'WETH', 'WPOL', 'WBTC', 'USDT', 'DAI', 'USDC']}, 'subgraph_pool_intel': {'enabled': True, 'candidate_count': 0, 'errors': {'uniswap_v3_polygon_subgraph': 'ConnectionError: HTTPSConnectionPool(host=\'error.thegraph.com\', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError("HTTPSConnection(host=\'error.thegraph.com\', port=443): Failed to resolve \'error.thegraph.com\' ([Errno 11001] getaddrinfo failed)"))', 'quickswap_v3_subgraph': 'ConnectionError: HTTPSConnectionPool(host=\'error.thegraph.com\', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError("HTTPSConnection(host=\'error.thegraph.com\', port=443): Failed to resolve \'error.thegraph.com\' ([Errno 11001] getaddrinfo failed)"))'}, 'limit_per_source': 50, 'execution_policy': 'discovery_hints_only_rpc_verification_required', 'promoted': 0}, 'dynamic_pool_registry': {'enabled': True, 'path': 'omega_v5/data/pools_dynamic.json', 'rows': 816, 'promoted': 256, 'skipped': {'duplicate_pool_address': 16, 'unknown_token': 31, 'max_pools_reached': 1}, 'by_protocol': {'UniswapV2': 135, 'UniswapV3': 121}}, 'curve_pool_registry': {'enabled': True, 'source': 'curve_official_api', 'api_base_url': 'https://api.curve.fi/api', 'families': ['main', 'factory', 'factory-crypto'], 'rows': 859, 'promoted': 76, 'skipped': {'below_min_tvl': 783}, 'by_family': {'main': 2, 'factory': 52, 'factory-crypto': 22}, 'tokens_added': 66, 'min_usd_tvl': '1'}}
+pools_loaded=392 base_registry_size=54 active_registry_size=392
+pool_quality_stats={'v3_algebra_orientation_decimals': {'clmm_total': 241, 'clmm_passed': 147, 'clmm_failed': 94, 'reject_reasons': {'invalid_onchain_token_pair': 4, 'non_positive_liquidity': 76, 'registered_pair_does_not_match_onchain_pair': 17, 'token0_address_symbol_mismatch': 32, 'token1_address_symbol_mismatch': 3}, 'filtered_out': 94, 'rankable_pools': 392}}
+v2_usdc_variants={'bridged_usdc': 25, 'none': 138, 'native_usdc': 4} v2_composition_mismatches=37
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+prices_loaded=32
+verified_pool_registry_rows=392 hot=45 warm=321 discovery=26 execution_statuses={'SIM_ELIGIBLE': 383, 'REJECT_DEPTH_UNAVAILABLE': 9}
+rate_pairs=473 directional_quotes=728
+live_pool_scan_report=C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\out\live_pool_scan_report.json
+two_leg_spreads=8 cross_dex=4 cross_invariant=4
+stable_spreads=0 stable_cross_invariant=0
+📐 Graph built: 101 nodes (tokens), 728 edges (pool routes)
+🦀 Rust Bellman-Ford engine returned 5 negative-cycle candidate(s)
+cycles_detected=5 bellman_cycles=5 three_leg_cycles=0 four_leg_cycles=0
+gate_passed_stable=0
+gate_passed_two_leg=3
+gate_passed_merged_cycles=0
+gate_passed_by_hop=2:3 3:0 4:0
+gate_passed_opportunities=3
+gas_fee_source=polygon_gas_station_v2.fast base_fee_gwei=247.487218448
+executor_truth_inspected=3 executor_truth_executable=0 executor_truth_exact_calls=21 executor_truth_unique_signatures=3 executor_truth_skipped_bad_signatures=0 executor_truth_rejections={'bad_route_semantics': 1, 'eth_call_failed': 1, 'slippage_or_profit_floor': 1}
+executor_truth_first opp_id=XPOOL-0002 executable=False route_signature=1c9e67d6bd9b1072 exact_calls=7 tested_sizes_usd=['7238.912623623889072991860689', '5429.184467717916804743895517', '4825.941749082592715327907126', '3619.456311811944536495930344', '2533.619418268361175547151241', '1809.728155905972268247965172', '1085.836893543583360948779103'] selected_size_usd=NONE rejection_class=bad_route_semantics detail=ContractCustomError: AdapterBadRoute() selector=0x039b98f8
+executor_truth_diag_1=opp_id:XPOOL-0002 path:QUICK->WPOL->QUICK protocols:UniswapV2->UniswapV2 signature:1c9e67d6bd9b1072 exact_calls:7 tested_sizes:['7238.912623623889072991860689', '5429.184467717916804743895517', '4825.941749082592715327907126', '3619.456311811944536495930344', '2533.619418268361175547151241', '1809.728155905972268247965172', '1085.836893543583360948779103'] class:bad_route_semantics detail:ContractCustomError: AdapterBadRoute() selector=0x039b98f8
+executor_truth_diag_2=opp_id:XPOOL-0001 path:WPOL->QUICK->WPOL protocols:UniswapV2->UniswapV2 signature:285acea27062c110 exact_calls:7 tested_sizes:['4825.941749082592715327907126', '7238.912623623889072991860689', '3619.456311811944536495930344', '2412.970874541296357663953563', '1689.079612178907450364767494', '1206.485437270648178831976782', '723.8912623623889072991860689'] class:eth_call_failed detail:HTTPError: 429 Client Error: Too Many Requests for url: https://polygon-mainnet.gateway.tatum.io/
+executor_truth_diag_3=opp_id:XPOOL-0005 path:USDC.e->CURVE_miMATIC_A3FA99->USDC.e protocols:Curve->UniswapV2 signature:3d99ea51f980ad17 exact_calls:7 tested_sizes:['9932.54857681588320', '14898.82286522382480', '7449.4114326119124000', '4966.274288407941600', '3476.3920018855591200', '2483.1371442039708000', '1489.8822865223824800'] class:slippage_or_profit_floor detail:ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc
+liquidation_packets=0 liquidation_ready=0 rejected=0
+payload_source=none reason=no exact-call executable opportunity after final truth gate
+payload_execution_eligible=False exact_call_gate=NO_EXECUTOR_TRUTH_ROUTE
+execution_armed=False guards={'runtime_mode=live': False, 'RPC_LIVE': True, 'EXECUTOR_PRIVATE_KEY valid': True, 'EXECUTOR_CONTRACT_ADDR set': True, 'EXACT_CALL_RPC healthy': True, 'BROADCAST_RPC configured': True, 'BROADCAST_RPC healthy': True}
+pipeline_validation=PASS

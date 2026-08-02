@@ -1,0 +1,307 @@
+{
+  "block": 91253352,
+  "chain_id": 137,
+  "elapsed_seconds_total": "20.743",
+  "exact_route_probes": {
+    "discovery_report": {
+      "cycles_detected": 0,
+      "directional_quotes": 0,
+      "engine_mode": "discover_fallback",
+      "rate_pairs": 0,
+      "sizing_params": {
+        "max_impact_bps": 100,
+        "max_principal_usd": "250000",
+        "min_principal_usd": "1000",
+        "tvl_fractions": [
+          "0.15",
+          "0.25",
+          "0.50"
+        ]
+      },
+      "stager_blueprints": 0
+    },
+    "enabled": false,
+    "reason": "This has been superseded by the unified Rust engine's discovery process."
+  },
+  "mode": "read_only_no_sign_no_broadcast",
+  "pool_load": {
+    "direct_hydration": true,
+    "discovery_expansion": false,
+    "elapsed_seconds": "8.855",
+    "failed_pool_ids": [],
+    "load_failed": 0,
+    "loaded_live": 12,
+    "quality_summary": {
+      "filtered_out": 12,
+      "rankable_pools": 0,
+      "rejection_samples": [
+        {
+          "address": "0xadbF1854e5883eB8aa7BAf50705338739e558E5b",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_WETH_0",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "WETH"
+          ]
+        },
+        {
+          "address": "0xf6B87181BF250af082272E3f448eC3238746Ce3D",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_WBTC_1",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "WBTC"
+          ]
+        },
+        {
+          "address": "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_USDC_2",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "USDC.e"
+          ]
+        },
+        {
+          "address": "0x604229c960e5CACF2aaEAc8Be68Ac07BA9dF81c3",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_USDT_3",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0xEEf611894CeaE652979C9D0DaE1dEb597790C6eE",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_DAI_4",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "DAI"
+          ]
+        },
+        {
+          "address": "0x410E8d9f4e8aDBC6baF2461df630795B3207095B",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_USDD_5",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "USDD"
+          ]
+        },
+        {
+          "address": "0x44B0E3fE61950e7503B82Dc60C2301039136cb29",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_TUSD_6",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "TUSD"
+          ]
+        },
+        {
+          "address": "0x9E5555f362393aAAb5C66B31797356c077Ed93Ba",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_FRAX_7",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "FRAX"
+          ]
+        },
+        {
+          "address": "0x7805B64e2d99412d3b8F10Dfe8fc55217C5cc954",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_MAI_8",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "MAI"
+          ]
+        },
+        {
+          "address": "0x0554059D42E26f35CC958581C71FdfD92405d02f",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_AAVE_9",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "AAVE"
+          ]
+        },
+        {
+          "address": "0x634F9d9f8680349b518cb615017C105aF46CCFd2",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_CRV_10",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "WMATIC",
+            "CRV"
+          ]
+        },
+        {
+          "address": "0x0B3a76D33d93b2651dbf03B102EEFa9500E89243",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [],
+          "onchain_tokens": [],
+          "pool_id": "UniswapV2_WPOL_SUSHI_11",
+          "protocol": "UniswapV2",
+          "reason": "missing_v2_audit",
+          "registered_tokens": [],
+          "reject_reasons": [],
+          "tokens": [
+            "SUSHI",
+            "WMATIC"
+          ]
+        }
+      ],
+      "v2_pair_canonical": {
+        "reject_reasons": {
+          "missing_v2_audit": 12
+        },
+        "v2_failed": 12,
+        "v2_passed": 0,
+        "v2_total": 12
+      },
+      "v3_algebra_orientation_decimals": {
+        "clmm_failed": 0,
+        "clmm_passed": 0,
+        "clmm_total": 0,
+        "reject_reasons": {}
+      }
+    },
+    "rankable_after_quality_filter": 0,
+    "registry_selected": 12
+  },
+  "pre_rank": {
+    "pre_ranked_returned": 0
+  },
+  "pre_rank_diagnostic": {
+    "cycles_detected": 0,
+    "directional_quotes": 0,
+    "engine_mode": "discover_fallback",
+    "rate_pairs": 0,
+    "sizing_params": {
+      "max_impact_bps": 100,
+      "max_principal_usd": "250000",
+      "min_principal_usd": "1000",
+      "tvl_fractions": [
+        "0.15",
+        "0.25",
+        "0.50"
+      ]
+    },
+    "stager_blueprints": 0
+  },
+  "proof": {
+    "base_price_sources": {
+      "USDC": "coingecko",
+      "WMATIC": "coingecko",
+      "WPOL": "coingecko"
+    },
+    "pool_metadata_rows": [],
+    "profile": {
+      "hops": [
+        2
+      ],
+      "intent": "minimum wall-clock proof with real metadata and exact route quotes",
+      "max_pools": 12,
+      "max_pre_ranked": 32,
+      "max_quote_options_per_pair": 2,
+      "max_token_paths": 250,
+      "name": "fastest_low_latency",
+      "principal_usd": "1000",
+      "rank_fast_to_slow": 1,
+      "slippage_bps": "5",
+      "speed_coverage_precision_tradeoff": {
+        "path_scope": "first 250 closed token paths",
+        "pool_scope": "first 12 prioritized pools",
+        "precision_note": "precision increases as caps move to zero, because zero means uncapped in this runner",
+        "quote_scope": "top 2 quote edges per pair",
+        "stage_scope": "top 8 staged routes"
+      },
+      "stage_limit": 8
+    },
+    "route_proofs_failed": 0,
+    "route_proofs_passed": 0
+  },
+  "quote_edges": {
+    "directional_quote_edges": 0,
+    "rate_pairs": 0
+  },
+  "routes": [],
+  "runtime_safety": {
+    "EXECUTION_MODE": "live",
+    "LIVE_TRADING": "1",
+    "OMEGA_RUNTIME_MODE": "live",
+    "broadcast": false,
+    "signing": false
+  },
+  "schema_version": "omega_v5.route_proof_matrix.v1",
+  "stage": {
+    "attempted": 0,
+    "staged_for_executor_truth": 0
+  },
+  "updated_at": 1785585068
+}

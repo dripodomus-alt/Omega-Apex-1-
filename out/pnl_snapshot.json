@@ -1,0 +1,1998 @@
+{
+  "dry_run": {
+    "C1": {
+      "confirmed": 0,
+      "display_pnl_usd": "0",
+      "events": 896,
+      "expected_net_usd": "256295.17195827826811947219799299",
+      "failed": 896,
+      "gas_cost_usd": "0",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "0"
+    },
+    "C2": {
+      "confirmed": 0,
+      "display_pnl_usd": "0",
+      "events": 0,
+      "expected_net_usd": "0",
+      "failed": 0,
+      "gas_cost_usd": "0",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "0"
+    },
+    "LIQUIDATION": {
+      "confirmed": 0,
+      "display_pnl_usd": "0",
+      "events": 0,
+      "expected_net_usd": "0",
+      "failed": 0,
+      "gas_cost_usd": "0",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "0"
+    },
+    "combined": {
+      "confirmed": 0,
+      "display_pnl_usd": "0",
+      "events": 896,
+      "expected_net_usd": "256295.17195827826811947219799299",
+      "failed": 896,
+      "gas_cost_usd": "0",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "0"
+    }
+  },
+  "live": {
+    "C1": {
+      "confirmed": 0,
+      "display_pnl_usd": "-0.0096086027471191846082280",
+      "events": 1,
+      "expected_net_usd": "1246.307866380695355763517974",
+      "failed": 1,
+      "gas_cost_usd": "0.0096086027471191846082280",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "-0.0096086027471191846082280"
+    },
+    "C2": {
+      "confirmed": 0,
+      "display_pnl_usd": "0",
+      "events": 0,
+      "expected_net_usd": "0",
+      "failed": 0,
+      "gas_cost_usd": "0",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "0"
+    },
+    "LIQUIDATION": {
+      "confirmed": 0,
+      "display_pnl_usd": "0",
+      "events": 0,
+      "expected_net_usd": "0",
+      "failed": 0,
+      "gas_cost_usd": "0",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "0"
+    },
+    "combined": {
+      "confirmed": 0,
+      "display_pnl_usd": "-0.0096086027471191846082280",
+      "events": 1,
+      "expected_net_usd": "1246.307866380695355763517974",
+      "failed": 1,
+      "gas_cost_usd": "0.0096086027471191846082280",
+      "pending": 0,
+      "positive": 0,
+      "realized_net_usd": "-0.0096086027471191846082280"
+    }
+  },
+  "live_reset_confirm": "RESET_LIVE_PNL",
+  "live_reset_policy": "explicit_user_reset_only",
+  "pipeline_metrics": {
+    "executed_count": 0,
+    "expired_lifespan_count": 0,
+    "lifespan_checks": 1,
+    "n_plus_4_lifespan": 4,
+    "staged_count": 1,
+    "successful_stagings": 1,
+    "successful_submissions": 0
+  },
+  "recent": [
+    {
+      "block": null,
+      "created_at_ns": 1784064849452695400,
+      "event_id": "pnl-1784064849452693600",
+      "expected_net_usd": "1252.998699676349906383804791",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xeef1a9507b3d505f0062f2be9453981255b503c8",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_500",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "ebcad5936cc22fd8ac0df0da48b1237a53067b847edea3fba4597e40631527c8"
+      },
+      "mode": "dry_run",
+      "opp_id": "XPOOL-0001",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064851526539500,
+      "event_id": "pnl-1784064851526537700",
+      "expected_net_usd": "1252.998567302770997904392791",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0xeef1a9507b3d505f0062f2be9453981255b503c8"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_USDC_e_WBTC_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "95e144293c3bf5b529f5057c02b7649ce5ccd52555189ea21ff1a6071410b044"
+      },
+      "mode": "dry_run",
+      "opp_id": "XPOOL-0002",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064853736684600,
+      "event_id": "pnl-1784064853736683200",
+      "expected_net_usd": "1145.670700082837720575856028",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x45dDa9cb7c25131DF268515131f647d726f50608"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "V3_USDC_e_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "ff0fc06b9fa14045fca672420d34046b789ad3c888d5122c55cf1debd1a86f81"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0016",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064855935372500,
+      "event_id": "pnl-1784064855935370700",
+      "expected_net_usd": "1145.670460634369571479946029",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x45dDa9cb7c25131DF268515131f647d726f50608",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "V3_USDC_e_WETH_500",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "ecc8c8fd3c86d6a162b3e26f740bba8b282adf5d3c6513dac63f61b7aa25e284"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0017",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064858123412200,
+      "event_id": "pnl-1784064858123410800",
+      "expected_net_usd": "1145.670460634369571479946027",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x45dDa9cb7c25131DF268515131f647d726f50608",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "V3_USDC_e_WETH_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "5183a2f6db817e03a9169da8c0f035defd029f46cff2b51778ec267673268ea5"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0018",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064860660343500,
+      "event_id": "pnl-1784064860660342200",
+      "expected_net_usd": "586.0375165979359825574325890",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "5f09d47de777c880fd95d190c9110382ab2240d37e60bef5b140448bc83a29d0"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0027",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064863139686300,
+      "event_id": "pnl-1784064863139683800",
+      "expected_net_usd": "586.0372959420784240201485890",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "429168d0b2e839b2d16bd10bea67e8a2f048e32e5508cb8ea484b4ceeb61b20c"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0030",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064865797391900,
+      "event_id": "pnl-1784064865797390100",
+      "expected_net_usd": "586.0372959420784240201485880",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "ed5ee0de874a3924b1e3daab6e24633708605e201926db3fa0619507b6621946"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0028",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064868248332500,
+      "event_id": "pnl-1784064868248330800",
+      "expected_net_usd": "586.0372959420784240201485880",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "e12e2b8cd696921078e3aadd21b92be6983fea69815fd8bc61e5138e15809eb0"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0029",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064870747431300,
+      "event_id": "pnl-1784064870747429300",
+      "expected_net_usd": "291.1494987952086202289379304",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "V3_WPOL_WETH_500",
+          "QS_WPOL_USDC_e",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "9e9b47e937100a61a1c21c41e9f8d56c29e79f270a31008ebbf741699b5d388b"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0021",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064873563017300,
+      "event_id": "pnl-1784064873563015500",
+      "expected_net_usd": "291.1039065224769461491974360",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "V3_WPOL_WETH_500",
+          "QS_WPOL_USDC_e",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "447dbc8e1917e34e5ba12c56143c00e5388269442fd3b60dbeef8da5235e6b53"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0022",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064876064450200,
+      "event_id": "pnl-1784064876064448600",
+      "expected_net_usd": "291.0565735934744621877819704",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0"
+        ],
+        "pool_sequence": [
+          "QS_WPOL_USDC_e",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "V3_WPOL_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "63e139fb6fef9a29f5b93225fb6b00b1aea81b7b399ccb25b3d46496c0420b3b"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0019",
+      "realized_net_usd": "0",
+      "route": [
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064878761223800,
+      "event_id": "pnl-1784064878761222400",
+      "expected_net_usd": "290.3341829221902589286359341",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "V3_WPOL_WETH_500",
+          "QS_WPOL_USDC_e"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "28e0a2d845cc0b1c18ec1bff8a28440d2f5ef37c7a6ab8467c2724e80fba4a12"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0020",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064881326491200,
+      "event_id": "pnl-1784064881326480500",
+      "expected_net_usd": "273.9054397508456222782580698",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "a47e10da1f0ffbfbcf005707c2e4568f549596a6040d4cfd8345c82accb73f5d"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0036",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064883976558700,
+      "event_id": "pnl-1784064883976556800",
+      "expected_net_usd": "273.9054397508456222782580696",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_USDC_e_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "d4763ef4d152af661ce201d8cca196e2045093623d031a977348ba27e3a6b2c1"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0035",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064886622729800,
+      "event_id": "pnl-1784064886622727900",
+      "expected_net_usd": "273.9053007911238406966740698",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_500",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "c08b1f774a2c94ad0a24fdd6cadf4c4df0871c30bd4a3be324c9e7e43e93602d"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0037",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064889087954200,
+      "event_id": "pnl-1784064889087952700",
+      "expected_net_usd": "273.9053007911238406966740698",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "8012d52eed97fc4417b2416e76f89a477d318ab5199edad64662a1971586b1a5"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0038",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064891687021100,
+      "event_id": "pnl-1784064891687017900",
+      "expected_net_usd": "206.4250987474981310236172459",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "V3_WPOL_WETH_500",
+          "BAL_WPOL_WETH_USDC",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "d8722f7dc18ba057cef6050536229702314fc00d2ddd7f690c304f949b39da4f"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0024",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064894367200500,
+      "event_id": "pnl-1784064894367198200",
+      "expected_net_usd": "206.1478317376699066616997979",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "V3_WPOL_WETH_500",
+          "BAL_WPOL_WETH_USDC",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "b6c8e43a40b1d86efdac9a588ab9d415dbb10a56d2769620e912df9b683f834a"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0025",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064896727932800,
+      "event_id": "pnl-1784064896727930700",
+      "expected_net_usd": "205.8612319410985822993893745",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0"
+        ],
+        "pool_sequence": [
+          "BAL_WPOL_WETH_USDC",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "V3_WPOL_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "945ff2d9a497ca24e5a3ce74c90600130adbf7f924c6c08b3e3406034a36e9d1"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0026",
+      "realized_net_usd": "0",
+      "route": [
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064899417589300,
+      "event_id": "pnl-1784064899417586100",
+      "expected_net_usd": "201.5089724878422212399968571",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "V3_WPOL_WETH_500",
+          "BAL_WPOL_WETH_USDC"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "61621deb7bd16f015c341f074c90addda0ac7914efede3b69c59fb15fab3471e"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0023",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064901665394400,
+      "event_id": "pnl-1784064901665392000",
+      "expected_net_usd": "195.7636341248409987239675163",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xfe343675878100b344802a6763fd373fdeed07a4",
+          "0x45dDa9cb7c25131DF268515131f647d726f50608",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "DISC_V3_WBTC_WETH_3000",
+          "V3_USDC_e_WETH_500",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "663593e0215520ab6b221f25009be73e9f93f75a0855b70897b6d7e0ba381e40"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0040",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064904084103600,
+      "event_id": "pnl-1784064904084100900",
+      "expected_net_usd": "195.7636341248409987239675163",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x45dDa9cb7c25131DF268515131f647d726f50608",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0xfe343675878100b344802a6763fd373fdeed07a4"
+        ],
+        "pool_sequence": [
+          "V3_USDC_e_WETH_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_3000"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "fa8f3e33ce36acc6e616f69fb74f6d6ca081b1136b43a7833a900d9d8b69ac78"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0041",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064906513738100,
+      "event_id": "pnl-1784064906513732700",
+      "expected_net_usd": "195.7636341248409987239675160",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0xfe343675878100b344802a6763fd373fdeed07a4",
+          "0x45dDa9cb7c25131DF268515131f647d726f50608"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_3000",
+          "V3_USDC_e_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "820e441a78603ce3307884b565c01a28b30d2212cda300d354799cea3b0c373a"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0039",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064909098014100,
+      "event_id": "pnl-1784064909098009300",
+      "expected_net_usd": "92.72736764164815730867486500",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x0e44cEb592AcFC5D3F09D996302eB4C499ff8c10",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "V3_USDC_e_WETH_3000",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "70999641c9325eb537b7ee77f0424eed4f916c9d44034f70328e17295073fc88"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0044",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064911400545400,
+      "event_id": "pnl-1784064911400542800",
+      "expected_net_usd": "92.72729037510292191126486550",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x0e44cEb592AcFC5D3F09D996302eB4C499ff8c10",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "V3_USDC_e_WETH_3000",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "d0a182ddb0239e8a8bb39179ec15a8545403f4d91df97a7a097deb57ee4d94da"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0042",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064913730861500,
+      "event_id": "pnl-1784064913730859000",
+      "expected_net_usd": "92.72729037510292191126486520",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x0e44cEb592AcFC5D3F09D996302eB4C499ff8c10"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "V3_USDC_e_WETH_3000"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "7539f0762cce754946904b3c2f259719909666da7055829b542e333c694c43e7"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0043",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064916272562500,
+      "event_id": "pnl-1784064916272559800",
+      "expected_net_usd": "46.55997335080367943092299710",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x19c5505638383337d2972ce68b493ad78e315147",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_WETH_3000",
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "725daece7f45b6d45bde04168981983f813b4f9ed3f05d3415a6e98f96f81786"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0045",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064918902512300,
+      "event_id": "pnl-1784064918902508800",
+      "expected_net_usd": "46.55977503839050901507999700",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x19c5505638383337d2972ce68b493ad78e315147",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_3000",
+          "DISC_V3_USDC_USDC_e_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "5d57b2037a34b991f3984549548ebef437844b1ddc72ae1697df471512dcb312"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0047",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064921865387400,
+      "event_id": "pnl-1784064921865381500",
+      "expected_net_usd": "46.55977503839050901507999680",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x19c5505638383337d2972ce68b493ad78e315147",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_3000",
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "7255991eb8c21521acd29425b2c83c96ab571549bb218fafbe297273bc6b21fe"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0048",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064924447627400,
+      "event_id": "pnl-1784064924447623700",
+      "expected_net_usd": "46.55977503839050901507999670",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x19c5505638383337d2972ce68b493ad78e315147"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_3000"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "bec66362068cc76eac321853f43c95b2db01b6ea7b0bceae303e0166d8c5fbdd"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0046",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064927674187000,
+      "event_id": "pnl-1784064927674184100",
+      "expected_net_usd": "37.80728154350066650143347300",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x19c5505638383337d2972ce68b493ad78e315147",
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_WETH_3000",
+          "DISC_V3_USDC_USDC_e_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "8888cf448f86660b6c45dbe79a9234d3c6fec29b315d92a3de5e41e8ade0e9b9"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0052",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064930377048500,
+      "event_id": "pnl-1784064930377045800",
+      "expected_net_usd": "37.80712806590425131493547310",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x19c5505638383337d2972ce68b493ad78e315147"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_USDC_e_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_3000"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "3b4c21dfd2ab83dfc200f5515c669345f94ee9fd0435fe2f62da92df26ebbae0"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0049",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064933015067100,
+      "event_id": "pnl-1784064933015065400",
+      "expected_net_usd": "37.80712806590425131493547300",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x19c5505638383337d2972ce68b493ad78e315147",
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_3000",
+          "DISC_V3_USDC_USDC_e_500",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "80e3a1b387521653137c850a8a16aa1d51e979e2da199f35836e33b9eeb3c51c"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0051",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064935524981200,
+      "event_id": "pnl-1784064935524978700",
+      "expected_net_usd": "37.80712806590425131493547290",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x50eaEDB835021E4A108B7290636d62E9765cc6d7",
+          "0x19c5505638383337d2972ce68b493ad78e315147",
+          "0xd9abecb39a5885d1e531ed3599adfed620e2fc8a"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "V3_WBTC_WETH_500",
+          "DISC_V3_USDC_WETH_3000",
+          "DISC_V3_USDC_USDC_e_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "05e8ced9eb6c765a31d41a2cc3cd40b1c2829af3ac287c4e16bb00aa1930f42e"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0050",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064937683254000,
+      "event_id": "pnl-1784064937683252500",
+      "expected_net_usd": "36.90569830616032151045532130",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_3000",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "8f44b48ca277cf518385ca741335a783cf11b12502aa186288095d4b2498b724"
+      },
+      "mode": "dry_run",
+      "opp_id": "XPOOL-0003",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064939751074200,
+      "event_id": "pnl-1784064939751072600",
+      "expected_net_usd": "36.90569830616032151045532130",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x847b64f9d3a95e977d157866447a5c0a5dfa0ee5"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_USDC_e_WBTC_3000"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "40ed7b08e110f074fea9345501a112dd86f8b64736d9cf01b9ad586c60c882be"
+      },
+      "mode": "dry_run",
+      "opp_id": "XPOOL-0004",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064942002910000,
+      "event_id": "pnl-1784064942002908000",
+      "expected_net_usd": "11.88364550170768002696287114",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x45dDa9cb7c25131DF268515131f647d726f50608",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "DISC_V3_WBTC_WETH_100",
+          "V3_USDC_e_WETH_500",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "22ee6e67378ce98f64e9c63ff80bd532d91479ab79914cd2e0b225f00639b120"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0002",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064944556470300,
+      "event_id": "pnl-1784064944556468900",
+      "expected_net_usd": "11.88364550170768002696287113",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x45dDa9cb7c25131DF268515131f647d726f50608"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100",
+          "V3_USDC_e_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "b8cb9c14303edff660e20a970b4c9a772f857c9d781a90b923f1995723597413"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0001",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064946749927600,
+      "event_id": "pnl-1784064946749926100",
+      "expected_net_usd": "11.88360264634483614459287112",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x45dDa9cb7c25131DF268515131f647d726f50608",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b"
+        ],
+        "pool_sequence": [
+          "V3_USDC_e_WETH_500",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "0cf9c0edd3542beeab42ba75b1b0195558f576f619234bc66d331685d5bcdc04"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0003",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064949359854400,
+      "event_id": "pnl-1784064949359851200",
+      "expected_net_usd": "11.76314920523643132048549530",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0"
+        ],
+        "pool_sequence": [
+          "QS_WPOL_USDC_e",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100",
+          "V3_WPOL_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "7effc5de7e471d49e0c63822a01c52675fb14e2906d95fcec9ee7e9bbd79fb66"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0004",
+      "realized_net_usd": "0",
+      "route": [
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064952088788900,
+      "event_id": "pnl-1784064952088787100",
+      "expected_net_usd": "11.76284208766206182629661781",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "DISC_V3_WBTC_WETH_100",
+          "V3_WPOL_WETH_500",
+          "QS_WPOL_USDC_e",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "73954e558d510c03281817a9c5e107d41082b709a3094b7df72996a202e2ede8"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0007",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064954885695700,
+      "event_id": "pnl-1784064954885694300",
+      "expected_net_usd": "11.76282294345463680470774601",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b"
+        ],
+        "pool_sequence": [
+          "V3_WPOL_WETH_500",
+          "QS_WPOL_USDC_e",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "8c80ce570c15ae0c1ed7db5ef5fc5cfdecc26ac3565ed21be93639aeac51dccb"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0006",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064957227793200,
+      "event_id": "pnl-1784064957227791600",
+      "expected_net_usd": "11.76275573596096499938503798",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+        ],
+        "pool_sequence": [
+          "DISC_V3_WBTC_WETH_100",
+          "V3_WPOL_WETH_500",
+          "BAL_WPOL_WETH_USDC",
+          "DISC_V3_USDC_e_WBTC_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "d75c42c7691bba32a2feec3c071cc76d3470c81b4ebadf34317ef68fd2f1f025"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0009",
+      "realized_net_usd": "0",
+      "route": [
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064960051442500,
+      "event_id": "pnl-1784064960051440700",
+      "expected_net_usd": "11.76266669745027744096325882",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b"
+        ],
+        "pool_sequence": [
+          "V3_WPOL_WETH_500",
+          "BAL_WPOL_WETH_USDC",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "5a0c22fe4ebab020b70ddd274fbd8b26aca29ad384d448af1580845479edb033"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0010",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064962852463400,
+      "event_id": "pnl-1784064962852461700",
+      "expected_net_usd": "11.76167658760996440462306941",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0"
+        ],
+        "pool_sequence": [
+          "BAL_WPOL_WETH_USDC",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100",
+          "V3_WPOL_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "451036991ca2f76e207bce922a94466ea66bda2a1443cffd58b47f425a4ec48c"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0011",
+      "realized_net_usd": "0",
+      "route": [
+        "WPOL",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064965446064200,
+      "event_id": "pnl-1784064965446062500",
+      "expected_net_usd": "11.76132832662178770617252797",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x6e7a5FAFcec6BB1e78bAE2A1F0B612012BF14827"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100",
+          "V3_WPOL_WETH_500",
+          "QS_WPOL_USDC_e"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "6536f6d7f0ba97f02dfbfe6dca6cd8293ab788a0074124194df8cd591e384b25"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0005",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064968080901300,
+      "event_id": "pnl-1784064968080899500",
+      "expected_net_usd": "11.74495230828821602982348476",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+          "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100",
+          "V3_WPOL_WETH_500",
+          "BAL_WPOL_WETH_USDC"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "1a16e131974388864989df7a87237cb3562c8a8a4ba96b481c4ca5f9704ae824"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0008",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064971164667000,
+      "event_id": "pnl-1784064971164664900",
+      "expected_net_usd": "11.57953970034824407420753269",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9",
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_WETH_500",
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "af8aa41f0abab96197b77060bdd688e204eacbe51096955575776e0740bbe609"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0015",
+      "realized_net_usd": "0",
+      "route": [
+        "WETH",
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    },
+    {
+      "block": null,
+      "created_at_ns": 1784064973685546600,
+      "event_id": "pnl-1784064973685544300",
+      "expected_net_usd": "11.57942705980497376790953271",
+      "gas_cost_usd": "",
+      "metadata": {
+        "detail": "ContractCustomError: AdapterSlippageOrProfit() selector=0x01ecd1cc",
+        "flash_source": "Balancer_Vault",
+        "pool_addresses": [
+          "0xd36ec33c8bed5a9f7b6630855f1533455b98a418",
+          "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+          "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+          "0xa4d8c89f0c20efbe54cba9e7e7a7e509056228d9"
+        ],
+        "pool_sequence": [
+          "DISC_V3_USDC_USDC_e_100",
+          "DISC_V3_USDC_e_WBTC_100",
+          "DISC_V3_WBTC_WETH_100",
+          "DISC_V3_USDC_WETH_500"
+        ],
+        "reason": "exact_eth_call_failed",
+        "trace_hash": "4999384c85d09ad95ddc9239fb3ef32831b8e2dbccf5730662e7e6fb3e0cfae9"
+      },
+      "mode": "dry_run",
+      "opp_id": "OPP-0012",
+      "realized_net_usd": "0",
+      "route": [
+        "USDC",
+        "USDC.e",
+        "WBTC",
+        "WETH",
+        "USDC"
+      ],
+      "stage": "C1",
+      "status": "SIMULATION_REJECTED",
+      "tx_hash": "",
+      "type": "PNL"
+    }
+  ],
+  "updated_at_ns": 1785049798628824700
+}

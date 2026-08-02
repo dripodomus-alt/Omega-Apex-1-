@@ -1,0 +1,103 @@
+{
+  "ReadinessScore": 90,
+  "Timestamp": "2026-07-25T08:31:13.9415377-07:00",
+  "Steps": [
+    {
+      "Name": "Python available",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "Foundry (cast)",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "Git available",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "pnpm available",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": ".env configuration",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "Rust engine build",
+      "Success": true,
+      "Detail": "Already built"
+    },
+    {
+      "Name": "Rust engine presence",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "DODO RPC Provider source",
+      "Success": true,
+      "Detail": "Already present"
+    },
+    {
+      "Name": "Anvil startup",
+      "Success": true,
+      "Detail": "Already healthy"
+    },
+    {
+      "Name": "DODO RPC Provider startup",
+      "Success": true,
+      "Detail": "Started or already running"
+    },
+    {
+      "Name": "Service startup",
+      "Success": true,
+      "Detail": "Skipped (manual or already running)"
+    },
+    {
+      "Name": "Pytest unit tests",
+      "Success": false,
+      "Detail": "Tests failed or pytest errored"
+    },
+    {
+      "Name": "Preflight",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "RPC benchmark",
+      "Success": false,
+      "Detail": "At C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:121 char:14\r\n+         catch (Microsoft.PowerShell.Commands.HttpResponseException $e …\r\n+              ~\r\nThe Catch block is missing its statement block.\r\n\r\nAt C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:121 char:72\r\n+ …      catch (Microsoft.PowerShell.Commands.HttpResponseException $e) {\r\n+                                                                       ~\r\nUnexpected token '{' in expression or statement.\r\n\r\nAt C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:138 char:14\r\n+         catch (Microsoft.PowerShell.Commands.HttpResponseException $e …\r\n+              ~\r\nThe Catch block is missing its statement block.\r\n\r\nAt C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:138 char:72\r\n+ …      catch (Microsoft.PowerShell.Commands.HttpResponseException $e) {\r\n+                                                                       ~\r\nUnexpected token '{' in expression or statement."
+    },
+    {
+      "Name": "Pipeline validation",
+      "Success": true,
+      "Detail": ""
+    },
+    {
+      "Name": "Anvil fork benchmark",
+      "Success": false,
+      "Detail": "Anvil may not be running - using dry run only"
+    },
+    {
+      "Name": "Dry-run simulator",
+      "Success": true,
+      "Detail": ""
+    }
+  ],
+  "Details": {
+    "DODO RPC Provider source": "Already present",
+    "LatestReport": "out\\pipeline_validation_latest.json",
+    "RPC benchmark": "At C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:121 char:14\r\n+         catch (Microsoft.PowerShell.Commands.HttpResponseException $e …\r\n+              ~\r\nThe Catch block is missing its statement block.\r\n\r\nAt C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:121 char:72\r\n+ …      catch (Microsoft.PowerShell.Commands.HttpResponseException $e) {\r\n+                                                                       ~\r\nUnexpected token '{' in expression or statement.\r\n\r\nAt C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:138 char:14\r\n+         catch (Microsoft.PowerShell.Commands.HttpResponseException $e …\r\n+              ~\r\nThe Catch block is missing its statement block.\r\n\r\nAt C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\scripts\\network\\benchmark_rpc_endpoints.ps1:138 char:72\r\n+ …      catch (Microsoft.PowerShell.Commands.HttpResponseException $e) {\r\n+                                                                       ~\r\nUnexpected token '{' in expression or statement.",
+    "DODO RPC Provider startup": "Started or already running",
+    "Rust engine build": "Already built",
+    "Service startup": "Skipped (manual or already running)",
+    "PrerequisiteScore": 100.0,
+    "Pytest unit tests": "Tests failed or pytest errored",
+    "Anvil fork benchmark": "Anvil may not be running - using dry run only",
+    "Anvil startup": "Already healthy"
+  }
+}

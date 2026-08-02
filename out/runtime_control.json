@@ -1,0 +1,17 @@
+{
+  "dry_run_armed_at_ns": 1784436050184117400,
+  "live_armed_at_ns": 1784441537019865300,
+  "live_reset_policy": "explicit_user_reset_only",
+  "mode": "live",
+  "settings": {
+    "canary_mode": true,
+    "execute_top": 5,
+    "interval_seconds": 60,
+    "no_scan": false,
+    "principal_usd": "1000",
+    "print_top_routes": 20,
+    "ticks": 1
+  },
+  "updated_at_ns": 1784441537019865300,
+  "updated_by": "codex_live_canary_completion"
+}

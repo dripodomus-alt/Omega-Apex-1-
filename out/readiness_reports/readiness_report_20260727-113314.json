@@ -1,0 +1,8 @@
+{
+  "scanner_benchmark": false,
+  "readiness_score": 0.0,
+  "anvil_benchmark": false,
+  "unit_tests": false,
+  "pipeline_validation": false,
+  "prereqs": false
+}

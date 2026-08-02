@@ -1,0 +1,49 @@
+{
+  "schema_version": "omega_v5.benchmark.sdk_orchestrator.v1",
+  "mode": "dry_run",
+  "submission_policy": "stage_only_no_broadcast",
+  "cycles_requested": 1,
+  "generated_at_ns": 1785602970804232200,
+  "cycles": [
+    {
+      "cycle": 1,
+      "stage": {},
+      "pre_rank": {},
+      "staged_routes_count": 3,
+      "top_staged_routes": [
+        {
+          "opp_id": "OPP-6a40d54da4bf0a4c",
+          "status": "staged_for_executor_truth",
+          "net_profit_usd": null,
+          "path": [
+            "USDC",
+            "WETH",
+            "USDC"
+          ]
+        },
+        {
+          "opp_id": "OPP-7750505173c2fd5b",
+          "status": "staged_for_executor_truth",
+          "net_profit_usd": null,
+          "path": [
+            "USDC",
+            "WETH",
+            "USDC"
+          ]
+        },
+        {
+          "opp_id": "OPP-e4d82153a2798e18",
+          "status": "staged_for_executor_truth",
+          "net_profit_usd": null,
+          "path": [
+            "USDC",
+            "WBTC",
+            "USDC"
+          ]
+        }
+      ],
+      "submissions": [],
+      "receipts": []
+    }
+  ]
+}

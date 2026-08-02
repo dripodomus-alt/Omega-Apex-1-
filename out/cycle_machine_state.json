@@ -1,0 +1,119 @@
+{
+  "recent": [
+    {
+      "opportunity_id": "opp_137_300_36dbfcd1d3f63424c0307bab",
+      "status": "CLOSED_C2_EXPIRED",
+      "blocks": {
+        "discovered": 300,
+        "c1_submitted": null,
+        "c1_confirmed": 301,
+        "c2_window_start": 302,
+        "c2_window_end": 306,
+        "c2_submitted": null,
+        "c2_confirmed": null
+      },
+      "c1": {
+        "cycle_id": "c1_8e0bdfde20a8b5cd691252a8",
+        "route_hash": "rh_7abf31e81d72ab52e1d5ffe0",
+        "state_hash": "sh_b0f2bfc6361846c74c7e9199",
+        "status": "SETTLED",
+        "expected_net_usd": "0",
+        "realized_net_usd": "1.00",
+        "tx_hash": "0xc1"
+      },
+      "c2": {
+        "cycle_id": "c2_327dcc1011b19e9dd23c6a1e",
+        "parent_c1_cycle_id": "c1_8e0bdfde20a8b5cd691252a8",
+        "decision": "EXPIRED",
+        "route_hash": null,
+        "post_c1_state_hash": "post",
+        "status": "EXPIRED",
+        "expected_net_usd": "0",
+        "realized_net_usd": null,
+        "tx_hash": null
+      },
+      "pnl": {
+        "c1_realized_net_usd": "1.00",
+        "c2_realized_net_usd": null,
+        "combined_realized_net_usd": "1.00"
+      }
+    },
+    {
+      "opportunity_id": "opp_137_200_6267d3ef0e372652644e9284",
+      "status": "CLOSED_C1_ONLY_PROFITABLE",
+      "blocks": {
+        "discovered": 200,
+        "c1_submitted": null,
+        "c1_confirmed": 201,
+        "c2_window_start": 202,
+        "c2_window_end": 206,
+        "c2_submitted": null,
+        "c2_confirmed": null
+      },
+      "c1": {
+        "cycle_id": "c1_3b49b23fa02ff1006ac42a74",
+        "route_hash": "rh_7abf31e81d72ab52e1d5ffe0",
+        "state_hash": "sh_43b556e6f60c07cf8837494d",
+        "status": "SETTLED",
+        "expected_net_usd": "0",
+        "realized_net_usd": "7.99",
+        "tx_hash": "0xc1ok"
+      },
+      "c2": {
+        "cycle_id": "c2_a93bb2859afe1a2115065d74",
+        "parent_c1_cycle_id": "c1_3b49b23fa02ff1006ac42a74",
+        "decision": "DO_NOTHING",
+        "route_hash": null,
+        "post_c1_state_hash": "post",
+        "status": "NOOP",
+        "expected_net_usd": "0",
+        "realized_net_usd": "0",
+        "tx_hash": null
+      },
+      "pnl": {
+        "c1_realized_net_usd": "7.99",
+        "c2_realized_net_usd": "0",
+        "combined_realized_net_usd": "7.99"
+      }
+    },
+    {
+      "opportunity_id": "opp_137_90213722_4cb15865cecf57033c802556",
+      "status": "CLOSED_PROFITABLE",
+      "blocks": {
+        "discovered": 90213722,
+        "c1_submitted": 90213723,
+        "c1_confirmed": 90213723,
+        "c2_window_start": 90213724,
+        "c2_window_end": 90213728,
+        "c2_submitted": 90213724,
+        "c2_confirmed": 90213724
+      },
+      "c1": {
+        "cycle_id": "c1_24714b7463995ad917468c53",
+        "route_hash": "rh_950ed0780f7e1c1dd4aadd2f",
+        "state_hash": "sh_0ce3c510904012bb9626a61f",
+        "status": "SETTLED",
+        "expected_net_usd": "8.57",
+        "realized_net_usd": "7.99",
+        "tx_hash": "0xc1tx"
+      },
+      "c2": {
+        "cycle_id": "c2_49d23c12b0e953ddf969d618",
+        "parent_c1_cycle_id": "c1_24714b7463995ad917468c53",
+        "decision": "REVERSE",
+        "route_hash": "0xroute_c2_reverse",
+        "post_c1_state_hash": "0xstate_post_c1",
+        "status": "SETTLED",
+        "expected_net_usd": "6.36",
+        "realized_net_usd": "5.68",
+        "tx_hash": "0xc2tx"
+      },
+      "pnl": {
+        "c1_realized_net_usd": "7.99",
+        "c2_realized_net_usd": "5.68",
+        "combined_realized_net_usd": "13.67"
+      }
+    }
+  ],
+  "updated_at_ms": 1785448802947
+}

@@ -1,0 +1,914 @@
+{
+  "schema_version": "omega_v5.benchmark.profitable_execution.v1",
+  "mode": "dry-run",
+  "submission_policy": "stage_only_no_signing_no_broadcast",
+  "execution_policy": "buy_lowest_executable_base_per_mid_then_sell_higher_back_to_base",
+  "cycles_requested": 1,
+  "generated_at_ns": 1785026671756895500,
+  "cycles": [
+    {
+      "cycle": 1,
+      "stage": {
+        "attempted": 3,
+        "staged_for_executor_truth": 3,
+        "rejected": 0,
+        "status_counts": {
+          "staged_for_executor_truth": 3
+        }
+      },
+      "pre_rank": {
+        "token_paths_considered": 2,
+        "candidates_generated": 3,
+        "rejection_counts": {
+          "two_leg_non_lowest_buy_options_removed": 3,
+          "rejected_two_leg_buy_sell_price_misaligned": 2
+        },
+        "discovery_block": 90881115,
+        "raw_positive_count": 3
+      },
+      "eligible_routes": 3,
+      "top_routes": [
+        {
+          "path": [
+            "USDC",
+            "WETH",
+            "USDC"
+          ],
+          "pool_sequence": [
+            "BUY_LOW_USDC_WETH",
+            "SELL_HIGH_WETH_USDC"
+          ],
+          "protocol_seq": [
+            "V2_CPMM",
+            "V2_CPMM"
+          ],
+          "opportunity_id_frozen": true,
+          "principal_usd": "10000",
+          "approximate_gross_rate": "1.1333785674936360367634220300976369501405868024538",
+          "approximate_raw_delta_usd": "1333.7856749363603676342203009763695014058680245380",
+          "sizing": {
+            "selected_principal_usd": "10000",
+            "max_profit_usd": "250249.24142968750000",
+            "min_pool_tvl_usd": "1000000000",
+            "method": "capital_injector:requested"
+          },
+          "flash_source": "BALANCER",
+          "raw_gate_eligible": true,
+          "status": "staged_for_executor_truth",
+          "stage": "staged_for_executor_truth",
+          "reason": "profitability_gate_passed",
+          "discovery_block": 90881115,
+          "current_block": 90881115,
+          "hop_fees_usd": "60.000",
+          "hop_fee_breakdown": [
+            "30.000",
+            "30.000"
+          ],
+          "amount_out": "11371.225254781522746825129615554828609922810141194",
+          "amount_out_min": "11359.854029526741224078304485939273781312887331053",
+          "out_usd": "11371.225254781522746825129615554828609922810141194",
+          "out_usd_min": "11359.854029526741224078304485939273781312887331053",
+          "raw_delta_usd": "1371.225254781522746825129615554828609922810141194",
+          "net_gain_usd": "1359.846029526741224078304485939273781312887331053",
+          "extra_slippage_buffer_usd": "11.371225254781522746825129615554828609922810141",
+          "slippage_bps": "10",
+          "min_amount_out_bps": "0",
+          "execution_sequence": {
+            "schema_version": "omega_v5.execution_sequence.v1",
+            "applies": true,
+            "passes": true,
+            "policy": "BUY_LOWEST_EXECUTABLE_BASE_PER_MID_THEN_SELL_HIGHER_BACK_TO_BASE",
+            "base_asset": "USDC",
+            "mid_asset": "WETH",
+            "buy_leg": {
+              "position": 1,
+              "pool_id": "BUY_LOW_USDC_WETH",
+              "token_in": "USDC",
+              "token_out": "WETH",
+              "amount_in_base": "10000",
+              "amount_out_mid": "3.2900671980300356405446637697022160689057930092437",
+              "executable_buy_price_base_per_mid": "3039.4515972158900945260022491717576973344275249992",
+              "approx_buy_price_base_per_mid": "3039.4243244886173672532749764444849700617002522719"
+            },
+            "sell_leg": {
+              "position": 2,
+              "pool_id": "SELL_HIGH_WETH_USDC",
+              "token_in": "WETH",
+              "token_out": "USDC",
+              "amount_in_mid": "3.2900671980300356405446637697022160689057930092437",
+              "amount_out_base": "11371.225254781522746825129615554828609922810141194",
+              "amount_out_min_base": "11359.854029526741224078304485939273781312887331053",
+              "executable_sell_price_base_per_mid": "3456.2288762947366094060713844859109727862530231942",
+              "executable_sell_price_min_base_per_mid": "3452.7726474184418727966653131014250618134667701710",
+              "approx_sell_price_base_per_mid": "3444.8183868942215370917318112805111014395492313877"
+            },
+            "spread_base_per_mid_min": "413.3210502025517782706630639296673644790392451718",
+            "reason": "sell_min_price_above_buy_price"
+          },
+          "profitable_execution_staging": {
+            "schema_version": "omega_v5.execution_sequence.v1",
+            "applies": true,
+            "passes": true,
+            "policy": "BUY_LOWEST_EXECUTABLE_BASE_PER_MID_THEN_SELL_HIGHER_BACK_TO_BASE",
+            "base_asset": "USDC",
+            "mid_asset": "WETH",
+            "buy_leg": {
+              "position": 1,
+              "pool_id": "BUY_LOW_USDC_WETH",
+              "token_in": "USDC",
+              "token_out": "WETH",
+              "amount_in_base": "10000",
+              "amount_out_mid": "3.2900671980300356405446637697022160689057930092437",
+              "executable_buy_price_base_per_mid": "3039.4515972158900945260022491717576973344275249992",
+              "approx_buy_price_base_per_mid": "3039.4243244886173672532749764444849700617002522719"
+            },
+            "sell_leg": {
+              "position": 2,
+              "pool_id": "SELL_HIGH_WETH_USDC",
+              "token_in": "WETH",
+              "token_out": "USDC",
+              "amount_in_mid": "3.2900671980300356405446637697022160689057930092437",
+              "amount_out_base": "11371.225254781522746825129615554828609922810141194",
+              "amount_out_min_base": "11359.854029526741224078304485939273781312887331053",
+              "executable_sell_price_base_per_mid": "3456.2288762947366094060713844859109727862530231942",
+              "executable_sell_price_min_base_per_mid": "3452.7726474184418727966653131014250618134667701710",
+              "approx_sell_price_base_per_mid": "3444.8183868942215370917318112805111014395492313877"
+            },
+            "spread_base_per_mid_min": "413.3210502025517782706630639296673644790392451718",
+            "reason": "sell_min_price_above_buy_price"
+          },
+          "net_formula": {
+            "raw_delta_usd": "1371.225254781522746825129615554828609922810141194",
+            "flashloan_fee_usd": "0",
+            "gas_cost_usd": "0.002",
+            "relay_or_private_submit_cost_usd": "0.001",
+            "risk_buffer_usd": "0.005",
+            "extra_slippage_buffer_usd": "11.371225254781522746825129615554828609922810141",
+            "hop_fees_usd": "60.000",
+            "net_gain_usd": "1359.846029526741224078304485939273781312887331053",
+            "gas_payer": "user_wallet",
+            "gas_accounting": {
+              "native_symbol": "POL",
+              "gas_cost_source": "evaluate_profitability"
+            },
+            "formula": "net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd - relay_or_private_submit_cost_usd - risk_buffer_usd - extra_slippage_buffer_usd; hop_fees_usd are embedded in executable AMM quotes and surfaced for audit"
+          },
+          "profitability": {
+            "net_profit_usd": "1359.846029526741224078304485939273781312887331053",
+            "passes_gate": true
+          },
+          "initial_amount_raw": "10000000000",
+          "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals",
+          "identity": {
+            "schema_version": "omega_v5.unified_invariant_route.v1.identity.v1",
+            "hash_encoding": "keccak256(abi.encode(...))",
+            "chain_id": 137,
+            "block_hash": "0x5b3cae63fd8203d1d7abd82f4ea2c4b2c887b7b81f3d274bf527a3485c1b3af7",
+            "block_hash_source": "offline_synthetic_block_hash",
+            "settlement_asset": "USDC",
+            "base_asset": "WETH",
+            "initial_amount_raw": "10000000000",
+            "initial_amount_raw_status": "resolved",
+            "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals",
+            "leg1_destination": {
+              "destination_id": "0x607472bebb29a878914cc6c087309443ab8e16dc368fb0a812ea7c3ccd20a76f",
+              "chain_id": 137,
+              "protocol_family": "V2_CPMM",
+              "factory_or_vault": "",
+              "pool_id": "BUY_LOW_USDC_WETH",
+              "fee_tier": 0
+            },
+            "leg2_destination": {
+              "destination_id": "0x3d93b237def1682e8f255d8236cd9cadc10da9dcdbb595cd44b573bc70ccf7ff",
+              "chain_id": 137,
+              "protocol_family": "V2_CPMM",
+              "factory_or_vault": "",
+              "pool_id": "SELL_HIGH_WETH_USDC",
+              "fee_tier": 0
+            },
+            "route_pair_id": "0xc8d48e5f1182069912eb4fe7cf54c552f4c95834a66f39bd64419252d1a7d926",
+            "quote_snapshot_id": "0xedc86f27b560f75829c640112c001ad3f524da98cb340ff1f85e200c1b5d41a3",
+            "simulation_id": "",
+            "execution_attempt_id": "",
+            "transaction_hash": "",
+            "invariants": {
+              "leg1_asset_in_equals_settlement_asset": true,
+              "leg1_asset_out_equals_base_asset": true,
+              "leg2_asset_in_equals_base_asset": true,
+              "leg2_asset_out_equals_settlement_asset": true,
+              "leg1_destination_differs_from_leg2_destination": true
+            }
+          },
+          "route_pair_id": "0xc8d48e5f1182069912eb4fe7cf54c552f4c95834a66f39bd64419252d1a7d926",
+          "quote_snapshot_id": "0xedc86f27b560f75829c640112c001ad3f524da98cb340ff1f85e200c1b5d41a3",
+          "simulation_id": "",
+          "execution_attempt_id": "",
+          "transaction_hash": "",
+          "opp_id": "OPP-edc86f27b560f758",
+          "opportunity_id": "OPP-edc86f27b560f758",
+          "capital_injector": {
+            "principal_usd": "250000",
+            "min_tvl_usd": "1000000000",
+            "bottleneck_pool": "BUY_LOW_USDC_WETH",
+            "peak_surplus_usd": "250374.241050781250000",
+            "sizing_method": "requested",
+            "quantum_score": "0.78125",
+            "quantum_adjustment": "0",
+            "cannibalization_detected": false,
+            "reason": "user_override",
+            "method": "requested"
+          },
+          "unified_route_envelope": {
+            "schema_version": "omega_v5.unified_invariant_route.v1",
+            "chain_id": 137,
+            "opp_id": "OPP-edc86f27b560f758",
+            "status": "STAGED_FOR_EXECUTOR_TRUTH",
+            "route": {
+              "path": [
+                "USDC",
+                "WETH",
+                "USDC"
+              ],
+              "pool_sequence": [
+                "BUY_LOW_USDC_WETH",
+                "SELL_HIGH_WETH_USDC"
+              ],
+              "protocol_seq": [
+                "V2_CPMM",
+                "V2_CPMM"
+              ]
+            },
+            "blocks": {
+              "discovered": 90881115,
+              "staged": 90881115
+            },
+            "discovery": {
+              "liquidity_keys": [
+                "USDC:WETH:1",
+                "WETH:USDC:3"
+              ],
+              "route_class_seq": [
+                "NATIVE_POOL_ROUTE",
+                "NATIVE_POOL_ROUTE"
+              ],
+              "edge_entries": [
+                {
+                  "pool_id": "BUY_LOW_USDC_WETH",
+                  "protocol": "UniswapV2",
+                  "route_class": "NATIVE_POOL_ROUTE",
+                  "liquidity_key": "USDC:WETH:1",
+                  "invariant": "constant_product",
+                  "token_in": "USDC",
+                  "token_out": "WETH",
+                  "rate": "0.00032900967197735703857503254069255692952074126782096",
+                  "amount_out": "0.32900967197735703857503254069255692952074126782096"
+                },
+                {
+                  "pool_id": "SELL_HIGH_WETH_USDC",
+                  "protocol": "UniswapV2",
+                  "route_class": "NATIVE_POOL_ROUTE",
+                  "liquidity_key": "WETH:USDC:3",
+                  "invariant": "constant_product",
+                  "token_in": "WETH",
+                  "token_out": "USDC",
+                  "rate": "3444.8183868942215370917318112805111014395492313877",
+                  "amount_out": "3444818.3868942215370917318112805111014395492313877"
+                }
+              ],
+              "identity": {
+                "schema_version": "omega_v5.unified_invariant_route.v1.identity.v1",
+                "hash_encoding": "keccak256(abi.encode(...))",
+                "chain_id": 137,
+                "block_hash": "0x5b3cae63fd8203d1d7abd82f4ea2c4b2c887b7b81f3d274bf527a3485c1b3af7",
+                "block_hash_source": "offline_synthetic_block_hash",
+                "settlement_asset": "USDC",
+                "base_asset": "WETH",
+                "initial_amount_raw": "0",
+                "initial_amount_raw_status": "unresolved_at_current_stager_boundary",
+                "initial_amount_raw_source": "missing_raw_uint256",
+                "leg1_destination": {
+                  "destination_id": "0x607472bebb29a878914cc6c087309443ab8e16dc368fb0a812ea7c3ccd20a76f",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "BUY_LOW_USDC_WETH",
+                  "fee_tier": 0
+                },
+                "leg2_destination": {
+                  "destination_id": "0x3d93b237def1682e8f255d8236cd9cadc10da9dcdbb595cd44b573bc70ccf7ff",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "SELL_HIGH_WETH_USDC",
+                  "fee_tier": 0
+                },
+                "route_pair_id": "0xc8d48e5f1182069912eb4fe7cf54c552f4c95834a66f39bd64419252d1a7d926",
+                "quote_snapshot_id": "0xd08eeab3c275b35e31469ae7dd0d49968b992d7d1e3acdc25b893bc94d39010e",
+                "simulation_id": "",
+                "execution_attempt_id": "",
+                "transaction_hash": "",
+                "invariants": {
+                  "leg1_asset_in_equals_settlement_asset": true,
+                  "leg1_asset_out_equals_base_asset": true,
+                  "leg2_asset_in_equals_base_asset": true,
+                  "leg2_asset_out_equals_settlement_asset": true,
+                  "leg1_destination_differs_from_leg2_destination": true
+                }
+              }
+            },
+            "intake": {
+              "approximate_gross_rate": "1.1333785674936360367634220300976369501405868024538",
+              "approximate_raw_delta_usd": "1333.7856749363603676342203009763695014058680245380",
+              "approximate_raw_delta_bps": "1333.7856749363603676342203009763695014058680245380"
+            },
+            "ranking": {},
+            "staging": {
+              "status": "staged_for_executor_truth",
+              "stage": "staged_for_executor_truth",
+              "principal_usd": "10000",
+              "flash_source": "BALANCER",
+              "opportunity_id_frozen": true,
+              "identity": {
+                "schema_version": "omega_v5.unified_invariant_route.v1.identity.v1",
+                "hash_encoding": "keccak256(abi.encode(...))",
+                "chain_id": 137,
+                "block_hash": "0x5b3cae63fd8203d1d7abd82f4ea2c4b2c887b7b81f3d274bf527a3485c1b3af7",
+                "block_hash_source": "offline_synthetic_block_hash",
+                "settlement_asset": "USDC",
+                "base_asset": "WETH",
+                "initial_amount_raw": "10000000000",
+                "initial_amount_raw_status": "resolved",
+                "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals",
+                "leg1_destination": {
+                  "destination_id": "0x607472bebb29a878914cc6c087309443ab8e16dc368fb0a812ea7c3ccd20a76f",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "BUY_LOW_USDC_WETH",
+                  "fee_tier": 0
+                },
+                "leg2_destination": {
+                  "destination_id": "0x3d93b237def1682e8f255d8236cd9cadc10da9dcdbb595cd44b573bc70ccf7ff",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "SELL_HIGH_WETH_USDC",
+                  "fee_tier": 0
+                },
+                "route_pair_id": "0xc8d48e5f1182069912eb4fe7cf54c552f4c95834a66f39bd64419252d1a7d926",
+                "quote_snapshot_id": "0xedc86f27b560f75829c640112c001ad3f524da98cb340ff1f85e200c1b5d41a3",
+                "simulation_id": "",
+                "execution_attempt_id": "",
+                "transaction_hash": "",
+                "invariants": {
+                  "leg1_asset_in_equals_settlement_asset": true,
+                  "leg1_asset_out_equals_base_asset": true,
+                  "leg2_asset_in_equals_base_asset": true,
+                  "leg2_asset_out_equals_settlement_asset": true,
+                  "leg1_destination_differs_from_leg2_destination": true
+                }
+              },
+              "route_pair_id": "0xc8d48e5f1182069912eb4fe7cf54c552f4c95834a66f39bd64419252d1a7d926",
+              "quote_snapshot_id": "0xedc86f27b560f75829c640112c001ad3f524da98cb340ff1f85e200c1b5d41a3",
+              "simulation_id": "",
+              "execution_attempt_id": "",
+              "transaction_hash": ""
+            },
+            "fees": {
+              "schema_version": "omega_v5.fee_ledger.v1",
+              "calibration_id": "omega_v5.nusd.v1:unresolved",
+              "normalized_unit": "NUSD",
+              "total_fee_usd": "71.379225254781522746825129615554828609922810141",
+              "components": [
+                {
+                  "fee_component": "flashloan_fee",
+                  "source_key": "flashloan_fee_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "gas_fee",
+                  "source_key": "gas_cost_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0.002",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "relay_fee",
+                  "source_key": "relay_or_private_submit_cost_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0.001",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "risk_buffer",
+                  "source_key": "risk_buffer_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0.005",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "slippage_buffer",
+                  "source_key": "extra_slippage_buffer_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "11.371225254781522746825129615554828609922810141",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "pool_hop_fees",
+                  "source_key": "hop_fees_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "60.000",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                }
+              ],
+              "component_count": 6,
+              "alignment_rule": "route_math_sums_only_normalized_fee_usd"
+            },
+            "math": {
+              "raw_delta_usd": "1371.225254781522746825129615554828609922810141194",
+              "flashloan_fee_usd": "0",
+              "gas_cost_usd": "0.002",
+              "relay_or_private_submit_cost_usd": "0.001",
+              "risk_buffer_usd": "0.005",
+              "extra_slippage_buffer_usd": "11.371225254781522746825129615554828609922810141",
+              "hop_fees_usd": "60.000",
+              "net_gain_usd": "1359.846029526741224078304485939273781312887331053",
+              "gas_payer": "user_wallet",
+              "gas_accounting": {
+                "native_symbol": "POL",
+                "gas_cost_source": "evaluate_profitability"
+              },
+              "formula": "net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd - relay_or_private_submit_cost_usd - risk_buffer_usd - extra_slippage_buffer_usd; hop_fees_usd are embedded in executable AMM quotes and surfaced for audit"
+            },
+            "quote": {
+              "amount_out": "11371.225254781522746825129615554828609922810141194",
+              "amount_out_min": "11359.854029526741224078304485939273781312887331053",
+              "slippage_bps": "10",
+              "min_amount_out_bps": "0",
+              "hop_fees_usd": "60.000"
+            },
+            "simulation": {},
+            "payload": {},
+            "submission": {},
+            "settlement": {},
+            "trace": {}
+          }
+        },
+        {
+          "path": [
+            "USDC",
+            "WETH",
+            "USDC"
+          ],
+          "pool_sequence": [
+            "BUY_LOW_USDC_WETH",
+            "BUY_HIGH_USDC_WETH"
+          ],
+          "protocol_seq": [
+            "V2_CPMM",
+            "V2_CPMM"
+          ],
+          "opportunity_id_frozen": true,
+          "principal_usd": "10000",
+          "approximate_gross_rate": "1.1272371981890705658797425508526866556431133105066",
+          "approximate_raw_delta_usd": "1272.3719818907056587974255085268665564311331050660",
+          "sizing": {
+            "selected_principal_usd": "10000",
+            "max_profit_usd": "250249.24142968750000",
+            "min_pool_tvl_usd": "1000000000",
+            "method": "capital_injector:requested"
+          },
+          "flash_source": "BALANCER",
+          "raw_gate_eligible": true,
+          "status": "staged_for_executor_truth",
+          "stage": "staged_for_executor_truth",
+          "reason": "profitability_gate_passed",
+          "discovery_block": 90881115,
+          "current_block": 90881115,
+          "hop_fees_usd": "60.000",
+          "hop_fee_breakdown": [
+            "30.000",
+            "30.000"
+          ],
+          "amount_out": "11310.896187821528422962201015911906653432774869045",
+          "amount_out_min": "11299.585291633706894539238814895994746779342094176",
+          "out_usd": "11310.896187821528422962201015911906653432774869045",
+          "out_usd_min": "11299.585291633706894539238814895994746779342094176",
+          "raw_delta_usd": "1310.896187821528422962201015911906653432774869045",
+          "net_gain_usd": "1299.577291633706894539238814895994746779342094176",
+          "extra_slippage_buffer_usd": "11.310896187821528422962201015911906653432774869",
+          "slippage_bps": "10",
+          "min_amount_out_bps": "0",
+          "execution_sequence": {
+            "schema_version": "omega_v5.execution_sequence.v1",
+            "applies": true,
+            "passes": true,
+            "policy": "BUY_LOWEST_EXECUTABLE_BASE_PER_MID_THEN_SELL_HIGHER_BACK_TO_BASE",
+            "base_asset": "USDC",
+            "mid_asset": "WETH",
+            "buy_leg": {
+              "position": 1,
+              "pool_id": "BUY_LOW_USDC_WETH",
+              "token_in": "USDC",
+              "token_out": "WETH",
+              "amount_in_base": "10000",
+              "amount_out_mid": "3.2900671980300356405446637697022160689057930092437",
+              "executable_buy_price_base_per_mid": "3039.4515972158900945260022491717576973344275249992",
+              "approx_buy_price_base_per_mid": "3039.4243244886173672532749764444849700617002522719"
+            },
+            "sell_leg": {
+              "position": 2,
+              "pool_id": "BUY_HIGH_USDC_WETH",
+              "token_in": "WETH",
+              "token_out": "USDC",
+              "amount_in_mid": "3.2900671980300356405446637697022160689057930092437",
+              "amount_out_base": "11310.896187821528422962201015911906653432774869045",
+              "amount_out_min_base": "11299.585291633706894539238814895994746779342094176",
+              "executable_sell_price_base_per_mid": "3437.8921484017266963315941609847832269967811293913",
+              "executable_sell_price_min_base_per_mid": "3434.4542562533249696352625668237984437697843482620",
+              "approx_sell_price_base_per_mid": "3426.1521596442575009364357708155066890723959353533"
+            },
+            "spread_base_per_mid_min": "395.0026590374348751092603176520407464353568232628",
+            "reason": "sell_min_price_above_buy_price"
+          },
+          "profitable_execution_staging": {
+            "schema_version": "omega_v5.execution_sequence.v1",
+            "applies": true,
+            "passes": true,
+            "policy": "BUY_LOWEST_EXECUTABLE_BASE_PER_MID_THEN_SELL_HIGHER_BACK_TO_BASE",
+            "base_asset": "USDC",
+            "mid_asset": "WETH",
+            "buy_leg": {
+              "position": 1,
+              "pool_id": "BUY_LOW_USDC_WETH",
+              "token_in": "USDC",
+              "token_out": "WETH",
+              "amount_in_base": "10000",
+              "amount_out_mid": "3.2900671980300356405446637697022160689057930092437",
+              "executable_buy_price_base_per_mid": "3039.4515972158900945260022491717576973344275249992",
+              "approx_buy_price_base_per_mid": "3039.4243244886173672532749764444849700617002522719"
+            },
+            "sell_leg": {
+              "position": 2,
+              "pool_id": "BUY_HIGH_USDC_WETH",
+              "token_in": "WETH",
+              "token_out": "USDC",
+              "amount_in_mid": "3.2900671980300356405446637697022160689057930092437",
+              "amount_out_base": "11310.896187821528422962201015911906653432774869045",
+              "amount_out_min_base": "11299.585291633706894539238814895994746779342094176",
+              "executable_sell_price_base_per_mid": "3437.8921484017266963315941609847832269967811293913",
+              "executable_sell_price_min_base_per_mid": "3434.4542562533249696352625668237984437697843482620",
+              "approx_sell_price_base_per_mid": "3426.1521596442575009364357708155066890723959353533"
+            },
+            "spread_base_per_mid_min": "395.0026590374348751092603176520407464353568232628",
+            "reason": "sell_min_price_above_buy_price"
+          },
+          "net_formula": {
+            "raw_delta_usd": "1310.896187821528422962201015911906653432774869045",
+            "flashloan_fee_usd": "0",
+            "gas_cost_usd": "0.002",
+            "relay_or_private_submit_cost_usd": "0.001",
+            "risk_buffer_usd": "0.005",
+            "extra_slippage_buffer_usd": "11.310896187821528422962201015911906653432774869",
+            "hop_fees_usd": "60.000",
+            "net_gain_usd": "1299.577291633706894539238814895994746779342094176",
+            "gas_payer": "user_wallet",
+            "gas_accounting": {
+              "native_symbol": "POL",
+              "gas_cost_source": "evaluate_profitability"
+            },
+            "formula": "net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd - relay_or_private_submit_cost_usd - risk_buffer_usd - extra_slippage_buffer_usd; hop_fees_usd are embedded in executable AMM quotes and surfaced for audit"
+          },
+          "profitability": {
+            "net_profit_usd": "1299.577291633706894539238814895994746779342094176",
+            "passes_gate": true
+          },
+          "initial_amount_raw": "10000000000",
+          "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals",
+          "identity": {
+            "schema_version": "omega_v5.unified_invariant_route.v1.identity.v1",
+            "hash_encoding": "keccak256(abi.encode(...))",
+            "chain_id": 137,
+            "block_hash": "0x5b3cae63fd8203d1d7abd82f4ea2c4b2c887b7b81f3d274bf527a3485c1b3af7",
+            "block_hash_source": "offline_synthetic_block_hash",
+            "settlement_asset": "USDC",
+            "base_asset": "WETH",
+            "initial_amount_raw": "10000000000",
+            "initial_amount_raw_status": "resolved",
+            "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals",
+            "leg1_destination": {
+              "destination_id": "0x607472bebb29a878914cc6c087309443ab8e16dc368fb0a812ea7c3ccd20a76f",
+              "chain_id": 137,
+              "protocol_family": "V2_CPMM",
+              "factory_or_vault": "",
+              "pool_id": "BUY_LOW_USDC_WETH",
+              "fee_tier": 0
+            },
+            "leg2_destination": {
+              "destination_id": "0xe9635c381c2d88998d0fe207083ca9036aedc5a7892885902d569a9d3243252e",
+              "chain_id": 137,
+              "protocol_family": "V2_CPMM",
+              "factory_or_vault": "",
+              "pool_id": "BUY_HIGH_USDC_WETH",
+              "fee_tier": 0
+            },
+            "route_pair_id": "0xedf67c0a463dad9c0bcbb9cf984bd5d9ab0b4e237186d76186f1d0c94ad92de8",
+            "quote_snapshot_id": "0xc0fefdce56ee66aa17eb8f31147977c95ce68b65412aedf43acfa154d60f5296",
+            "simulation_id": "",
+            "execution_attempt_id": "",
+            "transaction_hash": "",
+            "invariants": {
+              "leg1_asset_in_equals_settlement_asset": true,
+              "leg1_asset_out_equals_base_asset": true,
+              "leg2_asset_in_equals_base_asset": true,
+              "leg2_asset_out_equals_settlement_asset": true,
+              "leg1_destination_differs_from_leg2_destination": true
+            }
+          },
+          "route_pair_id": "0xedf67c0a463dad9c0bcbb9cf984bd5d9ab0b4e237186d76186f1d0c94ad92de8",
+          "quote_snapshot_id": "0xc0fefdce56ee66aa17eb8f31147977c95ce68b65412aedf43acfa154d60f5296",
+          "simulation_id": "",
+          "execution_attempt_id": "",
+          "transaction_hash": "",
+          "opp_id": "OPP-c0fefdce56ee66aa",
+          "opportunity_id": "OPP-c0fefdce56ee66aa",
+          "capital_injector": {
+            "principal_usd": "250000",
+            "min_tvl_usd": "1000000000",
+            "bottleneck_pool": "BUY_LOW_USDC_WETH",
+            "peak_surplus_usd": "250374.241050781250000",
+            "sizing_method": "requested",
+            "quantum_score": "0.78125",
+            "quantum_adjustment": "0",
+            "cannibalization_detected": false,
+            "reason": "user_override",
+            "method": "requested"
+          },
+          "unified_route_envelope": {
+            "schema_version": "omega_v5.unified_invariant_route.v1",
+            "chain_id": 137,
+            "opp_id": "OPP-c0fefdce56ee66aa",
+            "status": "STAGED_FOR_EXECUTOR_TRUTH",
+            "route": {
+              "path": [
+                "USDC",
+                "WETH",
+                "USDC"
+              ],
+              "pool_sequence": [
+                "BUY_LOW_USDC_WETH",
+                "BUY_HIGH_USDC_WETH"
+              ],
+              "protocol_seq": [
+                "V2_CPMM",
+                "V2_CPMM"
+              ]
+            },
+            "blocks": {
+              "discovered": 90881115,
+              "staged": 90881115
+            },
+            "discovery": {
+              "liquidity_keys": [
+                "USDC:WETH:1",
+                "USDC:WETH:2"
+              ],
+              "route_class_seq": [
+                "NATIVE_POOL_ROUTE",
+                "NATIVE_POOL_ROUTE"
+              ],
+              "edge_entries": [
+                {
+                  "pool_id": "BUY_LOW_USDC_WETH",
+                  "protocol": "UniswapV2",
+                  "route_class": "NATIVE_POOL_ROUTE",
+                  "liquidity_key": "USDC:WETH:1",
+                  "invariant": "constant_product",
+                  "token_in": "USDC",
+                  "token_out": "WETH",
+                  "rate": "0.00032900967197735703857503254069255692952074126782096",
+                  "amount_out": "0.32900967197735703857503254069255692952074126782096"
+                },
+                {
+                  "pool_id": "BUY_HIGH_USDC_WETH",
+                  "protocol": "UniswapV2",
+                  "route_class": "NATIVE_POOL_ROUTE",
+                  "liquidity_key": "USDC:WETH:2",
+                  "invariant": "constant_product",
+                  "token_in": "WETH",
+                  "token_out": "USDC",
+                  "rate": "3426.1521596442575009364357708155066890723959353533",
+                  "amount_out": "3426152.1596442575009364357708155066890723959353533"
+                }
+              ],
+              "identity": {
+                "schema_version": "omega_v5.unified_invariant_route.v1.identity.v1",
+                "hash_encoding": "keccak256(abi.encode(...))",
+                "chain_id": 137,
+                "block_hash": "0x5b3cae63fd8203d1d7abd82f4ea2c4b2c887b7b81f3d274bf527a3485c1b3af7",
+                "block_hash_source": "offline_synthetic_block_hash",
+                "settlement_asset": "USDC",
+                "base_asset": "WETH",
+                "initial_amount_raw": "0",
+                "initial_amount_raw_status": "unresolved_at_current_stager_boundary",
+                "initial_amount_raw_source": "missing_raw_uint256",
+                "leg1_destination": {
+                  "destination_id": "0x607472bebb29a878914cc6c087309443ab8e16dc368fb0a812ea7c3ccd20a76f",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "BUY_LOW_USDC_WETH",
+                  "fee_tier": 0
+                },
+                "leg2_destination": {
+                  "destination_id": "0xe9635c381c2d88998d0fe207083ca9036aedc5a7892885902d569a9d3243252e",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "BUY_HIGH_USDC_WETH",
+                  "fee_tier": 0
+                },
+                "route_pair_id": "0xedf67c0a463dad9c0bcbb9cf984bd5d9ab0b4e237186d76186f1d0c94ad92de8",
+                "quote_snapshot_id": "0x69c9f3b1811f25f5042485ce0117e62ff50daa8e69ba6463ace7a39edc7b69fc",
+                "simulation_id": "",
+                "execution_attempt_id": "",
+                "transaction_hash": "",
+                "invariants": {
+                  "leg1_asset_in_equals_settlement_asset": true,
+                  "leg1_asset_out_equals_base_asset": true,
+                  "leg2_asset_in_equals_base_asset": true,
+                  "leg2_asset_out_equals_settlement_asset": true,
+                  "leg1_destination_differs_from_leg2_destination": true
+                }
+              }
+            },
+            "intake": {
+              "approximate_gross_rate": "1.1272371981890705658797425508526866556431133105066",
+              "approximate_raw_delta_usd": "1272.3719818907056587974255085268665564311331050660",
+              "approximate_raw_delta_bps": "1272.3719818907056587974255085268665564311331050660"
+            },
+            "ranking": {},
+            "staging": {
+              "status": "staged_for_executor_truth",
+              "stage": "staged_for_executor_truth",
+              "principal_usd": "10000",
+              "flash_source": "BALANCER",
+              "opportunity_id_frozen": true,
+              "identity": {
+                "schema_version": "omega_v5.unified_invariant_route.v1.identity.v1",
+                "hash_encoding": "keccak256(abi.encode(...))",
+                "chain_id": 137,
+                "block_hash": "0x5b3cae63fd8203d1d7abd82f4ea2c4b2c887b7b81f3d274bf527a3485c1b3af7",
+                "block_hash_source": "offline_synthetic_block_hash",
+                "settlement_asset": "USDC",
+                "base_asset": "WETH",
+                "initial_amount_raw": "10000000000",
+                "initial_amount_raw_status": "resolved",
+                "initial_amount_raw_source": "resolved_from_selected_principal_price_and_registry_decimals",
+                "leg1_destination": {
+                  "destination_id": "0x607472bebb29a878914cc6c087309443ab8e16dc368fb0a812ea7c3ccd20a76f",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "BUY_LOW_USDC_WETH",
+                  "fee_tier": 0
+                },
+                "leg2_destination": {
+                  "destination_id": "0xe9635c381c2d88998d0fe207083ca9036aedc5a7892885902d569a9d3243252e",
+                  "chain_id": 137,
+                  "protocol_family": "V2_CPMM",
+                  "factory_or_vault": "",
+                  "pool_id": "BUY_HIGH_USDC_WETH",
+                  "fee_tier": 0
+                },
+                "route_pair_id": "0xedf67c0a463dad9c0bcbb9cf984bd5d9ab0b4e237186d76186f1d0c94ad92de8",
+                "quote_snapshot_id": "0xc0fefdce56ee66aa17eb8f31147977c95ce68b65412aedf43acfa154d60f5296",
+                "simulation_id": "",
+                "execution_attempt_id": "",
+                "transaction_hash": "",
+                "invariants": {
+                  "leg1_asset_in_equals_settlement_asset": true,
+                  "leg1_asset_out_equals_base_asset": true,
+                  "leg2_asset_in_equals_base_asset": true,
+                  "leg2_asset_out_equals_settlement_asset": true,
+                  "leg1_destination_differs_from_leg2_destination": true
+                }
+              },
+              "route_pair_id": "0xedf67c0a463dad9c0bcbb9cf984bd5d9ab0b4e237186d76186f1d0c94ad92de8",
+              "quote_snapshot_id": "0xc0fefdce56ee66aa17eb8f31147977c95ce68b65412aedf43acfa154d60f5296",
+              "simulation_id": "",
+              "execution_attempt_id": "",
+              "transaction_hash": ""
+            },
+            "fees": {
+              "schema_version": "omega_v5.fee_ledger.v1",
+              "calibration_id": "omega_v5.nusd.v1:unresolved",
+              "normalized_unit": "NUSD",
+              "total_fee_usd": "71.318896187821528422962201015911906653432774869",
+              "components": [
+                {
+                  "fee_component": "flashloan_fee",
+                  "source_key": "flashloan_fee_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "gas_fee",
+                  "source_key": "gas_cost_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0.002",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "relay_fee",
+                  "source_key": "relay_or_private_submit_cost_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0.001",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "risk_buffer",
+                  "source_key": "risk_buffer_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "0.005",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "slippage_buffer",
+                  "source_key": "extra_slippage_buffer_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "11.310896187821528422962201015911906653432774869",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                },
+                {
+                  "fee_component": "pool_hop_fees",
+                  "source_key": "hop_fees_usd",
+                  "normalized_unit": "NUSD",
+                  "fee_usd": "60.000",
+                  "block_number": 90881115,
+                  "calibration_id": "omega_v5.nusd.v1:unresolved",
+                  "conversion_status": "normalized_usd_from_math"
+                }
+              ],
+              "component_count": 6,
+              "alignment_rule": "route_math_sums_only_normalized_fee_usd"
+            },
+            "math": {
+              "raw_delta_usd": "1310.896187821528422962201015911906653432774869045",
+              "flashloan_fee_usd": "0",
+              "gas_cost_usd": "0.002",
+              "relay_or_private_submit_cost_usd": "0.001",
+              "risk_buffer_usd": "0.005",
+              "extra_slippage_buffer_usd": "11.310896187821528422962201015911906653432774869",
+              "hop_fees_usd": "60.000",
+              "net_gain_usd": "1299.577291633706894539238814895994746779342094176",
+              "gas_payer": "user_wallet",
+              "gas_accounting": {
+                "native_symbol": "POL",
+                "gas_cost_source": "evaluate_profitability"
+              },
+              "formula": "net_gain_usd = raw_delta_usd - flashloan_fee_usd - gas_cost_usd - relay_or_private_submit_cost_usd - risk_buffer_usd - extra_slippage_buffer_usd; hop_fees_usd are embedded in executable AMM quotes and surfaced for audit"
+            },
+            "quote": {
+              "amount_out": "11310.896187821528422962201015911906653432774869045",
+              "amount_out_min": "11299.585291633706894539238814895994746779342094176",
+              "slippage_bps": "10",
+              "min_amount_out_bps": "0",
+              "hop_fees_usd": "60.000"
+            },
+            "simulation": {},
+            "payload": {},
+            "submission": {},
+            "settlement": {},
+            "trace": {}
+          }
+        }
+      ]
+    }
+  ]
+}

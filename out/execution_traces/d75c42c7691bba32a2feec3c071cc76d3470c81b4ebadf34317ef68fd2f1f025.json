@@ -1,0 +1,72 @@
+{
+  "activation": {},
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784064957224977000,
+  "envelope": {
+    "calldata_hash": "a4215109349718f843121a3e34763bfa694469321a581d07942960a5de5d631e",
+    "chain_id": 137,
+    "created_ns": 1784064956580574500,
+    "domain": "omega_v5.envelope.arbitrage_c1.v1",
+    "envelope_id": "e994c6b0f83a9dc82fbfa4892bc286281acfcfe1d500d63fd4cf65b8cda93d50",
+    "kind": "ARBITRAGE_C1",
+    "metadata": {
+      "flash_source": "Balancer_Vault",
+      "net_profit_usd": "11.76275573596096499938503798",
+      "opp_id": "OPP-0009",
+      "path": [
+        "WBTC",
+        "WETH",
+        "WPOL",
+        "USDC.e",
+        "WBTC"
+      ],
+      "pool_sequence": [
+        "DISC_V3_WBTC_WETH_100",
+        "V3_WPOL_WETH_500",
+        "BAL_WPOL_WETH_USDC",
+        "DISC_V3_USDC_e_WBTC_100"
+      ],
+      "strategy": "FOUR_LEG_CYCLE"
+    },
+    "parent_envelope_id": "",
+    "selector": "0x626482a3",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "detail": "ContractLogicError: Error(string) selector=0x08c379a0",
+    "flash_source": "Balancer_Vault",
+    "net_profit_usd": "11.76275573596096499938503798",
+    "reason": "exact_eth_call_failed"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0009",
+  "parent_trace_hash": "",
+  "payload_hash": "c11ce0fc8e934fcc827545e6bfb60b20e67e8cf2489cf6a87e5dcf891a201cc2",
+  "pool_addresses": [
+    "0x960fc6489c9b44da6ba330883dc1898b75a7b27b",
+    "0x86f1d8390222A3691C28938eC7404A1661E618e0",
+    "0x0297e37f1873D2DAb4487Aa67cD56B58E2F27875",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0"
+  ],
+  "pool_sequence": [
+    "DISC_V3_WBTC_WETH_100",
+    "V3_WPOL_WETH_500",
+    "BAL_WPOL_WETH_USDC",
+    "DISC_V3_USDC_e_WBTC_100"
+  ],
+  "receipt": {},
+  "route": [
+    "WBTC",
+    "WETH",
+    "WPOL",
+    "USDC.e",
+    "WBTC"
+  ],
+  "stage": "C1",
+  "status": "SIMULATION_REJECTED",
+  "trace_hash": "d75c42c7691bba32a2feec3c071cc76d3470c81b4ebadf34317ef68fd2f1f025"
+}

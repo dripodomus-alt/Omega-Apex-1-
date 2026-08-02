@@ -1,0 +1,10 @@
+﻿{
+    "prereqs":  false,
+    "route_proof_matrix":  false,
+    "unit_tests":  false,
+    "data_integrity":  false,
+    "pipeline_validation":  false,
+    "scanner_benchmark":  false,
+    "readiness_score":  0,
+    "anvil_benchmark":  false
+}

@@ -1,0 +1,1 @@
+C:\Users\The\ Urban\ Genius\Documents\DO\ OBVER\ ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\target\release\app.exe: C:\Users\The\ Urban\ Genius\Documents\DO\ OBVER\ ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\src\main.rs

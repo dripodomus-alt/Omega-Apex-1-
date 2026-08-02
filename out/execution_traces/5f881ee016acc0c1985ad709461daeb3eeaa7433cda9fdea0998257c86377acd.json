@@ -1,0 +1,51 @@
+{
+  "activation": {
+    "parent_c1_trace_hash": "e1ae76dc222fb367593a464ce698088d4534c9280154b857e65cdef71d54e902",
+    "reason": "dry_run_has_no_confirmed_c1_receipt"
+  },
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "C2-DRY-0001",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784058182668431300,
+  "envelope": {
+    "calldata_hash": "e8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c",
+    "chain_id": 137,
+    "created_ns": 1784058182668179800,
+    "domain": "omega_v5.envelope.arbitrage_c2.v1",
+    "envelope_id": "f7ab4af52071ddb0c587c239e9416c1dcdcf21ba098d67353d41f8d9c5454cf4",
+    "kind": "ARBITRAGE_C2",
+    "metadata": {
+      "c2_id": "C2-DRY-0001",
+      "decision": "NO_C1_RECEIPT"
+    },
+    "parent_envelope_id": "1dc0bc5989892031ba5fdcbdb7b057e5043f8d173978ec375b01ee5b3419c42b",
+    "selector": "0x00000000",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "trace_type": "c2_waiting"
+  },
+  "mode": "dry_run",
+  "opp_id": "XPOOL-0002",
+  "parent_trace_hash": "e1ae76dc222fb367593a464ce698088d4534c9280154b857e65cdef71d54e902",
+  "payload_hash": "e8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c",
+  "pool_addresses": [
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0xeef1a9507b3d505f0062f2be9453981255b503c8"
+  ],
+  "pool_sequence": [
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_V3_USDC_e_WBTC_500"
+  ],
+  "receipt": {},
+  "route": [
+    "USDC.e",
+    "WBTC",
+    "USDC.e"
+  ],
+  "stage": "C2",
+  "status": "WAITING_FOR_C1_RECEIPT",
+  "trace_hash": "5f881ee016acc0c1985ad709461daeb3eeaa7433cda9fdea0998257c86377acd"
+}

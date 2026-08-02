@@ -1,0 +1,11 @@
+{
+  "dataset_path": "C:\\Users\\The Urban Genius\\Documents\\DO OBVER ARBITRAGE\\omega-V5-copilot-update-jupyter-notebook-matrix-setup\\out\\ml\\receipt_training_dataset.csv",
+  "generated_at_unix": 1784167249,
+  "min_required_rows": 25,
+  "ok": false,
+  "positive_realized": 0,
+  "reverted": 0,
+  "rows": 0,
+  "status": "INSUFFICIENT_RECEIPTS",
+  "total_realized_net_usd": "0"
+}

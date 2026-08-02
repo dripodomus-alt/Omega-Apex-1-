@@ -1,0 +1,2317 @@
+{
+  "accuracy_and_revert_risk_controls": {
+    "execution_guards": {
+      "BROADCAST_RPC configured": true,
+      "BROADCAST_RPC healthy": false,
+      "EXACT_CALL_RPC healthy": false,
+      "EXECUTOR_CONTRACT_ADDR set": true,
+      "EXECUTOR_PRIVATE_KEY valid": true,
+      "RPC_LIVE": true,
+      "runtime_mode=live": false
+    },
+    "pool_quality_gate": {
+      "filtered_out": 382,
+      "rankable_pools": 554,
+      "rejection_samples": [
+        {
+          "address": "0x7805B64e2d99412d3b8F10Dfe8fc55217C5cc954",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_MAI_30_5cc954",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x019ba0325f1988213D448b3472fA1cf8D07618d7",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_QUICK_30_7618d7",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "WPOL",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "WPOL",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0x65752C54D9102BDFD69d351E1838A1Be83C924C6",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "CURVE_stMATIC_3A58A5"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_stMATIC_30_C924C6",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "CURVE_stMATIC_3A58A5"
+          ]
+        },
+        {
+          "address": "0xb0e69f24982791dd49e316313fD3A791020B8bF7",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_MaticX_30_0B8bF7",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x9c6270ea8E17aaf7BA14dc8E36f6517b9Ad9472A",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_agEUR_30_d9472A",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0x1a2E7582a0d3c3474A2aBdd833B6E3748DF8a7fd",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0000000000000000000000000000000000001010",
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "USDC.e"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_USDC_e_30_F8a7fd",
+          "protocol": "UniswapV2",
+          "reason": "token0_unknown_onchain_address,token0_address_symbol_mismatch,non_positive_reserve",
+          "registered_tokens": [
+            "WPOL",
+            "USDC.e"
+          ],
+          "reject_reasons": [
+            "token0_unknown_onchain_address",
+            "token0_address_symbol_mismatch",
+            "non_positive_reserve"
+          ],
+          "tokens": [
+            "WPOL",
+            "USDC.e"
+          ]
+        },
+        {
+          "address": "0xCF2aBFf7B321CCAaaF4faca391Aa4Ffc87EfEc13",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_MAI_30_EfEc13",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WETH",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x1Bd06B96dd42AdA85fDd0795f3B4A79DB914ADD5",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_QUICK_30_14ADD5",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "WETH",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "WETH",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0xcE522475d17201ee0A38b9D8229c4eF59C98426D",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
+          ],
+          "onchain_tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "WETH"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_stMATIC_30_98426D",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "WETH"
+          ]
+        },
+        {
+          "address": "0x05488ED312FE2F7eB5a2D5bd160D30Ac53cC1852",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_MaticX_30_cC1852",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WETH",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x27c1e03c6cCB9EA37a3C2AB6495010593fc6f53e",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_agEUR_30_c6f53e",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WETH",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0x95BDb9423c5093C5C71b878e3102E2B0258Ad3A6",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "WBTC",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_WBTC_MAI_30_8Ad3A6",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WBTC",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WBTC",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0xFA776CB50B9FdbC604709C7b39265a62a4Fce481",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "WBTC",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_WBTC_QUICK_30_Fce481",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "WBTC",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "WBTC",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0xF5925BaDe6abFffD9f44D6CAe1D7a55A5226b051",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "WBTC",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_WBTC_agEUR_30_26b051",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WBTC",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WBTC",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0x160532D2536175d65C03B97b0630A9802c274daD",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_MAI_30_274daD",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x1F1E4c845183EF6d50E9609F16f6f9cAE43BC9Cb",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_QUICK_30_3BC9Cb",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "USDC.e",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "USDC.e",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0x9226908ABF9E7fb625c06B53c8EeFb37F125D4F4",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "CURVE_stMATIC_3A58A5"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_stMATIC_30_25D4F4",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "CURVE_stMATIC_3A58A5"
+          ]
+        },
+        {
+          "address": "0xb8A7A28BEC1CF5fd04eFa5681795F984B61dA534",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_MaticX_30_1dA534",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x82A54e66c05FCd555ADAE593848a4257C9e51AD9",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_agEUR_30_e51AD9",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0xE89faE1B4AdA2c869f05a0C96C87022DaDC7709a",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1",
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+          ],
+          "onchain_tokens": [
+            "CURVE_miMATIC_A3FA99",
+            "USDT"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_MAI_30_C7709a",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDT",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "CURVE_miMATIC_A3FA99",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0x7641F96A2B7b4708bc9E8F4D7ca08E232C31A3Dd",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+          ],
+          "onchain_tokens": [
+            "USDT",
+            "USDT"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_QUICK_30_31A3Dd",
+          "protocol": "UniswapV2",
+          "reason": "invalid_onchain_token_pair,token0_unknown_onchain_address,token0_address_symbol_mismatch,registered_pair_does_not_match_onchain_pair,token0_decimals_mismatch",
+          "registered_tokens": [
+            "USDT",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "invalid_onchain_token_pair",
+            "token0_unknown_onchain_address",
+            "token0_address_symbol_mismatch",
+            "registered_pair_does_not_match_onchain_pair",
+            "token0_decimals_mismatch"
+          ],
+          "tokens": [
+            "USDT",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0xcFEfcC429b4b0197a3cd5b4D3887fD191b05da66",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+          ],
+          "onchain_tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "USDT"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_stMATIC_30_05da66",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDT",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0x4DB11Ef5e41a67a5772427532066f0Fc46055548",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "USDT",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_MaticX_30_055548",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDT",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDT",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x74214F5d8AA71b8dc921D8A963a1Ba3605050781",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "DAI",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_DAI_MAI_30_050781",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "DAI",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "DAI",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x02E0e14D65175420fB12AcD325A7Be456bc22005",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+            "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
+          ],
+          "onchain_tokens": [
+            "DAI",
+            "DAI"
+          ],
+          "pool_id": "DYN_UniswapV2_DAI_QUICK_30_c22005",
+          "protocol": "UniswapV2",
+          "reason": "invalid_onchain_token_pair,token0_unknown_onchain_address,token0_address_symbol_mismatch,registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "DAI",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "invalid_onchain_token_pair",
+            "token0_unknown_onchain_address",
+            "token0_address_symbol_mismatch",
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "DAI",
+            "DAI"
+          ]
+        }
+      ],
+      "v2_pair_canonical": {
+        "reject_reasons": {
+          "invalid_onchain_token_pair": 7,
+          "non_positive_reserve": 1,
+          "registered_pair_does_not_match_onchain_pair": 49,
+          "token0_address_symbol_mismatch": 9,
+          "token0_decimals_mismatch": 1,
+          "token0_unknown_onchain_address": 9,
+          "token1_address_symbol_mismatch": 16,
+          "token1_unknown_onchain_address": 16
+        },
+        "v2_failed": 64,
+        "v2_passed": 238,
+        "v2_total": 302
+      },
+      "v3_algebra_orientation_decimals": {
+        "clmm_failed": 318,
+        "clmm_passed": 238,
+        "clmm_total": 556,
+        "reject_reasons": {
+          "invalid_onchain_token_pair": 6,
+          "non_positive_liquidity": 279,
+          "registered_pair_does_not_match_onchain_pair": 87,
+          "token0_address_symbol_mismatch": 40,
+          "token0_decimals_mismatch": 1,
+          "token1_address_symbol_mismatch": 6
+        }
+      }
+    },
+    "revert_prevention_order": [
+      "canonical token address audit",
+      "on-chain decimals/reserve/liquidity audit",
+      "distinct liquidity key check",
+      "quote math and size ladder",
+      "net-profit and impact gates",
+      "adapter semantic calldata build",
+      "fork/exact-call truth before live submission"
+    ],
+    "submission_policy": "no signing and no broadcast from this report"
+  },
+  "asset_pools": {
+    "base_registry_size": 54,
+    "discovery_stats": {
+      "curve_pool_registry": {
+        "api_base_url": "https://api.curve.fi/api",
+        "by_family": {
+          "factory": 52,
+          "factory-crypto": 22,
+          "main": 2
+        },
+        "enabled": true,
+        "families": [
+          "main",
+          "factory",
+          "factory-crypto"
+        ],
+        "min_usd_tvl": "1",
+        "promoted": 76,
+        "rows": 859,
+        "skipped": {
+          "below_min_tvl": 783
+        },
+        "source": "curve_official_api",
+        "tokens_added": 66,
+        "unbounded": true
+      },
+      "dynamic_pool_registry": {
+        "by_protocol": {
+          "UniswapV2": 254,
+          "UniswapV3": 466
+        },
+        "enabled": true,
+        "path": "omega_v5/data/pools_dynamic.json",
+        "promoted": 720,
+        "rows": 816,
+        "skipped": {
+          "duplicate_pool_address": 33,
+          "unknown_token": 63
+        },
+        "unbounded": true
+      },
+      "factory": {
+        "active_limit": 0,
+        "bridge_variants": [
+          "USDC",
+          "USDC.e"
+        ],
+        "curve_pool_registry": {
+          "api_base_url": "https://api.curve.fi/api",
+          "by_family": {
+            "factory": 52,
+            "factory-crypto": 22,
+            "main": 2
+          },
+          "enabled": true,
+          "families": [
+            "main",
+            "factory",
+            "factory-crypto"
+          ],
+          "min_usd_tvl": "1",
+          "promoted": 76,
+          "rows": 859,
+          "skipped": {
+            "below_min_tvl": 783
+          },
+          "source": "curve_official_api",
+          "tokens_added": 66,
+          "unbounded": true
+        },
+        "dynamic_pool_registry": {
+          "by_protocol": {
+            "UniswapV2": 254,
+            "UniswapV3": 466
+          },
+          "enabled": true,
+          "path": "omega_v5/data/pools_dynamic.json",
+          "promoted": 720,
+          "rows": 816,
+          "skipped": {
+            "duplicate_pool_address": 33,
+            "unknown_token": 63
+          },
+          "unbounded": true
+        },
+        "enabled": true,
+        "live_by_protocol": {
+          "QuickSwapV3": 14,
+          "UniswapV2": 52,
+          "UniswapV3": 108
+        },
+        "live_candidates": 174,
+        "pair_scan_counts": {
+          "v2_pairs_this_cycle": 640,
+          "v3_uniswap_algebra_pairs_this_cycle": 640
+        },
+        "pair_scan_limit": 0,
+        "pair_scan_window": {
+          "offset": 0,
+          "size": 640
+        },
+        "polygon_token_list": {
+          "base_pair_bias": [
+            "USDC.e",
+            "WETH",
+            "WPOL",
+            "WBTC",
+            "USDT",
+            "DAI",
+            "USDC",
+            "LINK",
+            "AAVE",
+            "CRV",
+            "BAL",
+            "UNI",
+            "SUSHI",
+            "QUICK"
+          ],
+          "branch": "dev",
+          "cache": "hit",
+          "enabled": true,
+          "max_candidates": 320,
+          "returned": 2231,
+          "runtime_added": 2068,
+          "skipped": {
+            "bad_shape": 5,
+            "bad_symbol": 47,
+            "blocked_bridge_tags": 13,
+            "known_address": 54,
+            "non_pos": 236,
+            "symbol_conflict": 27,
+            "zero_or_native_sentinel": 5
+          },
+          "source": "0xPolygon/polygon-token-list",
+          "unbounded": true,
+          "unique_candidates": 2245,
+          "wrapped_pos_seen": 2313
+        },
+        "promoted": 86,
+        "promoted_by_protocol": {
+          "QuickSwapV3": 4,
+          "UniswapV2": 31,
+          "UniswapV3": 51
+        },
+        "subgraph_pool_intel": {
+          "candidate_count": 0,
+          "enabled": true,
+          "errors": {
+            "quickswap_v3_subgraph": "ConnectionError: HTTPSConnectionPool(host='error.thegraph.com', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError(\"HTTPSConnection(host='error.thegraph.com', port=443): Failed to resolve 'error.thegraph.com' ([Errno 11001] getaddrinfo failed)\"))",
+            "uniswap_v3_polygon_subgraph": "ConnectionError: HTTPSConnectionPool(host='error.thegraph.com', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError(\"HTTPSConnection(host='error.thegraph.com', port=443): Failed to resolve 'error.thegraph.com' ([Errno 11001] getaddrinfo failed)\"))"
+          },
+          "execution_policy": "discovery_hints_only_rpc_verification_required",
+          "limit_per_source": 1000,
+          "promoted": 0
+        },
+        "unbounded_pair_scan": true,
+        "unbounded_promotions": true,
+        "v2_anchor": "USDC.e"
+      },
+      "polygon_token_list": {
+        "base_pair_bias": [
+          "USDC.e",
+          "WETH",
+          "WPOL",
+          "WBTC",
+          "USDT",
+          "DAI",
+          "USDC",
+          "LINK",
+          "AAVE",
+          "CRV",
+          "BAL",
+          "UNI",
+          "SUSHI",
+          "QUICK"
+        ],
+        "branch": "dev",
+        "cache": "hit",
+        "enabled": true,
+        "max_candidates": 320,
+        "returned": 2231,
+        "runtime_added": 2068,
+        "skipped": {
+          "bad_shape": 5,
+          "bad_symbol": 47,
+          "blocked_bridge_tags": 13,
+          "known_address": 54,
+          "non_pos": 236,
+          "symbol_conflict": 27,
+          "zero_or_native_sentinel": 5
+        },
+        "source": "0xPolygon/polygon-token-list",
+        "unbounded": true,
+        "unique_candidates": 2245,
+        "wrapped_pos_seen": 2313
+      },
+      "subgraph_pool_intel": {
+        "candidate_count": 0,
+        "enabled": true,
+        "errors": {
+          "quickswap_v3_subgraph": "ConnectionError: HTTPSConnectionPool(host='error.thegraph.com', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError(\"HTTPSConnection(host='error.thegraph.com', port=443): Failed to resolve 'error.thegraph.com' ([Errno 11001] getaddrinfo failed)\"))",
+          "uniswap_v3_polygon_subgraph": "ConnectionError: HTTPSConnectionPool(host='error.thegraph.com', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError(\"HTTPSConnection(host='error.thegraph.com', port=443): Failed to resolve 'error.thegraph.com' ([Errno 11001] getaddrinfo failed)\"))"
+        },
+        "execution_policy": "discovery_hints_only_rpc_verification_required",
+        "limit_per_source": 1000,
+        "promoted": 0
+      }
+    },
+    "loaded_rankable_pools": 554,
+    "protocol_counts": {
+      "Balancer": 2,
+      "Curve": 76,
+      "QuickSwapV3": 14,
+      "UniswapV2": 238,
+      "UniswapV3": 224
+    },
+    "quality": {
+      "filtered_out": 382,
+      "rankable_pools": 554,
+      "rejection_samples": [
+        {
+          "address": "0x7805B64e2d99412d3b8F10Dfe8fc55217C5cc954",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_MAI_30_5cc954",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x019ba0325f1988213D448b3472fA1cf8D07618d7",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_QUICK_30_7618d7",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "WPOL",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "WPOL",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0x65752C54D9102BDFD69d351E1838A1Be83C924C6",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "CURVE_stMATIC_3A58A5"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_stMATIC_30_C924C6",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "CURVE_stMATIC_3A58A5"
+          ]
+        },
+        {
+          "address": "0xb0e69f24982791dd49e316313fD3A791020B8bF7",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_MaticX_30_0B8bF7",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x9c6270ea8E17aaf7BA14dc8E36f6517b9Ad9472A",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_agEUR_30_d9472A",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WPOL",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WPOL",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0x1a2E7582a0d3c3474A2aBdd833B6E3748DF8a7fd",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x0000000000000000000000000000000000001010",
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
+          ],
+          "onchain_tokens": [
+            "WPOL",
+            "USDC.e"
+          ],
+          "pool_id": "DYN_UniswapV2_WPOL_USDC_e_30_F8a7fd",
+          "protocol": "UniswapV2",
+          "reason": "token0_unknown_onchain_address,token0_address_symbol_mismatch,non_positive_reserve",
+          "registered_tokens": [
+            "WPOL",
+            "USDC.e"
+          ],
+          "reject_reasons": [
+            "token0_unknown_onchain_address",
+            "token0_address_symbol_mismatch",
+            "non_positive_reserve"
+          ],
+          "tokens": [
+            "WPOL",
+            "USDC.e"
+          ]
+        },
+        {
+          "address": "0xCF2aBFf7B321CCAaaF4faca391Aa4Ffc87EfEc13",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_MAI_30_EfEc13",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WETH",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x1Bd06B96dd42AdA85fDd0795f3B4A79DB914ADD5",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_QUICK_30_14ADD5",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "WETH",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "WETH",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0xcE522475d17201ee0A38b9D8229c4eF59C98426D",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
+          ],
+          "onchain_tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "WETH"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_stMATIC_30_98426D",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "WETH"
+          ]
+        },
+        {
+          "address": "0x05488ED312FE2F7eB5a2D5bd160D30Ac53cC1852",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_MaticX_30_cC1852",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WETH",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x27c1e03c6cCB9EA37a3C2AB6495010593fc6f53e",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "WETH",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_WETH_agEUR_30_c6f53e",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WETH",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WETH",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0x95BDb9423c5093C5C71b878e3102E2B0258Ad3A6",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "WBTC",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_WBTC_MAI_30_8Ad3A6",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WBTC",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WBTC",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0xFA776CB50B9FdbC604709C7b39265a62a4Fce481",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "WBTC",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_WBTC_QUICK_30_Fce481",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "WBTC",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "WBTC",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0xF5925BaDe6abFffD9f44D6CAe1D7a55A5226b051",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "WBTC",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_WBTC_agEUR_30_26b051",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "WBTC",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "WBTC",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0x160532D2536175d65C03B97b0630A9802c274daD",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_MAI_30_274daD",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x1F1E4c845183EF6d50E9609F16f6f9cAE43BC9Cb",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "QUICK"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_QUICK_30_3BC9Cb",
+          "protocol": "UniswapV2",
+          "reason": "token1_unknown_onchain_address,token1_address_symbol_mismatch",
+          "registered_tokens": [
+            "USDC.e",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "token1_unknown_onchain_address",
+            "token1_address_symbol_mismatch"
+          ],
+          "tokens": [
+            "USDC.e",
+            "QUICK"
+          ]
+        },
+        {
+          "address": "0x9226908ABF9E7fb625c06B53c8EeFb37F125D4F4",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "CURVE_stMATIC_3A58A5"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_stMATIC_30_25D4F4",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "CURVE_stMATIC_3A58A5"
+          ]
+        },
+        {
+          "address": "0xb8A7A28BEC1CF5fd04eFa5681795F984B61dA534",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_MaticX_30_1dA534",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x82A54e66c05FCd555ADAE593848a4257C9e51AD9",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+            "0xE0B52e49357Fd4DAf2c15e02058DCE6BC0057db4"
+          ],
+          "onchain_tokens": [
+            "USDC.e",
+            "EURA"
+          ],
+          "pool_id": "DYN_UniswapV2_USDC_e_agEUR_30_e51AD9",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDC.e",
+            "agEUR"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDC.e",
+            "EURA"
+          ]
+        },
+        {
+          "address": "0xE89faE1B4AdA2c869f05a0C96C87022DaDC7709a",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1",
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+          ],
+          "onchain_tokens": [
+            "CURVE_miMATIC_A3FA99",
+            "USDT"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_MAI_30_C7709a",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDT",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "CURVE_miMATIC_A3FA99",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0x7641F96A2B7b4708bc9E8F4D7ca08E232C31A3Dd",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+          ],
+          "onchain_tokens": [
+            "USDT",
+            "USDT"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_QUICK_30_31A3Dd",
+          "protocol": "UniswapV2",
+          "reason": "invalid_onchain_token_pair,token0_unknown_onchain_address,token0_address_symbol_mismatch,registered_pair_does_not_match_onchain_pair,token0_decimals_mismatch",
+          "registered_tokens": [
+            "USDT",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "invalid_onchain_token_pair",
+            "token0_unknown_onchain_address",
+            "token0_address_symbol_mismatch",
+            "registered_pair_does_not_match_onchain_pair",
+            "token0_decimals_mismatch"
+          ],
+          "tokens": [
+            "USDT",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0xcFEfcC429b4b0197a3cd5b4D3887fD191b05da66",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4",
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
+          ],
+          "onchain_tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "USDT"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_stMATIC_30_05da66",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDT",
+            "stMATIC"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "CURVE_stMATIC_3A58A5",
+            "USDT"
+          ]
+        },
+        {
+          "address": "0x4DB11Ef5e41a67a5772427532066f0Fc46055548",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
+            "0xfa68FB4628DFF1028CFEc22b4162FCcd0d45efb6"
+          ],
+          "onchain_tokens": [
+            "USDT",
+            "CURVE_MaticX_FA68FB"
+          ],
+          "pool_id": "DYN_UniswapV2_USDT_MaticX_30_055548",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "USDT",
+            "MaticX"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "USDT",
+            "CURVE_MaticX_FA68FB"
+          ]
+        },
+        {
+          "address": "0x74214F5d8AA71b8dc921D8A963a1Ba3605050781",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
+            "0xa3Fa99A148fA48D14Ed51d610c367C61876997F1"
+          ],
+          "onchain_tokens": [
+            "DAI",
+            "CURVE_miMATIC_A3FA99"
+          ],
+          "pool_id": "DYN_UniswapV2_DAI_MAI_30_050781",
+          "protocol": "UniswapV2",
+          "reason": "registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "DAI",
+            "MAI"
+          ],
+          "reject_reasons": [
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "DAI",
+            "CURVE_miMATIC_A3FA99"
+          ]
+        },
+        {
+          "address": "0x02E0e14D65175420fB12AcD325A7Be456bc22005",
+          "gate": "v2_pair_canonical",
+          "onchain_addresses": [
+            "0x831753DD7087CaC61aB5644b308642cc1c33Dc13",
+            "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063"
+          ],
+          "onchain_tokens": [
+            "DAI",
+            "DAI"
+          ],
+          "pool_id": "DYN_UniswapV2_DAI_QUICK_30_c22005",
+          "protocol": "UniswapV2",
+          "reason": "invalid_onchain_token_pair,token0_unknown_onchain_address,token0_address_symbol_mismatch,registered_pair_does_not_match_onchain_pair",
+          "registered_tokens": [
+            "DAI",
+            "QUICK"
+          ],
+          "reject_reasons": [
+            "invalid_onchain_token_pair",
+            "token0_unknown_onchain_address",
+            "token0_address_symbol_mismatch",
+            "registered_pair_does_not_match_onchain_pair"
+          ],
+          "tokens": [
+            "DAI",
+            "DAI"
+          ]
+        }
+      ],
+      "v2_pair_canonical": {
+        "reject_reasons": {
+          "invalid_onchain_token_pair": 7,
+          "non_positive_reserve": 1,
+          "registered_pair_does_not_match_onchain_pair": 49,
+          "token0_address_symbol_mismatch": 9,
+          "token0_decimals_mismatch": 1,
+          "token0_unknown_onchain_address": 9,
+          "token1_address_symbol_mismatch": 16,
+          "token1_unknown_onchain_address": 16
+        },
+        "v2_failed": 64,
+        "v2_passed": 238,
+        "v2_total": 302
+      },
+      "v3_algebra_orientation_decimals": {
+        "clmm_failed": 318,
+        "clmm_passed": 238,
+        "clmm_total": 556,
+        "reject_reasons": {
+          "invalid_onchain_token_pair": 6,
+          "non_positive_liquidity": 279,
+          "registered_pair_does_not_match_onchain_pair": 87,
+          "token0_address_symbol_mismatch": 40,
+          "token0_decimals_mismatch": 1,
+          "token1_address_symbol_mismatch": 6
+        }
+      }
+    },
+    "verified_registry_rows": 554,
+    "verified_registry_summary": {
+      "SIM_ELIGIBLE": 554
+    }
+  },
+  "block": 90365997,
+  "calldata_success_surface": {
+    "attempted": 0,
+    "attempts": [],
+    "buildable": 0,
+    "failed": 0,
+    "note": "calldata build only; no signing, no broadcast"
+  },
+  "chain_id": 137,
+  "discoverable_assets": {
+    "configured_asset_matrix": [
+      "POL",
+      "WPOL",
+      "USDC",
+      "USDC.e",
+      "USDT",
+      "DAI",
+      "WBTC",
+      "WETH",
+      "CRV",
+      "UNI",
+      "AAVE",
+      "LINK",
+      "FRAX",
+      "crvUSD",
+      "EUR-0112",
+      "EURS",
+      "jEUR",
+      "PAR",
+      "EURT",
+      "miMATIC",
+      "AMUSDT",
+      "AMPOLDAI",
+      "AMPOLUSDC",
+      "RETH",
+      "CBETH",
+      "FRXETH",
+      "SFRXETH",
+      "TBTC",
+      "SOLVBTC",
+      "COMP",
+      "SUSHI",
+      "BAL",
+      "QUICK",
+      "KNC",
+      "UMA",
+      "SAND",
+      "MANA",
+      "BAT",
+      "GRT",
+      "SNX",
+      "YFI",
+      "COW",
+      "LDO",
+      "ZRO",
+      "TEL",
+      "GEOD",
+      "FLUID",
+      "BUIDL",
+      "EUTBL",
+      "USTBL",
+      "OUSG",
+      "BONK",
+      "APE",
+      "PNT",
+      "BUSD",
+      "AUSD",
+      "stBRZ",
+      "BRZ",
+      "BRLA",
+      "FXSwap",
+      "TESOURO",
+      "MKR",
+      "1INCH",
+      "GHST",
+      "GNS",
+      "QI",
+      "DFYN",
+      "DODO",
+      "ORBS",
+      "TRADE",
+      "NAKA",
+      "VOXEL",
+      "RNDR",
+      "ANKR",
+      "FIS",
+      "MAI",
+      "TUSD",
+      "agEUR",
+      "EURe",
+      "EURO3",
+      "pUSD",
+      "stMATIC",
+      "MaticX",
+      "wstETH",
+      "amUSDC",
+      "amDAI",
+      "amWETH",
+      "amWBTC",
+      "bb-a-USD",
+      "BIFI",
+      "KLIMA",
+      "SX",
+      "ANGLE",
+      "FXS",
+      "BANANA",
+      "ICE",
+      "ELON",
+      "FISH",
+      "FIRE",
+      "ELK",
+      "WEXPOLY",
+      "TETU",
+      "RETRO",
+      "MESH",
+      "COMBO"
+    ],
+    "configured_asset_matrix_count": 105,
+    "curve_tokens_added": 66,
+    "polygon_token_list_runtime_added": 2068,
+    "runtime_token_registry_count": 2205,
+    "runtime_token_registry_sample": [
+      "0xBTC",
+      "0xMR",
+      "10GUY",
+      "10SET",
+      "11META",
+      "1337",
+      "1INCH",
+      "1MT",
+      "1PLCO2",
+      "1UP",
+      "2GT",
+      "2PBF",
+      "300",
+      "4eur_f",
+      "50MM",
+      "AAH",
+      "AAPX",
+      "AAVE",
+      "AA_idleDAIYield",
+      "ABC",
+      "ABDY",
+      "AC",
+      "ACAI",
+      "ACPT",
+      "ACX",
+      "ACY",
+      "ADB",
+      "ADCO",
+      "ADD",
+      "ADS",
+      "ADX",
+      "AFN",
+      "AFTR",
+      "AGA",
+      "AGAIN",
+      "AGAc",
+      "AGAr",
+      "AGI",
+      "AGIX",
+      "AGLA",
+      "AGLD",
+      "AGLT",
+      "AGVE",
+      "AIDI",
+      "AIOZ",
+      "AITECH",
+      "AKA",
+      "AKRO",
+      "AKT",
+      "AKV",
+      "ALAN",
+      "ALBT",
+      "ALCH",
+      "ALCX",
+      "ALEPH",
+      "ALI",
+      "ALICE",
+      "ALK",
+      "ALN",
+      "ALOHA",
+      "ALPHA",
+      "ALRTO",
+      "ALTA",
+      "AMAS",
+      "AMIS",
+      "AMKT",
+      "AMMO",
+      "AMONG",
+      "AMP",
+      "AMPL",
+      "AMPT",
+      "ANAL",
+      "ANC",
+      "ANDY",
+      "ANGEL",
+      "ANGLE",
+      "ANKO",
+      "ANKR",
+      "ANME",
+      "ANML",
+      "ANT",
+      "ANTS",
+      "ANX",
+      "ANY",
+      "APCG",
+      "APE",
+      "API3",
+      "APW",
+      "APYS",
+      "AQR",
+      "AQU",
+      "ARCD",
+      "ARCH",
+      "ARDU",
+      "ARGO",
+      "ARIA20",
+      "ARKES",
+      "ARMOR",
+      "AROMA",
+      "ARPA",
+      "ARTH",
+      "ARTH_poly",
+      "ARTH_usd",
+      "ARTM",
+      "ASIA",
+      "ASLT",
+      "ASSY",
+      "AST",
+      "ASY",
+      "ATA",
+      "ATCx",
+      "ATOM",
+      "ATRI",
+      "ATTR",
+      "AUDIO",
+      "AUDT",
+      "AUR",
+      "AUTUMN",
+      "AVA",
+      "AVATAR",
+      "AWA",
+      "AWE",
+      "AWG",
+      "AWS",
+      "AWW",
+      "AWX",
+      "AX",
+      "AXC",
+      "AXI",
+      "AXN",
+      "AXS",
+      "AZK",
+      "AZUKI",
+      "Argmag20L1Sym",
+      "B20",
+      "B21",
+      "BAB",
+      "BABY",
+      "BABYCOIN",
+      "BAC",
+      "BAD",
+      "BADGER",
+      "BAE",
+      "BAG",
+      "BAGZ",
+      "BAKED",
+      "BAL",
+      "BANANA",
+      "BANANITE",
+      "BAND",
+      "BANK",
+      "BANX",
+      "BAO",
+      "BASE",
+      "BASv2",
+      "BAT",
+      "BBG",
+      "BBL",
+      "BBSC",
+      "BB_idleDAIYield",
+      "BC",
+      "BCDT",
+      "BCM",
+      "BCNA",
+      "BCNT",
+      "BCP",
+      "BCUG",
+      "BCUT",
+      "BCVT",
+      "BDG",
+      "BDI",
+      "BDMI",
+      "BDP",
+      "BED",
+      "BEL",
+      "BEPRO",
+      "BEST",
+      "BET",
+      "BFC",
+      "BFLY",
+      "BGC",
+      "BICO",
+      "BID",
+      "BIFI",
+      "BIG",
+      "BIGTIME",
+      "BIGX",
+      "BIOS",
+      "BIRD",
+      "BITE",
+      "BITEPT",
+      "BITS",
+      "BITT",
+      "BIZN",
+      "BLACK",
+      "BLANK",
+      "BLAST",
+      "BLD",
+      "BLES",
+      "BLO"
+    ]
+  },
+  "discovered_assets": {
+    "mid_token_asset_count": 7,
+    "mid_token_assets": [
+      "CADC",
+      "CURVE_EURS_E11117",
+      "CURVE_JPYC_431D5D",
+      "CURVE_amUSDC_1A13F4",
+      "PAR",
+      "am3CRV",
+      "jEUR"
+    ],
+    "pool_asset_count": 104,
+    "pool_assets": [
+      "0xBTC",
+      "0xMR",
+      "1337",
+      "4eur_f",
+      "AAH",
+      "AAPX",
+      "AAVE",
+      "ACPT",
+      "ACY",
+      "ADB",
+      "ADS",
+      "AGA",
+      "AGAr",
+      "AGIX",
+      "AGLD",
+      "ALRTO",
+      "ANKR",
+      "ARTH",
+      "ARTH_poly",
+      "ARTH_usd",
+      "BAL",
+      "BOB",
+      "BRZ",
+      "CADC",
+      "CORIN",
+      "CRV",
+      "CRV_Miner_f",
+      "CURVE_BRZ_491A4E",
+      "CURVE_CADC_9DE41A",
+      "CURVE_EURS_E11117",
+      "CURVE_EURe_18EC0A",
+      "CURVE_JPYC_431D5D",
+      "CURVE_MaticX_FA68FB",
+      "CURVE_SDT_2BD034",
+      "CURVE_WPOL_EEEEEE",
+      "CURVE_XSGD_DC3326",
+      "CURVE_amDAI_27F8D0",
+      "CURVE_amUSDC_1A13F4",
+      "CURVE_amWBTC_5C2ED8",
+      "CURVE_miMATIC_A3FA99",
+      "CURVE_stMATIC_3A58A5",
+      "DAI",
+      "ELG",
+      "EURA",
+      "EURT",
+      "EXIT_f",
+      "FRAX",
+      "FXS",
+      "GHST",
+      "JPYC",
+      "L3USD",
+      "LINK",
+      "LUK",
+      "Lithereum_f",
+      "MANA",
+      "MGL",
+      "NZDS",
+      "PAR",
+      "PAXG",
+      "PLT",
+      "PROS",
+      "PSOL",
+      "PYD",
+      "QUICK",
+      "RNDR",
+      "SAND",
+      "SDT",
+      "SME",
+      "SNX",
+      "SUSHI",
+      "SoHe",
+      "TUSD",
+      "UNI",
+      "USDC",
+      "USDC.e",
+      "USDR",
+      "USDR_f",
+      "USDS",
+      "USDT",
+      "UTV",
+      "WBTC",
+      "WETH",
+      "WPOL",
+      "XOC",
+      "XSGD",
+      "aCRV",
+      "aMATICb",
+      "am3CRV",
+      "amUSDT",
+      "asdCRV",
+      "axlUSDC",
+      "crvUSDBTCETH",
+      "deFRAX",
+      "deUSDC",
+      "jBRL",
+      "jCAD",
+      "jEUR",
+      "jJPY",
+      "jMXN",
+      "jNZD",
+      "jSGD",
+      "moUSD",
+      "renBTC",
+      "sUSDR"
+    ]
+  },
+  "elapsed_seconds": "648.05",
+  "mode": "read_only_no_broadcast",
+  "ok": true,
+  "opportunity_route_surface": {
+    "bellman_cycles": 5,
+    "directional_quotes": 848,
+    "explicit_four_leg_cycles": 0,
+    "explicit_three_leg_cycles": 0,
+    "net_gate_passed": {
+      "cycles": 0,
+      "stable": 0,
+      "total": 0,
+      "two_leg": 0
+    },
+    "possible": {
+      "two_leg_pairs_with_distinct_liquidity": 190,
+      "two_leg_pairs_with_reverse_quotes": 478,
+      "two_leg_route_combinations_possible": 1586
+    },
+    "rate_pairs": 479,
+    "raw_positive_cycle_reject_reasons": {
+      "duplicate_or_missing_liquidity_key": 5
+    },
+    "raw_positive_cycles_all": 5,
+    "raw_positive_cycles_execution_candidates": 0,
+    "raw_positive_stable": 0,
+    "raw_positive_two_leg": 2
+  },
+  "raw_delta_leaderboard": {
+    "cycle_top_all": [
+      {
+        "amount_in_base": "1000",
+        "base_token": "EURT",
+        "candidate_reject_reasons": [
+          "duplicate_or_missing_liquidity_key"
+        ],
+        "cumulative_rate": "1.0192840832160002",
+        "detector": "RUST_BELLMAN_FORD",
+        "execution_candidate": false,
+        "final_out_base": "1019.2840832160002000",
+        "formula": "raw_delta_base = amount_in_base * cumulative_rate - amount_in_base",
+        "path": [
+          "EURT",
+          "CURVE_EURS_E11117",
+          "EURT"
+        ],
+        "pool_sequence": [
+          "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651",
+          "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "19.2840832160002000",
+        "raw_delta_bps": "192.8408321600020000",
+        "raw_delta_usd": "22.0635945503383888270000"
+      },
+      {
+        "amount_in_base": "1000",
+        "base_token": "CURVE_miMATIC_A3FA99",
+        "candidate_reject_reasons": [
+          "duplicate_or_missing_liquidity_key"
+        ],
+        "cumulative_rate": "1.0092171416040001",
+        "detector": "RUST_BELLMAN_FORD",
+        "execution_candidate": false,
+        "final_out_base": "1009.2171416040001000",
+        "formula": "raw_delta_base = amount_in_base * cumulative_rate - amount_in_base",
+        "path": [
+          "CURVE_miMATIC_A3FA99",
+          "am3CRV",
+          "CURVE_miMATIC_A3FA99"
+        ],
+        "pool_sequence": [
+          "CURVE_factory_factory_v2_107_CURVE_miMATIC_A3FA99_am3CRV_F09308",
+          "CURVE_factory_factory_v2_107_CURVE_miMATIC_A3FA99_am3CRV_F09308"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "9.2171416040001000",
+        "raw_delta_bps": "92.1714160400010000",
+        "raw_delta_usd": "0"
+      },
+      {
+        "amount_in_base": "1000",
+        "base_token": "jCAD",
+        "candidate_reject_reasons": [
+          "duplicate_or_missing_liquidity_key"
+        ],
+        "cumulative_rate": "1.009217141604",
+        "detector": "RUST_BELLMAN_FORD",
+        "execution_candidate": false,
+        "final_out_base": "1009.217141604000",
+        "formula": "raw_delta_base = amount_in_base * cumulative_rate - amount_in_base",
+        "path": [
+          "jCAD",
+          "CADC",
+          "jCAD"
+        ],
+        "pool_sequence": [
+          "CURVE_factory_factory_v2_23_jCAD_CADC_84F63F",
+          "CURVE_factory_factory_v2_23_jCAD_CADC_84F63F"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "9.217141604000",
+        "raw_delta_bps": "92.171416040000",
+        "raw_delta_usd": "0"
+      },
+      {
+        "amount_in_base": "1000",
+        "base_token": "jJPY",
+        "candidate_reject_reasons": [
+          "duplicate_or_missing_liquidity_key"
+        ],
+        "cumulative_rate": "1.009217141604",
+        "detector": "RUST_BELLMAN_FORD",
+        "execution_candidate": false,
+        "final_out_base": "1009.217141604000",
+        "formula": "raw_delta_base = amount_in_base * cumulative_rate - amount_in_base",
+        "path": [
+          "jJPY",
+          "CURVE_JPYC_431D5D",
+          "jJPY"
+        ],
+        "pool_sequence": [
+          "CURVE_factory_factory_v2_255_jJPY_CURVE_JPYC_431D5D_Af1bdc",
+          "CURVE_factory_factory_v2_255_jJPY_CURVE_JPYC_431D5D_Af1bdc"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "9.217141604000",
+        "raw_delta_bps": "92.171416040000",
+        "raw_delta_usd": "0"
+      },
+      {
+        "amount_in_base": "1000",
+        "base_token": "amUSDT",
+        "candidate_reject_reasons": [
+          "duplicate_or_missing_liquidity_key"
+        ],
+        "cumulative_rate": "1.0001996099600399",
+        "detector": "RUST_BELLMAN_FORD",
+        "execution_candidate": false,
+        "final_out_base": "1000.1996099600399000",
+        "formula": "raw_delta_base = amount_in_base * cumulative_rate - amount_in_base",
+        "path": [
+          "amUSDT",
+          "CURVE_amUSDC_1A13F4",
+          "amUSDT"
+        ],
+        "pool_sequence": [
+          "CURVE_main_1_CURVE_amDAI_27F8D0_CURVE_amUSDC_1A13F4_8db351",
+          "CURVE_main_1_CURVE_amDAI_27F8D0_CURVE_amUSDC_1A13F4_8db351"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "0.1996099600399000",
+        "raw_delta_bps": "1.9960996003990000",
+        "raw_delta_usd": "0"
+      }
+    ],
+    "cycle_top_execution_candidates": [],
+    "notional_base_amount": "1000",
+    "two_leg_top": [
+      {
+        "amount_in_base": "1000",
+        "base_token": "jEUR",
+        "buy_pool_id": "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651",
+        "cross_invariant": false,
+        "cross_protocol": false,
+        "final_out_base": "2544.464732464244750368594263",
+        "formula": "raw_delta_base = amount_in_base * buy_rate * sell_rate - amount_in_base",
+        "gross_profit_pct": "154.4464732464244750368594263",
+        "mid_out": "629.2754717709737285305618857",
+        "mid_token": "PAR",
+        "path": [
+          "jEUR",
+          "PAR",
+          "jEUR"
+        ],
+        "pool_sequence": [
+          "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651",
+          "CURVE_factory_factory_v2_285_PAR_jEUR_3d0e97"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "1544.464732464244750368594263",
+        "raw_delta_bps": "15444.64732464244750368594263",
+        "raw_delta_usd": "1767.076156677978667462971597",
+        "round_trip_rate": "2.544464732464244750368594263",
+        "sell_pool_id": "CURVE_factory_factory_v2_285_PAR_jEUR_3d0e97"
+      },
+      {
+        "amount_in_base": "1000",
+        "base_token": "PAR",
+        "buy_pool_id": "CURVE_factory_factory_v2_285_PAR_jEUR_3d0e97",
+        "cross_invariant": false,
+        "cross_protocol": false,
+        "final_out_base": "2544.464732464244750368594263",
+        "formula": "raw_delta_base = amount_in_base * buy_rate * sell_rate - amount_in_base",
+        "gross_profit_pct": "154.4464732464244750368594263",
+        "mid_out": "4043.4830954134322391972000",
+        "mid_token": "jEUR",
+        "path": [
+          "PAR",
+          "jEUR",
+          "PAR"
+        ],
+        "pool_sequence": [
+          "CURVE_factory_factory_v2_285_PAR_jEUR_3d0e97",
+          "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651"
+        ],
+        "protocol_seq": [
+          "Curve",
+          "Curve"
+        ],
+        "raw_delta_base": "1544.464732464244750368594263",
+        "raw_delta_bps": "15444.64732464244750368594263",
+        "raw_delta_usd": "1767.076156677978667462971597",
+        "round_trip_rate": "2.544464732464244750368594263",
+        "sell_pool_id": "CURVE_factory_factory_v2_37_jEUR_PAR_9ca651"
+      }
+    ]
+  }
+}

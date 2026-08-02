@@ -1,0 +1,54 @@
+{
+  "activation": {
+    "parent_c1_trace_hash": "25ab7dd1f7524ef86b523ea4d3ce23e4efcb0ddb4f5d7cb3faf2a4c65d6dd6e1",
+    "reason": "dry_run_has_no_confirmed_c1_receipt"
+  },
+  "c1_id": "",
+  "c1_tx_hash": "",
+  "c2_id": "C2-DRY-0008",
+  "c2_tx_hash": "",
+  "chain_id": 137,
+  "created_at_ns": 1784054065135659500,
+  "envelope": {
+    "calldata_hash": "e8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c",
+    "chain_id": 137,
+    "created_ns": 1784054065135390900,
+    "domain": "omega_v5.envelope.arbitrage_c2.v1",
+    "envelope_id": "35a48126c659e29b3c242a5f47b4e6f4fa5299c61fe04f614e40825d74652ea5",
+    "kind": "ARBITRAGE_C2",
+    "metadata": {
+      "c2_id": "C2-DRY-0008",
+      "decision": "NO_C1_RECEIPT"
+    },
+    "parent_envelope_id": "298de4e1cdea4958cca8564b17d9a0bf43f26264bc4ac96dd1e3a5b1a6361583",
+    "selector": "0x00000000",
+    "target": "0x409ece3Fd71DFBd8f692B600f36A89301cb37346"
+  },
+  "metadata": {
+    "trace_type": "c2_waiting"
+  },
+  "mode": "dry_run",
+  "opp_id": "OPP-0003",
+  "parent_trace_hash": "25ab7dd1f7524ef86b523ea4d3ce23e4efcb0ddb4f5d7cb3faf2a4c65d6dd6e1",
+  "payload_hash": "e8e77626586f73b955364c7b4bbf0bb7f7685ebd40e852b164633a4acbd3244c",
+  "pool_addresses": [
+    "0x55CAaBB0d2b704FD0eF8192A7E35D8837e678207",
+    "0xba91ae7312ace1137c15786177cbe687fd2d73d0",
+    "0xAC4494e30a85369e332BDB5230d6d694d4259DbC"
+  ],
+  "pool_sequence": [
+    "DISC_ALGEBRA_USDC_e_WETH",
+    "DISC_V3_USDC_e_WBTC_100",
+    "DISC_ALGEBRA_WBTC_WETH"
+  ],
+  "receipt": {},
+  "route": [
+    "WETH",
+    "USDC.e",
+    "WBTC",
+    "WETH"
+  ],
+  "stage": "C2",
+  "status": "WAITING_FOR_C1_RECEIPT",
+  "trace_hash": "f8c1260c4b071046c84571d8b27c1eb390d949371dfab964ca1883f6ed548ecf"
+}

@@ -1,0 +1,38 @@
+[package]
+name = "apex-omega-bridge"
+version = "6.2.2"
+edition = "2021"
+
+[dependencies]
+# Web3 / Ethereum
+alloy = { version = "0.1", features = ["full"] }
+ethers = "2.0"
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+
+# JSON-RPC
+jsonrpsee = { version = "0.20", features = ["http-client", "ws-client"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# Numerics
+ethers-core = "2.0"
+
+# Anvil (Shadow Gate)
+anvil = "0.2"
+
+# Atomic operations
+parking_lot = "0.12"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

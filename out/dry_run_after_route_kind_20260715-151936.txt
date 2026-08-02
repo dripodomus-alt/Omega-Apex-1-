@@ -1,0 +1,59 @@
+Omega V5 pipeline validation
+target_rpc=https://polygon-mainnet.infura.io/v3/ed05b301f1a949f59bfbc1c128910937
+env_live_intent=True exec_mode=live live_flag=1 confirm_ok=True effective_runtime_mode=dry_run
+runtime_execution_settings=execute_top:5 canary_mode:False effective_execution_cap:5
+redis_cache_ok=True detail=connected
+✅ HTTP connected  →  polygon-mainnet.infura.io  block #90,299,322
+rpc_connect=True chain_id=137 block=90299322
+executor_code_ok=True detail=bytecode present and selector 0x626482a3 found
+executor_owner=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+simulation_from=0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+loading_pools=True
+🔎 Factory discovery promoted 72 live pool(s) (132 live found).
+   🧬 Polygon token-list discovery staged 143 candidate token(s) against bases USDC.e,WETH,WPOL,WBTC,USDT,DAI,USDC.
+   🗂️  Dynamic pool registry staged 256 metadata pool(s) for live RPC verification.
+   🌀 Curve official registry staged 76 pool(s) across {'main': 2, 'factory': 52, 'factory-crypto': 22}.
+   🧭 tickSpacing cached: 212/212
+   🧩 Balancer poolIds cached: 2/2
+🌐 Loading live state for 458 registered pools...
+   ✅ 458 pools loaded live  |  ⚠️  0 failed
+   🔁 Balancer metadata remaps applied: 2
+   🧭 V3/Algebra orientation+decimals audit: passed=142/212 failed=70 filtered_out=70
+      reject_reasons={'invalid_onchain_token_pair': 4, 'non_positive_liquidity': 52, 'registered_pair_does_not_match_onchain_pair': 17, 'token0_address_symbol_mismatch': 32, 'token1_address_symbol_mismatch': 3}
+   📊 V3 TVL state hydrated: 94/142
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+   🧮 Total executable liquidity hydrated: 379/388 pools  |  unavailable=9
+factory_discovery_stats={'enabled': True, 'live_candidates': 132, 'promoted': 72, 'live_by_protocol': {'UniswapV2': 37, 'UniswapV3': 81, 'QuickSwapV3': 14}, 'promoted_by_protocol': {'UniswapV2': 16, 'UniswapV3': 52, 'QuickSwapV3': 4}, 'active_limit': 192, 'pair_scan_limit': 160, 'v2_anchor': 'USDC.e', 'bridge_variants': ['USDC', 'USDC.e'], 'polygon_token_list': {'enabled': True, 'source': '0xPolygon/polygon-token-list', 'branch': 'dev', 'wrapped_pos_seen': 2313, 'unique_candidates': 2245, 'returned': 160, 'max_candidates': 160, 'skipped': {'known_address': 54, 'symbol_conflict': 27, 'zero_or_native_sentinel': 5, 'non_pos': 236, 'blocked_bridge_tags': 13, 'bad_symbol': 47, 'bad_shape': 5}, 'cache': 'hit', 'runtime_added': 143, 'base_pair_bias': ['USDC.e', 'WETH', 'WPOL', 'WBTC', 'USDT', 'DAI', 'USDC']}, 'subgraph_pool_intel': {'enabled': True, 'candidate_count': 0, 'errors': {'uniswap_v3_polygon_subgraph': 'ConnectionError: HTTPSConnectionPool(host=\'error.thegraph.com\', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError("HTTPSConnection(host=\'error.thegraph.com\', port=443): Failed to resolve \'error.thegraph.com\' ([Errno 11001] getaddrinfo failed)"))', 'quickswap_v3_subgraph': 'ConnectionError: HTTPSConnectionPool(host=\'error.thegraph.com\', port=443): Max retries exceeded with url: /apierror.json (Caused by NameResolutionError("HTTPSConnection(host=\'error.thegraph.com\', port=443): Failed to resolve \'error.thegraph.com\' ([Errno 11001] getaddrinfo failed)"))'}, 'limit_per_source': 50, 'execution_policy': 'discovery_hints_only_rpc_verification_required', 'promoted': 0}, 'dynamic_pool_registry': {'enabled': True, 'path': 'omega_v5/data/pools_dynamic.json', 'rows': 816, 'promoted': 256, 'skipped': {'duplicate_pool_address': 16, 'unknown_token': 31, 'max_pools_reached': 1}, 'by_protocol': {'UniswapV2': 135, 'UniswapV3': 121}}, 'curve_pool_registry': {'enabled': True, 'source': 'curve_official_api', 'api_base_url': 'https://api.curve.fi/api', 'families': ['main', 'factory', 'factory-crypto'], 'rows': 859, 'promoted': 76, 'skipped': {'below_min_tvl': 783}, 'by_family': {'main': 2, 'factory': 52, 'factory-crypto': 22}, 'tokens_added': 66, 'min_usd_tvl': '1'}}
+pools_loaded=388 base_registry_size=54 active_registry_size=388
+pool_quality_stats={'v3_algebra_orientation_decimals': {'clmm_total': 212, 'clmm_passed': 142, 'clmm_failed': 70, 'reject_reasons': {'invalid_onchain_token_pair': 4, 'non_positive_liquidity': 52, 'registered_pair_does_not_match_onchain_pair': 17, 'token0_address_symbol_mismatch': 32, 'token1_address_symbol_mismatch': 3}, 'filtered_out': 70, 'rankable_pools': 388}}
+v2_usdc_variants={'bridged_usdc': 27, 'none': 137, 'native_usdc': 4} v2_composition_mismatches=37
+  📡 CoinGecko:  29 prices fetched
+  🔗 Chainlink:  15 on-chain prices confirmed
+prices_loaded=32
+verified_pool_registry_rows=388 hot=45 warm=317 discovery=26 execution_statuses={'SIM_ELIGIBLE': 379, 'REJECT_DEPTH_UNAVAILABLE': 9}
+rate_pairs=467 directional_quotes=720
+live_pool_scan_report=C:\Users\The Urban Genius\Documents\DO OBVER ARBITRAGE\omega-V5-copilot-update-jupyter-notebook-matrix-setup\out\live_pool_scan_report.json
+two_leg_spreads=8 cross_dex=4 cross_invariant=4
+stable_spreads=0 stable_cross_invariant=0
+📐 Graph built: 98 nodes (tokens), 720 edges (pool routes)
+🦀 Rust Bellman-Ford engine returned 5 negative-cycle candidate(s)
+cycles_detected=5 bellman_cycles=5 three_leg_cycles=0 four_leg_cycles=0
+gate_passed_stable=0
+gate_passed_two_leg=3
+gate_passed_merged_cycles=0
+gate_passed_by_hop=2:3 3:0 4:0
+gate_passed_opportunities=3
+gas_fee_source=polygon_gas_station_v2.fast base_fee_gwei=257.772050621
+liquidation_packets=0 liquidation_ready=0 rejected=0
+ranked_candidate_1=opp_id:XPOOL-0002 net_usd:4034761.241190087044037801560 path:QUICK->WPOL->QUICK strategy:CROSS_POOL_TWO_LEG spread_usd_per_unit:60.24063531836055888970293603 units:66977.42704949056841633338545 raw_delta_usd:4034762.757450459376380991982 normalized_base:QUICK normalized_mid:WPOL sell_in_equals_buy_out:True gross_profit_raw:410871971227134356046944 net_profit_raw:410871816821801124647435 raw_inequality_pass:True accounting_schema:omega_v5.arbitrage_accounting.v2 accounting_sections:['delta', 'expenses', 'leg1_buy', 'leg2_sell', 'principal', 'raw_execution_gate', 'raw_profit', 'route', 'schema', 'schema_intent', 'spread'] raw_delta_formula:RawDeltaUSD = GrossOutputUSD - PrincipalUSD
+ranked_candidate_2=opp_id:XPOOL-0001 net_usd:19157.46752944376570542014306 path:WPOL->QUICK->WPOL strategy:CROSS_POOL_TWO_LEG spread_usd_per_unit:0.05064154624215747487234041021 units:378325.4108830281735304014803 raw_delta_usd:19158.98378981609804861056506 normalized_base:WPOL normalized_mid:QUICK sell_in_equals_buy_out:True gross_profit_raw:230814555844135746982633 net_profit_raw:230796288958573163968228 raw_inequality_pass:True accounting_schema:omega_v5.arbitrage_accounting.v2 accounting_sections:['delta', 'expenses', 'leg1_buy', 'leg2_sell', 'principal', 'raw_execution_gate', 'raw_profit', 'route', 'schema', 'schema_intent', 'spread'] raw_delta_formula:RawDeltaUSD = GrossOutputUSD - PrincipalUSD
+ranked_candidate_3=opp_id:XPOOL-0005 net_usd:7060.469720460425546431838960 path:USDC.e->CURVE_miMATIC_A3FA99->USDC.e strategy:CROSS_POOL_TWO_LEG spread_usd_per_unit:0.3911101021201870716639890777 units:18056.26073719422564650970408 raw_delta_usd:7061.985980832757889622260959 normalized_base:USDC.e normalized_mid:CURVE_miMATIC_A3FA99 sell_in_equals_buy_out:True gross_profit_raw:7062981861 net_profit_raw:7061465388 raw_inequality_pass:True accounting_schema:omega_v5.arbitrage_accounting.v2 accounting_sections:['delta', 'expenses', 'leg1_buy', 'leg2_sell', 'principal', 'raw_execution_gate', 'raw_profit', 'route', 'schema', 'schema_intent', 'spread'] raw_delta_formula:RawDeltaUSD = GrossOutputUSD - PrincipalUSD
+payload_source=ranked opp_id=XPOOL-0002
+schema_version=omega_v5.opportunity.v2 pricing_steps=['BUY_LEG1_PRICE', 'SELL_LEG2_PRICE'] flash_principal_usd=7241.074452148702453129937478
+capital_source_adapter_ok=True capital_source_executable=True flash_source_id=1 target_mode=capital_source_adapter configured_source_envs=['AAVE_V3_CAPITAL_ADAPTER', 'BALANCER_VAULT_CAPITAL_ADAPTER'] detail=BALANCER_VAULT_CAPITAL_ADAPTER configured locally; adapter bytecode present
+payload_ok=True to=0x409ece3Fd71DFBd8f692B600f36A89301cb37346 selector=0x626482a3 calldata_bytes=420
+c1_envelope_id=89db3f5b15f9c9531c5a8e1aabf1f44aebdd784dacb35ac25296649d8334ba63 domain=omega_v5.envelope.arbitrage_c1.v1 selector=0x626482a3
+c2_envelope_id=afdf7fba779ad63267ac5ed8a2875279275f0c9a298f302362d88a08ca999242 domain=omega_v5.envelope.arbitrage_c2.v1 parent=89db3f5b15f9c9531c5a8e1aabf1f44aebdd784dacb35ac25296649d8334ba63 selector=0x00000000
+execution_armed=False guards={'runtime_mode=live': False, 'RPC_LIVE': True, 'EXECUTOR_PRIVATE_KEY valid': True, 'EXECUTOR_CONTRACT_ADDR set': True, 'EXACT_CALL_RPC healthy': True, 'BROADCAST_RPC configured': True, 'BROADCAST_RPC healthy': True}
+pipeline_validation=PASS
