@@ -1,6 +1,7 @@
 import { ExecutionMode } from '../types';
 import { POLYGON_CHAIN_CONFIG, POL_PRICE_USD } from '../config/chainConfig';
 import { POLYGON_TOKENS } from '../data/mockEngineData';
+import { getOmegaRpcRouter } from './rpcRouter';
 
 export interface WalletState {
   address: string;
@@ -151,7 +152,11 @@ export async function fetchExecutorRealTimeBalance(customWallet?: string): Promi
 }
 
 /**
- * Fetch Real-time On-Chain POL Balance and Nonce Count via Polygon Mainnet JSON-RPC
+ * Fetch Real-time On-Chain POL Balance and Nonce Count via Polygon Mainnet JSON-RPC.
+ *
+ * Uses the Omega RPC Router (block-height-aware, multi-endpoint) so the read
+ * is always served from the freshest available node.  Falls back to the
+ * Polygonscan ground-truth constants if all endpoints fail.
  */
 export async function fetchLivePolygonOnChainState(walletAddress: string): Promise<{
   nativePolBalance: number;
@@ -160,62 +165,42 @@ export async function fetchLivePolygonOnChainState(walletAddress: string): Promi
   rpcProviderUsed: string;
   polValueUSD: number;
 }> {
-  const rpcEndpoints = [
-    'https://polygon-bor-rpc.publicnode.com',
-    'https://polygon-rpc.com',
-    'https://1rpc.io/matic',
-    'https://rpc.ankr.com/polygon',
-  ];
+  const router = getOmegaRpcRouter();
 
-  for (const endpoint of rpcEndpoints) {
-    try {
-      const [balanceRes, nonceRes] = await Promise.all([
-        fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'eth_getBalance',
-            params: [walletAddress, 'latest'],
-          }),
-        }),
-        fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 2,
-            method: 'eth_getTransactionCount',
-            params: [walletAddress, 'latest'],
-          }),
-        }),
-      ]);
+  try {
+    const [balanceResult, nonceResult] = await Promise.all([
+      router.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_getBalance',
+        params: [walletAddress, 'latest'],
+      }),
+      router.send({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'eth_getTransactionCount',
+        params: [walletAddress, 'latest'],
+      }),
+    ]);
 
-      if (!balanceRes.ok || !nonceRes.ok) continue;
+    const balanceData = balanceResult.data as { result?: string };
+    const nonceData = nonceResult.data as { result?: string };
 
-      const balanceData = await balanceRes.json();
-      const nonceData = await nonceRes.json();
+    if (balanceData.result && nonceData.result) {
+      const weiBigInt = BigInt(balanceData.result);
+      const polVal = Number(weiBigInt) / 1e18;
+      const nonceVal = parseInt(nonceData.result, 16);
 
-      if (balanceData.result && nonceData.result) {
-        const rawWeiHex = balanceData.result;
-        const nonceHex = nonceData.result;
-
-        const weiBigInt = BigInt(rawWeiHex);
-        const polVal = Number(weiBigInt) / 1e18;
-        const nonceVal = parseInt(nonceHex, 16);
-
-        return {
-          nativePolBalance: Number(polVal.toFixed(4)),
-          nonceCount: nonceVal,
-          isLiveRpcSuccess: true,
-          rpcProviderUsed: new URL(endpoint).hostname,
-          polValueUSD: Number((polVal * POL_PRICE_USD).toFixed(2)),
-        };
-      }
-    } catch (err) {
-      console.warn(`RPC fetch attempt failed for ${endpoint}:`, err);
+      return {
+        nativePolBalance: Number(polVal.toFixed(4)),
+        nonceCount: nonceVal,
+        isLiveRpcSuccess: true,
+        rpcProviderUsed: balanceResult.usedLabel,
+        polValueUSD: Number((polVal * POL_PRICE_USD).toFixed(2)),
+      };
     }
+  } catch (err) {
+    console.warn('RpcRouter failed to fetch live Polygon state:', err);
   }
 
   // Polygonscan Verified Ground Truth Fallback

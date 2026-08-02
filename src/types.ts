@@ -23,9 +23,11 @@ export type ProtocolType =
   | 'AAVE_V3'
   | 'BALANCER_V3'
   /** Dual V2/V3-compatible Balancer Vault (unified flashloan source) */
-  | 'BALANCER_VAULT';
+  | 'BALANCER_VAULT'
+  /** DODO V2 PMM / DPP / DVM pool */
+  | 'DODO_V2_PMM';
 
-export type PoolCategory = 'SWAPPABLE_EXECUTION' | 'FUNDING_FLASHLOAN' | 'LIQUIDATION_TARGET';
+export type PoolCategory = 'SWAPPABLE_EXECUTION' | 'FUNDING_FLASHLOAN' | 'LIQUIDATION_TARGET' | 'DODO_PMM_FLASH';
 
 export interface PoolInfo {
   id: string;
@@ -44,6 +46,29 @@ export interface PoolInfo {
   activeTick?: number;
   isFundingPool: boolean;
   status: 'ACTIVE' | 'DEPRECATED' | 'PAUSED';
+}
+
+/**
+ * The four calldata encoding strategies surfaced in TransactionPayloadBuilderStudio.
+ *   STANDARD_ABI   — standard ABI-encoded function call (Aave V3, ERC-4626, Kyber)
+ *   MATRIX_INDEX   — dynamic index/pool-flag resolution before ABI encoding
+ *                    (Curve i/j, Aerodrome stable flag, Balancer poolId struct)
+ *   BITMASK        — proprietary bitmask / command-byte dispatchers
+ *                    (DODO PMM, Uniswap V4 Universal Router, 1inch v6 Unpacker)
+ *   ASSEMBLY       — EVM tight-packing: mstore/mload patterns + EIP-1153 transient
+ *                    storage alignment to strip ABI zero-padding overhead
+ */
+export type EncoderMode = 'STANDARD_ABI' | 'MATRIX_INDEX' | 'BITMASK' | 'ASSEMBLY';
+
+/** Carries EIP-712 signed order data for DODO limit-order backrun execution. */
+export interface LimitOrderPayload {
+  orderId: string;
+  /** EIP-712 signed order hex */
+  signedOrder: string;
+  /** Fill amount in maker token's native decimals (wei string) */
+  fillAmountWei: string;
+  /** Price divergence from Chainlink oracle in basis points */
+  priceDivergenceBps: number;
 }
 
 export interface ArbitrageRoute {
@@ -70,6 +95,8 @@ export interface ArbitrageRoute {
   /** C1_ARBITRAGE (default), C2_ARBITRAGE (mirror/reverse), or LIQUIDATION */
   executionType?: ExecutionType;
   transientTrace?: TransientAccountingTrace;
+  /** Present when this route involves a DODO limit-order fill as the entry leg. */
+  limitOrderPayload?: LimitOrderPayload;
 }
 
 export interface VqcModelMetadata {
