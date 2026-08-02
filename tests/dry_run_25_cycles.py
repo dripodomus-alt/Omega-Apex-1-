@@ -47,117 +47,43 @@ except Exception:  # pragma: no cover
             self.__dict__.update(kwargs)
 
 LIVE_MODE = bool(os.getenv("OMEGA_LIVE_TEST") or os.getenv("LIVE_TEST_RPC_URL"))
-_LIVE_DISCOVERY_CONTEXT: Any = None
 
 
-def _compact_live_status(engine: Any) -> str:
-    status_getter = getattr(engine, "get_pool_bootstrap_status", None)
-    status = status_getter() if callable(status_getter) else {}
-    if not status:
-        status = {
-            "pools_loading": getattr(engine, "pools_loading", False),
-            "pools_published": len(getattr(engine, "pools", {}) or {}),
-        }
-    failed = status.get("failed_scanners") or []
-    active = status.get("active_scanners") or []
-    return (
-        f"state={status.get('state', 'unknown')} "
-        f"providers={len(status.get('providers_connected') or [])} "
-        f"discovered={status.get('pools_discovered', 0)} "
-        f"local={status.get('local_pools', 0)} "
-        f"unique={status.get('unique_pools', 0)} "
-        f"reserves={status.get('pools_with_reserves', 0)} "
-        f"normalized={status.get('pools_normalized', 0)} "
-        f"published={status.get('pools_published', 0)} "
-        f"active={','.join(active) if active else '-'} "
-        f"failed={','.join(failed) if failed else '-'} "
-        f"ready={status.get('cache_ready', False)} "
-        f"last_exception={status.get('last_exception') or '-'}"
-    )
-
-
-def _get_live_discovery_context() -> Any:
-    """Initialize the live discovery engine once; each cycle consumes its current cache."""
-    global _LIVE_DISCOVERY_CONTEXT
-    if _LIVE_DISCOVERY_CONTEXT is not None:
-        return _LIVE_DISCOVERY_CONTEXT
-
+def _discover_live_opportunities() -> List[Any]:
+    """Use the live coefficient engine to discover opportunities from current Polygon market state."""
     engine_strategy = os.getenv('ENGINE_STRATEGY', 'FULL_ARB').upper()
+
     try:
         if engine_strategy == 'COEFFICIENT':
-            print("Using COEFFICIENT engine for live discovery...")
+            print("🚦 Using COEFFICIENT engine for live discovery...")
             from coefficient_arbitrage_engine import get_coefficient_engine
             engine = get_coefficient_engine()
             scan_method = "scan_for_coefficient_opportunities"
         else:
-            print("Using FULL_ARB engine for live discovery...")
+            print("🚦 Using FULL_ARB engine for live discovery...")
             from arbitrage_engine import get_arbitrage_engine
             engine = get_arbitrage_engine()
             scan_method = "scan_for_spreads"
     except ImportError as exc:  # pragma: no cover - live discovery fallback
         print(f"Live discovery unavailable: {exc}")
-        return None
+        return []
 
-    _LIVE_DISCOVERY_CONTEXT = SimpleNamespace(
-        engine=engine,
-        engine_strategy=engine_strategy,
-        scan_method=scan_method,
-        waited_for_pool_data=False,
-    )
-    return _LIVE_DISCOVERY_CONTEXT
-
-
-def _wait_for_pool_data(context: Any) -> bool:
-    engine = context.engine
-    if getattr(context, "pool_wait_timed_out", False) and getattr(engine, "pools_loading", False):
-        return False
-    if context.waited_for_pool_data and not getattr(engine, "pools_loading", False):
-        if getattr(engine, "pools", None) or {}:
-            return True
-        print(f"Live discovery has no usable pool data: {_compact_live_status(engine)}")
-        return False
-
-    timeout_s = float(os.getenv("OMEGA_LIVE_DISCOVERY_READY_TIMEOUT", "6"))
-    deadline = time.time() + timeout_s
+    deadline = time.time() + 6
+    waited = 0
     while getattr(engine, "pools_loading", False) and time.time() < deadline:
-        print(f"Live discovery waiting for pool data: {_compact_live_status(engine)}")
+        print("Live discovery waiting for pool data...")
         time.sleep(0.25)
+        waited += 1
 
-    context.waited_for_pool_data = True
     if getattr(engine, "pools_loading", False):
-        print(f"Live discovery timed out waiting for pool data: {_compact_live_status(engine)}")
-        context.pool_wait_timed_out = True
-        return False
-
-    if not (getattr(engine, "pools", None) or {}):
-        print(f"Live discovery has no usable pool data: {_compact_live_status(engine)}")
-        return False
-
-    return True
-
-
-def _discover_live_opportunities(context: Any = None) -> List[Any]:
-    """Discover opportunities from current Polygon market state without rebinding producers per cycle."""
-    context = context or _get_live_discovery_context()
-    if context is None:
+        print("Live discovery timed out waiting for pool data")
         return []
 
-    engine = context.engine
-    engine_strategy = context.engine_strategy
-    if not _wait_for_pool_data(context):
-        return []
-
-    if not getattr(context, "reported_pool_ready", False):
-        print(f"Live discovery pool data ready: {_compact_live_status(engine)}")
-        context.reported_pool_ready = True
     try:
-        opportunities = getattr(engine, context.scan_method)(max_comparisons=600)
+        opportunities = getattr(engine, scan_method)(max_comparisons=600)
     except Exception as exc:  # pragma: no cover - resilience for live discovery issues
-        print(f"Live discovery scan failed: {exc}; {_compact_live_status(engine)}")
+        print(f"Live discovery scan failed: {exc}")
         return []
-    if not opportunities and not getattr(context, "reported_zero_raw_opportunities", False):
-        print(f"Live discovery scan returned 0 raw opportunities: {_compact_live_status(engine)}")
-        context.reported_zero_raw_opportunities = True
 
     filtered: List[Any] = []
     for opp in opportunities:
@@ -182,6 +108,7 @@ def _discover_live_opportunities(context: Any = None) -> List[Any]:
         filtered.append(opp)
 
     return filtered
+
 
 def _build_live_opportunity(cycle: int, index: int, opp: Any) -> LiveOpportunity:
     # The opportunity from the ranker is already a LiveOpportunity instance
@@ -262,11 +189,9 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False, emit_report: bo
     live_discovery_count = 0
     pipeline_mode = "live" if (use_live or LIVE_MODE) else "synthetic"
 
-    live_context = _get_live_discovery_context() if (use_live or LIVE_MODE) else None
-
     for cycle in range(num_cycles):
         if use_live or LIVE_MODE:
-            discovered_live = _discover_live_opportunities(live_context) if live_context is not None else []
+            discovered_live = _discover_live_opportunities()
             live_discovery_count += len(discovered_live)
             if discovered_live:
                 opportunities = [_build_live_opportunity(cycle, i, opp) for i, opp in enumerate(discovered_live[:4])]

@@ -1291,8 +1291,8 @@ async function startServer() {
               };
             }
             await releaseOpportunityLock(lock.id, "C2_NO_OP", {
-              mirrorError: mirrorResult.error,
-              reverseError: reverseResult.error,
+              mirrorError: mirrorResult.message,
+              reverseError: reverseResult.message,
               blockNumber: currentBlock,
             });
             return {
@@ -1302,15 +1302,15 @@ async function startServer() {
               routeEvaluation: {
                 listener: "C2_BLOCK_LISTENER",
                 gate: "MIRROR_AND_REVERSE_FAILED_GATES",
-                mirrorError: mirrorResult.error,
-                reverseError: reverseResult.error,
+                mirrorError: mirrorResult.message,
+                reverseError: reverseResult.message,
                 txCreated: false,
               },
             };
           }
 
           await releaseOpportunityLock(lock.id, "C2_NO_OP", {
-            mirrorError: mirrorResult.error,
+            mirrorError: mirrorResult.message,
             reverseError: reversePayload.error,
             blockNumber: currentBlock,
           });
@@ -1321,7 +1321,7 @@ async function startServer() {
             routeEvaluation: {
               listener: "C2_BLOCK_LISTENER",
               gate: "MIRROR_FAILED_REVERSE_UNAVAILABLE",
-              mirrorError: mirrorResult.error,
+              mirrorError: mirrorResult.message,
               reverseError: reversePayload.error,
               txCreated: false,
             },
@@ -1329,7 +1329,7 @@ async function startServer() {
         }
 
         await releaseOpportunityLock(lock.id, "C2_NO_OP", {
-          mirrorError: mirrorResult.error,
+          mirrorError: mirrorResult.message,
           blockNumber: currentBlock,
         });
         return {
@@ -1339,7 +1339,7 @@ async function startServer() {
           routeEvaluation: {
             listener: "C2_BLOCK_LISTENER",
             gate: "MIRROR_FAILED_REVERSE_DISABLED",
-            mirrorError: mirrorResult.error,
+            mirrorError: mirrorResult.message,
             txCreated: false,
           },
         };
