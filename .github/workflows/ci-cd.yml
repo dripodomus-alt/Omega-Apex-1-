@@ -1,0 +1,341 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  OMEGA V5 — End-to-End CI/CD Pipeline
+#  Chain: Polygon PoS #137 · Engine: Node 22 / Vite / Express
+#
+#  Stages (sequential gates — each must green before the next runs):
+#  1. lint-typecheck   — TypeScript strict type check (no emit)
+#  2. test             — Vitest unit suite
+#  3. build            — Vite frontend + esbuild server bundle
+#  4. docker-build     — Multi-stage image build + security scan
+#  5. docker-push      — Push tagged image to GitHub Container Registry (GHCR)
+#  6. deploy           — Rolling deploy to Cloud Run (production gate)
+#
+#  Triggers
+#  --------
+#  • push to main  → full pipeline (includes docker-push + deploy)
+#  • pull_request  → lint + test + build + docker-build only (no push/deploy)
+#  • workflow_dispatch → manual full run with optional dry-run flag
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: OMEGA V5 · CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (skip docker-push and deploy)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+# Cancel in-progress runs for the same ref (saves CI minutes)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # ── Registry ────────────────────────────────────────────────────────────────
+  REGISTRY:   ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+  # ── Node ────────────────────────────────────────────────────────────────────
+  NODE_VERSION: '22'
+
+  # ── Google Cloud Run ────────────────────────────────────────────────────────
+  GCP_REGION:   us-central1
+  CLOUD_RUN_SERVICE: omega-v5-engine
+
+jobs:
+  # ── 1. Lint & Type-check ────────────────────────────────────────────────────
+  lint-typecheck:
+    name: Lint & Type-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript strict type-check
+        run: npm run lint
+
+  # ── 2. Unit Tests ───────────────────────────────────────────────────────────
+  test:
+    name: Unit Tests (Vitest)
+    runs-on: ubuntu-24.04
+    needs: lint-typecheck
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Upload coverage (if generated)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # ── 3. Build ─────────────────────────────────────────────────────────────────
+  build:
+    name: Build (Vite + esbuild)
+    runs-on: ubuntu-24.04
+    needs: test
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend + server
+        run: npm run build
+
+      - name: Upload build artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  # ── 4. Docker Build + Security Scan ─────────────────────────────────────────
+  docker-build:
+    name: Docker Build & Scan
+    runs-on: ubuntu-24.04
+    needs: build
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build image (no push — cache only)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_SHA=${{ github.sha }}
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: Upload Trivy SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-results.sarif
+
+  # ── 5. Docker Push (main branch only) ───────────────────────────────────────
+  docker-push:
+    name: Push Image → GHCR
+    runs-on: ubuntu-24.04
+    needs: docker-build
+    timeout-minutes: 15
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name != 'pull_request' &&
+      github.event.inputs.dry_run != 'true'
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=true
+
+      - name: Build & push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  # ── 6. Deploy to Cloud Run ───────────────────────────────────────────────────
+  deploy:
+    name: Deploy → Cloud Run (${{ vars.GCP_REGION || 'us-central1' }})
+    runs-on: ubuntu-24.04
+    needs: docker-push
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      contents: read
+      id-token: write   # Workload Identity Federation
+
+    steps:
+      - name: Authenticate to Google Cloud (WIF)
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Compute short SHA tag
+        id: sha
+        run: echo "tag=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.CLOUD_RUN_SERVICE }}
+          region:  ${{ env.GCP_REGION }}
+          image:   ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sha.outputs.tag }}
+          flags: |
+            --min-instances=1
+            --max-instances=10
+            --cpu=2
+            --memory=2Gi
+            --concurrency=80
+            --timeout=60s
+            --no-allow-unauthenticated
+            --port=3000
+          env_vars: |
+            NODE_ENV=production
+            OMEGA_RUNTIME_MODE=${{ vars.OMEGA_RUNTIME_MODE }}
+            EXECUTION_MODE=${{ vars.EXECUTION_MODE }}
+          secrets: |
+            GEMINI_API_KEY=GEMINI_API_KEY:latest
+            REDIS_URL=OMEGA_REDIS_URL:latest
+            CLOUD_SQL_PASSWORD=OMEGA_SQL_PASSWORD:latest
+            CLOUD_SQL_HOST=OMEGA_SQL_HOST:latest
+            CLOUD_SQL_DATABASE=OMEGA_SQL_DATABASE:latest
+            CLOUD_SQL_USER=OMEGA_SQL_USER:latest
+            BOT_ADDRESS=OMEGA_BOT_ADDRESS:latest
+            BOT_PROFIT_RECEIVER=OMEGA_PROFIT_RECEIVER:latest
+            EXECUTOR_WALLET=OMEGA_EXECUTOR_WALLET:latest
+            EXECUTOR_CONTRACT_ADDR=OMEGA_EXECUTOR_CONTRACT:latest
+            C1_ARB_EXECUTOR_ADDRESS=OMEGA_C1_EXECUTOR:latest
+            LIQUIDATION_EXECUTOR_ADDRESS=OMEGA_LIQ_EXECUTOR:latest
+            POLYGON_RPC_URL=OMEGA_POLYGON_RPC_URL:latest
+            POLYGON_WSS_URL=OMEGA_POLYGON_WSS_URL:latest
+            POLYGONSCAN_API_KEY=OMEGA_POLYGONSCAN_KEY:latest
+            CONFIRM_MAINNET_EXECUTION=OMEGA_MAINNET_CONSENT:latest
+
+      - name: Verify deployment health
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+          echo "Checking $URL/api/health …"
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
+              -H "Authorization: ****** auth print-identity-token)" \
+              "$URL/api/health" || echo "000")
+            echo "Attempt $i: HTTP $STATUS"
+            [ "$STATUS" = "200" ] && { echo "✔ Health check passed"; exit 0; }
+            sleep 10
+          done
+          echo "✘ Health check failed after 5 attempts"
+          exit 1
+
+      - name: Print deployment summary
+        if: success()
+        run: |
+          echo "### ✅ OMEGA V5 deployed successfully" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Service | \`${{ env.CLOUD_RUN_SERVICE }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Region | \`${{ env.GCP_REGION }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Image | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.sha.outputs.tag }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| URL | ${{ steps.deploy.outputs.url }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit | \`${{ github.sha }}\` |" >> "$GITHUB_STEP_SUMMARY"

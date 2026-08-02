@@ -4,6 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
+import { runBootAudit } from './src/utils/bootAudit';
 
 // ─── Redis client (lazy — only created when env vars are present) ─────────────
 
@@ -35,6 +36,9 @@ function getPgPool(): Pool | null {
 }
 
 async function startServer() {
+  // ── Boot-time audit: validates env, wallets, contracts before serving ──────
+  runBootAudit();
+
   const app = express();
   const PORT = 3000;
 

@@ -1,0 +1,34 @@
+# ─── .dockerignore ────────────────────────────────────────────────────────────
+# Keeps build context small — only source files that the Dockerfile needs
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Version control
+.git
+.gitignore
+
+# Dev / CI artefacts
+node_modules
+dist
+build
+coverage
+*.log
+
+# Secrets — never bake real env files into the image
+.env
+.env.*
+!.env.example
+
+# Editor / OS noise
+.DS_Store
+*.swp
+*.swo
+.idea
+.vscode
+
+# Temporary files
+tmp
+/tmp
+
+# Docker itself (prevent recursive context)
+Dockerfile
+.dockerignore
