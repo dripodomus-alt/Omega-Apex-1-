@@ -168,7 +168,7 @@ class MulticallBatchLoader:
         except Exception as e:
             logger.error(f"Failed to load oracle prices: {e}")
     
-    def batch_load_pools(self, pool_addresses: List[str], chunk_size: int = 500) -> Dict[str, Dict]:
+    def batch_load_pools(self, pool_addresses: List[str], chunk_size: int = None) -> Dict[str, Dict]:
         """
         Load ALL pool reserves + tokens in CHUNKED multicalls
         
@@ -189,6 +189,11 @@ class MulticallBatchLoader:
                 }
             }
         """
+        if chunk_size is None:
+            import os
+            default_chunk_size = "50" if os.getenv("OMEGA_LIVE_TEST") else "500"
+            chunk_size = int(os.getenv("OMEGA_MULTICALL_POOL_CHUNK_SIZE", default_chunk_size))
+
         logger.info(f"🚀 Batch loading {len(pool_addresses)} pools via Multicall3 (chunks of {chunk_size})...")
         
         # Split into chunks
@@ -200,14 +205,43 @@ class MulticallBatchLoader:
         for chunk_idx, chunk in enumerate(pool_chunks, 1):
             logger.info(f"📡 Processing chunk {chunk_idx}/{len(pool_chunks)} ({len(chunk)} pools, {len(chunk)*3} calls)...")
             
-            chunk_results = self._load_pool_chunk(chunk)
+            chunk_results = self._load_pool_chunk_adaptive(chunk)
             all_results.update(chunk_results)
         
         logger.info(f"✅ Loaded {len(all_results)} pools across {len(pool_chunks)} chunks")
         return all_results
     
+    def _load_pool_chunk_adaptive(self, pool_addresses: List[str]) -> Dict[str, Dict]:
+        """Load a chunk, recursively splitting when the RPC response is too large."""
+        chunk_results = self._load_pool_chunk(pool_addresses)
+        if chunk_results or len(pool_addresses) <= 1:
+            return chunk_results
+
+        last_error = str(getattr(self, "_last_chunk_error", "") or "")
+        too_large = (
+            "exceeding limit" in last_error
+            or "payload too large" in last_error.lower()
+            or "413" in last_error
+            or "response too large" in last_error.lower()
+        )
+        if not too_large:
+            return chunk_results
+
+        midpoint = max(1, len(pool_addresses) // 2)
+        logger.warning(
+            "Multicall response too large for %d pools; retrying as %d + %d",
+            len(pool_addresses),
+            midpoint,
+            len(pool_addresses) - midpoint,
+        )
+        left = self._load_pool_chunk_adaptive(pool_addresses[:midpoint])
+        right = self._load_pool_chunk_adaptive(pool_addresses[midpoint:])
+        left.update(right)
+        return left
+    
     def _load_pool_chunk(self, pool_addresses: List[str]) -> Dict[str, Dict]:
         """Load a single chunk of pools."""
+        self._last_chunk_error = None
         calls = []
         call_mapping = []  # Track which call belongs to which pool
         
@@ -244,6 +278,7 @@ class MulticallBatchLoader:
         try:
             results = self.multicall.functions.aggregate3(calls).call()
         except Exception as e:
+            self._last_chunk_error = str(e)
             logger.error(f"Multicall failed: {e}")
             return {}
         

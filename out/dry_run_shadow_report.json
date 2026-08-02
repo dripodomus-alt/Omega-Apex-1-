@@ -1,0 +1,244 @@
+{
+  "summary": {
+    "cycles": 25,
+    "discovered_total": 75,
+    "shadow_executed_total": 50,
+    "accepted_total": 50,
+    "rejected_total": 0,
+    "total_profit_usd": 615.0,
+    "execution_rate": 66.67,
+    "discovery_rate": 100.0,
+    "profit_per_cycle_usd": 24.6,
+    "accepted_per_cycle": 2.0,
+    "data_source": "synthetic_fallback",
+    "pipeline_mode": "live",
+    "live_discovery_count": 0
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 2,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 3,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 4,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 5,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 6,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 7,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 8,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 9,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 10,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 11,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 12,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 13,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 14,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 15,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 16,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 17,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 18,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 19,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 20,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 21,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 22,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 23,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 24,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    },
+    {
+      "cycle": 25,
+      "discovered": 3,
+      "staged": 2,
+      "shadow_executed": 2,
+      "accepted": 2,
+      "rejected": 0,
+      "profit_usd": 24.6
+    }
+  ]
+}

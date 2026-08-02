@@ -430,16 +430,42 @@ class ArbitrageEngine:
         
         logger.info(f"🔗 Connecting to Polygon: {rpc_url[:60]}...")
         self.w3 = Web3(Web3.HTTPProvider(rpc_url, request_kwargs={'timeout': 30}))
+        self.pool_ready_min = int(os.getenv('OMEGA_MIN_READY_POOLS', '1'))
+        self.pool_bootstrap_status: Dict[str, Any] = {
+            "state": "initializing",
+            "started_at": time.time(),
+            "completed_at": None,
+            "elapsed_s": 0.0,
+            "providers_connected": [],
+            "factories_scanned": 0,
+            "pools_discovered": 0,
+            "local_pools": 0,
+            "unique_pools": 0,
+            "pools_with_reserves": 0,
+            "pools_normalized": 0,
+            "pools_published": 0,
+            "skipped_pools": 0,
+            "unknown_token_pools": 0,
+            "active_scanners": [],
+            "failed_scanners": [],
+            "cache_ready": False,
+            "minimum_required_pools": self.pool_ready_min,
+            "last_heartbeat": time.time(),
+            "last_exception": None,
+        }
         
         if self.w3.is_connected():
             logger.info(f"✅ Connected! Block: {self.w3.eth.block_number:,}")
+            self.pool_bootstrap_status["providers_connected"].append("polygon_rpc")
         else:
             logger.error("❌ RPC connection failed!")
+            self.pool_bootstrap_status["failed_scanners"].append("polygon_rpc")
         
         self.pools: Dict[str, PoolPrice] = {}
         self.spreads: List[SpreadOpportunity] = []
         self.last_update = 0
         self.pools_db_path = Path(__file__).parent / 'data' / 'pools.json'
+
         
         # Initialize Web3 pool fetcher for EXACT blockchain data (institutional-grade)
         if WEB3_FETCHER_ENABLED and self.w3.is_connected():
@@ -470,10 +496,46 @@ class ArbitrageEngine:
         def load_pools_async():
             logger.info("🚀 Loading pools with MULTICALL3 batch + EXACT Web3 data...")
             start_time = time.time()
-            self._load_pools_from_db()
-            elapsed = time.time() - start_time
-            self.pools_loading = False
-            logger.info(f"✅ Batch loading complete: {len(self.pools)} pools with EXACT data in {elapsed:.1f}s")
+            self.pool_bootstrap_status.update(
+                {
+                    "state": "loading",
+                    "started_at": start_time,
+                    "active_scanners": ["unified_discovery", "local_database", "multicall3", "token_prices"],
+                    "last_heartbeat": start_time,
+                }
+            )
+            try:
+                self._load_pools_from_db()
+            except Exception as exc:
+                self.pool_bootstrap_status["state"] = "failed"
+                self.pool_bootstrap_status["last_exception"] = repr(exc)
+                failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+                if "pool_loader" not in failed:
+                    failed.append("pool_loader")
+                logger.exception("Pool bootstrap failed before cache publication")
+            finally:
+                elapsed = time.time() - start_time
+                published = len(self.pools)
+                self.pools_loading = False
+                if self.pool_bootstrap_status.get("state") != "failed":
+                    self.pool_bootstrap_status["state"] = "ready" if published >= self.pool_ready_min else "empty"
+                self.pool_bootstrap_status.update(
+                    {
+                        "completed_at": time.time(),
+                        "elapsed_s": round(elapsed, 3),
+                        "pools_published": published,
+                        "cache_ready": published >= self.pool_ready_min,
+                        "active_scanners": [],
+                        "last_heartbeat": time.time(),
+                    }
+                )
+                if published >= self.pool_ready_min:
+                    logger.info(f"✅ Batch loading complete: {published} pools with EXACT data in {elapsed:.1f}s")
+                else:
+                    logger.error(
+                        "Pool bootstrap completed without usable pool data: %s",
+                        self.get_pool_bootstrap_status(),
+                    )
         
         # Start background loading
         threading.Thread(target=load_pools_async, daemon=True).start()
@@ -514,12 +576,31 @@ class ArbitrageEngine:
             logger.info("⚠️  INSTITUTIONAL MATH DISABLED (using basic math)")
             self.institutional_coordinator = None
     
+    def get_pool_bootstrap_status(self) -> Dict[str, Any]:
+        """Return a stable diagnostic snapshot for live-discovery readiness waits."""
+        status = dict(getattr(self, "pool_bootstrap_status", {}))
+        heartbeat = status.get("last_heartbeat")
+        if heartbeat:
+            status["last_heartbeat_age_s"] = round(max(time.time() - float(heartbeat), 0.0), 3)
+        status["pools_published"] = len(getattr(self, "pools", {}) or {})
+        status["cache_ready"] = status["pools_published"] >= int(status.get("minimum_required_pools", 1) or 1)
+        status["pools_loading"] = bool(getattr(self, "pools_loading", False))
+        return status
+    
     def get_token_info(self, address: str) -> Dict:
         """Get token info with fallback"""
-        info = get_token_info(137, address)
-        if info:
-            return info
-        return {"symbol": address[:8], "decimals": 18}
+        # First, check the static TOKENS map for well-known assets.
+        checksum_address = Web3.to_checksum_address(address)
+        if checksum_address in TOKENS:
+            return TOKENS[checksum_address]
+
+        # If not found, dynamically create a placeholder. The symbol and decimals
+        # will be updated with exact on-chain data during the pool loading process.
+        # This ensures ALL discovered assets are supported, not just pre-configured ones.
+        return {
+            "symbol": f"DYN_{address[:6]}",  # Dynamic token placeholder
+            "decimals": 18,  # Default, will be overwritten by exact data
+        }
     
     def get_cached_gas_snapshot(self):
         """
@@ -719,19 +800,72 @@ class ArbitrageEngine:
         
         start_total = time.time()
         
-        # STEP 1: Discover pools from all sources
-        discovery = get_unified_discovery()
-        discovered_pools = discovery.discover_all_pools()
+        # STEP 1: Discover pools from all sources. A venue outage must not block
+        # cached/local pools from being normalized and published.
+        self.pool_bootstrap_status["last_heartbeat"] = time.time()
+        discovered_pools = {}
+        discovery_timeout_s = float(os.getenv("OMEGA_UNIFIED_DISCOVERY_TIMEOUT_S", "3"))
+        if discovery_timeout_s <= 0:
+            failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+            if "unified_discovery_disabled" not in failed:
+                failed.append("unified_discovery_disabled")
+            logger.info("Unified pool discovery disabled; using local database pools only")
+        else:
+            import queue
+            import threading
+
+            result_queue: "queue.Queue[tuple[str, Any]]" = queue.Queue(maxsize=1)
+
+            def run_unified_discovery():
+                try:
+                    discovery = get_unified_discovery()
+                    result_queue.put(("ok", discovery.discover_all_pools()))
+                except Exception as exc:
+                    result_queue.put(("error", exc))
+
+            worker = threading.Thread(target=run_unified_discovery, daemon=True)
+            worker.start()
+            worker.join(discovery_timeout_s)
+            if worker.is_alive():
+                failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+                if "unified_discovery_timeout" not in failed:
+                    failed.append("unified_discovery_timeout")
+                self.pool_bootstrap_status["last_exception"] = f"unified discovery exceeded {discovery_timeout_s:.1f}s"
+                logger.warning(
+                    "Unified pool discovery exceeded %.1fs; continuing with local database pools",
+                    discovery_timeout_s,
+                )
+            else:
+                status, payload = result_queue.get() if not result_queue.empty() else ("ok", {})
+                if status == "ok":
+                    discovered_pools = payload or {}
+                else:
+                    self.pool_bootstrap_status["last_exception"] = repr(payload)
+                    failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+                    if "unified_discovery" not in failed:
+                        failed.append("unified_discovery")
+                    logger.warning("Unified pool discovery failed; continuing with local database pools: %s", payload)
+        self.pool_bootstrap_status["pools_discovered"] = len(discovered_pools)
         
         # STEP 2: Load local database pools
         if not self.pools_db_path.exists():
             logger.warning(f"Local pool database not found: {self.pools_db_path}")
             local_pools = []
         else:
-            with open(self.pools_db_path, 'r') as f:
-                data = json.load(f)
-                local_pools = data.get('pools', [])
-                logger.info(f"📊 Local database: {len(local_pools)} pools")
+            try:
+                with open(self.pools_db_path, 'r') as f:
+                    data = json.load(f)
+                    local_pools = data.get('pools', [])
+                    logger.info(f"📊 Local database: {len(local_pools)} pools")
+            except Exception as exc:
+                local_pools = []
+                self.pool_bootstrap_status["last_exception"] = repr(exc)
+                failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+                if "local_database" not in failed:
+                    failed.append("local_database")
+                logger.warning("Local pool database load failed; continuing without cached pools: %s", exc)
+        self.pool_bootstrap_status["local_pools"] = len(local_pools)
+        self.pool_bootstrap_status["last_heartbeat"] = time.time()
         
         # STEP 3: Merge all sources (deduplicate by address)
         all_pool_addresses = set()
@@ -750,14 +884,42 @@ class ArbitrageEngine:
                 if addr not in pool_metadata:
                     pool_metadata[addr] = pool_data
         
-        pool_addresses = list(all_pool_addresses)
-        logger.info(f"📍 TOTAL UNIQUE POOLS: {len(pool_addresses)} (merged from all sources)")
+        def pool_priority(addr: str) -> tuple[int, str]:
+            metadata = pool_metadata.get(addr, {})
+            token0_known = str(metadata.get('token0_symbol', '')).upper() in TOKEN_PRICES_USD
+            token1_known = str(metadata.get('token1_symbol', '')).upper() in TOKEN_PRICES_USD
+            return (-(int(token0_known) + int(token1_known)), addr)
+
+        pool_addresses = sorted(all_pool_addresses, key=pool_priority)
+        discovered_unique_count = len(pool_addresses)
+        default_max_pools = "100" if os.getenv("OMEGA_LIVE_TEST") else "0"
+        max_bootstrap_pools = int(os.getenv("OMEGA_MAX_POOL_BOOTSTRAP_POOLS", default_max_pools))
+        if max_bootstrap_pools > 0 and len(pool_addresses) > max_bootstrap_pools:
+            logger.warning(
+                "Pool bootstrap capped at %d/%d pools for bounded live-test startup",
+                max_bootstrap_pools,
+                len(pool_addresses),
+            )
+            pool_addresses = pool_addresses[:max_bootstrap_pools]
+        self.pool_bootstrap_status["unique_pools"] = len(pool_addresses)
+        self.pool_bootstrap_status["candidate_pools_total"] = discovered_unique_count
+        logger.info(f"📍 TOTAL UNIQUE POOLS: {len(pool_addresses)} loaded ({discovered_unique_count} discovered/cached)")
         
         # STEP 4: MULTICALL3 BATCH LOADING - Fetch EXACT reserves for ALL
         batch_loader = get_batch_loader(self.w3)
         start_batch = time.time()
-        exact_reserves = batch_loader.batch_load_pools(pool_addresses)
+        try:
+            exact_reserves = batch_loader.batch_load_pools(pool_addresses)
+        except Exception as exc:
+            exact_reserves = {}
+            self.pool_bootstrap_status["last_exception"] = repr(exc)
+            failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+            if "multicall3" not in failed:
+                failed.append("multicall3")
+            logger.warning("Multicall3 pool reserve load failed; no exact reserves available: %s", exc)
         batch_time = time.time() - start_batch
+        self.pool_bootstrap_status["pools_with_reserves"] = len(exact_reserves)
+        self.pool_bootstrap_status["last_heartbeat"] = time.time()
         
         logger.info(f"⚡ Multicall3 fetched {len(exact_reserves)} pools in {batch_time:.2f}s")
         
@@ -781,13 +943,34 @@ class ArbitrageEngine:
         
         # Batch fetch prices from DEXScreener (30 tokens per request)
         logger.info("🌐 Fetching real prices from DEXScreener API (batched)...")
-        oracle = get_real_price_oracle()
         start_price_fetch = time.time()
-        batch_prices = oracle.get_multiple_prices(unique_token_list, chain="polygon")
+        skip_external_prices = (
+            os.getenv("OMEGA_SKIP_EXTERNAL_TOKEN_PRICES", "1" if os.getenv("OMEGA_LIVE_TEST") else "0").lower()
+            in {"1", "true", "yes", "on"}
+        )
+        if skip_external_prices:
+            batch_prices = {}
+            failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+            if "external_token_prices_skipped" not in failed:
+                failed.append("external_token_prices_skipped")
+            logger.info("External token price fetch skipped; using static known-token prices")
+        else:
+            oracle = get_real_price_oracle()
+            try:
+                batch_prices = oracle.get_multiple_prices(unique_token_list, chain="polygon") if unique_token_list else {}
+            except Exception as exc:
+                batch_prices = {}
+                self.pool_bootstrap_status["last_exception"] = repr(exc)
+                failed = self.pool_bootstrap_status.setdefault("failed_scanners", [])
+                if "token_prices" not in failed:
+                    failed.append("token_prices")
+                logger.warning("Batch token price fetch failed; falling back to static known-token prices: %s", exc)
         price_fetch_time = time.time() - start_price_fetch
+        price_coverage_pct = (100 * len(batch_prices) / len(unique_token_list)) if unique_token_list else 0.0
+        self.pool_bootstrap_status["last_heartbeat"] = time.time()
         
         logger.info(f"✅ Fetched {len(batch_prices)} token prices in {price_fetch_time:.2f}s")
-        logger.info(f"📊 Price coverage: {len(batch_prices)}/{len(unique_token_list)} tokens ({100*len(batch_prices)/len(unique_token_list):.1f}%)")
+        logger.info(f"📊 Price coverage: {len(batch_prices)}/{len(unique_token_list)} tokens ({price_coverage_pct:.1f}%)")
         
         # STEP 5: Build PoolPrice objects with EXACT data
         pool_prices = {}
@@ -903,6 +1086,16 @@ class ArbitrageEngine:
                 continue
         
         self.pools = pool_prices
+        self.pool_bootstrap_status.update(
+            {
+                "pools_normalized": len(pool_prices),
+                "pools_published": len(pool_prices),
+                "skipped_pools": skipped,
+                "unknown_token_pools": unknown_token_pools,
+                "cache_ready": len(pool_prices) >= self.pool_ready_min,
+                "last_heartbeat": time.time(),
+            }
+        )
         
         total_time = time.time() - start_total
         logger.info(f"✅ Successfully loaded {len(pool_prices)} pools with EXACT reserves")

@@ -1,0 +1,19 @@
+# Core Python runtime for the hybrid engine
+# pandas is intentionally left out here because it is not required for the
+# Rust/Python hybrid bootstrap and can fail on newer Python runtimes.
+numpy>=2.0,<3.0
+pytest>=8.0,<9.0
+requests>=2.31,<3.0
+python-dotenv>=1.0,<2.0
+web3>=7.0,<8.0
+eth-account>=0.13.1,<0.14
+eth-utils>=5.0,<6.0
+eth-typing>=5.0,<6.0
+hexbytes>=1.0,<2.0
+psutil>=6.0,<7.0
+redis>=5.0,<6.0
+aiohttp>=3.9,<4.0
+pydantic>=2.0,<3.0
+httpx>=0.28,<0.29
+tenacity>=9.0,<10.0
+urllib3>=2.0,<3.0

@@ -14,6 +14,39 @@ This repository presents a **discovery → ranking → simulation → preparatio
 - audit logging and historical performance views,
 - controlled progression from simulation-safe operation to live-mainnet readiness.
 
+## Preferred Local Workflow
+
+For local development, this repository is set up to use:
+
+- Yarn for Node.js dependencies and scripts
+- a project-local virtual environment for Python
+- the hybrid bootstrap script for the Rust/Python bridge
+
+Recommended commands from the repo root:
+
+- `yarn install`
+- `yarn hybrid:bootstrap`
+- `yarn hybrid:launch`
+
+This keeps the Node toolchain and Python runtime separated while still enabling the hybrid engine bootstrap path.
+
+## Important Reality Check
+
+### Technology Stack
+
+| Category      | Technology / Service                                      |
+|---------------|-----------------------------------------------------------|
+| **Front End**   | React 19, Vite, TypeScript, Recharts, Lucide              |
+| **Back End**    | Node.js, Express                                          |
+| **APIs**        | Gemini API (AI Analysis), Google Drive API (Backup)       |
+| **Blockchain**  | Polygon PoS (RPC/WSS), Ethers.js                          |
+| **Database**    | Google Firestore (Cloud Sync), Browser Local Storage      |
+| **Auth**        | Firebase Authentication, Google Auth                      |
+| **Tooling**     | ESLint, Prettier                                          |
+| **Concepts**    | DeFi Arbitrage, Flash Loans, AMMs, EIP-1153, VQC Modeling |
+
+---
+
 ## Important Reality Check
 
 This codebase includes both **live integrations** and **deterministic simulated/mock data**.
