@@ -73,6 +73,29 @@ RUST_SCANNER_AVAILABLE = rust_scanner.is_available()
 SCANNER_MODE = os.environ.get("SCANNER_MODE", "rust").lower()
 
 
+def _make_serializable(value: Any) -> Any:
+    """Recursively convert discovery data into JSON-friendly primitives."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, tuple):
+        return [_make_serializable(item) for item in value]
+    if isinstance(value, (list, set, frozenset)):
+        return [_make_serializable(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _make_serializable(item) for key, item in value.items()}
+    if is_dataclass(value):
+        return _make_serializable(asdict(value))
+    if hasattr(value, "__dict__") and not isinstance(value, type):
+        return {
+            key: _make_serializable(item)
+            for key, item in vars(value).items()
+            if not key.startswith("_")
+        }
+    return value
+
+
 @dataclass
 class LiveOpportunity:
     """Canonical opportunity object passed through ranking, staging and execution."""
@@ -91,19 +114,24 @@ class LiveOpportunity:
     pricing_steps: list[dict] = field(default_factory=list)
 
     def to_payload(self) -> dict[str, Any]:
-        """Return a JSON-friendly payload for downstream reporting or staging."""
+        """Return a JSON-friendly payload for downstream staging or reporting."""
+        profitability_payload: Any = None
+        if self.profitability is not None:
+            profitability_payload = _make_serializable(self.profitability)
+
         return {
-            "path": list(self.path),
-            "pool_sequence": list(self.pool_sequence),
-            "protocol_seq": list(self.protocol_seq),
-            "profitability": {
-                "net_profit_usd": getattr(getattr(self.profitability, "net_profit_usd", None), "__float__", lambda: getattr(self.profitability, "net_profit_usd", None))(),
-            },
+            "path": _make_serializable(self.path or ()),
+            "pool_sequence": _make_serializable(self.pool_sequence or ()),
+            "protocol_seq": _make_serializable(self.protocol_seq or ()),
+            "profitability": profitability_payload,
             "block_detected": self.block_detected,
-            "metadata": self.metadata,
-            "market_snapshot": self.market_snapshot,
+            "metadata": _make_serializable(self.metadata or {}),
+            "market_snapshot": _make_serializable(self.market_snapshot),
             "opp_id": self.opp_id,
             "family": self.family,
+            "c1_success": self.c1_success,
+            "liquidation_data": _make_serializable(self.liquidation_data),
+            "pricing_steps": _make_serializable(self.pricing_steps or []),
         }
 
 

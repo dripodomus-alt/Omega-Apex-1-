@@ -44,7 +44,49 @@ except Exception:  # pragma: no cover
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
 
+        def to_payload(self) -> dict[str, Any]:
+            return {
+                "path": _make_serializable(getattr(self, "path", ())),
+                "pool_sequence": _make_serializable(getattr(self, "pool_sequence", ())),
+                "protocol_seq": _make_serializable(getattr(self, "protocol_seq", ())),
+                "profitability": _make_serializable(getattr(self, "profitability", None)),
+                "block_detected": getattr(self, "block_detected", 0),
+                "metadata": _make_serializable(getattr(self, "metadata", {})),
+                "market_snapshot": _make_serializable(getattr(self, "market_snapshot", None)),
+                "opp_id": getattr(self, "opp_id", ""),
+                "family": getattr(self, "family", "C1"),
+                "c1_success": getattr(self, "c1_success", False),
+                "liquidation_data": _make_serializable(getattr(self, "liquidation_data", None)),
+                "pricing_steps": _make_serializable(getattr(self, "pricing_steps", [])),
+            }
+
+        def to_payload(self) -> dict[str, Any]:
+            return {
+                key: value for key, value in self.__dict__.items() if not key.startswith("_")
+            }
+
 LIVE_MODE = bool(os.getenv("OMEGA_LIVE_TEST") or os.getenv("LIVE_TEST_RPC_URL"))
+
+
+def _make_serializable(value: Any) -> Any:
+    """Recursively convert discovery data into JSON-friendly primitives."""
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, tuple):
+        return [_make_serializable(item) for item in value]
+    if isinstance(value, (list, set, frozenset)):
+        return [_make_serializable(item) for item in value]
+    if isinstance(value, dict):
+        return {str(key): _make_serializable(item) for key, item in value.items()}
+    if hasattr(value, "__dict__") and not isinstance(value, type):
+        return {
+            key: _make_serializable(item)
+            for key, item in vars(value).items()
+            if not key.startswith("_")
+        }
+    return value
 
 
 def _open_live_pipeline_gates() -> None:
@@ -257,12 +299,16 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False, emit_report: bo
     _open_live_pipeline_gates()
 
     for cycle in range(num_cycles):
-        discovered_live = _discover_live_opportunities()
-        if discovered_live:
-            live_discovery_count += len(discovered_live)
-            ranked_live = _rank_live_opportunities(discovered_live)
-            ranked_total += len(ranked_live)
-            opportunities = [_build_live_opportunity(cycle, i, opp) for i, opp in enumerate(ranked_live[:4])]
+        should_attempt_live_discovery = bool(use_live or LIVE_MODE or os.getenv("OMEGA_LIVE_TEST") or os.getenv("LIVE_TEST_RPC_URL"))
+        if should_attempt_live_discovery:
+            discovered_live = _discover_live_opportunities()
+            if discovered_live:
+                live_discovery_count += len(discovered_live)
+                ranked_live = _rank_live_opportunities(discovered_live)
+                ranked_total += len(ranked_live)
+                opportunities = [_build_live_opportunity(cycle, i, opp) for i, opp in enumerate(ranked_live[:4])]
+            else:
+                opportunities = []
         else:
             opportunities = []
 
