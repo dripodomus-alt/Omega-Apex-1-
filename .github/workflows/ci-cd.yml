@@ -60,6 +60,8 @@ jobs:
     name: Lint & Type-check
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -83,6 +85,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: lint-typecheck
     timeout-minutes: 15
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -115,6 +119,8 @@ jobs:
     runs-on: ubuntu-24.04
     needs: test
     timeout-minutes: 15
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
