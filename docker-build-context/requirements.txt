@@ -1,0 +1,72 @@
+# Core application dependencies
+web3
+requests
+pyo3
+pyo3-asyncio
+uvicorn
+fastapi
+google-cloud-secret-manager
+
+# ML Pipeline dependencies
+xgboost
+scikit-learn
+pandas
+joblib
+
+# Testing dependencies
+pytest
+pydantic-core==2.20.1 \
+    --hash=sha256:a75f196c215333f20227ed3a2d42a3737a3e303534c3110593e594451332204c
+    # via pydantic
+pysha3==1.0.2 \
+    --hash=sha256:a5b4812a14ddb334a3369a2886e50f3f61b8f0b4a03f4c05c08f4f2c05d2146f
+    # via eth-utils
+redis==5.0.7 \
+    --hash=sha256:560c7d079e53090332f14305e94b2165b1695420f1c322019702013c01e1b3c0
+    # via -r requirements.in
+referencing==0.35.1 \
+    --hash=sha256:20100a45330e21815124131b31522067168e3b1c6b05421b7d038165f57300f8
+    # via jsonschema
+requests==2.32.3 \
+    --hash=sha256:c7a5c5033380b3328a1e48f3f01908a3bf80b10c656e121a085f1c1c1b50100a
+    # via web3
+rpds-py==0.18.1 \
+    --hash=sha256:1a82030f785b95a1c0d5cc3350e938f714234903a21334d1c1c5530181e11bde
+    # via jsonschema
+sniffio==1.3.1 \
+    --hash=sha256:f2d857155a43a758b45334c99c14955b9ed4939222fd60b862597948ac33030f
+    # via anyio
+starlette==0.37.2 \
+    --hash=sha256:43227ac2b55a8246313a08f7e8c6f10f8e18ead910418a0026e6a10a11b3017a
+    # via
+    #   fastapi
+    #   uvicorn
+toolz==0.12.1 \
+    --hash=sha256:a633daa1f208f6c6f6255d53e0135894b9055e12b9454e8d5de1f506b6236303
+    # via eth-utils
+typing-extensions==4.12.2 \
+    --hash=sha256:1f86d113ec71380894e6052382a1c80b3c10e3a1a0b5d3b369f33534b86869a3
+    # via
+    #   anyio
+    #   fastapi
+    #   pydantic
+    #   pydantic-core
+    #   redis
+    #   starlette
+urllib3==2.2.2 \
+    --hash=sha256:b13b15679feb34c410e38b30a98324c5322975e1c0a0b59938aff5340624976c
+    # via requests
+uvicorn==0.30.1 \
+    --hash=sha256:a80538a7b4553a06b0253818c1482a472c3d5554320986161a996a50b4e0544f
+    # via -r requirements.in
+uvloop==0.19.0 \
+    --hash=sha256:3582f6c26d187158b2d281a0e101150d8a1b55f5e419875b0e47f4c52595f435
+    # via uvicorn
+web3==7.1.0 \
+    --hash=sha256:55082fb717771749505809a0e20349074092191f637775591244e05b9b99015e
+    # via -r requirements.in
+websockets==12.0 \
+    --hash=sha256:a6f4a852a6a83a5c7f8e3b10c3c551061b4c5b6050b6164f3cfb56c0c2d3a033
+    # via
+    #   uvicorn
+    #   web3

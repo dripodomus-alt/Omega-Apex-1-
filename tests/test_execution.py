@@ -267,39 +267,51 @@ class TestRevalidateAtBroadcast(unittest.TestCase):
     @patch("omega_v5.execution.simulate_on_pending_block", MagicMock(return_value=True))
     def test_revalidate_profitability_at_broadcast_accepts_still_profitable(self):
         from omega_v5.execution import revalidate_profitability_at_broadcast
-        op = MockLiveOpportunity(
-            path=("USDC", "WETH", "USDC"),
-            pool_sequence=("p1", "p2"),
-            protocol_seq=("UniswapV2", "UniswapV2"),
-            profitability=MockProfitability(net_profit_usd=Decimal("25.0")),
-            family="C1"
-        )
-        pools = {"p1": {}, "p2": {}}
-        self.assertTrue(revalidate_profitability_at_broadcast(op, pools))
+        with patch.dict(
+            revalidate_profitability_at_broadcast.__wrapped__.__globals__,
+            {"validate_canonical_execution_proof": MagicMock(return_value=True)},
+        ):
+            op = MockLiveOpportunity(
+                path=("USDC", "WETH", "USDC"),
+                pool_sequence=("p1", "p2"),
+                protocol_seq=("UniswapV2", "UniswapV2"),
+                profitability=MockProfitability(net_profit_usd=Decimal("25.0")),
+                family="C1"
+            )
+            pools = {"p1": {}, "p2": {}}
+            self.assertTrue(revalidate_profitability_at_broadcast(op, pools))
 
     def test_revalidate_profitability_at_broadcast_rejects_negative(self):
         from omega_v5.execution import revalidate_profitability_at_broadcast
-        op = MockLiveOpportunity(
-            path=("USDC", "WETH", "USDC"),
-            pool_sequence=("p1", "p2"),
-            protocol_seq=("UniswapV2", "UniswapV2"),
-            profitability=MockProfitability(net_profit_usd=Decimal("-3.0")),
-            family="C2"
-        )
-        pools = {"p1": {}, "p2": {}}
-        self.assertFalse(revalidate_profitability_at_broadcast(op, pools))
+        with patch.dict(
+            revalidate_profitability_at_broadcast.__wrapped__.__globals__,
+            {"validate_canonical_execution_proof": MagicMock(return_value=True)},
+        ):
+            op = MockLiveOpportunity(
+                path=("USDC", "WETH", "USDC"),
+                pool_sequence=("p1", "p2"),
+                protocol_seq=("UniswapV2", "UniswapV2"),
+                profitability=MockProfitability(net_profit_usd=Decimal("-3.0")),
+                family="C2"
+            )
+            pools = {"p1": {}, "p2": {}}
+            self.assertFalse(revalidate_profitability_at_broadcast(op, pools))
 
     @patch("omega_v5.execution.simulate_on_pending_block", MagicMock(return_value=True))
     def test_supports_liquidation_family(self):
         from omega_v5.execution import revalidate_profitability_at_broadcast
-        op = MockLiveOpportunity(
-            path=("USDC",),
-            pool_sequence=(),
-            protocol_seq=(),
-            profitability=MockProfitability(net_profit_usd=Decimal("180.0")),
-            family="LIQUIDATION"
-        )
-        self.assertTrue(revalidate_profitability_at_broadcast(op, {}))
+        with patch.dict(
+            revalidate_profitability_at_broadcast.__wrapped__.__globals__,
+            {"validate_canonical_execution_proof": MagicMock(return_value=True)},
+        ):
+            op = MockLiveOpportunity(
+                path=("USDC",),
+                pool_sequence=(),
+                protocol_seq=(),
+                profitability=MockProfitability(net_profit_usd=Decimal("180.0")),
+                family="LIQUIDATION"
+            )
+            self.assertTrue(revalidate_profitability_at_broadcast(op, {}))
 
 
 if __name__ == '__main__':

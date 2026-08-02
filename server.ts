@@ -1,10 +1,11 @@
 import express from "express";
-import "dotenv/config";
+import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import fs from "fs";
 import { spawn } from "node:child_process";
 import { ethers } from "ethers";
+import { ensureBootstrapDependencies } from "./scripts/ensure_bootstrap_dependencies.cjs";
 import { WebSocketServer } from "ws";
 import { DeFiExecutorManager } from "./ExecutionManager.js";
 import { InvariantMath } from "./server/engine/invariants.js";
@@ -18,6 +19,37 @@ import {
   publishOpportunitySnapshot,
   releaseOpportunityLock,
 } from "./server/redisLedger.js";
+
+function resolveEnvContractPath(): string {
+  const explicit = process.env.OMEGA_ENV_PATH;
+  if (explicit) {
+    return path.isAbsolute(explicit) ? explicit : path.join(process.cwd(), explicit);
+  }
+
+  const profile = (
+    process.env.OMEGA_ENV_PROFILE ||
+    process.env.OMEGA_RUNTIME_PROFILE ||
+    process.env.ENVIRONMENT ||
+    ""
+  ).toLowerCase();
+
+  let candidates = [".env"];
+  if (["test", "tests", "testing", "ci"].some((value) => profile.includes(value))) {
+    candidates = ["test.env", ".env.test", ".env.testing", ".env"];
+  } else if (["prod", "production", "live"].some((value) => profile.includes(value))) {
+    candidates = ["production.env", "prodution.env", ".env.production", ".env"];
+  }
+
+  for (const candidate of candidates) {
+    const resolved = path.join(process.cwd(), candidate);
+    if (fs.existsSync(resolved)) {
+      return resolved;
+    }
+  }
+  return path.join(process.cwd(), ".env");
+}
+
+dotenv.config({ path: resolveEnvContractPath() });
 
 const CONFIG_PATH = path.join(process.cwd(), "config.json");
 const TOP_ROUTE_DISPLAY_LIMIT = Number(process.env.TOP_ROUTE_DISPLAY_LIMIT || 20);
@@ -44,6 +76,17 @@ function compactConfigDefaults(defaults: Record<string, any>) {
   return Object.fromEntries(
     Object.entries(defaults).filter(([, value]) => value !== undefined && value !== null && value !== ""),
   );
+}
+
+function ensureBootDependenciesOnce() {
+  try {
+    const result = ensureBootstrapDependencies({ repoRoot: process.cwd() });
+    if (result?.ok) {
+      console.log(`[BOOTSTRAP] Dependency bootstrap completed: ${result.steps?.join(", ") || "none"}`);
+    }
+  } catch (error) {
+    console.warn(`[BOOTSTRAP] Dependency bootstrap skipped or failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function parseBoolean(value: string | undefined): boolean | undefined {
@@ -206,6 +249,7 @@ const getBroadcastRpcUrl = () => {
   return getRpcUrl();
 };
 
+ensureBootDependenciesOnce();
 const defiExecutor = new DeFiExecutorManager(getBroadcastRpcUrl(), process.env.EXECUTOR_PRIVATE_KEY || process.env.BOT_PRIVATE_KEY, true);
 
 function getChain137RpcCandidates(): string[] {

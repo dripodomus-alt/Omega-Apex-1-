@@ -59,6 +59,27 @@ def _json_ready(value: Any) -> Any:
     return value
 
 
+def format_top_route_summary(routes: list[dict[str, Any]], limit: int = 5) -> list[dict[str, Any]]:
+    """Return a compact summary for the top routes for logging and reporting."""
+    summaries = []
+    for row in routes[:limit]:
+        profitability = row.get("profitability") or {}
+        if isinstance(profitability, dict):
+            net_profit_usd = profitability.get("net_profit_usd")
+        else:
+            net_profit_usd = getattr(profitability, "net_profit_usd", None)
+
+        summaries.append(
+            {
+                "opp_id": row.get("opp_id") or row.get("route_id") or "unknown",
+                "status": row.get("status"),
+                "net_profit_usd": str(net_profit_usd) if net_profit_usd is not None else None,
+                "path": row.get("path") or [],
+            }
+        )
+    return summaries
+
+
 def _v2_pool(tokens: tuple[str, str], reserves: tuple[str, str], address_tail: int) -> dict[str, Any]:
     return {
         "protocol": "UniswapV2",
@@ -112,10 +133,8 @@ def run_orchestrator(args: argparse.Namespace) -> dict[str, Any]:
             principal_usd=Decimal(str(args.principal_usd)),
             stage_limit=args.max_parallel_tx,
             hops=(2,),
-            max_quote_options_per_pair=0,
             max_pre_ranked=args.max_pre_ranked,
             base_tokens=["USDC"],
-            slippage_bps=Decimal(str(args.slippage_bps)),
         )
         routes = report.get("routes", [])
         staged_routes = [
@@ -127,10 +146,17 @@ def run_orchestrator(args: argparse.Namespace) -> dict[str, Any]:
             "stage": report.get("stage", {}),
             "pre_rank": report.get("pre_rank", {}),
             "staged_routes_count": len(staged_routes),
-            "top_staged_routes": staged_routes[: args.print_top],
+            "top_staged_routes": format_top_route_summary(staged_routes, limit=args.print_top),
             "submissions": [],
             "receipts": [],
         }
+
+        logger.info(
+            "Cycle %s: staged=%s, top_routes=%s",
+            cycle_num,
+            len(staged_routes),
+            json.dumps(cycle_result["top_staged_routes"], default=str),
+        )
 
         if args.mode in ("live", "anvil") and staged_routes:
             logger.info(f"Cycle {cycle_num}: Found {len(staged_routes)} routes to execute.")

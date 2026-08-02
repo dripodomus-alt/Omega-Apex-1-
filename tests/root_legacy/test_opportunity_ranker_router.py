@@ -59,7 +59,7 @@ class TestFindOpportunitiesRouter(unittest.TestCase):
         self.assertIn("Rust engine is not available", mock_logger.call_args[0][0])
         self.assertEqual(result, [])
 
-    @patch("omega_v5.opportunity_ranker.os.environ.get", return_value="python_reference")
+    @patch("omega_v5.opportunity_ranker.os.environ.get", return_value="unrecognized_mode_value")
     @patch("omega_v5.opportunity_ranker.find_opportunities_with_rust")
     @patch("omega_v5.opportunity_ranker.logger.warning")
     def test_returns_empty_for_unrecognized_mode(
@@ -75,5 +75,5 @@ class TestFindOpportunitiesRouter(unittest.TestCase):
         # Assert
         mock_rust_scanner.assert_not_called()
         mock_logger.assert_called_once()
-        self.assertIn("is not recognized", mock_logger.call_args[0][0])
+        self.assertIn("Unrecognized SCANNER_MODE", mock_logger.call_args[0][0])
         self.assertEqual(result, [])

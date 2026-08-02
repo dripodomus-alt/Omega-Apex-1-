@@ -116,14 +116,28 @@ try {
             # Prefer FORK_RPC_URL for local benchmarks, as it's the primary Anvil config.
             $forkUrl = $envConfig.FORK_RPC_URL
             Assert-Ok -Condition (-not [string]::IsNullOrEmpty($forkUrl)) -Message "Could not find FORK_UPSTREAM_RPC_URL or FORK_RPC_URL in .env file to start Anvil."
-
+            
             # Start Anvil as a background job in PowerShell
             Start-Job -ScriptBlock {
                 param($url)
                 anvil --fork-url $url --silent
             } -ArgumentList $forkUrl | Out-Null
-            Write-Host "Anvil started as a background job. Waiting a few seconds for it to initialize..."
-            Start-Sleep -Seconds 5
+            Write-Host "Anvil started as a background job. Waiting for it to become responsive..."
+
+            $anvilReady = $false
+            $maxWaitSeconds = 20
+            $startTime = Get-Date
+            while (((Get-Date) - $startTime).TotalSeconds -lt $maxWaitSeconds) {
+                if ((Test-NetConnection -ComputerName "127.0.0.1" -Port $anvilPort -ErrorAction SilentlyContinue).TcpTestSucceeded) {
+                    $anvilReady = $true
+                    Write-Host "Anvil is responsive." -ForegroundColor Green
+                    break
+                }
+                Start-Sleep -Seconds 1
+                Write-Host "." -NoNewline
+            }
+
+            Assert-Ok -Condition $anvilReady -Message "Anvil was started but did not become responsive on port $anvilPort within $maxWaitSeconds seconds."
         }
         powershell -NoProfile -ExecutionPolicy Bypass -File scripts/ops/run_anvil_fork_benchmark.ps1 -Cycles $AnvilCycles
         Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Anvil fork benchmark failed."

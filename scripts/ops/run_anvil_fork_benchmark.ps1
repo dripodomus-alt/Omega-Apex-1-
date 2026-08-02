@@ -33,6 +33,10 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
 Set-Location $repoRoot
+$envHelperPath = Join-Path $PSScriptRoot "env_contract.ps1"
+. $envHelperPath
+$resolvedEnvPath = Resolve-EnvContractPath -RepoRoot $repoRoot
+$env:OMEGA_ENV_PATH = $resolvedEnvPath
 
 # --- Helper Functions ---
 function Write-Phase {
@@ -74,11 +78,11 @@ Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on P
 Assert-Command -Name "cast" -InstallHint "Install Foundry (which includes 'cast') and ensure it is on PATH."
 Assert-Command -Name "anvil" -InstallHint "Install Foundry (which includes 'anvil') and ensure it is on PATH."
 
-$envConfig = Parse-EnvFile -FilePath ".env"
+$envConfig = Parse-EnvFile -FilePath $resolvedEnvPath
 $forkRpcUrl = $envConfig.FORK_RPC_URL
 if ([string]::IsNullOrEmpty($forkRpcUrl)) {
     $forkRpcUrl = "http://127.0.0.1:8545"
-    Write-Host "FORK_RPC_URL not found in .env, defaulting to $forkRpcUrl" -ForegroundColor Yellow
+    Write-Host "FORK_RPC_URL not found in '$resolvedEnvPath', defaulting to $forkRpcUrl" -ForegroundColor Yellow
 }
 
 try {

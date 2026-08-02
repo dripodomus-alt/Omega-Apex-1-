@@ -88,6 +88,45 @@ def test_pre_rank_rejects_duplicate_liquidity_key():
     assert stats["rejection_counts"]["rejected_duplicate_liquidity_key"] == 1
 
 
+def test_pre_rank_keeps_profitable_two_hop_routes_with_large_sell_leg_rates():
+    pools = {
+        "BUY_LOW": _v2_pool(("USDC", "WETH"), ("10000000", "1000")),
+        "SELL_HIGH": _v2_pool(("WETH", "USDC"), ("1000", "20000000")),
+    }
+    rates = {
+        ("USDC", "WETH"): [{
+            "pool_id": "BUY_LOW",
+            "protocol": "UniswapV2",
+            "route_class": "NATIVE_POOL_ROUTE",
+            "liquidity_key": "USDC:WETH",
+            "token_in": "USDC",
+            "token_out": "WETH",
+            "rate": Decimal("0.0001"),
+        }],
+        ("WETH", "USDC"): [{
+            "pool_id": "SELL_HIGH",
+            "protocol": "UniswapV2",
+            "route_class": "NATIVE_POOL_ROUTE",
+            "liquidity_key": "WETH:USDC",
+            "token_in": "WETH",
+            "token_out": "USDC",
+            "rate": Decimal("10000"),
+        }],
+    }
+
+    candidates, stats = pre_rank_routes(
+        rates,
+        pools,
+        principal_usd=Decimal("10000"),
+        hops=(2,),
+        base_tokens=["USDC"],
+    )
+
+    assert candidates, "A profitable two-hop route should survive pruning"
+    assert any(route.path == ("USDC", "WETH", "USDC") for route in candidates)
+    assert stats["rejection_counts"]["rejected_max_hop_multiplier"] == 0
+
+
 def test_stage_report_uses_exact_net_gain_formula(monkeypatch):
     pools = {
         "P1": _v2_pool(("A", "B"), ("1000000000", "3000000000")),

@@ -1,0 +1,59 @@
+# This file tells the gcloud CLI which files to ignore when deploying.
+# A smaller upload context results in faster deployments.
+
+# Git repository files
+.git/
+.gitignore
+.gitattributes
+
+# Environment files with secrets
+.env
+*.env.local
+
+# Python caches and virtual environments
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Runtime artifacts, logs, and local caches
+out/
+cache/
+logs/
+*.jsonl
+
+# Node.js dependencies. If needed, these should be installed during the build.
+node_modules/
+vendor/web3-rpc-provider/node_modules/
+
+# Rust build artifacts. The Dockerfile should copy only the final compiled binary.
+rust_engine/target/
+
+# Solidity / Foundry artifacts
+contracts/
+foundry.toml
+broadcast/
+lib/
+cache_forge/
+
+# Local infrastructure and helper scripts
+infra/
+scripts/
+
+# Documentation and notebooks
+docs/
+notebooks/
+
+# IDE / Editor specific configuration
+.vscode/
+.idea/
+
+# PM2 configuration (not used in Cloud Run)
+ecosystem.config.cjs

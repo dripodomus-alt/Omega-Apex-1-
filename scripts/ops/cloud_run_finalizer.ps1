@@ -45,34 +45,23 @@ $totalTime = Measure-Command {
 try {
 
 # --- 1. Pre-flight Checks ---
-Write-Phase -Title "Step 1: Pre-flight System & Cloud Checks" -Subtitle "Verifying toolchain, wallet, and cloud prerequisites..."
-Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on PATH."
+Write-Phase -Title "Step 1: Pre-flight System & Cloud Checks" -Subtitle "Running master validation script and verifying cloud prerequisites..."
+
+Write-Host "Executing comprehensive pre-flight check..."
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\ops\run_preflight_check.ps1 -SkipBalanceCheck
+Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Master pre-flight check (run_preflight_check.ps1) FAILED. See output above for details."
+Write-Host "Master pre-flight check PASSED." -ForegroundColor Green
+
+Write-Host "Verifying cloud-specific toolchain (PM2, gcloud)..."
 Assert-Command -Name "pm2" -InstallHint "Install with: npm install -g pm2"
-Assert-Command -Name "node" -InstallHint "Install Node.js and ensure it is on PATH."
-Assert-Command -Name "anvil" -InstallHint "Install Foundry, then restart this shell."
-Assert-Command -Name "redis-server" -InstallHint "Install Redis or point PM2 at an existing Redis instance."
 Assert-Command -Name "gcloud" -InstallHint "Install Google Cloud SDK and authenticate with `gcloud auth login`."
-
-Write-Host "Verifying wallet configuration..."
-Assert-Ok -Condition ($env:EXECUTOR_WALLET -ne $null -and $env:EXECUTOR_WALLET -ne "") -Message "EXECUTOR_WALLET environment variable is not set. This is required."
-Assert-Ok -Condition ($env:EXECUTOR_WALLET.Length -eq 42 -and $env:EXECUTOR_WALLET.StartsWith("0x")) -Message "EXECUTOR_WALLET is not a valid Ethereum address."
-# The private key is essential for any potential live run.
-Assert-Ok -Condition ($null -ne $env:EXECUTOR_PRIVATE_KEY -and $env:EXECUTOR_PRIVATE_KEY -ne "") -Message "EXECUTOR_PRIVATE_KEY environment variable is not set. This is required for any potential live run."
-Write-Host "[SECURITY NOTE] For production, it is recommended that the application fetches the private key from a secret manager at runtime, rather than relying on a persistent environment variable." -ForegroundColor Yellow
-
-Write-Host "Verifying core configuration integrity..."
-python scripts/ops/validate_config.py
-Assert-Ok -Condition ($LASTEXITCODE -eq 0) -Message "Core configuration validation (validate_config.py) FAILED."
 
 Write-Host "Verifying GCP prerequisites for live activation..."
 # Try to get project ID from env var, then from gcloud config
 $effectiveProject = $env:GCP_PROJECT_ID
 if ([string]::IsNullOrEmpty($effectiveProject)) {
-    try {
-        $effectiveProject = gcloud config get-value project 2>$null
-    }
-    catch {
-        # gcloud might not be configured; we'll catch this in the Assert-Ok below.
+    try { $effectiveProject = gcloud config get-value project 2>$null }
+    catch { # gcloud might not be configured; we'll catch this in the Assert-Ok below.
     }
 }
 # Assert-Ok that we have a project ID, and provide a helpful error if not.

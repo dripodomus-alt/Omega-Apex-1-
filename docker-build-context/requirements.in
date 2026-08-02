@@ -1,0 +1,25 @@
+# This file is for managing the direct Python dependencies of the project.
+# Use 'pip-compile' to generate the full 'requirements.txt' lock file.
+#
+# pip-compile requirements.in --output-file requirements.txt --generate-hashes
+
+# ── Core runtime ──────────────────────────────────────────────────────────────
+web3>=7.0.0
+websockets>=12.0
+redis>=5.0.0
+fastapi>=0.110.0
+uvicorn[standard]>=0.25.0
+
+# ── Performance: faster JSON handling ─────────────────────────────────────────
+orjson>=3.9.0
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+# Add these for reliable pytest runs without stalling on network/timeout issues
+pytest>=8.0.0
+pytest-timeout>=2.3.0
+pytest-mock>=3.14.0
+sqlalchemy[asyncio]>=2.0.0
+asyncpg>=0.29.0
+cloud-sql-python-connector[asyncpg]>=1.9.0
+google-cloud-secret-manager>=2.20.0
+

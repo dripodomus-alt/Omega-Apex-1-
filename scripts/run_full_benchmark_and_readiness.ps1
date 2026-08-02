@@ -3,12 +3,15 @@ param([int]$Cycles = 2, [switch]$SkipAnvil, [switch]$ReadinessOnly)
 $ErrorActionPreference = "Continue"
 $repoRoot = $PSScriptRoot
 if (!$repoRoot) { $repoRoot = Get-Location }
+$envHelperPath = Join-Path $repoRoot "ops\env_contract.ps1"
+. $envHelperPath
+$envPath = Resolve-EnvContractPath -RepoRoot $repoRoot
+$env:OMEGA_ENV_PATH = $envPath
 
 function Write-Phase { param($Msg) Write-Host "`n>>> PHASE: $Msg" -ForegroundColor Cyan }
 function Write-Sub { param($Msg) Write-Host " -> $Msg" }
 
 Write-Phase "1. VALIDATION"
-$envPath = Join-Path $repoRoot ".env"
 $envData = @{}
 if (Test-Path $envPath) {
     Get-Content $envPath | ForEach-Object {

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Copy, ArrowRight, Activity, Zap, ShieldAlert, Cpu } from "lucide-react";
+import { buildDiscoveryTopRoutes } from "../lib/discoveryTopRoutes";
 
 interface Opportunity {
   pair: string;
@@ -62,6 +63,10 @@ export default function HyperImmersiveOpportunities({ opportunities, diagnostics
     ? diagnostics?.summary || "Live opportunity feed connected"
     : "API feed disconnected or returning invalid data";
   const statusTone = connectionStatus === "live" ? "text-cyan-400" : "text-red-400";
+  const discoveryTopRoutes = useMemo(
+    () => buildDiscoveryTopRoutes(displayOpportunities, Math.min(10, topRouteLimit || 10)),
+    [displayOpportunities, topRouteLimit],
+  );
   const displayNumber = (value: any, digits = 6) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed.toFixed(digits) : String(value ?? "NA");
@@ -129,6 +134,44 @@ export default function HyperImmersiveOpportunities({ opportunities, diagnostics
           <div className="border border-cyan-500/15 bg-black/30 rounded-md px-3 py-2">
             <span className="block text-gray-600">C2 {c1Limit}x{c2PerC1Limit}</span>
             <span className="text-yellow-300 font-bold">{c2DecisionCount}/{c2Limit}</span>
+          </div>
+        </div>
+
+        <div className="mb-5 rounded-xl border border-cyan-500/20 bg-[#06070a]/80 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.24em] text-cyan-400">Discovery Top 10</div>
+              <div className="text-[9px] text-gray-500">Live-ranked routes with banking signal</div>
+            </div>
+            <div className="text-[10px] text-cyan-300">{discoveryTopRoutes.length}/10</div>
+          </div>
+          <div className="space-y-2">
+            {discoveryTopRoutes.map((row) => (
+              <div key={row.id} className="flex items-center justify-between rounded-lg border border-cyan-500/10 bg-black/25 px-3 py-2">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-[10px] font-bold text-cyan-400">#{row.rank}</span>
+                    <span className="truncate text-[10px] text-white">{row.routeKey}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-2 text-[8px] uppercase tracking-[0.2em] text-gray-500">
+                    <span>{row.state}</span>
+                    <span className="text-cyan-500">•</span>
+                    <span>bank ${row.bankBalance.toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-[10px] font-semibold text-[#00f5a0]">{row.score >= 0 ? "+" : ""}{row.score.toFixed(2)}</div>
+                  <div className={`text-[8px] uppercase tracking-[0.2em] ${row.bankingTag === "healthy" ? "text-emerald-300" : row.bankingTag === "buffered" ? "text-amber-300" : "text-rose-300"}`}>
+                    {row.bankingTag}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {discoveryTopRoutes.length === 0 && (
+              <div className="rounded-lg border border-dashed border-cyan-500/20 px-3 py-3 text-[9px] uppercase tracking-[0.2em] text-gray-500">
+                No ranked discovery routes available yet.
+              </div>
+            )}
           </div>
         </div>
 

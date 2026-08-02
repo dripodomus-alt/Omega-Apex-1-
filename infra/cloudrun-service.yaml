@@ -36,6 +36,14 @@ spec:
               value: apex-scanner-live1:us-east1:apex-omega-sql
             - name: API_FRONTEND_TOKEN_REQUIRED
               value: "true"
+            - name: START_FOUNDRY_FORK
+              value: "true"
+            - name: FORK_UPSTREAM_RPC_URL
+              value: https://polygon-rpc.com
+            - name: FORK_RPC_URL
+              value: http://127.0.0.1:8545
+            - name: FORK_SIM_RPC_URL
+              value: http://127.0.0.1:8545
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

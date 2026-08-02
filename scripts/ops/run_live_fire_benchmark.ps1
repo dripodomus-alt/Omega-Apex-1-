@@ -40,6 +40,10 @@ param(
 $ErrorActionPreference = "Stop"
 $repoRoot = (Get-Item -Path $PSScriptRoot).Parent.Parent.FullName
 Set-Location $repoRoot
+$envHelperPath = Join-Path $PSScriptRoot "env_contract.ps1"
+. $envHelperPath
+$resolvedEnvPath = Resolve-EnvContractPath -RepoRoot $repoRoot
+$env:OMEGA_ENV_PATH = $resolvedEnvPath
 
 # --- Helper Functions (aligned with project standards) ---
 function Write-Phase {
@@ -87,10 +91,10 @@ Assert-Command -Name "python" -InstallHint "Install Python and ensure it is on P
 Assert-Command -Name "cast" -InstallHint "Install Foundry (which includes 'cast') and ensure it is on PATH."
 
 Write-Host "Verifying environment and wallet configuration..."
-Assert-Ok -Condition (Test-Path ".env") -Message ".env file not found. Cannot proceed."
+Assert-Ok -Condition (Test-Path $resolvedEnvPath) -Message "Environment file not found at '$resolvedEnvPath'. Cannot proceed."
 
 # Use a robust parser that handles duplicate keys by taking the last value.
-$envConfig = Parse-EnvFile -FilePath ".env"
+$envConfig = Parse-EnvFile -FilePath $resolvedEnvPath
 
 Write-Host "Resolving best broadcast RPC endpoint via rpc_layer..."
 $rpcUrl = (& python -m omega_v5.broadcast_rpc 2>$null | Where-Object { $_ -match "^https?://" } | Select-Object -First 1).Trim()
@@ -100,7 +104,7 @@ Write-Host "Using broadcast RPC: $rpcUrl" -ForegroundColor Green
 $env:ETH_RPC_URL = $rpcUrl # Set for subsequent cast commands
 
 $publicRpc = $envConfig.TELEMETRY_RPC_URL
-Assert-Ok -Condition (-not [string]::IsNullOrEmpty($publicRpc)) -Message "TELEMETRY_RPC_URL is not set in .env. A public RPC is required for chain sync verification."
+Assert-Ok -Condition (-not [string]::IsNullOrEmpty($publicRpc)) -Message "TELEMETRY_RPC_URL is not set in '$resolvedEnvPath'. A public RPC is required for chain sync verification."
 
 $executorContractAddress = (& python -m omega_v5.executor_address 2>$null | Where-Object { $_ -match '^0x[a-fA-F0-9]{40}$' } | Select-Object -First 1).Trim()
 Assert-Ok -Condition (-not [string]::IsNullOrEmpty($executorContractAddress)) -Message "Could not resolve the main EXECUTOR_CONTRACT from config.py. Check .env variables like C1_PAYLOAD_TARGET, EXECUTOR_CONTRACT_ADDR, etc."
@@ -122,10 +126,10 @@ Assert-Ok -Condition ($chainId -eq 137) -Message "FATAL: RPC endpoint is connect
 
 Write-Host "Sanity-checking executor wallet..."
 $privateKey = $envConfig.EXECUTOR_PRIVATE_KEY
-Assert-Ok -Condition (-not ([string]::IsNullOrEmpty($privateKey) -or $privateKey.Contains("..."))) -Message "EXECUTOR_PRIVATE_KEY is not set in .env for a PrivateKey-signed test."
+Assert-Ok -Condition (-not ([string]::IsNullOrEmpty($privateKey) -or $privateKey.Contains("..."))) -Message "EXECUTOR_PRIVATE_KEY is not set in '$resolvedEnvPath' for a PrivateKey-signed test."
 $derivedAddress = (cast wallet address $privateKey).Trim()
 $configuredAddress = $envConfig.EXECUTOR_WALLET
-Assert-Ok -Condition ($derivedAddress.ToLower() -eq $configuredAddress.ToLower()) -Message "FATAL: Address derived from EXECUTOR_PRIVATE_KEY ($derivedAddress) does not match EXECUTOR_WALLET ($configuredAddress) in .env file. Check for typos."
+Assert-Ok -Condition ($derivedAddress.ToLower() -eq $configuredAddress.ToLower()) -Message "FATAL: Address derived from EXECUTOR_PRIVATE_KEY ($derivedAddress) does not match EXECUTOR_WALLET ($configuredAddress) in '$resolvedEnvPath'. Check for typos."
 Write-Host "Wallet sanity checks passed." -ForegroundColor Green
 
 Write-Phase -Title "Step 2: Final Confirmation" -Subtitle "Review details before authorizing live transactions."
@@ -141,7 +145,8 @@ Write-Host "  Cycles to Run   : $Cycles" -ForegroundColor Yellow
 Write-Host "  Min Profit / Tx : `$ $($MinProfitUSD)" -ForegroundColor Yellow
 $initialBalanceWei = cast balance $envConfig.EXECUTOR_WALLET
 $initialBalanceNative = cast from-wei $initialBalanceWei
-Write-Host "Initial wallet balance: $initialBalanceNative POL" -ForegroundColor Green
+Write-Host "  Initial Balance : $([double]$initialBalanceNative.Trim()) POL" -ForegroundColor Yellow
+Write-Host "------------------------------------------------------------" -ForegroundColor Yellow
 
 $confirmation = Read-Host "`nThis script will execute REAL transactions on the network above. Are you absolutely sure you want to proceed? [y/N]"
 if ($confirmation.ToLower() -ne 'y') {

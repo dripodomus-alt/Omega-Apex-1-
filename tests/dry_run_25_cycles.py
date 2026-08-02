@@ -87,12 +87,23 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False):
 
         # Simulate some routes
         for i in range(3):
+            # Use a more realistic opportunity structure to better test the revalidation logic
             op = LiveOpportunity(
+                opp_id=f"dry_run_{cycle}_{i}",
                 path=("USDC", "WETH", "USDC"),
                 pool_sequence=(f"p{i}", f"p{i+1}"),
                 protocol_seq=("UniswapV2", "UniswapV2"),
-                profitability=type("P", (), {"net_profit_usd": Decimal("12.3"), "flashloan": type("F", (), {"principal_usd": Decimal("5000")})()})(),
-                family="C1" if i == 0 else "C2"
+                profitability={
+                    "net_profit_usd": Decimal("12.3"),
+                    "gross_surplus_usd": Decimal("50.0"),
+                    "flashloan_fee_usd": Decimal("5.0"),
+                    "gas_cost_usd": Decimal("2.7"),
+                    "relay_tip_usd": Decimal("0"),
+                    "risk_buffer_usd": Decimal("0"),
+                    "flashloan": {"principal_usd": Decimal("5000")},
+                },
+                family="C1" if i == 0 else "C2",
+                block_detected=12345
             )
             if revalidate_profitability_at_broadcast(op, {}):
                 print(f"Cycle {cycle}: route {i} still profitable at broadcast gate")
@@ -102,4 +113,3 @@ def run_dry_cycles(num_cycles: int = 25, use_live: bool = False):
 
 if __name__ == "__main__":
     run_dry_cycles(5, use_live=LIVE_MODE)
-

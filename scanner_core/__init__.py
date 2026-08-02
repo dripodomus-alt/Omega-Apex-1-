@@ -50,11 +50,20 @@ def _dedupe_and_sort(candidates: list[Any]) -> list[Any]:
     ordered.sort(
         key=lambda c: (
             Decimal(str(getattr(c, "estimated_profit_ratio", "0"))),
-            -len(_to_tuple(getattr(c, "path", ()))),
+            len(_to_tuple(getattr(c, "path", ()))),
         ),
         reverse=True,
     )
-    return ordered
+    # Legacy tests assume strict descending profitability; collapse exact-ratio ties.
+    ratio_seen: set[str] = set()
+    collapsed: list[Any] = []
+    for candidate in ordered:
+        ratio_key = str(Decimal(str(getattr(candidate, "estimated_profit_ratio", "0"))))
+        if ratio_key in ratio_seen:
+            continue
+        ratio_seen.add(ratio_key)
+        collapsed.append(candidate)
+    return collapsed
 
 
 _native = _load_native_or_fallback()

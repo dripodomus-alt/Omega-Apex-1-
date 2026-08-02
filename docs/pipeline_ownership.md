@@ -84,6 +84,49 @@ gross profit, flash fees, gas, relay tips, risk buffer, net profit, and ranking.
 Math consumes normalized discovery data and emits immutable ranked
 opportunities. It must not query live chain state or build transactions.
 
+### Strategy Layer
+
+Strategies consume normalized state. They do not implement pool math.
+
+The strategy layer defines execution intent, token flow, and route constraints:
+
+```text
+2-Hop Strategy
+TOKEN_A -> buy TOKEN_B at Venue 1 (lowest executable price)
+TOKEN_B -> sell TOKEN_B at Venue 2 (highest executable price)
+TOKEN_A
+```
+
+```text
+3-Hop Strategy
+TOKEN_A -> swap for TOKEN_B at Venue 1
+TOKEN_B -> swap for TOKEN_C at Venue 2
+TOKEN_C -> swap back to TOKEN_A at Venue 3
+TOKEN_A
+```
+
+```text
+4-Hop Strategy
+TOKEN_A -> swap for TOKEN_B at Venue 1
+TOKEN_B -> swap for TOKEN_C at Venue 2
+TOKEN_C -> swap for TOKEN_D at Venue 3
+TOKEN_D -> swap back to TOKEN_A at Venue 4
+TOKEN_A
+```
+
+Routes longer than 3 hops must be treated as gas-sensitive and only pass
+forward when the pricing dislocation still survives the incremental execution
+cost.
+
+The live execution families remain explicit:
+
+```text
+C1 Aggressor = state before trade, block N, consumes independently profitable edge
+C2 Surgeon   = recomputed after C1, block N+1 to N+3 (optionally N+5), mirrors/reverses/does nothing
+```
+
+C2 must strictly use the post-C1 state.
+
 ### Simulation
 
 Owns execution proof: fork setup, C1 simulation, post-C1 reload, C2
