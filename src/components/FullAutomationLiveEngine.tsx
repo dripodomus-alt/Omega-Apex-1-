@@ -15,8 +15,9 @@ import {
   BarChart3,
   Layers,
   Award,
+  FlaskConical,
 } from 'lucide-react';
-import { ArbitrageRoute } from '../types';
+import { ArbitrageRoute, ExecutionMode } from '../types';
 
 interface FullAutomationLiveEngineProps {
   routes: ArbitrageRoute[];
@@ -25,6 +26,8 @@ interface FullAutomationLiveEngineProps {
   onExecuteRoute: (routeId: string) => void;
   isHandsFreeActive?: boolean;
   onToggleHandsFree?: () => void;
+  executionMode?: ExecutionMode;
+  onToggleExecutionMode?: () => void;
 }
 
 export const FullAutomationLiveEngine: React.FC<FullAutomationLiveEngineProps> = ({
@@ -34,6 +37,8 @@ export const FullAutomationLiveEngine: React.FC<FullAutomationLiveEngineProps> =
   onExecuteRoute,
   isHandsFreeActive,
   onToggleHandsFree,
+  executionMode = 'DRY_RUN',
+  onToggleExecutionMode,
 }) => {
   const [internalAutomationActive, setInternalAutomationActive] = useState<boolean>(true);
 
@@ -201,6 +206,40 @@ export const FullAutomationLiveEngine: React.FC<FullAutomationLiveEngineProps> =
             )}
           </button>
         </div>
+      </div>
+
+      {/* Execution Mode Toggle Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-2.5 relative z-10">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Dispatch Mode:</span>
+          <span
+            className={`px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-wide border ${
+              executionMode === 'LIVE'
+                ? 'bg-emerald-950 text-emerald-300 border-emerald-700'
+                : 'bg-amber-950 text-amber-300 border-amber-700'
+            }`}
+          >
+            {executionMode === 'LIVE' ? '🔴 LIVE' : '🧪 DRY RUN'}
+          </span>
+          <span className="text-[10px] text-slate-500 font-sans hidden sm:block">
+            {executionMode === 'LIVE'
+              ? 'Real on-chain transactions will be submitted via FastLane relay.'
+              : 'No on-chain state changes. Payloads are logged with [DRY RUN SIMULATION].'}
+          </span>
+        </div>
+        {onToggleExecutionMode && (
+          <button
+            onClick={onToggleExecutionMode}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider border transition-all active:scale-95 ${
+              executionMode === 'LIVE'
+                ? 'bg-amber-950 hover:bg-amber-900 text-amber-300 border-amber-700'
+                : 'bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border-emerald-700'
+            }`}
+          >
+            <FlaskConical className="w-3 h-3" />
+            {executionMode === 'LIVE' ? 'Switch to Dry Run' : 'Switch to Live'}
+          </button>
+        )}
       </div>
 
       {/* Live Automation Metrics Cards */}

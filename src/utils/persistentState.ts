@@ -1,3 +1,4 @@
+import { ExecutionMode } from '../types';
 import { POLYGON_CHAIN_CONFIG, POL_PRICE_USD } from '../config/chainConfig';
 import { POLYGON_TOKENS } from '../data/mockEngineData';
 
@@ -25,6 +26,8 @@ export interface SystemAccountMemoryState {
   wallet: WalletState;
   handsFreeActive: boolean;
   gasGwei: number;
+  /** Persisted execution mode so the operator's last choice survives page refresh. */
+  executionMode: ExecutionMode;
 }
 
 const STORAGE_KEY = 'OMEGA_V5_SYSTEM_ACCOUNT_MEMORY_V1';
@@ -269,6 +272,7 @@ export function loadSystemMemory(): {
   handsFreeActive: boolean;
   gasGwei: number;
   lastSyncedAt: string;
+  executionMode: ExecutionMode;
 } {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -278,6 +282,7 @@ export function loadSystemMemory(): {
         handsFreeActive: true,
         gasGwei: 38,
         lastSyncedAt: new Date().toISOString(),
+        executionMode: 'DRY_RUN',
       };
     }
 
@@ -287,6 +292,7 @@ export function loadSystemMemory(): {
       handsFreeActive: typeof parsed.handsFreeActive === 'boolean' ? parsed.handsFreeActive : true,
       gasGwei: parsed.gasGwei || 38,
       lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
+      executionMode: parsed.executionMode || 'DRY_RUN',
     };
   } catch (err) {
     console.warn('Failed to load system memory from storage, returning defaults:', err);
@@ -295,6 +301,7 @@ export function loadSystemMemory(): {
       handsFreeActive: true,
       gasGwei: 38,
       lastSyncedAt: new Date().toISOString(),
+      executionMode: 'DRY_RUN',
     };
   }
 }
@@ -310,6 +317,7 @@ export function saveSystemMemory(data: {
   wallet: WalletState;
   handsFreeActive: boolean;
   gasGwei: number;
+  executionMode: ExecutionMode;
 }): string {
   const timestamp = new Date().toISOString();
   try {
@@ -319,6 +327,7 @@ export function saveSystemMemory(data: {
       wallet: data.wallet,
       handsFreeActive: data.handsFreeActive,
       gasGwei: data.gasGwei,
+      executionMode: data.executionMode,
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     return timestamp;
