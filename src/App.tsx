@@ -47,6 +47,10 @@ import {
   subscribeAuditLogsFromFirestore,
   syncRouteToFirestore,
   syncAuditLogToFirestore,
+  syncRouteToRedis,
+  syncAuditLogToRedis,
+  syncAuditLogToCloudSql,
+  syncRouteToCloudSql,
 } from './lib/firebase';
 import { runLiveBenchmark, StepUpdateCallback, PENDING_BENCHMARK_REPORT } from './utils/liveBenchmark';
 import { runExecutionPipeline } from './utils/executionPipeline';
@@ -242,9 +246,18 @@ export default function App() {
           }));
         }
 
+        // Sync executed route to Redis hash (both dry-run and live)
+        syncRouteToRedis(executedRoute).catch((err) =>
+          console.warn('Failed to sync executed route to Redis:', err)
+        );
+
         setAuditLogs((prev) => [auditLog, ...prev]);
         syncAuditLogToFirestore(auditLog).catch((err) =>
           console.warn('Failed to sync audit log to Firestore:', err)
+        );
+        // Append audit log to Redis stream for accountant pipeline
+        syncAuditLogToRedis(auditLog).catch((err) =>
+          console.warn('Failed to sync audit log to Redis stream:', err)
         );
       })
       .catch((err) => {
@@ -256,73 +269,93 @@ export default function App() {
   // Handler: Flush Redis Stream to Cloud SQL Batch
   const handleFlushBatchToSQL = () => {
     setIsFlushing(true);
-    setTimeout(() => {
+    const unsyncedLogs = auditLogs.filter((l) => !l.sqlSynced);
+    const executedRoutes = routes.filter(
+      (r) => r.stage === 'EXECUTED' || r.stage === 'ACCOUNTED'
+    );
+
+    // Audit log flush: Redis stream write → Cloud SQL upsert for each unsynced log
+    const logSyncPromises = unsyncedLogs.map((log) =>
+      syncAuditLogToRedis(log)
+        .catch((err) => console.warn(`Redis stream write failed for log ${log.id}:`, err))
+        .then(() => syncAuditLogToCloudSql(log))
+        .catch((err) => console.warn(`Cloud SQL upsert failed for log ${log.id}:`, err))
+    );
+
+    // Route flush: persist all executed/accounted routes to Cloud SQL
+    const routeSyncPromises = executedRoutes.map((route) =>
+      syncRouteToCloudSql(route).catch((err) =>
+        console.warn(`Cloud SQL route upsert failed for ${route.id}:`, err)
+      )
+    );
+
+    Promise.allSettled([...logSyncPromises, ...routeSyncPromises]).then(() => {
       setAuditLogs((prev) =>
-        prev.map((l) => ({
-          ...l,
-          sqlSynced: true,
-        }))
+        prev.map((l) => (!l.sqlSynced ? { ...l, sqlSynced: true } : l))
       );
       setIsFlushing(false);
-    }, 800);
+    });
   };
 
   // Handler: Discover New Route (Unique Dynamic Opportunity Generator)
   const handleAddSimulatedRoute = () => {
     setIsSimulating(true);
     setTimeout(() => {
-      setRoutes((prev) => {
-        const routeNum = prev.length + 1;
-        const numStr = routeNum < 100 ? (routeNum < 10 ? `00${routeNum}` : `0${routeNum}`) : `${routeNum}`;
-        const uniqueSuffix = Math.random().toString(36).substring(2, 7);
-        const newRouteId = `route_poly_${numStr}_${uniqueSuffix}`;
+      const routeNum = routes.length + 1;
+      const numStr = routeNum < 100 ? (routeNum < 10 ? `00${routeNum}` : `0${routeNum}`) : `${routeNum}`;
+      const uniqueSuffix = Math.random().toString(36).substring(2, 7);
+      const newRouteId = `route_poly_${numStr}_${uniqueSuffix}`;
 
-        const t1 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
-        let t2 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
-        while (t2 === t1) t2 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
-        let t3 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
-        while (t3 === t1 || t3 === t2) t3 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+      const t1 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+      let t2 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+      while (t2 === t1) t2 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+      let t3 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
+      while (t3 === t1 || t3 === t2) t3 = POLYGON_TOKEN_SYMBOLS[Math.floor(Math.random() * POLYGON_TOKEN_SYMBOLS.length)];
 
-        const dex1 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
-        const dex2 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
-        const dex3 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
+      const dex1 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
+      const dex2 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
+      const dex3 = POLYGON_DEX_IDENTIFIERS[Math.floor(Math.random() * POLYGON_DEX_IDENTIFIERS.length)];
 
-        const pathString = `${t1} -> ${dex1} -> ${t2} -> ${dex2} -> ${t3} -> ${dex3} -> ${t1}`;
+      const pathString = `${t1} -> ${dex1} -> ${t2} -> ${dex2} -> ${t3} -> ${dex3} -> ${t1}`;
 
-        const inputUSD = Math.round(18000 + Math.random() * 210000);
-        const grossYieldUSD = Number((inputUSD * (0.0035 + Math.random() * 0.0075)).toFixed(2));
-        const estimatedGasUSD = Number((0.35 + Math.random() * 0.55).toFixed(2));
-        const netProfitUSD = Number((grossYieldUSD - estimatedGasUSD).toFixed(2));
-        const alphaScore = Number((0.880 + Math.random() * 0.115).toFixed(3));
-        const winProb = Number((0.860 + Math.random() * 0.130).toFixed(3));
+      const inputUSD = Math.round(18000 + Math.random() * 210000);
+      const grossYieldUSD = Number((inputUSD * (0.0035 + Math.random() * 0.0075)).toFixed(2));
+      const estimatedGasUSD = Number((0.35 + Math.random() * 0.55).toFixed(2));
+      const netProfitUSD = Number((grossYieldUSD - estimatedGasUSD).toFixed(2));
+      const alphaScore = Number((0.880 + Math.random() * 0.115).toFixed(3));
+      const winProb = Number((0.860 + Math.random() * 0.130).toFixed(3));
 
-        const poolA = INITIAL_POOLS[Math.floor(Math.random() * INITIAL_POOLS.length)];
-        const poolB = INITIAL_POOLS[Math.floor(Math.random() * INITIAL_POOLS.length)];
-        const poolC = INITIAL_POOLS[Math.floor(Math.random() * INITIAL_POOLS.length)];
+      const poolA = INITIAL_POOLS[Math.floor(Math.random() * INITIAL_POOLS.length)];
+      const poolB = INITIAL_POOLS[Math.floor(Math.random() * INITIAL_POOLS.length)];
+      const poolC = INITIAL_POOLS[Math.floor(Math.random() * INITIAL_POOLS.length)];
 
-        const newRoute: ArbitrageRoute = {
-          id: newRouteId,
-          pathString,
-          length: 3,
-          pools: [poolA, poolB, poolC],
-          expectedYieldUSD: netProfitUSD,
-          vqcAlphaScore: alphaScore,
-          vqcWinProbability: winProb,
-          optimalInputUSD: inputUSD,
-          optimalInputWei: `${inputUSD}000000000000000000`,
-          grossProfitUSD: grossYieldUSD,
-          estimatedGasUSD,
-          netProfitUSD,
-          stage: 'DISCOVERED',
-          timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
-          slippageToleranceBps: Math.floor(8 + Math.random() * 12),
-          isSelfFundingRisk: false,
-          notes: `Unique Bellman-Ford cycle discovered on Polygon mainnet. Discrepancy: ${(Math.random() * 0.75 + 0.15).toFixed(2)}%.`,
-        };
+      const newRoute: ArbitrageRoute = {
+        id: newRouteId,
+        pathString,
+        length: 3,
+        pools: [poolA, poolB, poolC],
+        expectedYieldUSD: netProfitUSD,
+        vqcAlphaScore: alphaScore,
+        vqcWinProbability: winProb,
+        optimalInputUSD: inputUSD,
+        optimalInputWei: `${inputUSD}000000000000000000`,
+        grossProfitUSD: grossYieldUSD,
+        estimatedGasUSD,
+        netProfitUSD,
+        stage: 'DISCOVERED',
+        timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+        slippageToleranceBps: Math.floor(8 + Math.random() * 12),
+        isSelfFundingRisk: false,
+        notes: `Unique Bellman-Ford cycle discovered on Polygon mainnet. Discrepancy: ${(Math.random() * 0.75 + 0.15).toFixed(2)}%.`,
+      };
 
-        return [newRoute, ...prev];
-      });
+      setRoutes((prev) => [newRoute, ...prev]);
       setIsSimulating(false);
+
+      // Persist newly discovered route to Firestore so it survives page refresh
+      syncRouteToFirestore(newRoute).catch((err) =>
+        console.warn('Failed to sync discovered route to Firestore:', err)
+      );
     }, 600);
   };
 
@@ -352,29 +385,41 @@ export default function App() {
 
   // Handler: Advance Route Pipeline Stage
   const handleAdvanceRouteStage = (routeId: string) => {
+    const STAGE_TRANSITIONS: Record<string, string> = {
+      DISCOVERED: 'RANKED',
+      RANKED: 'SIMULATED',
+      SIMULATED: 'PREPARED',
+      PREPARED: 'EXECUTED',
+      EXECUTED: 'ACCOUNTED',
+      ACCOUNTED: 'ACCOUNTED',
+    };
+
+    let promotedRoute: ArbitrageRoute | null = null;
+
     setRoutes((prev) =>
       prev.map((r) => {
         if (r.id === routeId) {
-          const STAGE_TRANSITIONS: Record<string, string> = {
-            DISCOVERED: 'RANKED',
-            RANKED: 'SIMULATED',
-            SIMULATED: 'PREPARED',
-            PREPARED: 'EXECUTED',
-            EXECUTED: 'ACCOUNTED',
-            ACCOUNTED: 'ACCOUNTED',
-          };
-          const nextStage = STAGE_TRANSITIONS[r.stage] as any;
+          const nextStage = STAGE_TRANSITIONS[r.stage] as ArbitrageRoute['stage'];
           const isMined = nextStage === 'EXECUTED' || nextStage === 'ACCOUNTED';
-          return {
+          const updated: ArbitrageRoute = {
             ...r,
             stage: nextStage,
             txHash: isMined && !r.txHash ? '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('') : r.txHash,
             notes: `Staged & promoted to ${nextStage} via Opportunity Tracker at ${new Date().toISOString().substring(11, 19)} UTC.`,
           };
+          promotedRoute = updated;
+          return updated;
         }
         return r;
       })
     );
+
+    // Persist the stage update to Firestore so it survives page refresh
+    if (promotedRoute) {
+      syncRouteToFirestore(promotedRoute).catch((err) =>
+        console.warn('Failed to sync stage-promoted route to Firestore:', err)
+      );
+    }
   };
 
   const handleSelectRouteForInjector = (route: ArbitrageRoute) => {
