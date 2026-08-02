@@ -57,6 +57,17 @@ export const POLYGON_CHAIN_CONFIG = {
   polygonGasStationUrl: 'https://gasstation.polygon.technology/v2',
   flashbotsRelayUrl: 'https://relay-polygon.flashbots.net',
   titanMevUsWest: 'https://us.rpc.titanbuilder.xyz',
+
+  // DODO V2 Polygon Mainnet Contracts
+  dodoV2Router: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e3',
+  dodoDvmFactory: '0x79887f65f83bdf15Bcc8736b5e5BcDB48fb8fE13',
+  dodoDppFactory: '0x43C49f8DD240e1545F147211Ec9f917376Ac1e87',
+  dodoMixSwapProxy: '0x2dA2F2ABfe7f776AC610B70C68a2cD2f7b07D1fD',
+  /** DODO DPP pools on Polygon carry 0% flash-loan fee (use instead of Aave's 9 bps). */
+  dodoDppFlashLoanFeeRate: 0,
+
+  // RPC Proxy / Router (local sidecar URL — falls back to direct multi-endpoint routing)
+  rpcProxyLocalUrl: 'http://localhost:8545',
 };
 
 /** Current POL/USD spot price used for USD-denominated balance display. */
