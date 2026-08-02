@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
@@ -25,13 +26,17 @@ let pgPool: Pool | null = null;
 
 function getPgPool(): Pool | null {
   if (pgPool) return pgPool;
-  const host = process.env.CLOUD_SQL_HOST;
-  const port = parseInt(process.env.CLOUD_SQL_PORT || '5432', 10);
+  const host     = process.env.CLOUD_SQL_HOST;
+  // On Cloud Run with Cloud SQL Auth Proxy, CLOUD_SQL_SOCKET overrides host/port
+  const socket   = process.env.CLOUD_SQL_SOCKET;
+  const port     = parseInt(process.env.CLOUD_SQL_PORT || '5432', 10);
   const database = process.env.CLOUD_SQL_DATABASE;
-  const user = process.env.CLOUD_SQL_USER;
+  const user     = process.env.CLOUD_SQL_USER;
   const password = process.env.CLOUD_SQL_PASSWORD;
-  if (!host || !database || !user || !password) return null;
-  pgPool = new Pool({ host, port, database, user, password, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 5000, max: 5 });
+  if (!database || !user || !password || (!host && !socket)) return null;
+  pgPool = socket
+    ? new Pool({ host: socket, database, user, password, ssl: false, connectionTimeoutMillis: 5000, max: 5 })
+    : new Pool({ host, port, database, user, password, ssl: { rejectUnauthorized: false }, connectionTimeoutMillis: 5000, max: 5 });
   return pgPool;
 }
 
@@ -39,10 +44,12 @@ async function startServer() {
   // ── Boot-time audit: validates env, wallets, contracts before serving ──────
   runBootAudit();
 
-  const app = express();
-  const PORT = 3000;
+  const app  = express();
+  // Cloud Run injects PORT; fall back to 3000 for local dev
+  const PORT = parseInt(process.env.PORT || '3000', 10);
 
-  app.use(express.json());
+  // 1 MB body cap — prevents oversized-payload attacks
+  app.use(express.json({ limit: '1mb' }));
 
   // Health Endpoint
   app.get('/api/health', (req, res) => {
@@ -51,7 +58,7 @@ async function startServer() {
       engine: 'OMEGA-FINALLY-RICH-V5',
       chainId: 137,
       network: 'Polygon PoS',
-      executor: '0xC1_ARB_EXECUTOR_ADDRESS',
+      executor: process.env.C1_ARB_EXECUTOR_ADDRESS || 'not-configured',
       fundingVault: '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
       rustEngineStatus: 'OPTIMIZED_RELEASE_COMPILED',
       redisStream: 'omega:audit:simulations',
@@ -295,9 +302,27 @@ ${JSON.stringify(routeData, null, 2)}`;
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`OMEGA V5 Engine Server listening on http://0.0.0.0:${PORT}`);
   });
+
+  // ── Graceful shutdown (Cloud Run sends SIGTERM before stopping the instance) ─
+  function shutdown(signal: string) {
+    console.log(`[${signal}] Graceful shutdown initiated…`);
+    server.close(async () => {
+      try {
+        if (redisClient) await redisClient.quit();
+        if (pgPool)      await pgPool.end();
+      } catch (_) { /* best-effort */ }
+      console.log('[shutdown] All connections closed. Exiting.');
+      process.exit(0);
+    });
+    // Force-exit after 10 s if connections don't drain
+    setTimeout(() => { console.error('[shutdown] Drain timeout — forcing exit'); process.exit(1); }, 10_000).unref();
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT',  () => shutdown('SIGINT'));
 }
 
 startServer();

@@ -296,19 +296,23 @@ jobs:
             --timeout=60s
             --no-allow-unauthenticated
             --port=3000
+            --set-cloudsql-instances=${{ secrets.GCP_CLOUD_SQL_INSTANCE }}
           env_vars: |
             NODE_ENV=production
             OMEGA_RUNTIME_MODE=${{ vars.OMEGA_RUNTIME_MODE }}
             EXECUTION_MODE=${{ vars.EXECUTION_MODE }}
+            LIVE_TRADING=${{ vars.LIVE_TRADING }}
           secrets: |
             GEMINI_API_KEY=GEMINI_API_KEY:latest
             REDIS_URL=OMEGA_REDIS_URL:latest
-            CLOUD_SQL_PASSWORD=OMEGA_SQL_PASSWORD:latest
+            CLOUD_SQL_SOCKET=OMEGA_SQL_SOCKET:latest
             CLOUD_SQL_HOST=OMEGA_SQL_HOST:latest
             CLOUD_SQL_DATABASE=OMEGA_SQL_DATABASE:latest
             CLOUD_SQL_USER=OMEGA_SQL_USER:latest
+            CLOUD_SQL_PASSWORD=OMEGA_SQL_PASSWORD:latest
             BOT_ADDRESS=OMEGA_BOT_ADDRESS:latest
             BOT_PROFIT_RECEIVER=OMEGA_PROFIT_RECEIVER:latest
+            PROFIT_RECIPIENT_ADDRESS=OMEGA_PROFIT_RECEIVER:latest
             EXECUTOR_WALLET=OMEGA_EXECUTOR_WALLET:latest
             EXECUTOR_CONTRACT_ADDR=OMEGA_EXECUTOR_CONTRACT:latest
             C1_ARB_EXECUTOR_ADDRESS=OMEGA_C1_EXECUTOR:latest
@@ -319,18 +323,20 @@ jobs:
             CONFIRM_MAINNET_EXECUTION=OMEGA_MAINNET_CONSENT:latest
 
       - name: Verify deployment health
+        env:
+          SERVICE_URL: ${{ steps.deploy.outputs.url }}
         run: |
-          URL="${{ steps.deploy.outputs.url }}"
-          echo "Checking $URL/api/health …"
+          echo "Checking $SERVICE_URL/api/health …"
+          TOKEN=$(gcloud auth print-identity-token)
           for i in 1 2 3 4 5; do
             STATUS=$(curl -sf -o /dev/null -w "%{http_code}" \
-              -H "Authorization: ****** auth print-identity-token)" \
-              "$URL/api/health" || echo "000")
+              --oauth2-bearer "$TOKEN" \
+              "$SERVICE_URL/api/health" || echo "000")
             echo "Attempt $i: HTTP $STATUS"
-            [ "$STATUS" = "200" ] && { echo "✔ Health check passed"; exit 0; }
+            [ "$STATUS" = "200" ] && { echo "Health check passed"; exit 0; }
             sleep 10
           done
-          echo "✘ Health check failed after 5 attempts"
+          echo "Health check failed after 5 attempts"
           exit 1
 
       - name: Print deployment summary

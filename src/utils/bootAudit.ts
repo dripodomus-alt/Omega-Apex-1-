@@ -27,7 +27,8 @@ interface CheckResult {
   level:   CheckLevel;
 }
 
-const results: CheckResult[] = [];
+// _results is reset at the start of each runBootAudit() call.
+let _results: CheckResult[] = [];
 
 function check(
   label: string,
@@ -42,7 +43,7 @@ function check(
     message: pass ? passMsg : failMsg,
     level,
   };
-  results.push(r);
+  _results.push(r);
   return r;
 }
 
@@ -160,7 +161,7 @@ function checkLiveTradingGuard(): void {
       'CRITICAL',
     );
   } else {
-    results.push({ label: 'LIVE_TRADING_CONSENT', status: 'SKIP', message: 'simulation mode', level: 'INFO' });
+    _results.push({ label: 'LIVE_TRADING_CONSENT', status: 'SKIP', message: 'simulation mode', level: 'INFO' });
   }
 }
 
@@ -179,7 +180,7 @@ function renderReport(): void {
   console.log(`${C.bold}${C.cyan}║  Deployment pre-flight checklist @ ${new Date().toISOString()}  ║${C.reset}`);
   console.log(`${C.cyan}${line}${C.reset}\n`);
 
-  for (const r of results) {
+  for (const r of _results) {
     let icon: string;
     let colour: string;
     switch (r.status) {
@@ -194,9 +195,9 @@ function renderReport(): void {
     );
   }
 
-  const failures = results.filter((r) => r.status === 'FAIL');
-  const warns    = results.filter((r) => r.status === 'WARN');
-  const passes   = results.filter((r) => r.status === 'PASS');
+  const failures = _results.filter((r) => r.status === 'FAIL');
+  const warns    = _results.filter((r) => r.status === 'WARN');
+  const passes   = _results.filter((r) => r.status === 'PASS');
 
   console.log(`\n${C.cyan}${line}${C.reset}`);
   console.log(
@@ -211,6 +212,9 @@ function renderReport(): void {
 // ─── Public entry point ───────────────────────────────────────────────────────
 
 export function runBootAudit(): void {
+  // Reset per-invocation so re-runs don't accumulate results
+  _results = [];
+
   checkCriticalEnvVars();
   checkWalletEnvVars();
   checkContractAddresses();
@@ -222,7 +226,7 @@ export function runBootAudit(): void {
 
   renderReport();
 
-  const criticalFailures = results.filter((r) => r.status === 'FAIL' && r.level === 'CRITICAL');
+  const criticalFailures = _results.filter((r) => r.status === 'FAIL' && r.level === 'CRITICAL');
   if (criticalFailures.length > 0) {
     throw new Error(
       `[BOOT AUDIT] ${criticalFailures.length} critical check(s) failed — ` +
