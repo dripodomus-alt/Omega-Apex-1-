@@ -92,7 +92,7 @@ const COMPONENT_AUDIT_DATA: ComponentAuditItem[] = [
   },
 ];
 
-export const RustPythonHybridPipeline: React.FC = () => {
+export const MainNetEngine: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'audit' | 'rust_core' | 'pyo3_ipc'>('rust_core');
   const [isRebuildingRust, setIsRebuildingRust] = useState(false);
   const [rustLogs, setRustLogs] = useState<string[]>([

@@ -94,7 +94,7 @@ export const SystemRule026Controller: React.FC<SystemRule026ControllerProps> = (
       bgColor: 'bg-cyan-950/80',
       borderColor: 'border-cyan-800',
       textColor: 'text-cyan-300',
-      description: 'eth_call pre-flight zero-revert dry-run, 4-qubit VQC ansatz ranking & Rust/Python benchmarks.',
+      description: 'eth_call pre-flight zero-revert dry-run, 4-qubit VQC ansatz ranking & Main Net Engine benchmarks.',
       status: 'PERMISSION GRANTED',
       metrics: 'eth_call Pre-Flight Clear',
     },

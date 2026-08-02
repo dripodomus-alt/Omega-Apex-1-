@@ -15,7 +15,7 @@ export type TabType =
   | 'transient_accounting'
   | 'protocols'
   | 'sonic_master'
-  | 'rust_hybrid'
+  | 'main_net_engine'
   | 'math_indexer'
   | 'google_drive'
   | 'benchmark'
@@ -63,7 +63,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
     // TIER 4: HIGH-TECH INFRA & INVARIANTS
     { id: 'sonic_master', label: 'Sonic Master & Invariants', icon: Volume2, tier: 'TIER 4 (INFRA)', badge: '20Hz-20kHz DSP', badgeColor: 'bg-cyan-950 text-cyan-300 border border-cyan-800' },
-    { id: 'rust_hybrid', label: 'Rust/Python Hybrid', icon: Cpu, tier: 'TIER 4 (INFRA)', badge: 'AAA Audited' },
+    { id: 'main_net_engine', label: 'Main Net Engine', icon: Cpu, tier: 'TIER 4 (INFRA)', badge: 'AAA Audited' },
     { id: 'math_indexer', label: 'Math Equation Indexer', icon: BookOpen, tier: 'TIER 4 (INFRA)', badge: '11 Indexed' },
     { id: 'google_drive', label: 'Google Drive Sync', icon: HardDrive, tier: 'TIER 4 (INFRA)', badge: 'Cloud Vault' },
     { id: 'benchmark', label: 'Benchmark Suite', icon: Terminal, tier: 'TIER 4 (INFRA)', badge: 'Readiness' },
