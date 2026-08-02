@@ -11,7 +11,7 @@ import { GeminiRouteOptimizer } from './components/GeminiRouteOptimizer';
 import { MathEquationIndexer } from './components/MathEquationIndexer';
 import { GoogleDriveManager } from './components/GoogleDriveManager';
 import { LiveMainnetGuide } from './components/LiveMainnetGuide';
-import { RustPythonHybridPipeline } from './components/RustPythonHybridPipeline';
+import { MainNetEngine } from './components/MainNetEngine';
 import { ExecutionIntegritySentinel } from './components/ExecutionIntegritySentinel';
 import { FullAutomationLiveEngine } from './components/FullAutomationLiveEngine';
 import { StudioMasterSonicEngine } from './components/StudioMasterSonicEngine';
@@ -501,8 +501,8 @@ export default function App() {
           <StudioMasterSonicEngine />
         )}
 
-        {activeTab === 'rust_hybrid' && (
-          <RustPythonHybridPipeline />
+        {activeTab === 'main_net_engine' && (
+          <MainNetEngine />
         )}
 
         {activeTab === 'capital_injector' && (
