@@ -8,7 +8,6 @@ import { ethers } from "ethers";
 import { ensureBootstrapDependencies } from "./scripts/ensure_bootstrap_dependencies.cjs";
 import { WebSocketServer } from "ws";
 import { DeFiExecutorManager } from "./ExecutionManager.js";
-import { InvariantMath } from "./server/engine/invariants.js";
 import RedisRouteGuard from "./server/engine/RedisRouteGuard.js";
 import {
   getActiveLedgerCount,
@@ -339,6 +338,7 @@ const DEFAULT_PROFIT_RECEIVER = "0xaD3eF84259cFACB5D77a70911f85d39D2DBB49c6";
 const DEFAULT_PROFIT_ASSET = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174";
 const POLYGON_WETH = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
 const BALANCER_V2_VAULT = "0xBA12222222228d8Ba445958a75a0704d566BF2C8";
+const BALANCER_SWAP_KIND_GIVEN_IN = 0;
 const QUICKSWAP_V2_ROUTER = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff";
 const SUSHISWAP_V2_ROUTER = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506";
 const APEX_VM_EXECUTION_ABI = [
@@ -351,6 +351,7 @@ const UNISWAP_V2_ROUTER_ABI = [
 ];
 const BALANCER_VAULT_ABI = [
   "function getPoolTokens(bytes32 poolId) view returns (address[] tokens,uint256[] balances,uint256 lastChangeBlock)",
+  "function queryBatchSwap(uint8 kind, tuple(bytes32 poolId,uint256 assetInIndex,uint256 assetOutIndex,uint256 amount,bytes userData)[] swaps, address[] assets, tuple(address sender,bool fromInternalBalance,address recipient,bool toInternalBalance) funds) returns (int256[] assetDeltas)",
 ];
 const BALANCER_WEIGHTED_POOL_ABI = [
   "function getNormalizedWeights() view returns (uint256[])",
@@ -415,13 +416,30 @@ async function fetchBalancerWeightedPoolState(poolId: string, tokenIn: string, t
 
 async function quoteBalancerWeighted(poolId: string, tokenIn: string, tokenOut: string, amountIn: bigint) {
   const state = await fetchBalancerWeightedPoolState(poolId, tokenIn, tokenOut);
-  const amountOut = InvariantMath.getAmountOutBalancerWeighted(amountIn, {
-    balanceIn: state.balances[state.inIndex],
-    balanceOut: state.balances[state.outIndex],
-    weightIn: state.weights[state.inIndex],
-    weightOut: state.weights[state.outIndex],
-    swapFeeBps: state.swapFeeBps,
-  });
+  const assets = [state.tokenIn, state.tokenOut];
+  const swaps = [{
+    poolId,
+    assetInIndex: 0,
+    assetOutIndex: 1,
+    amount: amountIn,
+    userData: "0x",
+  }];
+  const funds = {
+    sender: DEFAULT_PROFIT_RECEIVER,
+    fromInternalBalance: false,
+    recipient: DEFAULT_PROFIT_RECEIVER,
+    toInternalBalance: false,
+  };
+  const quoteData = await ethCall(
+    BALANCER_V2_VAULT,
+    balancerVaultIface.encodeFunctionData("queryBatchSwap", [BALANCER_SWAP_KIND_GIVEN_IN, swaps, assets, funds]),
+  );
+  const [assetDeltas] = balancerVaultIface.decodeFunctionResult("queryBatchSwap", quoteData) as unknown as [bigint[]];
+  const tokenOutDelta = assetDeltas[1] ?? 0n;
+  if (tokenOutDelta >= 0n) {
+    throw new Error("BALANCER_QUERY_NO_OUTPUT_DELTA: expected negative tokenOut vault delta for GIVEN_IN swap.");
+  }
+  const amountOut = -tokenOutDelta;
   const [tokenInDecimals, tokenOutDecimals] = await Promise.all([
     fetchTokenDecimals(state.tokenIn),
     fetchTokenDecimals(state.tokenOut),
@@ -434,6 +452,7 @@ async function quoteBalancerWeighted(poolId: string, tokenIn: string, tokenOut: 
     tokenOutDecimals,
     amountInFormatted: formatRawTokenAmount(amountIn, tokenInDecimals),
     amountOutFormatted: formatRawTokenAmount(amountOut, tokenOutDecimals),
+    quoteSource: "BALANCER_VAULT_QUERY_BATCH_SWAP",
   };
 }
 
@@ -1046,8 +1065,8 @@ async function startServer() {
   let latestOpportunities: any[] = [];
 
   const getActiveOpportunities = async () => {
-    const ledgerRows = await getActiveLedgerOpportunities(TOP_ROUTE_DISPLAY_LIMIT).catch(() => null);
-    return ledgerRows ?? latestOpportunities;
+    const ledgerRows = await getActiveLedgerOpportunities().catch(() => null);
+    return ledgerRows?.slice(0, TOP_ROUTE_DISPLAY_LIMIT) ?? latestOpportunities;
   };
 
   const readDiscoveryTransparency = () => {

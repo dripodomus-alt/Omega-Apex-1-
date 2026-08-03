@@ -18,7 +18,8 @@
     "bootstrap": "yarn install --immutable",
     "dev:yarn": "yarn dev",
     "dry-run:discovery": "tsx scripts/discovery-ranking-dry-run.ts",
-    "truth-gate:live": "tsx scripts/live-truth-gate.ts"
+    "truth-gate:live": "tsx scripts/live-truth-gate.ts",
+    "probe:balancer": "tsx scripts/probe-balancer-query.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

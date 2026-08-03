@@ -6,4 +6,5 @@ export class InvariantMath {
   static fromJson(data) {
     return data;
   }
+
 }

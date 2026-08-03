@@ -233,7 +233,7 @@ async function main() {
   const calldata = iface.encodeFunctionData('executeArbitrage', [[USDC, WMATIC, USDC], INPUT_USDC, MIN_PROFIT_USDC, '0x']);
 
   try {
-    const callResult = await provider.call({ from: BOT, to: EXECUTOR, data: calldata, value: 0n }, latestBlock);
+    const callResult = await provider.call({ from: BOT, to: EXECUTOR, data: calldata, value: 0n, blockTag: latestBlock });
     printPass('eth_call_against_executor', `resultBytes=${(callResult.length - 2) / 2}`);
     console.log('VERDICT=PASS_TO_LIVE_SUBMIT');
   } catch (err) {

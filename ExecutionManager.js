@@ -72,7 +72,7 @@ export class DeFiExecutorManager {
       stage: route?.stage || 'PREPARED',
       netProfitUSD: route?.netProfitUSD || 0,
     });
-    return { ok: true, success: true, ...envelope, message: this.dryRun ? 'execution prepared in dry-run mode' : 'execution envelope prepared for broadcast' };
+    return { ok: true, success: true, error: null, ...envelope, message: this.dryRun ? 'execution prepared in dry-run mode' : 'execution envelope prepared for broadcast' };
   }
 
   async broadcastFlashloanIntegratedC1Payload(targetContract, flashloanSource, flashloanAsset, flashloanAmount, context) {
@@ -83,7 +83,7 @@ export class DeFiExecutorManager {
       flashloanAmount,
       context,
     });
-    return { ok: true, success: true, ...envelope, message: this.dryRun ? 'C1 payload prepared for dry-run verification' : 'C1 payload prepared for live broadcast' };
+    return { ok: true, success: true, error: null, ...envelope, message: this.dryRun ? 'C1 payload prepared for dry-run verification' : 'C1 payload prepared for live broadcast' };
   }
 
   async broadcastFlashloanIntegratedC2Payload(targetContract, c1InternalId, flashloanSource, flashloanAsset, flashloanAmount, context) {
@@ -95,7 +95,7 @@ export class DeFiExecutorManager {
       flashloanAmount,
       context,
     });
-    return { ok: true, success: true, ...envelope, message: this.dryRun ? 'C2 payload prepared for dry-run verification' : 'C2 payload prepared for live broadcast' };
+    return { ok: true, success: true, error: null, ...envelope, message: this.dryRun ? 'C2 payload prepared for dry-run verification' : 'C2 payload prepared for live broadcast' };
   }
 
   async broadcastFlashloanIntegratedLiquidation(targetContract, liquidation) {
@@ -103,6 +103,6 @@ export class DeFiExecutorManager {
       targetContract,
       liquidation,
     });
-    return { ok: true, success: true, ...envelope, message: this.dryRun ? 'liquidation payload prepared for dry-run verification' : 'liquidation payload prepared for live broadcast' };
+    return { ok: true, success: true, error: null, ...envelope, message: this.dryRun ? 'liquidation payload prepared for dry-run verification' : 'liquidation payload prepared for live broadcast' };
   }
 }

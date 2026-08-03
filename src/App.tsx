@@ -54,6 +54,7 @@ import {
 } from './lib/firebase';
 import { runLiveBenchmark, StepUpdateCallback, PENDING_BENCHMARK_REPORT } from './utils/liveBenchmark';
 import { runExecutionPipeline } from './utils/executionPipeline';
+import { computeLegLedger } from './utils/transientAccounting';
 
 const MIN_TICKER_GROSS_USD = 50;
 const MAX_TICKER_GROSS_MULTIPLIER = 2;

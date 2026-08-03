@@ -39,6 +39,23 @@ export default class RedisRouteGuard {
     return { acquired: true, key };
   }
 
+  async acquireLiquidationLock(targetContract, user, debtAsset, collateralAsset) {
+    const key = this._buildKey('liquidation', [targetContract, user, debtAsset, collateralAsset].join(':'));
+    if (this.memoryLocks.has(key)) {
+      return { acquired: false, key, reason: 'lock already held' };
+    }
+
+    this.memoryLocks.set(key, {
+      type: 'liquidation',
+      targetContract,
+      user,
+      debtAsset,
+      collateralAsset,
+      acquiredAt: Date.now(),
+    });
+    return { acquired: true, key };
+  }
+
   async releaseLock(key) {
     if (!key) return true;
     this.memoryLocks.delete(String(key));
@@ -48,6 +65,11 @@ export default class RedisRouteGuard {
   async isAllowed(route) {
     const key = this._buildKey('route', route?.id || route?.routeId || 'default');
     return !this.memoryLocks.has(key);
+  }
+
+  async close() {
+    this.memoryLocks.clear();
+    return true;
   }
 
   async mark(route, status) {
