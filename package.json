@@ -14,8 +14,11 @@
     "hybrid:bootstrap": "powershell -ExecutionPolicy Bypass -File .\\scripts\\ops\\bootstrap_hybrid_env.ps1",
     "hybrid:start": "powershell -ExecutionPolicy Bypass -File .\\scripts\\ops\\start_direct.ps1",
     "hybrid:launch": "powershell -ExecutionPolicy Bypass -File .\\scripts\\ops\\launch_hybrid.ps1",
-    "yarn:bootstrap": "yarn install --immutable",
-    "yarn:dev": "yarn dev"
+    "deploy": "powershell -ExecutionPolicy Bypass -File .\\scripts\\ops\\deploy_main.ps1",
+    "bootstrap": "yarn install --immutable",
+    "dev:yarn": "yarn dev",
+    "dry-run:discovery": "tsx scripts/discovery-ranking-dry-run.ts",
+    "truth-gate:live": "tsx scripts/live-truth-gate.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -205,27 +205,23 @@ describe('validateRouteAssetRegistry', () => {
     expect(result.unregisteredAssets).toHaveLength(0);
   });
 
-  it('marks route executable via maxPoolDiscoveryAllAssets bypass even with unregistered token', () => {
+  it('rejects an unregistered swappable asset even when max discovery is enabled', () => {
     const pool = makePool({
       token0: { symbol: 'UNKNOWN_TOKEN', decimals: 18, address: '0xdeadbeef' },
     });
     const route = makeRoute([pool]);
-    // POLYGON_CHAIN_CONFIG.maxPoolDiscoveryAllAssets is true in chainConfig,
-    // so the function short-circuits and always returns executable.
     const result = validateRouteAssetRegistry(route, []);
-    expect(result.isExecutable).toBe(true);
-    expect(result.unregisteredAssets).toHaveLength(0);
+    expect(result.isExecutable).toBe(false);
+    expect(result.unregisteredAssets).toEqual(['UNKNOWN_TOKEN']);
   });
 
-  it('marks route executable via maxPoolDiscoveryAllAssets bypass even with unregistered pool', () => {
-    const pool = makePool({ id: 'pool-unknown', address: '0xunknown' });
+  it('rejects an unregistered pool when a registered-pool list is supplied', () => {
+    const pool = makePool({ id: 'pool-unknown', address: '0x0000000000000000000000000000000000000abc' });
     const route = makeRoute([pool]);
-    const registeredPool = makePool({ id: 'pool-registered', address: '0xregistered' });
-    // POLYGON_CHAIN_CONFIG.maxPoolDiscoveryAllAssets is true in chainConfig,
-    // so the function short-circuits and always returns executable.
+    const registeredPool = makePool({ id: 'pool-registered', address: '0x0000000000000000000000000000000000000def' });
     const result = validateRouteAssetRegistry(route, [registeredPool]);
-    expect(result.isExecutable).toBe(true);
-    expect(result.unregisteredPools).toHaveLength(0);
+    expect(result.isExecutable).toBe(false);
+    expect(result.unregisteredPools).toEqual(['TestPool']);
   });
 
   it('counts pools correctly in result', () => {
@@ -237,14 +233,22 @@ describe('validateRouteAssetRegistry', () => {
   });
 
   it('deduplicates unregistered assets (same token appearing in multiple pools)', () => {
-    // With maxPoolDiscoveryAllAssets=true these lists will be empty, but we
-    // verify the shape of the returned arrays is always correct.
-    const pool1 = makePool({ id: 'p1', token0: { symbol: 'WMATIC / WPOL', decimals: 18, address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' } });
-    const pool2 = makePool({ id: 'p2', token0: { symbol: 'WMATIC / WPOL', decimals: 18, address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' } });
+    const badAsset = { symbol: 'UNKNOWN_TOKEN', decimals: 18, address: '0xdeadbeef' };
+    const pool1 = makePool({ id: 'p1', token0: badAsset });
+    const pool2 = makePool({ id: 'p2', token0: badAsset });
     const route = makeRoute([pool1, pool2]);
     const result = validateRouteAssetRegistry(route, []);
-    // unregisteredAssets should be a deduplicated array (possibly empty due to bypass)
     const uniqueCount = new Set(result.unregisteredAssets).size;
+    expect(result.isExecutable).toBe(false);
     expect(uniqueCount).toBe(result.unregisteredAssets.length);
+    expect(result.unregisteredAssets).toEqual(['UNKNOWN_TOKEN']);
+  });
+
+  it('rejects funding pools inside swap execution legs', () => {
+    const pool = makePool({ category: 'FUNDING_FLASHLOAN', isFundingPool: true });
+    const route = makeRoute([pool]);
+    const result = validateRouteAssetRegistry(route, []);
+    expect(result.isExecutable).toBe(false);
+    expect(result.invalidPoolCategories[0]).toContain('FUNDING_FLASHLOAN');
   });
 });

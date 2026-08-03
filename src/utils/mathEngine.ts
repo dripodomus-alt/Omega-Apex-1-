@@ -1,6 +1,9 @@
 import { ArbitrageRoute, PoolInfo } from '../types';
-import { POLYGON_TOKENS } from '../data/mockEngineData';
-import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
+import {
+  hasPriceAsset,
+  isExecutableProtocol,
+  resolveSwappableAsset,
+} from '../config/assetUniverse';
 
 /**
  * OMEGA V5 - Precision Math Engine
@@ -198,23 +201,20 @@ export interface RouteRegistryValidation {
   totalPoolsCount: number;
   unregisteredAssets: string[];
   unregisteredPools: string[];
+  invalidPoolCategories: string[];
+  missingPriceAssets: string[];
+  unsupportedProtocols: string[];
 }
 
 /**
- * Ensures routes can ONLY be executed if all constituent pools hold assets present in our asset registry (POLYGON_TOKENS),
- * and if all pools in the route are registered in our protocol registry.
+ * Ensures routes can ONLY be executed after logistics are explicit:
+ * flashloan capital is not a swap leg, every swap-leg asset is swappable and priced,
+ * every protocol has executable calldata support, and optional protocol-registry pools match.
  */
 export function validateRouteAssetRegistry(
   route: ArbitrageRoute,
   registeredPools: PoolInfo[] = []
 ): RouteRegistryValidation {
-  const registeredTokenAddresses = new Set(
-    Object.values(POLYGON_TOKENS).map((t) => t.address.toLowerCase())
-  );
-  const registeredTokenSymbols = new Set(
-    Object.values(POLYGON_TOKENS).map((t) => t.symbol.toLowerCase())
-  );
-
   const registeredPoolAddresses = new Set(
     registeredPools.map((p) => p.address.toLowerCase())
   );
@@ -224,9 +224,11 @@ export function validateRouteAssetRegistry(
 
   const unregisteredAssets: string[] = [];
   const unregisteredPools: string[] = [];
+  const invalidPoolCategories: string[] = [];
+  const missingPriceAssets: string[] = [];
+  const unsupportedProtocols: string[] = [];
 
   route.pools.forEach((pool) => {
-    // Check pool existence in registered pools (if pools list provided)
     if (registeredPools.length > 0) {
       const isPoolRegistered =
         registeredPoolAddresses.has(pool.address.toLowerCase()) ||
@@ -237,41 +239,56 @@ export function validateRouteAssetRegistry(
       }
     }
 
-    // Check token0 in asset registry
-    const token0Addr = pool.token0?.address?.toLowerCase();
-    const token0Sym = pool.token0?.symbol?.toLowerCase();
-    const isToken0Registered =
-      (token0Addr && registeredTokenAddresses.has(token0Addr)) ||
-      (token0Sym && registeredTokenSymbols.has(token0Sym));
-
-    if (!isToken0Registered && pool.token0?.symbol) {
-      unregisteredAssets.push(pool.token0.symbol);
+    if (pool.category !== 'SWAPPABLE_EXECUTION') {
+      invalidPoolCategories.push(`${pool.name || pool.id}:${pool.category}`);
     }
 
-    // Check token1 in asset registry
-    const token1Addr = pool.token1?.address?.toLowerCase();
-    const token1Sym = pool.token1?.symbol?.toLowerCase();
-    const isToken1Registered =
-      (token1Addr && registeredTokenAddresses.has(token1Addr)) ||
-      (token1Sym && registeredTokenSymbols.has(token1Sym));
+    if (!isExecutableProtocol(pool.protocol)) {
+      unsupportedProtocols.push(`${pool.name || pool.id}:${pool.protocol}`);
+    }
 
-    if (!isToken1Registered && pool.token1?.symbol) {
-      unregisteredAssets.push(pool.token1.symbol);
+    for (const asset of [pool.token0, pool.token1]) {
+      const isSwappable = resolveSwappableAsset(asset?.address) || resolveSwappableAsset(asset?.symbol);
+      if (!isSwappable && asset?.symbol) {
+        unregisteredAssets.push(asset.symbol);
+      }
+
+      const isPriced = hasPriceAsset(asset?.address) || hasPriceAsset(asset?.symbol);
+      if (!isPriced && asset?.symbol) {
+        missingPriceAssets.push(asset.symbol);
+      }
     }
   });
 
   const uniqueUnregisteredAssets = Array.from(new Set(unregisteredAssets));
   const uniqueUnregisteredPools = Array.from(new Set(unregisteredPools));
+  const uniqueInvalidCategories = Array.from(new Set(invalidPoolCategories));
+  const uniqueMissingPriceAssets = Array.from(new Set(missingPriceAssets));
+  const uniqueUnsupportedProtocols = Array.from(new Set(unsupportedProtocols));
 
-  // When MAX POOL DISCOVERY FOR ALL DISCOVERY ASSETS is enabled,
-  // all discovered pools and assets are automatically recognized as executable upon gating pass.
-  if (POLYGON_CHAIN_CONFIG.maxPoolDiscoveryAllAssets || POLYGON_CHAIN_CONFIG.discoverableIsExecutableUponGating) {
+  const baseResult = {
+    registeredPoolsCount: route.pools.length - uniqueUnregisteredPools.length,
+    totalPoolsCount: route.pools.length,
+    unregisteredAssets: uniqueUnregisteredAssets,
+    unregisteredPools: uniqueUnregisteredPools,
+    invalidPoolCategories: uniqueInvalidCategories,
+    missingPriceAssets: uniqueMissingPriceAssets,
+    unsupportedProtocols: uniqueUnsupportedProtocols,
+  };
+
+  if (uniqueInvalidCategories.length > 0) {
     return {
-      isExecutable: true,
-      registeredPoolsCount: route.pools.length,
-      totalPoolsCount: route.pools.length,
-      unregisteredAssets: [],
-      unregisteredPools: [],
+      isExecutable: false,
+      reason: `Route contains non-swap pool category inside execution legs: ${uniqueInvalidCategories.join(', ')}`,
+      ...baseResult,
+    };
+  }
+
+  if (uniqueUnsupportedProtocols.length > 0) {
+    return {
+      isExecutable: false,
+      reason: `Route contains protocol(s) without executable calldata support: ${uniqueUnsupportedProtocols.join(', ')}`,
+      ...baseResult,
     };
   }
 
@@ -279,29 +296,28 @@ export function validateRouteAssetRegistry(
     return {
       isExecutable: false,
       reason: `Route contains pool(s) not registered in Protocol Registry: ${uniqueUnregisteredPools.join(', ')}`,
-      registeredPoolsCount: route.pools.length - uniqueUnregisteredPools.length,
-      totalPoolsCount: route.pools.length,
-      unregisteredAssets: uniqueUnregisteredAssets,
-      unregisteredPools: uniqueUnregisteredPools,
+      ...baseResult,
     };
   }
 
   if (uniqueUnregisteredAssets.length > 0) {
     return {
       isExecutable: false,
-      reason: `Route contains asset(s) not found in Asset Registry: ${uniqueUnregisteredAssets.join(', ')}`,
-      registeredPoolsCount: route.pools.length,
-      totalPoolsCount: route.pools.length,
-      unregisteredAssets: uniqueUnregisteredAssets,
-      unregisteredPools: uniqueUnregisteredPools,
+      reason: `Route contains asset(s) not found in swappable Asset Registry: ${uniqueUnregisteredAssets.join(', ')}`,
+      ...baseResult,
+    };
+  }
+
+  if (uniqueMissingPriceAssets.length > 0) {
+    return {
+      isExecutable: false,
+      reason: `Route contains asset(s) without price source: ${uniqueMissingPriceAssets.join(', ')}`,
+      ...baseResult,
     };
   }
 
   return {
     isExecutable: true,
-    registeredPoolsCount: route.pools.length,
-    totalPoolsCount: route.pools.length,
-    unregisteredAssets: [],
-    unregisteredPools: [],
+    ...baseResult,
   };
 }
