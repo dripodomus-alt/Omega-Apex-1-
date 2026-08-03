@@ -1,10 +1,6 @@
 import { ArbitrageRoute, ExecutionMode } from '../types';
 import { BroadcastTransactionPayload, broadcastEthersOnChainTransaction } from './ethersBroadcaster';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared payload produced by the Staging stage and consumed by the Dispatch sink
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface StagedPayload {
   route: ArbitrageRoute;
   pathAddresses: string[];
@@ -13,9 +9,13 @@ export interface StagedPayload {
   timestamp: string;
 }
 
+export type SubmissionOutcome = 'NOT_BROADCAST' | 'BROADCAST_SUBMITTED';
+
 export interface DispatchResult {
   success: boolean;
-  txHash: string;
+  txHash?: string;
+  approvedEnvelopeHash: string;
+  submissionOutcome: SubmissionOutcome;
   isDryRun: boolean;
   mode: ExecutionMode;
   logs: string[];
@@ -25,35 +25,81 @@ export interface DispatchResult {
   polygonscanUrl?: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Dispatcher interface — isolates the dispatch sink from the rest of the pipeline
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface IDispatcher {
   dispatch(payload: StagedPayload): Promise<DispatchResult>;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LiveDispatcher — connects to broadcast infrastructure and submits real txns
-// ─────────────────────────────────────────────────────────────────────────────
+function stableHash(input: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i += 1) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return `0x${hash.toString(16).padStart(8, '0')}`;
+}
 
-export class LiveDispatcher implements IDispatcher {
+function buildApprovedEnvelopeHash(payload: StagedPayload): string {
+  const canonical = JSON.stringify({
+    routeId: payload.route.id,
+    pathString: payload.route.pathString,
+    pathAddresses: payload.pathAddresses,
+    inputAmountUSD: payload.inputAmountUSD,
+    expectedProfitUSD: payload.expectedProfitUSD,
+    netProfitUSD: payload.route.netProfitUSD,
+    slippageToleranceBps: payload.route.slippageToleranceBps,
+  });
+  return stableHash(canonical);
+}
+
+export class ModeTerminal implements IDispatcher {
+  constructor(private readonly mode: ExecutionMode) {}
+
   async dispatch(payload: StagedPayload): Promise<DispatchResult> {
+    const approvedEnvelopeHash = buildApprovedEnvelopeHash(payload);
+    const baseLogs = [
+      `[MODE TERMINAL] Envelope Hash   : ${approvedEnvelopeHash}`,
+      `[MODE TERMINAL] Mode            : ${this.mode}`,
+      `[MODE TERMINAL] Route ID        : ${payload.route.id}`,
+      `[MODE TERMINAL] Path            : ${payload.route.pathString}`,
+      `[MODE TERMINAL] Expected Net    : $${payload.route.netProfitUSD.toFixed(2)}`,
+    ];
+
+    if (this.mode !== 'LIVE') {
+      const logs = [
+        ...baseLogs,
+        `[MODE TERMINAL] Outcome         : NOT_BROADCAST`,
+        `[MODE TERMINAL] Note            : Approved envelope archived; no signature or chain submission in ${this.mode}.`,
+      ];
+      logs.forEach((line) => console.log(line));
+      return {
+        success: true,
+        approvedEnvelopeHash,
+        submissionOutcome: 'NOT_BROADCAST',
+        isDryRun: true,
+        mode: this.mode,
+        logs,
+        routeId: payload.route.id,
+        netProfitUSD: payload.route.netProfitUSD,
+        timestamp: payload.timestamp,
+      };
+    }
+
     const broadcastPayload: BroadcastTransactionPayload = {
       routeId: payload.route.id,
       pathAddresses: payload.pathAddresses,
       inputAmountUSD: payload.inputAmountUSD,
       expectedProfitUSD: payload.expectedProfitUSD,
     };
-
     const result = await broadcastEthersOnChainTransaction(broadcastPayload);
-
+    const logs = [...baseLogs, ...result.confirmationLogs];
     return {
       success: result.success,
       txHash: result.txHash,
+      approvedEnvelopeHash,
+      submissionOutcome: 'BROADCAST_SUBMITTED',
       isDryRun: false,
       mode: 'LIVE',
-      logs: result.confirmationLogs,
+      logs,
       routeId: payload.route.id,
       netProfitUSD: payload.route.netProfitUSD,
       timestamp: payload.timestamp,
@@ -62,58 +108,14 @@ export class LiveDispatcher implements IDispatcher {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DryRunDispatcher — formats the exact payload that would have been sent and
-// logs it with [DRY RUN SIMULATION] indicators.  All external network writes,
-// database mutations, and API state changes are disabled.
-// ─────────────────────────────────────────────────────────────────────────────
-
-export class DryRunDispatcher implements IDispatcher {
-  async dispatch(payload: StagedPayload): Promise<DispatchResult> {
-    const { route, timestamp } = payload;
-
-    // Generate a deterministic-looking simulated tx hash for audit parity
-    const simulatedTxHash =
-      '0x' +
-      Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-
-    const logs: string[] = [
-      `[DRY RUN SIMULATION] ============================================`,
-      `[DRY RUN SIMULATION] Timestamp        : ${timestamp}`,
-      `[DRY RUN SIMULATION] Route ID         : ${route.id}`,
-      `[DRY RUN SIMULATION] Path             : ${route.pathString}`,
-      `[DRY RUN SIMULATION] Input Capital    : $${payload.inputAmountUSD.toLocaleString()} USD`,
-      `[DRY RUN SIMULATION] Gross Profit     : $${route.grossProfitUSD.toFixed(2)}`,
-      `[DRY RUN SIMULATION] Estimated Gas    : $${route.estimatedGasUSD.toFixed(2)}`,
-      `[DRY RUN SIMULATION] Net Profit (est) : $${route.netProfitUSD.toFixed(2)}`,
-      `[DRY RUN SIMULATION] VQC Alpha Score  : ${route.vqcAlphaScore}`,
-      `[DRY RUN SIMULATION] Win Probability  : ${(route.vqcWinProbability * 100).toFixed(1)}%`,
-      `[DRY RUN SIMULATION] Simulated Tx Hash: ${simulatedTxHash}`,
-      `[DRY RUN SIMULATION] NOTE: No on-chain transaction submitted. No state mutations applied.`,
-      `[DRY RUN SIMULATION] ============================================`,
-    ];
-
-    // Write to console so the audit trail is visible in server logs
-    logs.forEach((line) => console.log(line));
-
-    return {
-      success: true,
-      txHash: simulatedTxHash,
-      isDryRun: true,
-      mode: 'DRY_RUN',
-      logs,
-      routeId: route.id,
-      netProfitUSD: route.netProfitUSD,
-      timestamp,
-      polygonscanUrl: undefined,
-    };
-  }
+export class LiveDispatcher extends ModeTerminal {
+  constructor() { super('LIVE'); }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Factory — returns the correct dispatcher for the active execution mode
-// ─────────────────────────────────────────────────────────────────────────────
+export class DryRunDispatcher extends ModeTerminal {
+  constructor() { super('DRY_RUN'); }
+}
 
 export function createDispatcher(mode: ExecutionMode): IDispatcher {
-  return mode === 'LIVE' ? new LiveDispatcher() : new DryRunDispatcher();
+  return new ModeTerminal(mode);
 }

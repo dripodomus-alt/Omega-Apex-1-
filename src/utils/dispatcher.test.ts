@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DryRunDispatcher, LiveDispatcher, createDispatcher } from './dispatcher';
+import { DryRunDispatcher, LiveDispatcher, ModeTerminal, createDispatcher } from './dispatcher';
 import type { StagedPayload } from './dispatcher';
 import type { ArbitrageRoute, PoolInfo } from '../types';
 
@@ -82,10 +82,10 @@ describe('DryRunDispatcher', () => {
     expect(result.success).toBe(true);
   });
 
-  it('returns a simulated tx hash that starts with 0x and is 66 chars', async () => {
+  it('does not fabricate a txHash', async () => {
     const dispatcher = new DryRunDispatcher();
     const result = await dispatcher.dispatch(makeStagedPayload());
-    expect(result.txHash).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(result.txHash).toBeUndefined();
   });
 
   it('does not set a polygonscanUrl (no on-chain submission)', async () => {
@@ -94,11 +94,23 @@ describe('DryRunDispatcher', () => {
     expect(result.polygonscanUrl).toBeUndefined();
   });
 
-  it('emits [DRY RUN SIMULATION] marker lines in logs', async () => {
+  it('sets submissionOutcome to NOT_BROADCAST', async () => {
+    const dispatcher = new DryRunDispatcher();
+    const result = await dispatcher.dispatch(makeStagedPayload());
+    expect(result.submissionOutcome).toBe('NOT_BROADCAST');
+  });
+
+  it('returns an approvedEnvelopeHash', async () => {
+    const dispatcher = new DryRunDispatcher();
+    const result = await dispatcher.dispatch(makeStagedPayload());
+    expect(result.approvedEnvelopeHash).toMatch(/^0x[0-9a-f]{64}$/);
+  });
+
+  it('emits [MODE TERMINAL] marker lines in logs', async () => {
     const dispatcher = new DryRunDispatcher();
     const result = await dispatcher.dispatch(makeStagedPayload());
     expect(result.logs.length).toBeGreaterThan(0);
-    expect(result.logs.every((l) => l.startsWith('[DRY RUN SIMULATION]'))).toBe(true);
+    expect(result.logs.every((l) => l.startsWith('[MODE TERMINAL]'))).toBe(true);
   });
 
   it('echoes the route id from the payload', async () => {
@@ -165,5 +177,3 @@ describe('createDispatcher', () => {
     const result = await dispatcher.dispatch(makeStagedPayload());
     expect(result.isDryRun).toBe(true);
     expect(result.mode).toBe('DRY_RUN');
-  });
-});

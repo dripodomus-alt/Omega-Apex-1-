@@ -1,7 +1,7 @@
 export type PipelineStage = 'DISCOVERED' | 'RANKED' | 'SIMULATED' | 'PREPARED' | 'EXECUTED' | 'ACCOUNTED';
 
-/** Controls whether dispatch sends real on-chain transactions or logs a simulated dry-run. */
-export type ExecutionMode = 'DRY_RUN' | 'LIVE';
+/** Mode controls only the terminal submission action. All modes share canonical pipeline logic. */
+export type ExecutionMode = 'DEV' | 'TEST' | 'SIM' | 'DRY_RUN' | 'LIVE';
 
 /** C1 = first-cycle arbitrage; C2 = second-cycle (mirror/reverse); LIQUIDATION = Aave borrower liquidation */
 export type ExecutionType = 'C1_ARBITRAGE' | 'C2_ARBITRAGE' | 'LIQUIDATION';

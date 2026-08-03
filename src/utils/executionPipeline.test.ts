@@ -161,7 +161,7 @@ describe('runExecutionPipeline — DRY_RUN has tx broadcasting disabled', () => 
     expect(result.auditLog.isDryRun).toBe(true);
   });
 
-  it('executed route notes mention [DRY RUN] in DRY_RUN mode', async () => {
+  it('executed route notes mention approved envelope was archived with no submission', async () => {
     const result = await runExecutionPipeline(
       makeRoute(),
       [],
@@ -169,7 +169,8 @@ describe('runExecutionPipeline — DRY_RUN has tx broadcasting disabled', () => 
       38,
       dryRunDispatcher
     );
-    expect(result.executedRoute.notes).toContain('[DRY RUN]');
+    expect(result.executedRoute.notes).toContain('Approved envelope archived');
+    expect(result.executedRoute.notes).toContain('No signature or chain submission');
   });
 
   it('dispatch result has isDryRun false when a LiveDispatcher is supplied', async () => {
@@ -283,7 +284,7 @@ describe('runExecutionPipeline — output shape', () => {
     expect(result.auditLog.simulationId).toBeTruthy();
   });
 
-  it('audit log simulationId starts with "dry" in DRY_RUN mode', async () => {
+  it('audit log simulationId starts with "archive_" in DRY_RUN mode', async () => {
     const result = await runExecutionPipeline(
       makeRoute(),
       [],
@@ -291,7 +292,7 @@ describe('runExecutionPipeline — output shape', () => {
       38,
       dryRunDispatcher
     );
-    expect(result.auditLog.simulationId).toMatch(/^dry_/);
+    expect(result.auditLog.simulationId).toMatch(/^archive_/);
   });
 
   it('audit log status is SUCCESS for a passing route', async () => {

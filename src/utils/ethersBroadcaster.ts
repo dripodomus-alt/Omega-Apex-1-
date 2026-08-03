@@ -1,5 +1,7 @@
 import { ethers } from 'ethers';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
+import { buildPayloadForRoute } from './payloadBuilder';
+import type { ArbitrageRoute } from '../types';
 
 /**
  * FULLY EXPRESSED ETHERS.JS ON-CHAIN TRANSACTION WRITER & BROADCASTER
@@ -17,6 +19,7 @@ export const OMEGA_EXECUTOR_ABI = [
   'function executeFlashLoanArbitrage(address tokenIn, uint256 amountIn, address[] calldata routePools, bytes calldata callData) external returns (uint256 profit)',
   'function executeAaveLiquidation(address userToLiquidate, address collateralAsset, address debtAsset, uint256 debtToCover, bool receiveAToken) external returns (uint256 profitUSD)',
   'function owner() view returns (address)',
+  'function executeMultiHopSwap(tuple(address target, bytes callData, uint256 value)[] calls)',
   'function profitReceiver() view returns (address)',
   'function isAuthorizedRelayer(address relayer) view returns (bool)',
   'function getNonce(address user) view returns (uint256)',
@@ -40,10 +43,8 @@ export interface LiveEthersTxBroadcastResult {
 }
 
 export interface BroadcastTransactionPayload {
-  routeId: string;
-  pathAddresses: string[];
-  inputAmountUSD: number;
-  expectedProfitUSD: number;
+  /** The full arbitrage route, which is the source of truth for the payload builder. */
+  route: ArbitrageRoute;
   relayProtocol?: 'FASTLANE' | 'FLASHBOTS' | 'BUILDER_0X69' | 'EDEN' | 'PUBLIC_RPC';
   customMaxFeeGwei?: number;
 }
@@ -70,48 +71,27 @@ export function getEthersPolygonProvider(): ethers.JsonRpcProvider {
  * Full On-Chain Pre-Flight Simulation using ethers.js `eth_call`
  */
 export async function simulateArbitrageOnChain(
-  payload: BroadcastTransactionPayload
+  route: ArbitrageRoute
 ): Promise<{ success: boolean; simulationData: string; estimatedGasUnits: bigint; errorReason?: string }> {
   const provider = getEthersPolygonProvider();
-  const executorAddress = POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress;
-
-  const executorInterface = new ethers.Interface(OMEGA_EXECUTOR_ABI);
-
-  // Encode function call
-  const callData = executorInterface.encodeFunctionData('executeArbitrage', [
-    payload.pathAddresses && payload.pathAddresses.length > 0
-      ? payload.pathAddresses
-      : [
-          '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC.e
-          '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270', // WMATIC/POL
-          '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619', // WETH
-          '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174', // USDC.e
-        ],
-    BigInt(Math.floor(payload.inputAmountUSD * 1e6)), // USDC decimals
-    BigInt(Math.floor(payload.expectedProfitUSD * 1e6)),
-    '0x', // Empty flashloan extra bytes
-  ]);
+  const builtPayload = await buildPayloadForRoute(route);
 
   try {
     // 1. Simulate via eth_call
     const simulationResult = await provider.call({
       from: POLYGON_CHAIN_CONFIG.botAddress,
-      to: executorAddress,
-      data: callData,
-      value: 0n,
+      to: builtPayload.to,
+      data: builtPayload.data,
+      value: builtPayload.value,
     });
 
     // 2. Estimate Gas
-    let estimatedGas = 350000n;
-    try {
-      estimatedGas = await provider.estimateGas({
-        from: POLYGON_CHAIN_CONFIG.botAddress,
-        to: executorAddress,
-        data: callData,
-      });
-    } catch {
-      estimatedGas = 420000n; // Safe fallback estimation
-    }
+    const estimatedGas = await provider.estimateGas({
+      from: POLYGON_CHAIN_CONFIG.botAddress,
+      to: builtPayload.to,
+      data: builtPayload.data,
+      value: builtPayload.value,
+    });
 
     return {
       success: true,
@@ -144,7 +124,7 @@ export async function broadcastEthersOnChainTransaction(
 
   // Step 1: Pre-flight Simulation via eth_call
   confirmationLogs.push(`[STEP 1/4 PRE-FLIGHT] Executing eth_call state diff simulation...`);
-  const simResult = await simulateArbitrageOnChain(payload);
+  const simResult = await simulateArbitrageOnChain(payload.route);
 
   if (simResult.errorReason && !simResult.success) {
     confirmationLogs.push(`[SIMULATION WARNING] ${simResult.errorReason}`);
