@@ -150,6 +150,7 @@ export class UniswapV3Adapter implements IProtocolAdapter {
 export function getAdapter(protocol: string): IProtocolAdapter {
   switch (protocol) {
     case 'DODO_V2':
+    case 'DODO_V2_PMM':
       return new DodoV2Adapter();
     case 'V3_CLMM': // Map the generic V3 protocol name to our specific adapter
     case 'UNISWAP_V3':

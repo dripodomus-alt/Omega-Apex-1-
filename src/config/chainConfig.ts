@@ -59,7 +59,7 @@ export const POLYGON_CHAIN_CONFIG = {
   titanMevUsWest: 'https://us.rpc.titanbuilder.xyz',
 
   // DODO V2 Polygon Mainnet Contracts
-  dodoV2Router: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e3',
+  dodoV2Router: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e70',
   dodoDvmFactory: '0x79887f65f83bdf15Bcc8736b5e5BcDB48fb8fE13',
   dodoDppFactory: '0x43C49f8DD240e1545F147211Ec9f917376Ac1e87',
   dodoMixSwapProxy: '0x2dA2F2ABfe7f776AC610B70C68a2cD2f7b07D1fD',
@@ -106,3 +106,4 @@ export const RESERVE_RATES = {
   liquidationRisk: 0.0012,
   liquidationModel: 0.0008,
 } as const;
+

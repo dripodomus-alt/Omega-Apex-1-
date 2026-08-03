@@ -43,10 +43,22 @@ export interface LiveEthersTxBroadcastResult {
 }
 
 export interface BroadcastTransactionPayload {
-  /** The full arbitrage route, which is the source of truth for the payload builder. */
-  route: ArbitrageRoute;
+  /** The full arbitrage route, which is the source of truth for simulation and broadcast. */
+  route?: ArbitrageRoute;
+  /** Legacy UI fields are typed for compatibility only; live execution still requires route. */
+  routeId?: string;
+  pathAddresses?: string[];
+  inputAmountUSD?: number;
+  expectedProfitUSD?: number;
   relayProtocol?: 'FASTLANE' | 'FLASHBOTS' | 'BUILDER_0X69' | 'EDEN' | 'PUBLIC_RPC';
   customMaxFeeGwei?: number;
+}
+
+function requireCanonicalRoute(payload: BroadcastTransactionPayload): ArbitrageRoute {
+  if (!payload.route) {
+    throw new Error('[ETHERS.JS WRITER] Refusing broadcast: canonical ArbitrageRoute is required before simulation or submit.');
+  }
+  return payload.route;
 }
 
 /**
@@ -124,7 +136,7 @@ export async function broadcastEthersOnChainTransaction(
 
   // Step 1: Pre-flight Simulation via eth_call
   confirmationLogs.push(`[STEP 1/4 PRE-FLIGHT] Executing eth_call state diff simulation...`);
-  const simResult = await simulateArbitrageOnChain(payload.route);
+  const simResult = await simulateArbitrageOnChain(requireCanonicalRoute(payload));
 
   if (simResult.errorReason && !simResult.success) {
     confirmationLogs.push(`[SIMULATION WARNING] ${simResult.errorReason}`);
@@ -226,3 +238,4 @@ export async function broadcastAaveLiquidationViaEthers(
     confirmationLogs,
   };
 }
+

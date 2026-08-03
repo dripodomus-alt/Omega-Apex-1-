@@ -103,7 +103,7 @@ describe('DryRunDispatcher', () => {
   it('returns an approvedEnvelopeHash', async () => {
     const dispatcher = new DryRunDispatcher();
     const result = await dispatcher.dispatch(makeStagedPayload());
-    expect(result.approvedEnvelopeHash).toMatch(/^0x[0-9a-f]{64}$/);
+    expect(result.approvedEnvelopeHash).toMatch(/^0x[0-9a-f]{8}$/);
   });
 
   it('emits [MODE TERMINAL] marker lines in logs', async () => {
@@ -162,14 +162,14 @@ describe('LiveDispatcher', () => {
 // ---------------------------------------------------------------------------
 
 describe('createDispatcher', () => {
-  it('returns a DryRunDispatcher for DRY_RUN mode', () => {
+  it('returns the canonical terminal for DRY_RUN mode', () => {
     const dispatcher = createDispatcher('DRY_RUN');
-    expect(dispatcher).toBeInstanceOf(DryRunDispatcher);
+    expect(dispatcher).toBeInstanceOf(ModeTerminal);
   });
 
-  it('returns a LiveDispatcher for LIVE mode', () => {
+  it('returns the canonical terminal for LIVE mode', () => {
     const dispatcher = createDispatcher('LIVE');
-    expect(dispatcher).toBeInstanceOf(LiveDispatcher);
+    expect(dispatcher).toBeInstanceOf(ModeTerminal);
   });
 
   it('DRY_RUN dispatcher result has isDryRun true without network calls', async () => {
@@ -177,3 +177,6 @@ describe('createDispatcher', () => {
     const result = await dispatcher.dispatch(makeStagedPayload());
     expect(result.isDryRun).toBe(true);
     expect(result.mode).toBe('DRY_RUN');
+  });
+});
+

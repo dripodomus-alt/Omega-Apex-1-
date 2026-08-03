@@ -47,7 +47,7 @@ export const DODO_MIX_SWAP_SELECTOR = '0x12aa3caf';
 
 export const DODO_POLYGON_ADDRESSES = {
   /** DODO V2 Router (proxies to underlying pools) */
-  router: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e3',
+  router: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e70',
   /** DODO DVM factory (dynamic vAMM pools) */
   dvmFactory: '0x79887f65f83bdf15Bcc8736b5e5BcDB48fb8fE13',
   /** DODO DPP factory (private pools — supports zero-fee flash loans) */
@@ -364,3 +364,4 @@ function _encodeBytesArray(items: string[]): string {
   }
   return lenWord + offsets.join('') + bodies.join('');
 }
+

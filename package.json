@@ -19,7 +19,8 @@
     "dev:yarn": "yarn dev",
     "dry-run:discovery": "tsx scripts/discovery-ranking-dry-run.ts",
     "truth-gate:live": "tsx scripts/live-truth-gate.ts",
-    "probe:balancer": "tsx scripts/probe-balancer-query.ts"
+    "probe:balancer": "tsx scripts/probe-balancer-query.ts",
+    "audit:targets": "tsx scripts/audit-contract-targets.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

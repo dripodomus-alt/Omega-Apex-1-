@@ -180,6 +180,8 @@ describe('runExecutionPipeline — DRY_RUN has tx broadcasting disabled', () => 
       dispatch: vi.fn().mockResolvedValue({
         success: true,
         txHash: '0x' + 'b'.repeat(64),
+        approvedEnvelopeHash: '0xaaaaaaaa',
+        submissionOutcome: 'BROADCAST_SUBMITTED' as const,
         isDryRun: false,
         mode: 'LIVE' as const,
         logs: [],
@@ -306,3 +308,4 @@ describe('runExecutionPipeline — output shape', () => {
     expect(result.auditLog.status).toBe('SUCCESS');
   });
 });
+

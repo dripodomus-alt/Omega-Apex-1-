@@ -25,7 +25,9 @@ export type ProtocolType =
   /** Dual V2/V3-compatible Balancer Vault (unified flashloan source) */
   | 'BALANCER_VAULT'
   /** DODO V2 PMM / DPP / DVM pool */
-  | 'DODO_V2_PMM';
+  | 'DODO_V2_PMM'
+  | 'DODO_V2'
+  | 'UNISWAP_V3';
 
 export type PoolCategory = 'SWAPPABLE_EXECUTION' | 'FUNDING_FLASHLOAN' | 'LIQUIDATION_TARGET' | 'DODO_PMM_FLASH';
 
@@ -46,6 +48,10 @@ export interface PoolInfo {
   activeTick?: number;
   isFundingPool: boolean;
   status: 'ACTIVE' | 'DEPRECATED' | 'PAUSED';
+  /** Route-local transient token direction, assigned by calldata construction after continuity validation. */
+  tokenInAddress?: string;
+  /** Route-local transient token direction, assigned by calldata construction after continuity validation. */
+  tokenOutAddress?: string;
 }
 
 /**
@@ -241,3 +247,4 @@ export interface MainnetConfig {
   authApiKey?: string;
   realTxSigningEnabled?: boolean;
 }
+

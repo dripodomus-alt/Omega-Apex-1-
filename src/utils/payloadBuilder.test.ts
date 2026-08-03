@@ -22,7 +22,7 @@ function makeDodoPool(overrides: Partial<PoolInfo> = {}): PoolInfo {
   return {
     id: 'dodo-pool-1',
     name: 'DODO-WMATIC-USDC',
-    protocol: 'DODO_V2',
+    protocol: 'DODO_V2_PMM',
     category: 'SWAPPABLE_EXECUTION',
     address: '0x813fC12B3BE39Ab68B6f21Cd8a2BCED7d75b31f4', // A real DODO pool
     token0: { symbol: 'WMATIC', decimals: 18, address: '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270' },
@@ -40,7 +40,7 @@ function makeUniswapV3Pool(overrides: Partial<PoolInfo> = {}): PoolInfo {
   return {
     id: 'uni-v3-pool-1',
     name: 'UNI-V3-USDC-WETH',
-    protocol: 'UNISWAP_V3',
+    protocol: 'V3_CLMM',
     category: 'SWAPPABLE_EXECUTION',
     address: '0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640', // A real UNI-V3 pool
     token0: { symbol: 'USDC.e', decimals: 6, address: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174' },
@@ -60,11 +60,18 @@ function makeRoute(pools: PoolInfo[], overrides: Partial<ArbitrageRoute> = {}): 
     pathString: 'WMATIC→USDC.e',
     length: 1,
     pools,
+    expectedYieldUSD: 0,
+    vqcAlphaScore: 0.88,
+    vqcWinProbability: 0.82,
     optimalInputUSD: 50000,
     optimalInputWei: '50000000000000000000000', // 50,000 * 10^18
+    grossProfitUSD: 300,
+    estimatedGasUSD: 0.5,
     netProfitUSD: 300,
     stage: 'SIMULATED',
     timestamp: new Date().toISOString(),
+    slippageToleranceBps: 50,
+    isSelfFundingRisk: false,
     ...overrides,
   };
 }
