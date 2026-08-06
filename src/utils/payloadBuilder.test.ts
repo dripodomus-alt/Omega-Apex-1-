@@ -136,4 +136,34 @@ describe('PayloadBuilder', () => {
     const uniSwapSelector = 'c04b8602'; // exactInputSingle
     expect(payload.data).toContain(uniSwapSelector);
   });
+
+  it('should build a correct payload for a single-hop DODO route', async () => {
+    const dodoPool = makeDodoPool();
+    const route = makeRoute([dodoPool], {
+      pathString: 'WMATIC→USDC.e',
+      length: 1,
+    });
+
+    const payload = await buildPayloadForRoute(route);
+
+    // The payload should still target our own executor contract for consistency
+    expect(payload.to).toBe('0x409ece3Fd71DFBd8f692B600f36A89301cb37346');
+    expect(payload.value).toBe(0n);
+    expect(payload.description).toContain('Execute 1-hop swap');
+
+    // Verify the calldata for the multicall
+    const selector = payload.data.slice(0, 10);
+    expect(selector).toBe('0x0d08c4f5'); // executeMultiHopSwap
+
+    // Check that the calldata contains the target address of the DODO adapter
+    const dodoAdapter = new DodoV2Adapter();
+    expect(payload.data).toContain(dodoAdapter.protocol.slice(2).toLowerCase());
+  });
+
+  it('should throw an error for a route with no pools', async () => {
+    const routeWithNoPools = makeRoute([]);
+    await expect(buildPayloadForRoute(routeWithNoPools)).rejects.toThrow(
+      '[PayloadBuilder] Route must contain at least one pool.'
+    );
+  });
 });

@@ -19,16 +19,20 @@
  *                        → REVERTED  (success=false)
  *                        → DROPPED   (timeout)
  *
+ * When a transaction is REVERTED, the runner will attempt to fetch the revert
+ * reason by re-playing the transaction via `eth_call`.
+ *
  * Output is compatible with the existing `LiveTradeLog` shape so results can
  * be written directly to the Firestore audit trail or rendered by the UI.
  *
  * Design constraints:
- *   - Zero new external dependencies — only uses browser fetch + existing project utils.
+ *   - Uses existing project dependencies (`ethers`) and utils.
  *   - Safe for concurrent callers (JS single-threaded event loop, no shared mutable state
  *     across `TxRunner` instances).
  *   - Works in both browser (import.meta.env) and Node.js (process.env) environments.
  */
 
+import { ethers } from 'ethers';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import { getOmegaRpcRouter } from './rpcRouter';
 import type { LiveTradeLog } from '../types';
@@ -169,6 +173,7 @@ function buildDefaultEndpoints(): { url: string; label: string }[] {
     { url: cfg.infuraWritableHttp,    label: 'Infura'     },
     { url: 'https://polygon-bor-rpc.publicnode.com', label: 'PublicNode' },
     { url: 'https://polygon-rpc.com',                label: 'PolygonRPC' },
+    { url: 'https://rpc.ankr.com/polygon',           label: 'Ankr'       },
   ];
 }
 
@@ -327,10 +332,11 @@ export class TxRunner {
   private readonly router = getOmegaRpcRouter();
   private readonly cfg: Required<Omit<TxLoggerConfig, 'endpoints'>>;
   private readonly records = new Map<string, TxRecord>();
+  private readonly listeners: TxStatusChangeHandler[] = [];
   private _running = false;
   private _loopHandle: ReturnType<typeof setTimeout> | null = null;
 
-  /** Called every time a record transitions to a new TxStatus. */
+  /** @deprecated Use `subscribe()` for new code. Kept for backward compatibility. */
   onStatusChange: TxStatusChangeHandler | null = null;
 
   constructor(config: TxLoggerConfig = {}) {
@@ -351,6 +357,21 @@ export class TxRunner {
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
+
+  /**
+   * Subscribes to status change events.
+   * @param handler The function to call on each status change.
+   * @returns An `unsubscribe` function to remove the listener.
+   */
+  subscribe(handler: TxStatusChangeHandler): () => void {
+    this.listeners.push(handler);
+    return () => {
+      const index = this.listeners.indexOf(handler);
+      if (index > -1) {
+        this.listeners.splice(index, 1);
+      }
+    };
+  }
 
   /** Registers a tx hash to be tracked.  Idempotent — re-registering a known hash is a no-op. */
   track(txHash: string, meta: TxMeta = {}): TxRecord {
@@ -542,6 +563,7 @@ export class TxRunner {
 
     const success = receipt.status === '0x1';
     if (!success) {
+      void this._fetchRevertReason(record);
       this._transition(record, 'REVERTED');
       return;
     }
@@ -556,7 +578,74 @@ export class TxRunner {
   private _transition(record: TxRecord, next: TxStatus): void {
     if (record.status === next) return;
     record.status = next;
+    
+    // Fire legacy handler
     this.onStatusChange?.(record);
+    // Fire all subscribed listeners
+    for (const listener of this.listeners) {
+      try {
+        listener(record);
+      } catch (e) {
+        // console.error('[TxRunner] Status change listener threw an error:', e);
+      }
+    }
+  }
+
+  /**
+   * For a reverted transaction, attempts to discover the on-chain revert reason
+   * by re-playing the transaction against the block in which it was mined.
+   */
+  private async _fetchRevertReason(record: TxRecord): Promise<void> {
+    if (!record.blockNumber) return;
+
+    try {
+      // 1. Fetch the full transaction object
+      const txResult = await this.router.send({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'eth_getTransactionByHash',
+        params: [record.txHash],
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tx = (txResult.data as { result: any }).result;
+
+      if (!tx || !tx.to) { // tx.to can be null for contract creation
+        return;
+      }
+
+      // 2. Re-play the transaction via eth_call at the failure block
+      const callParams = {
+        from: tx.from,
+        to: tx.to,
+        gas: tx.gas,
+        data: tx.data,
+        value: tx.value,
+        // For eth_call, we don't need to specify gas prices
+      };
+
+      const callResult = await this.router.send({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'eth_call',
+        params: [callParams, '0x' + record.blockNumber.toString(16)]
+      });
+
+      // 3. Decode the revert reason from the error data
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const errorData = (callResult.data as { error?: { data?: string } }).error?.data;
+      if (errorData && errorData.startsWith('0x08c379a0')) { // Error(string) selector
+        const iface = new ethers.utils.Interface(['function Error(string)']);
+        const decodedError = iface.decodeErrorResult('Error', errorData);
+        record.revertReason = decodedError[0];
+      } else if (errorData === '0x') {
+        record.revertReason = 'Reverted with no reason';
+      } else if (errorData) {
+        record.revertReason = `Reverted with custom error: ${errorData}`;
+      }
+
+    } catch (e) {
+      // This is a best-effort process; non-fatal if it fails.
+    }
   }
 }
 
@@ -603,14 +692,12 @@ export function waitForTx(
   }
 
   return new Promise((resolve) => {
-    const prev = runner.onStatusChange;
-    runner.onStatusChange = (updated) => {
-      // Propagate to any previously registered handler
-      prev?.(updated);
+    const unsubscribe = runner.subscribe((updated) => {
       if (updated.txHash === txHash.toLowerCase() && _isTerminal(updated.status)) {
+        unsubscribe();
         resolve(updated);
       }
-    };
+    });
   });
 }
 

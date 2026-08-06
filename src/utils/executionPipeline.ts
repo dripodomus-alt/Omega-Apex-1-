@@ -1,6 +1,7 @@
 import { ArbitrageRoute, ExecutionMode, PoolInfo, SimulationAuditLog } from '../types';
 import { validateRouteAssetRegistry } from './mathEngine';
 import { computeLegLedger } from './transientAccounting';
+import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import { StagedPayload, DispatchResult, IDispatcher, createDispatcher } from './dispatcher';
 
 export type PipelineStageName = 'DISCOVERY' | 'RANKING' | 'STAGING' | 'DISPATCH';
@@ -98,7 +99,7 @@ export async function runExecutionPipeline(
     expectedGrossProfitUSD: route.grossProfitUSD,
     netProfitUSD: route.netProfitUSD,
     status: 'SUCCESS',
-    gasUsedGwei: gasGwei + 2.5,
+    gasUsedGwei: gasGwei + POLYGON_CHAIN_CONFIG.defaultPriorityFeeGwei,
     redisStreamKey: `omega:audit:${dispatchResult.submissionOutcome === 'NOT_BROADCAST' ? 'archives' : 'submissions'}:${Date.now()}-0`,
     sqlSynced: false,
     timestamp,
