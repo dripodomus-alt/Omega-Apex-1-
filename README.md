@@ -51,19 +51,569 @@ This keeps the Node toolchain and Python runtime separated while still enabling 
 
 This repository currently operates as a **prototype operator console and simulation environment**, not as an audited production trading system.
 
-**Key limitations:**
+Below is the production-grade rewrite, aligned to the current Apex-Omega architecture while preserving the distinction between what exists now and what must be proven before the system can be represented as production-live. The scanner doctrine already defines live Chain 137 intake, executable quote discovery, protocol-aware normalization, RustMath staging, simulation gating, transaction construction, private submission, and receipt-backed settlement as the target pipeline. Apex-Omega Scanner Execution.txt
 
-- Benchmark results, route profitability figures, and pool metrics are **seeded / simulated mock data**. They do not represent live traded performance or real P&L.
-- Live external connectivity is limited to:
-  - RPC calls for balance and nonce checks
-  - Gemini AI route analysis
-  - Firebase persistence
-- No production-grade execution, risk management, or capital custody layers are active.
-- The system has **not** undergone formal security audits, formal verification, or mainnet battle-testing.
+APEX-OMEGA — SYSTEM STATUS & PRODUCTION READINESS
 
-Until these components are replaced with live data feeds, audited execution paths, and production infrastructure, this codebase should be treated strictly as a development and simulation surface.
+Apex-Omega is a Chain 137 multi-protocol trading-engine architecture currently operating across development, live-data discovery, simulation, and execution-integration layers.
 
-## Core System Capabilities
+The repository is substantially beyond a static UI prototype: its architecture defines live Polygon market discovery, protocol-native state normalization, deterministic opportunity ranking, simulation gating, transaction construction, private submission, and receipt-backed settlement.
+
+However, production status is determined by verified runtime capability—not architectural intent, seeded demonstrations, UI presentation, or the presence of incomplete adapters.
+
+Accordingly, any subsystem that has not been connected to live Chain 137 state, exercised end-to-end, and validated against actual execution outcomes must remain classified as development, simulation, integration, or validation-stage functionality.
+
+Production Truth Standard
+
+Apex-Omega follows one governing rule:
+
+Hard logic protects correctness.
+Dynamic configuration controls behavior.
+Live state controls opportunity.
+Simulation controls permission.
+Settlement controls truth.
+
+The system therefore distinguishes between:
+
+ARCHITECTED
+    capability exists in system design
+IMPLEMENTED
+    executable source exists
+CONNECTED
+    implementation is wired to its required live dependency
+VALIDATED
+    implementation has passed deterministic/runtime testing
+SIMULATED
+    complete execution path has passed state-accurate simulation
+EXECUTED
+    transaction has been submitted to Chain 137
+SETTLED
+    successful on-chain receipt confirms the final state transition
+
+No lower state may be represented as a higher state.
+
+A simulated opportunity is not realized profit.
+
+A transaction envelope is not an execution.
+
+A broadcast transaction is not settlement.
+
+A projected P&L value is not realized P&L.
+
+On-chain settlement is the final execution authority.
+
+⸻
+
+Current Data Classification
+
+Repository outputs must explicitly identify their provenance.
+
+Permitted classifications:
+
+MOCK
+SEEDED
+DERIVED
+LIVE_RPC
+LIVE_QUOTE
+SIMULATED
+SUBMITTED
+SETTLED
+
+Seeded benchmark results, synthetic route opportunities, demonstration pool metrics, and simulated profitability values must remain clearly labeled and must never be represented as historical live trading performance.
+
+Live values may only be labeled as such when sourced directly from current Chain 137 state or an explicitly identified live external provider.
+
+Realized profit may only be recorded after successful settlement and receipt reconciliation.
+
+⸻
+
+Live Connectivity
+
+The architecture supports a multi-lane external connectivity model.
+
+Chain 137 State Layer
+
+Live RPC/WSS infrastructure is responsible for:
+
+block synchronization
+contract reads
+pool-state acquisition
+balances
+allowances
+nonces
+gas state
+transaction submission
+receipt retrieval
+settlement verification
+
+All execution-critical state must be block-anchored.
+
+The scanner must reject stale or internally inconsistent state before execution permission is granted.
+
+⸻
+
+Multi-Protocol Discovery
+
+Apex-Omega is designed as a protocol-family-aware Polygon Chain 137 scanner, rather than a scanner built around a single DEX ABI or fixed token pair.
+
+Supported architecture families include:
+
+V2 Constant Product / CPMM
+V3 Concentrated Liquidity / CLMM
+Algebra CLMM
+Curve StableSwap
+Balancer Weighted
+Balancer Stable
+Balancer Composable Stable
+Order-book-compatible normalized surfaces
+
+Protocol families remain independently modeled because their invariants, state requirements, quoting mechanisms, and execution interfaces differ.
+
+For example, Uniswap V3 and QuickSwap Algebra must remain separate discovery/execution adapters rather than being forced through a common factory ABI.
+
+⸻
+
+Dynamic Market Intake
+
+The scanner operates under an opportunistic market-selection doctrine.
+
+It must not assume that a particular:
+
+token
+token pair
+DEX
+protocol
+pool
+fee tier
+route template
+
+is inherently preferable.
+
+Current scanner eligibility doctrine requires:
+
+Chain ID = 137
+pool-native TVL available
+pool-native TVL >= $50,000 USD-equivalent
+live executable quote
+supported invariant family
+fresh block-anchored state
+normalized execution destination
+2+ comparable executable destinations
+distinct buy and sell destinations
+
+Same-pool round trips are invalid.
+
+No asset is excluded solely because of its identity, and no protocol receives ranking priority solely because of its identity.
+
+⸻
+
+Deterministic Opportunity Engine
+
+Eligible live state flows into the deterministic mathematical layer.
+
+The math layer is responsible for protocol-correct:
+
+quote normalization
+fee accounting
+executable-price calculation
+price-impact calculation
+slippage modeling
+liquidity-depth analysis
+route comparison
+optimal sizing
+profit calculation
+candidate hashing
+state hashing
+
+The canonical ranking relation is:
+
+BUY_LEG1_EXEC_PRICE < SELL_LEG2_EXEC_PRICE
+
+For each comparable executable market:
+
+LEG1 = lowest executable acquisition price
+LEG2 = highest executable disposal price
+
+A positive quoted spread alone is insufficient.
+
+The route must remain profitable after execution size, price impact, venue fees, flash-capital costs, gas, slippage constraints, and all other deterministic execution costs are incorporated.
+
+⸻
+
+Invariant-Native Mathematics
+
+Apex-Omega does not approximate heterogeneous protocols through a single reserve-ratio model.
+
+The deterministic engine architecture explicitly distinguishes:
+
+CPMM
+CLMM
+Algebra CLMM
+StableSwap
+Balancer Weighted
+Balancer Stable
+Balancer Composable Stable
+
+Each invariant family exposes normalized execution operations while retaining its native mathematical implementation.
+
+Canonical adapter behavior includes:
+
+quote_exact_in()
+quote_exact_out()
+apply_swap()
+marginal_price()
+state_hash()
+pool_identity()
+supports_simulation()
+supports_execution()
+
+This allows strategy logic to consume normalized executable state without corrupting protocol-specific mathematics.
+
+⸻
+
+Dynamic Capital Sizing
+
+Flash capital is an execution resource, not a fixed trade size.
+
+Capital sizing must be determined dynamically from the executable route.
+
+Conceptually:
+
+MAX_EXECUTABLE_SIZE =
+min(
+    capital_provider_limit,
+    executable_pool_depth,
+    configured TVL/TLV safety ceiling,
+    price-impact ceiling,
+    slippage ceiling,
+    route-profit optimum
+)
+
+The selected size must maximize net executable profit, rather than nominal spread.
+
+No route receives execution permission merely because its smallest test quote is profitable.
+
+⸻
+
+RustMath Staging and Ranking
+
+The canonical execution architecture separates discovery from deterministic ranking:
+
+Scanner
+    ↓
+normalized eligible Chain 137 state
+    ↓
+RustMath
+    ↓
+deterministic executable-price staging
+    ↓
+candidate ranking
+    ↓
+optimal sizing
+
+RustMath is the deterministic authority once its production implementation, PyO3 boundary, benchmark harness, and runtime integration have been completed and validated.
+
+Until those components are actually present and exercised, the repository must distinguish the specified RustMath architecture from a verified production RustMath runtime.
+
+⸻
+
+Simulation Permission Layer
+
+No ranked opportunity automatically receives execution permission.
+
+Simulation must independently prove the transaction path against sufficiently fresh Chain 137 state.
+
+Required validations include:
+
+route does not revert
+protocol calldata is valid
+LEG1 output correctly feeds LEG2
+expected output remains inside tolerance
+gas requirement is viable
+flash-capital repayment succeeds
+slippage remains within policy
+route remains net profitable
+route hash matches simulated route
+calldata hash matches approved transaction
+state has not exceeded its freshness window
+
+Simulation therefore acts as the boundary between:
+
+PROFITABLE IN DETERMINISTIC MATH
+
+and:
+
+PERMITTED FOR EXECUTION
+
+⸻
+
+Transaction Construction
+
+Simulation-approved opportunities are transformed into execution envelopes containing the complete transaction state required for submission.
+
+This includes:
+
+chain_id
+cycle_id
+route_hash
+candidate_hash
+simulation_hash
+executor
+protocol adapters
+asset path
+amount_in
+minimum outputs
+deadline
+gas parameters
+nonce
+calldata
+calldata_hash
+execution mode
+
+Synthetic or demonstration calldata must never enter live submission.
+
+Live mode requires actual protocol-compatible executable calldata.
+
+⸻
+
+Execution Modes
+
+The architecture supports logically identical upstream processing across:
+
+DEV
+SIMULATION
+LIVE
+
+Discovery, normalization, deterministic math, ranking, sizing, and execution gating should remain common.
+
+The primary divergence occurs at submission.
+
+DEV
+→ inspect and diagnose
+SIMULATION
+→ construct and validate without chain submission
+LIVE
+→ sign and submit the already-approved transaction
+
+This prevents the simulation environment from becoming a materially different trading engine than the production environment.
+
+⸻
+
+C1 / C2 Execution Architecture
+
+Apex-Omega treats C1 and C2 as execution cycles, not individual swap legs.
+
+C1
+  LEG1 → buy
+  LEG2 → sell
+C1 settles
+POST-C1 STATE RECOMPUTE
+C2
+  MIRROR
+  REVERSE
+  DO_NOTHING
+  EXPIRE
+
+C2 must never assume that the state predicted before C1 still exists afterward.
+
+It requires:
+
+successful C1 receipt
+confirmed C1 block
+newer post-C1 state
+changed state hash
+fresh executable quotes
+fresh deterministic ranking
+fresh sizing
+fresh simulation
+
+Only then may C2 receive execution permission.
+
+⸻
+
+State Freshness
+
+Market state is transient.
+
+Apex-Omega therefore treats freshness as a dynamic execution property rather than a permanently hardcoded number of blocks.
+
+The validity window must be derived from measured production cycle duration:
+
+STATE_TTL =
+measured complete discovery-to-execution cycle
++
+3 additional cycle-equivalents
+
+Hard revalidation remains mandatory before simulation and execution.
+
+The TTL provides operational time for the system to discover, normalize, rank, size, simulate, construct, and submit an opportunity.
+
+It does not override state correctness.
+
+⸻
+
+Settlement and Realized P&L
+
+Settlement is the final truth source.
+
+After submission, the system must reconcile:
+
+transaction hash
+receipt status
+confirmed block
+gas actually consumed
+effective gas price
+actual token movements
+flash-capital repayment
+protocol fees
+wallet balance delta
+settlement asset delta
+
+Canonical accounting distinction:
+
+RAW_DELTA
+    ↓
+deterministic execution deductions
+AFTER_MATH_DELTA
+    ↓
+simulation / submission / settlement
+REAL_DELTA
+
+Only REAL_DELTA derived from confirmed settlement may be represented as realized trading P&L.
+
+⸻
+
+Risk and Execution Controls
+
+Production execution requires active controls covering at minimum:
+
+state freshness
+nonce integrity
+allowances
+wallet balances
+flash-capital availability
+pool identity
+same-pool rejection
+price divergence
+slippage
+gas economics
+minimum net profit
+profit-to-gas ratio
+simulation success
+calldata integrity
+duplicate opportunity suppression
+transaction replacement
+receipt verification
+C1/C2 state isolation
+
+Missing production functionality must be implemented rather than hidden behind permanent feature gates.
+
+Fail-closed behavior is reserved for genuine runtime safety violations such as:
+
+stale state
+invalid signature
+failed simulation
+broken invariant
+nonce conflict
+unsafe price divergence
+invalid calldata
+insufficient capital
+unprofitable recomputation
+expired execution envelope
+
+⸻
+
+Security and Audit Status
+
+Apex-Omega must not be described as formally audited, formally verified, or mainnet battle-tested unless those milestones have actually occurred and their evidence is available.
+
+Until independent security review and sustained production validation are completed:
+
+formal audit status        = UNVERIFIED
+formal verification status = UNVERIFIED
+mainnet battle-test status  = UNVERIFIED
+
+This classification does not invalidate implemented functionality.
+
+It prevents architecture, implementation, simulation, and production validation from being conflated.
+
+⸻
+
+Core System Capabilities
+
+The target integrated system consists of:
+
+01. Chain 137 RPC/WSS state ingestion
+02. Multi-protocol pool discovery
+03. Protocol-native invariant adapters
+04. $50K minimum pool-TVL eligibility enforcement
+05. Dynamic asset and venue discovery
+06. Executable quote acquisition
+07. Block-anchored state normalization
+08. Comparable-market construction
+09. Same-pool / same-destination rejection
+10. Deterministic RustMath staging
+11. Lowest-buy / highest-sell executable ranking
+12. Dynamic capital and flashloan sizing
+13. Complete cost and net-profit accounting
+14. State-accurate simulation
+15. Transaction-envelope construction
+16. Protocol-specific calldata generation
+17. Nonce and submission-lane management
+18. Private transaction submission
+19. Receipt monitoring and reconciliation
+20. C1/C2 execution-state management
+21. Settlement-derived realized P&L
+22. Persistent telemetry and execution ledger
+23. Firebase / application-state integration
+24. Operator-console observability
+25. DEV / SIMULATION / LIVE operating modes
+
+⸻
+
+Production Classification Rule
+
+Apex-Omega should be represented according to the strongest state that can be demonstrated for each subsystem.
+
+Design alone       ≠ implementation.
+Implementation     ≠ connectivity.
+Connectivity       ≠ validation.
+Validation         ≠ simulation.
+Simulation         ≠ execution.
+Execution          ≠ settlement.
+Settlement         = operational truth.
+
+The production objective is therefore not to make the repository appear production-ready.
+
+The objective is to make every critical path independently provable:
+
+LIVE STATE
+    ↓
+ELIGIBILITY
+    ↓
+DETERMINISTIC MATH
+    ↓
+RANKING
+    ↓
+SIZING
+    ↓
+SIMULATION
+    ↓
+EXECUTION GATE
+    ↓
+TRANSACTION BUILD
+    ↓
+PRIVATE SUBMISSION
+    ↓
+RECEIPT
+    ↓
+SETTLEMENT
+    ↓
+REALIZED P&L
+
+When that entire chain is operational, instrumented, security-reviewed, and repeatedly validated against Chain 137 settlement, Apex-Omega can correctly transition from an execution-capable development system into a production trading system.
+
+This version is suitable as the repository’s SYSTEM_STATUS.md, README production-status section, or operator-console disclosure.
 
 ### 1. Opportunity Discovery
 
