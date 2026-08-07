@@ -86,6 +86,7 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
 
     // The output of this hop is the input for the next
     currentTokenIn = tokenOut;
+    currentAmountIn = expectedAmountOut; // Use simulated output for next hop's input
   }
 
   // For multi-hop, we use our own executor's multicall function

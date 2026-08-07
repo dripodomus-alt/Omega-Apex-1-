@@ -22,6 +22,7 @@ import {
   DodoMixSwapHop,
 } from './dodoCalldata';
 import { ethers } from 'ethers';
+import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 
 /**
  * Represents the protocol-specific data needed for a single swap (hop) in a route.
@@ -119,14 +120,11 @@ export class DodoV2Adapter implements IProtocolAdapter {
 export class UniswapV3Adapter implements IProtocolAdapter {
   public readonly protocol = 'UNISWAP_V3';
 
-  // Per Uniswap docs, the V3 router address on Polygon
-  public readonly routerAddress = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
-
   encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall {
     const uniswapRouterInterface = new ethers.Interface([
       'function exactInputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)',
     ]);
-
+    
     const params = {
       tokenIn: pool.tokenInAddress!,
       tokenOut: pool.tokenOutAddress!,
@@ -141,12 +139,131 @@ export class UniswapV3Adapter implements IProtocolAdapter {
     const callData = uniswapRouterInterface.encodeFunctionData('exactInputSingle', [params]);
 
     return {
+      target: POLYGON_CHAIN_CONFIG.uniswapV3Router,
+      callData,
+      value: 0n,
+    };
+  }
+}
+
+/**
+ * Adapter for Uniswap V2 forks (QuickSwap V2, SushiSwap V2).
+ * Generates calldata for `swapExactTokensForTokens`.
+ */
+export class UniswapV2ForkAdapter implements IProtocolAdapter {
+  constructor(public readonly protocol: string, public readonly routerAddress: string) {}
+
+  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall {
+    const routerInterface = new ethers.Interface([
+      'function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)',
+    ]);
+
+    const path = [pool.tokenInAddress!, pool.tokenOutAddress!];
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes
+
+    const callData = routerInterface.encodeFunctionData('swapExactTokensForTokens', [
+      amountIn,
+      amountOutMinimum,
+      path,
+      recipient,
+      deadline,
+    ]);
+
+    return {
       target: this.routerAddress,
       callData,
       value: 0n,
     };
   }
 }
+
+/**
+ * Adapter for Algebra-based DEXs (e.g., QuickSwap V3).
+ * Generates calldata for `exactInputSingle`.
+ */
+export class AlgebraAdapter implements IProtocolAdapter {
+  public readonly protocol = 'QS_V3_ALGEBRA';
+
+  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall {
+    const routerInterface = new ethers.Interface([
+      'function exactInputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)',
+    ]);
+
+    const params = {
+      tokenIn: pool.tokenInAddress!,
+      tokenOut: pool.tokenOutAddress!,
+      fee: pool.feeBps, // Algebra uses direct fee bps
+      recipient: recipient,
+      deadline: Math.floor(Date.now() / 1000) + 60 * 20,
+      amountIn: amountIn,
+      amountOutMinimum: amountOutMinimum,
+      sqrtPriceLimitX96: 0n,
+    };
+
+    const callData = routerInterface.encodeFunctionData('exactInputSingle', [params]);
+
+    return {
+      target: POLYGON_CHAIN_CONFIG.algebraRouter,
+      callData,
+      value: 0n,
+    };
+  }
+}
+
+/**
+ * Adapter for Balancer V2 Vault.
+ * Generates calldata for `batchSwap`.
+ */
+export class BalancerV2Adapter implements IProtocolAdapter {
+  public readonly protocol = 'BAL_WEIGHTED';
+
+  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall {
+    const vaultInterface = new ethers.Interface([
+      'function batchSwap(uint8 kind, tuple(bytes32 poolId, uint256 assetInIndex, uint256 assetOutIndex, uint256 amount, bytes userData)[] swaps, address[] assets, tuple(address sender, bool fromInternalBalance, address recipient, bool toInternalBalance) funds, int256[] limit, uint256 deadline) external payable',
+    ]);
+
+    const assets = [pool.tokenInAddress!, pool.tokenOutAddress!];
+    const swaps = [
+      {
+        poolId: pool.id, // Balancer requires the poolId
+        assetInIndex: 0,
+        assetOutIndex: 1,
+        amount: amountIn,
+        userData: '0x',
+      },
+    ];
+
+    // For a single swap, the limit is the negative of amountOutMinimum
+    const limits = [0n, -amountOutMinimum];
+
+    const funds = {
+      sender: POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress, // Our executor contract
+      fromInternalBalance: false,
+      recipient: recipient,
+      toInternalBalance: false,
+    };
+
+    const deadline = Math.floor(Date.now() / 1000) + 60 * 20;
+
+    const callData = vaultInterface.encodeFunctionData('batchSwap', [
+      0, // 0 for GIVEN_IN
+      swaps,
+      assets,
+      funds,
+      limits,
+      deadline,
+    ]);
+
+    return {
+      target: POLYGON_CHAIN_CONFIG.balancerVaultAddress,
+      callData,
+      value: 0n,
+    };
+  }
+}
+
+// Note: A full Curve adapter is highly complex due to its dynamic registry and varied pool types.
+// A generic `exchange` adapter is a placeholder. For production, specific adapters for 2pool, 3pool, etc., are needed.
 
 /** A simple factory to get an adapter instance by protocol name. */
 export function getAdapter(protocol: string): IProtocolAdapter {
@@ -157,6 +274,22 @@ export function getAdapter(protocol: string): IProtocolAdapter {
     case 'V3_CLMM': // Map the generic V3 protocol name to our specific adapter
     case 'UNISWAP_V3':
       return new UniswapV3Adapter();
+    case 'QS_V2_CPMM':
+      // Find router address from a config map if available, or hardcode
+      return new UniswapV2ForkAdapter('QS_V2_CPMM', '0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff');
+    case 'V2_CPMM': // Generic for SushiSwap etc.
+      return new UniswapV2ForkAdapter('V2_CPMM', '0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506'); // SushiSwap Router
+    case 'QS_V3_ALGEBRA':
+      return new AlgebraAdapter();
+    case 'BAL_WEIGHTED':
+      return new BalancerV2Adapter();
+    // KyberSwap Elastic is a V3-style CLMM and can often use a V3 adapter if the router interface is identical.
+    // For this exercise, we'll map it to the UniswapV3Adapter, assuming interface compatibility.
+    // A dedicated Kyber adapter would be needed for any unique features.
+    case 'KYBER_ELASTIC':
+      return new UniswapV3Adapter(); // Assuming compatible `exactInputSingle`
+    case 'CURVE_STABLE':
+      throw new Error(`[AdapterFactory] Protocol not yet fully supported for execution: ${protocol}. Requires specialized pool-by-pool adapter.`);
     default:
       throw new Error(`[AdapterFactory] No adapter found for protocol: ${protocol}`);
   }
