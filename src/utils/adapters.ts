@@ -48,9 +48,10 @@ export interface IProtocolAdapter {
    * @param pool The pool information for the swap.
    * @param amountIn The amount of the input token (in wei).
    * @param recipient The address that will receive the output tokens.
+   * @param amountOutMinimum The minimum amount of output tokens expected (in wei) for slippage protection.
    * @returns An AdapterCall object with the target and calldata.
    */
-  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string): AdapterCall;
+  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall;
 }
 
 /**
@@ -71,7 +72,7 @@ export class DodoV2Adapter implements IProtocolAdapter {
    * @param recipient The final recipient of the output tokens.
    * @returns An AdapterCall targeting the DODO gas-saving router.
    */
-  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string): AdapterCall {
+  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall {
     // DODO's tight-packed path requires knowing if we are selling the base token (token0)
     // or the quote token (token1). This is determined by which token is the input.
     // Direction: 0 = sellBase (token0 -> token1), 1 = sellQuote (token1 -> token0)
@@ -93,11 +94,12 @@ export class DodoV2Adapter implements IProtocolAdapter {
 
     // The on-chain executor will expect this packed format.
     // For this example, we'll assume a function `executeDodoPackedSwap(bytes path, uint256 amountIn)`
-    // on our OmegaExecutor contract.
-    const executorInterface = new ethers.Interface(['function executeDodoPackedSwap(bytes path, uint256 amountIn)']);
+    // on our OmegaExecutor contract. We'll add amountOutMinimum to it.
+    const executorInterface = new ethers.Interface(['function executeDodoPackedSwap(bytes path, uint256 amountIn, uint256 amountOutMinimum)']);
     const callData = executorInterface.encodeFunctionData('executeDodoPackedSwap', [
       '0x' + packedPath,
       amountIn,
+      amountOutMinimum, // Pass amountOutMinimum to the executor
     ]);
 
     return {
@@ -120,7 +122,7 @@ export class UniswapV3Adapter implements IProtocolAdapter {
   // Per Uniswap docs, the V3 router address on Polygon
   public readonly routerAddress = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
 
-  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string): AdapterCall {
+  encodeCall(pool: PoolInfo, amountIn: bigint, recipient: string, amountOutMinimum: bigint): AdapterCall {
     const uniswapRouterInterface = new ethers.Interface([
       'function exactInputSingle(tuple(address tokenIn, address tokenOut, uint24 fee, address recipient, uint256 deadline, uint256 amountIn, uint256 amountOutMinimum, uint160 sqrtPriceLimitX96) params) external payable returns (uint256 amountOut)',
     ]);
@@ -132,7 +134,7 @@ export class UniswapV3Adapter implements IProtocolAdapter {
       recipient: recipient,
       deadline: Math.floor(Date.now() / 1000) + 60 * 20, // 20 minutes from now
       amountIn: amountIn,
-      amountOutMinimum: 0n, // For this example, we don't enforce a minimum
+      amountOutMinimum: amountOutMinimum, // Now we enforce the minimum
       sqrtPriceLimitX96: 0n,
     };
 

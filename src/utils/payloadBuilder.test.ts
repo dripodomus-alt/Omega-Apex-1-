@@ -6,7 +6,6 @@ import { DODO_POLYGON_ADDRESSES } from './dodoCalldata';
 
 vi.mock('./ethersBroadcaster', () => ({
   OMEGA_EXECUTOR_ABI: [
-    'function executeDodoPackedSwap(bytes path, uint256 amountIn)',
     'function executeDodoPackedSwap(bytes path, uint256 amountIn, uint256 amountOutMinimum)', // Updated ABI
     'function executeMultiHopSwap(tuple(address target, bytes callData, uint256 value)[] calls)',
   ],

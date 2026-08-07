@@ -40,7 +40,8 @@ export const POLYGON_CHAIN_CONFIG = {
 
   // RPC Endpoints & Multi-Lane Architecture
   rpcEndpoints: {
-    primaryAlchemyHttp: 'https://polygon-mainnet.g.alchemy.com/v2/alch_1ZM_Z5UwNe9UghW0V0czR',
+    primaryAlchemyHttp: '
+    ',
     primaryAlchemyWss: 'wss://polygon-mainnet.g.alchemy.com/v2/alch_1ZM_Z5UwNe9UghW0V0czR',
     drpcLoadBalancedHttp: 'https://lb.drpc.live/polygon/Avauizx6-kfknfhxCHj4Li331ds_f94R8a7RijtBrJVX',
     drpcLoadBalancedWss: 'wss://lb.drpc.live/polygon/Avauizx6-kfknfhxCHj4Li331ds_f94R8a7RijtBrJVX',
