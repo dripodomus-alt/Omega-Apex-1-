@@ -120,20 +120,19 @@ describe('PayloadBuilder', () => {
     // Verify the calldata for the multicall
     // 1. Selector for `executeMultiHopSwap`
     const selector = payload.data.slice(0, 10);
-    expect(selector).toBe('0x0d08c4f5'); // keccak256('executeMultiHopSwap(tuple(address,bytes,uint256)[])')[:4]
+    expect(selector).toBe('0xc133dcae'); // keccak256('executeMultiHopSwap((address,bytes,uint256)[])')[:4]
 
     // 2. Check that the calldata contains the target addresses of both adapters
-    const dodoAdapter = new DodoV2Adapter();
     const uniAdapter = new UniswapV3Adapter();
-    expect(payload.data).toContain(dodoAdapter.protocol.slice(2).toLowerCase());
+    expect(payload.data).toContain(DODO_POLYGON_ADDRESSES.router.slice(2).toLowerCase());
     expect(payload.data).toContain(uniAdapter.routerAddress.slice(2).toLowerCase());
 
     // 3. Check that the calldata contains the function selector for DODO's swap
-    const dodoSwapSelector = '0a354383'; // executeDodoPackedSwap
+    const dodoSwapSelector = '04b97b37'; // executeDodoPackedSwap
     expect(payload.data).toContain(dodoSwapSelector);
 
     // 4. Check that the calldata contains the function selector for Uniswap's swap
-    const uniSwapSelector = 'c04b8602'; // exactInputSingle
+    const uniSwapSelector = '414bf389'; // exactInputSingle
     expect(payload.data).toContain(uniSwapSelector);
   });
 
@@ -153,11 +152,10 @@ describe('PayloadBuilder', () => {
 
     // Verify the calldata for the multicall
     const selector = payload.data.slice(0, 10);
-    expect(selector).toBe('0x0d08c4f5'); // executeMultiHopSwap
+    expect(selector).toBe('0xc133dcae'); // executeMultiHopSwap
 
     // Check that the calldata contains the target address of the DODO adapter
-    const dodoAdapter = new DodoV2Adapter();
-    expect(payload.data).toContain(dodoAdapter.protocol.slice(2).toLowerCase());
+    expect(payload.data).toContain(DODO_POLYGON_ADDRESSES.router.slice(2).toLowerCase());
   });
 
   it('should throw an error for a route with no pools', async () => {
