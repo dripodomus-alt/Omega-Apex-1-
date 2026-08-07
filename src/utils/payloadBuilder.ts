@@ -2,6 +2,7 @@
  * OMEGA V5 — Universal Transaction Payload Builder
  *
  * This engine consumes an `ArbitrageRoute` and the `AdapterFramework` to construct
+ * with on-chain slippage protection,
  * the final, executable calldata for the on-chain `OmegaExecutor` contract.
  *
  * It translates a high-level route definition into a low-level, gas-optimized
@@ -9,6 +10,7 @@
  */
 
 import { ethers } from 'ethers';
+import { getAmountOut } from './pricing'; // Assumes a new helper for price simulation
 import type { ArbitrageRoute } from '../types';
 import { getAdapter, AdapterCall } from './adapters';
 import { OMEGA_EXECUTOR_ABI } from './ethersBroadcaster';
@@ -43,6 +45,7 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
   const executorAddress = POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress;
 
   const adapterCalls: AdapterCall[] = [];
+  let currentAmountIn = BigInt(route.optimalInputWei);
   let currentTokenIn = route.pools[0].token0.address; // Assume route starts with token0 of first pool
 
   for (let i = 0; i < route.pools.length; i++) {
@@ -59,18 +62,25 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
       ? POLYGON_CHAIN_CONFIG.profitReceiverAddress
       : route.pools[i + 1].address;
 
+    // Simulate the output of this hop to calculate amountOutMinimum and to use as input for the next hop.
+    const { amountOut: expectedAmountOut } = await getAmountOut(pool, currentAmountIn);
+
+    // Calculate the minimum amount out based on the route's slippage tolerance.
+    const slippageTolerance = BigInt(route.slippageToleranceBps);
+    const amountOutMinimum = expectedAmountOut - (expectedAmountOut * slippageTolerance / 10000n);
+
     // The amount for the first hop is the route's optimal input. For subsequent hops,
-    // it would be the output of the previous hop. In this off-chain builder, we assume
-    // the on-chain executor contract will handle the amount forwarding. We only need the first input amount.
-    const amountIn = i === 0 ? BigInt(route.optimalInputWei) : 0n; // On-chain executor handles intermediate amounts
+    // the on-chain executor contract will handle the amount forwarding, so we pass 0.
+    const amountInForCall = i === 0 ? currentAmountIn : 0n;
 
     const adapter = getAdapter(pool.protocol);
     pool.tokenInAddress = currentTokenIn;
     pool.tokenOutAddress = tokenOut;
     const adapterCall = adapter.encodeCall(
       pool,
-      amountIn,
-      recipient
+      amountInForCall,
+      recipient,
+      amountOutMinimum // Pass the calculated minimum to the adapter
     );
     adapterCalls.push(adapterCall);
 

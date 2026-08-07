@@ -634,7 +634,7 @@ export class TxRunner {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const errorData = (callResult.data as { error?: { data?: string } }).error?.data;
       if (errorData && errorData.startsWith('0x08c379a0')) { // Error(string) selector
-        const iface = new ethers.utils.Interface(['function Error(string)']);
+        const iface = new ethers.Interface(['error Error(string)']);
         const decodedError = iface.decodeErrorResult('Error', errorData);
         record.revertReason = decodedError[0];
       } else if (errorData === '0x') {

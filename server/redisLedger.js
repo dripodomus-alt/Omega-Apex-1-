@@ -63,7 +63,7 @@ export async function getRedisLedgerStatus() {
 
   try {
     if (mode === 'redis') {
-      activeOpportunityCount = await client.llen(KEYS.OPPORTUNITY_LIST);
+      activeOpportunityCount = await client.hlen(KEYS.OPPORTUNITY_LIST);
     } else {
       activeOpportunityCount = memoryState.opportunities.size;
     }
@@ -78,6 +78,14 @@ export async function getRedisLedgerStatus() {
     mode,
     activeOpportunityCount,
   };
+}
+
+/**
+ * Returns the number of currently active opportunities.
+ */
+export async function getActiveLedgerCount() {
+  const status = await getRedisLedgerStatus();
+  return status.activeOpportunityCount;
 }
 
 /**
@@ -181,19 +189,37 @@ export async function lockOpportunityForExecution(payload, ttlMs = 20_000) {
 /**
  * Releases a previously acquired lock.
  * @param {string} lockId - The `routeId` of the opportunity to release.
+ * @param {string} [status] - Optional terminal status for audit visibility.
+ * @param {object} [metadata] - Optional status metadata to archive with the release.
  */
-export async function releaseOpportunityLock(lockId) {
+export async function releaseOpportunityLock(lockId, status, metadata) {
   if (!lockId) return true;
 
   const client = await getRedisClient();
   const lockKey = `${KEYS.LOCK_PREFIX}${lockId}`;
+  const releaseEntry = status
+    ? {
+        id: `release-${lockId}-${Date.now()}`,
+        routeId: lockId,
+        status,
+        metadata: metadata ?? {},
+        createdAt: Date.now(),
+      }
+    : null;
   
   try {
     if (client) {
       await client.del(lockKey);
+      if (releaseEntry) {
+        await client.lpush(KEYS.SNAPSHOT_LIST, JSON.stringify(releaseEntry));
+        await client.ltrim(KEYS.SNAPSHOT_LIST, 0, SNAPSHOT_LIST_MAX_LENGTH - 1);
+      }
     } else {
       // Memory fallback
       memoryState.locks.delete(lockId);
+      if (releaseEntry) {
+        memoryState.opportunities.set(releaseEntry.id, releaseEntry);
+      }
     }
     return true;
   } catch(e) {

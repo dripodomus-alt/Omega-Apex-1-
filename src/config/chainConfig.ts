@@ -54,6 +54,7 @@ export const POLYGON_CHAIN_CONFIG = {
   },
 
   // Gas Station & FastLane Relayer
+  defaultPriorityFeeGwei: 35,
   polygonGasStationUrl: 'https://gasstation.polygon.technology/v2',
   flashbotsRelayUrl: 'https://relay-polygon.flashbots.net',
   titanMevUsWest: 'https://us.rpc.titanbuilder.xyz',
@@ -61,8 +62,8 @@ export const POLYGON_CHAIN_CONFIG = {
   // DODO V2 Polygon Mainnet Contracts
   dodoV2Router: '0xa222e6a71D1A1Dd5F279805fbe38d5329C1d0e70',
   dodoDvmFactory: '0x79887f65f83bdf15Bcc8736b5e5BcDB48fb8fE13',
-  dodoDppFactory: '0x43C49f8DD240e1545F147211Ec9f917376Ac1e87',
-  dodoMixSwapProxy: '0x2dA2F2ABfe7f776AC610B70C68a2cD2f7b07D1fD',
+  dodoDppFactory: '0xd24153244066F0afA9415563bFC7Ba248bfB7a51',
+  dodoMixSwapProxy: '0x45894C062E6f4E58B257e0826675355305dfef0d',
   /** DODO DPP pools on Polygon carry 0% flash-loan fee (use instead of Aave's 9 bps). */
   dodoDppFlashLoanFeeRate: 0,
 

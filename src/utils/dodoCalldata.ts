@@ -51,9 +51,9 @@ export const DODO_POLYGON_ADDRESSES = {
   /** DODO DVM factory (dynamic vAMM pools) */
   dvmFactory: '0x79887f65f83bdf15Bcc8736b5e5BcDB48fb8fE13',
   /** DODO DPP factory (private pools — supports zero-fee flash loans) */
-  dppFactory: '0x43C49f8DD240e1545F147211Ec9f917376Ac1e87',
+  dppFactory: '0xd24153244066F0afA9415563bFC7Ba248bfB7a51',
   /** DODO MixSwap Proxy (universal routing entry-point) */
-  mixSwapProxy: '0x2dA2F2ABfe7f776AC610B70C68a2cD2f7b07D1fD',
+  mixSwapProxy: '0x45894C062E6f4E58B257e0826675355305dfef0d',
   /** Canonical flash-fee rate for DODO DPP pools on Polygon */
   flashLoanFeeRate: 0,
 } as const;
