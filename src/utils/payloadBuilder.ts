@@ -13,6 +13,7 @@ import { ethers } from 'ethers';
 import { getAmountOut } from './pricing'; // Assumes a new helper for price simulation
 import type { ArbitrageRoute } from '../types';
 import { getAdapter, AdapterCall } from './adapters';
+import { CanonicalAmount } from './canonicalAmount';
 import { OMEGA_EXECUTOR_ABI } from './ethersBroadcaster';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 
@@ -45,7 +46,7 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
   const executorAddress = POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress;
 
   const adapterCalls: AdapterCall[] = [];
-  let currentAmountIn = BigInt(route.optimalInputWei);
+  let currentAmountIn = new CanonicalAmount(BigInt(route.optimalInputWei), route.pools[0].token0.decimals);
   let currentTokenIn = route.pools[0].token0.address; // Assume route starts with token0 of first pool
 
   for (let i = 0; i < route.pools.length; i++) {
@@ -66,15 +67,15 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
     pool.tokenOutAddress = tokenOut;
 
     // Simulate the output of this hop to calculate amountOutMinimum and to use as input for the next hop.
-    const { amountOut: expectedAmountOut } = await getAmountOut(pool, currentAmountIn);
+    const { amountOut: expectedAmountOutRaw } = await getAmountOut(pool, currentAmountIn.raw);
 
     // Calculate the minimum amount out based on the route's slippage tolerance.
     const slippageTolerance = BigInt(route.slippageToleranceBps);
-    const amountOutMinimum = expectedAmountOut - (expectedAmountOut * slippageTolerance / 10000n);
+    const amountOutMinimum = expectedAmountOutRaw - (expectedAmountOutRaw * slippageTolerance / 10000n);
 
     // The amount for the first hop is the route's optimal input. For subsequent hops,
     // the on-chain executor contract will handle the amount forwarding, so we pass 0.
-    const amountInForCall = i === 0 ? currentAmountIn : 0n;
+    const amountInForCall = i === 0 ? currentAmountIn.raw : 0n;
 
     const adapter = getAdapter(pool.protocol);
     
@@ -88,7 +89,10 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
 
     // The output of this hop is the input for the next
     currentTokenIn = tokenOut;
-    currentAmountIn = expectedAmountOut; // Use simulated output for next hop's input
+    // The output token of the current pool is the input for the next.
+    // We need its decimals to construct the next CanonicalAmount.
+    const nextTokenDecimals = pool.token0.address.toLowerCase() === tokenOut.toLowerCase() ? pool.token0.decimals : pool.token1.decimals;
+    currentAmountIn = new CanonicalAmount(expectedAmountOutRaw, nextTokenDecimals); // Use simulated output for next hop's input
   }
 
   // For multi-hop, we use our own executor's multicall function

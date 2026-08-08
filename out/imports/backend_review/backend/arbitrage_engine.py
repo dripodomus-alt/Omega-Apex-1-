@@ -1715,7 +1715,7 @@ class ArbitrageEngine:
             token_out_decimals=buy_pool.token1_decimals,
             token_in_price_usd=token0_price_usd,
             token_out_price_usd=token1_price_usd,
-            fee=buy_pool.fee,
+            fee=buy_pool.fee, # Use the specific pool's fee tier
         )
 
         leg2 = SwapLeg(
@@ -1735,7 +1735,7 @@ class ArbitrageEngine:
             token_out_decimals=sell_pool.token0_decimals,
             token_in_price_usd=token1_price_usd,
             token_out_price_usd=token0_price_usd,
-            fee=sell_pool.fee,
+            fee=sell_pool.fee, # Use the specific pool's fee tier
         )
         
         flash_loan = FlashLoanData(
