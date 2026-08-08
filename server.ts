@@ -8,6 +8,7 @@ import { ethers } from "ethers";
 import { ensureBootstrapDependencies } from "./scripts/ensure_bootstrap_dependencies.cjs";
 import { WebSocketServer } from "ws";
 import { DeFiExecutorManager } from "./ExecutionManager.js";
+import { getOmegaRpcRouter } from "./src/utils/rpcRouter";
 import RedisRouteGuard from "./server/engine/RedisRouteGuard.js";
 import {
   getActiveLedgerCount,
@@ -1761,48 +1762,142 @@ async function startServer() {
     };
   };
 
+  type RpcProofResult = Awaited<ReturnType<ReturnType<typeof getOmegaRpcRouter>['send']>>;
+
+  const requireRpcHexResult = (result: RpcProofResult, label: string): string => {
+    const data = result.data as { result?: unknown; error?: { message?: string } };
+    if (data.error?.message) {
+      throw new Error(`${label}: ${data.error.message}`);
+    }
+    if (typeof data.result !== "string" || !/^0x[0-9a-fA-F]*$/.test(data.result)) {
+      throw new Error(`${label}: missing hex RPC result`);
+    }
+    return data.result === "0x" ? "0x0" : data.result;
+  };
+
+  const requireRpcBlockObject = (result: RpcProofResult) => {
+    const data = result.data as { result?: { hash?: string; number?: string }; error?: { message?: string } };
+    if (data.error?.message) {
+      throw new Error(`latest block: ${data.error.message}`);
+    }
+    if (!data.result?.hash) {
+      throw new Error("latest block: missing block hash");
+    }
+    return data.result;
+  };
+
+  /**
+   * State-proof engine for dashboard critical wallet telemetry.
+   *
+   * The proof uses the shared Omega RPC Router so reads can fail over across
+   * Polygon endpoints while preserving endpoint labels for operator audit.
+   */
+  const fetchSystemStateProof = async () => {
+    const executorWallet = getConfiguredExecutorWallet();
+    const profitReceiver = getConfiguredProfitReceiver();
+    const profitAsset = getConfiguredProfitAsset();
+
+    if (!isAddress(executorWallet)) {
+      throw new Error(`INVALID_EXECUTOR_WALLET: ${executorWallet}`);
+    }
+    if (!isAddress(profitReceiver)) {
+      throw new Error(`INVALID_PROFIT_RECEIVER: ${profitReceiver}`);
+    }
+    if (!isAddress(profitAsset)) {
+      throw new Error(`INVALID_PROFIT_ASSET: ${profitAsset}`);
+    }
+
+    const router = getOmegaRpcRouter();
+    const profitReceiverBalanceCalldata = `${ERC20_BALANCE_OF_ABI}${profitReceiver.slice(2).padStart(64, "0")}`;
+
+    const [blockResult, latestBlockResult, balanceResult, nonceResult, profitAssetBalanceResult, profitAssetDecimals] = await Promise.all([
+      router.send({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] }),
+      router.send({ jsonrpc: "2.0", id: 2, method: "eth_getBlockByNumber", params: ["latest", false] }),
+      router.send({ jsonrpc: "2.0", id: 3, method: "eth_getBalance", params: [executorWallet, "latest"] }),
+      router.send({ jsonrpc: "2.0", id: 4, method: "eth_getTransactionCount", params: [executorWallet, "latest"] }),
+      router.send({
+        jsonrpc: "2.0",
+        id: 5,
+        method: "eth_call",
+        params: [{ to: profitAsset, data: profitReceiverBalanceCalldata }, "latest"],
+      }),
+      fetchTokenDecimals(profitAsset),
+    ]);
+
+    const blockHex = requireRpcHexResult(blockResult, "block number");
+    const latestBlock = requireRpcBlockObject(latestBlockResult);
+    const executorBalanceHex = requireRpcHexResult(balanceResult, "executor native balance");
+    const nonceHex = requireRpcHexResult(nonceResult, "executor nonce");
+    const profitAssetBalanceHex = requireRpcHexResult(profitAssetBalanceResult, "profit receiver asset balance");
+
+    return {
+      blockNumber: parseInt(blockHex, 16),
+      latestBlockHash: latestBlock.hash,
+      latestBlockNumberHex: latestBlock.number || blockHex,
+      executorWallet,
+      executorBalanceWei: BigInt(executorBalanceHex),
+      nonce: parseInt(nonceHex, 16),
+      profitReceiver,
+      profitAsset,
+      profitAssetDecimals,
+      profitAssetBalanceRaw: BigInt(profitAssetBalanceHex),
+      providers: {
+        block: { label: blockResult.usedLabel, endpoint: blockResult.usedEndpoint, height: blockResult.blockHeight },
+        latestBlock: { label: latestBlockResult.usedLabel, endpoint: latestBlockResult.usedEndpoint, height: latestBlockResult.blockHeight },
+        balance: { label: balanceResult.usedLabel, endpoint: balanceResult.usedEndpoint, height: balanceResult.blockHeight },
+        nonce: { label: nonceResult.usedLabel, endpoint: nonceResult.usedEndpoint, height: nonceResult.blockHeight },
+        profitAsset: { label: profitAssetBalanceResult.usedLabel, endpoint: profitAssetBalanceResult.usedEndpoint, height: profitAssetBalanceResult.blockHeight },
+      },
+    };
+  };
+
   // New High-Intensity Titan Architecture Endpoints
   app.get("/api/system/state-proof", async (req, res) => {
     try {
-      // 1. Fetch genuine block height from Polygon RPC
-      const liveBlockHex = await queryPolygonRPC("eth_blockNumber", []);
-      const realBlockNumber = parseInt(liveBlockHex, 16);
-
-      // 2. Query Executor Wallet Balance
-      const executorWallet = getConfiguredExecutorWallet(); 
-      const balanceHex = await queryPolygonRPC("eth_getBalance", [executorWallet, "latest"]);
-      const balanceWei = BigInt(balanceHex);
-      const balancePol = Number(balanceWei) / 1e18; // Convert to POL
-      
+      const proof = await fetchSystemStateProof();
+      const balancePol = Number(formatRawTokenAmount(proof.executorBalanceWei, 18));
       const maticPriceUsd = globalPrices["POL / MATIC"] ?? 0;
-
       const currentWalletBalanceUsd = balancePol * maticPriceUsd;
-      
-      // Calculate derived PnL
-      const derivedPnlUsd = currentWalletBalanceUsd;
-
-      // 3. Track latest genuine hash footprint
-      const latestBlockData = await queryPolygonRPC("eth_getBlockByNumber", ["latest", false]);
-      const genuineBlockHash = latestBlockData?.hash || "0x_AWAITING_STATE_SYNC";
+      const profitAssetBalance = formatRawTokenAmount(proof.profitAssetBalanceRaw, proof.profitAssetDecimals);
 
       res.json({
         ok: true,
         network: "Polygon Mainnet",
-        rpc_endpoint: getRpcUrl(),
-        current_rpc_block_height: realBlockNumber,
-        executor_wallet_address: executorWallet,
-        active_cryptographic_wallet_balance_wei: balanceHex,
+        chain_id: 137,
+        rpc_endpoint: maskEndpoint(proof.providers.balance.endpoint),
+        rpc_provider: proof.providers.balance.label,
+        rpc_quorum: {
+          block_provider: proof.providers.block.label,
+          latest_block_provider: proof.providers.latestBlock.label,
+          balance_provider: proof.providers.balance.label,
+          nonce_provider: proof.providers.nonce.label,
+          profit_asset_provider: proof.providers.profitAsset.label,
+        },
+        current_rpc_block_height: proof.blockNumber,
+        latest_c1_block_hash: proof.latestBlockHash,
+        latest_block_number_hex: proof.latestBlockNumberHex,
+        executor_wallet_address: proof.executorWallet,
+        executor_nonce: proof.nonce,
+        active_cryptographic_wallet_balance_wei: proof.executorBalanceWei.toString(),
         active_wallet_balance_pol: balancePol,
+        profit_receiver_address: proof.profitReceiver,
+        profit_asset: proof.profitAsset,
+        profit_asset_decimals: proof.profitAssetDecimals,
+        profit_asset_balance_raw: proof.profitAssetBalanceRaw.toString(),
+        profit_asset_balance: profitAssetBalance,
         derived_usd_value: currentWalletBalanceUsd,
-        math_proof: `${currentWalletBalanceUsd.toFixed(2)} (Current Wallet Balance) = ${derivedPnlUsd.toFixed(2)} (Dashboard Net P&L)`,
-        latest_c1_block_hash: genuineBlockHash,
-        timestamp: new Date().toISOString()
+        math_proof: `${balancePol.toFixed(6)} POL * $${maticPriceUsd.toFixed(6)} = $${currentWalletBalanceUsd.toFixed(2)} wallet valuation`,
+        integrity: {
+          source: "OMEGA_RPC_ROUTER_MULTI_ENDPOINT_READS",
+          bigint_serialized: true,
+          pnl_updated: false,
+        },
+        timestamp: new Date().toISOString(),
       });
     } catch (e: any) {
       res.status(500).json({ ok: false, error: e.message || "Failed to establish state proof connection." });
     }
   });
-
   app.get("/api/system/healthz", (req, res) => {
     res.json({
       success: true,

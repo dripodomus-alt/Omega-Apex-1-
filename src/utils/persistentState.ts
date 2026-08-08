@@ -51,8 +51,56 @@ export const DEFAULT_WALLET_STATE: WalletState = {
   validationHash: '0x91a28f3c4e5d6a7b8c9d0e1f2a3b4c5d6e7f8a9b',
 };
 
+type JsonRpcData = { result?: string; error?: { message?: string } };
+
+function isHexQuantity(value: unknown): value is string {
+  return typeof value === 'string' && /^0x[0-9a-fA-F]*$/.test(value);
+}
+
+function parseRpcHexBigInt(data: JsonRpcData, label: string): bigint {
+  if (data.error?.message) {
+    throw new Error(`${label}: ${data.error.message}`);
+  }
+  if (!isHexQuantity(data.result)) {
+    throw new Error(`${label}: missing hex result`);
+  }
+  return BigInt(data.result === '0x' ? '0x0' : data.result);
+}
+
+function parseRpcHexNumber(data: JsonRpcData, label: string): number {
+  const value = Number(parseRpcHexBigInt(data, label));
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(`${label}: value exceeds safe integer range`);
+  }
+  return value;
+}
+
+function formatRawTokenAmount(raw: bigint, decimals: number, fractionDigits: number): number {
+  const scale = 10n ** BigInt(decimals);
+  const whole = raw / scale;
+  const fraction = raw % scale;
+  const fractionText = fraction.toString().padStart(decimals, '0').slice(0, fractionDigits);
+  return Number(`${whole.toString()}.${fractionText || '0'}`);
+}
+
+function getFallbackLivePolygonState(): {
+  nativePolBalance: number;
+  nonceCount: number;
+  isLiveRpcSuccess: boolean;
+  rpcProviderUsed: string;
+  polValueUSD: number;
+} {
+  return {
+    nativePolBalance: DEFAULT_WALLET_STATE.nativePolBalance,
+    nonceCount: DEFAULT_WALLET_STATE.nonceCount,
+    isLiveRpcSuccess: false,
+    rpcProviderUsed: 'Fallback to persisted wallet state',
+    polValueUSD: Number((DEFAULT_WALLET_STATE.nativePolBalance * POL_PRICE_USD).toFixed(2)),
+  };
+}
+
 /**
- * Fetch Real-time Native MATIC/POL and USDC Balance of EXECUTOR_WALLET using Alchemy RPC URL from .env
+ * Fetch real-time native POL, USDC balance, and nonce for the executor wallet.
  */
 export async function fetchExecutorRealTimeBalance(customWallet?: string): Promise<{
   nativePolBalance: number;
@@ -60,12 +108,8 @@ export async function fetchExecutorRealTimeBalance(customWallet?: string): Promi
   nonceCount: number;
   success: boolean;
   rpcUsed: string;
+  rpcLabel: string;
 }> {
-  const alchemyRpcUrl =
-    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_POLYGON_RPC_URL) ||
-    (typeof process !== 'undefined' && process.env && process.env.POLYGON_RPC_URL) ||
-    POLYGON_CHAIN_CONFIG.rpcEndpoints.primaryAlchemyHttp;
-
   const executorWallet =
     customWallet ||
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_EXECUTOR_WALLET) ||
@@ -73,90 +117,52 @@ export async function fetchExecutorRealTimeBalance(customWallet?: string): Promi
     POLYGON_CHAIN_CONFIG.executorWallet ||
     '0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95';
 
+  if (!/^0x[a-fA-F0-9]{40}$/.test(executorWallet)) {
+    throw new Error(`Invalid executor wallet address: ${executorWallet}`);
+  }
+
+  const router = getOmegaRpcRouter();
+
   try {
     const formattedAddress = executorWallet.toLowerCase().replace('0x', '').padStart(64, '0');
-    const usdcCalldata = '0x70a08231' + formattedAddress; // balanceOf(address)
+    const usdcCalldata = '0x70a08231' + formattedAddress;
 
     const [balanceRes, nonceRes, usdcRes] = await Promise.all([
-      fetch(alchemyRpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'eth_getBalance',
-          params: [executorWallet, 'latest'],
-        }),
-      }),
-      fetch(alchemyRpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 2,
-          method: 'eth_getTransactionCount',
-          params: [executorWallet, 'latest'],
-        }),
-      }),
-      fetch(alchemyRpcUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 3,
-          method: 'eth_call',
-          params: [{ to: POLYGON_TOKENS.USDC.address, data: usdcCalldata }, 'latest'],
-        }),
-      }),
+      router.send({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [executorWallet, 'latest'] }),
+      router.send({ jsonrpc: '2.0', id: 2, method: 'eth_getTransactionCount', params: [executorWallet, 'latest'] }),
+      router.send({ jsonrpc: '2.0', id: 3, method: 'eth_call', params: [{ to: POLYGON_TOKENS.USDC.address, data: usdcCalldata }, 'latest'] }),
     ]);
 
-    const balanceJson = await balanceRes.json();
-    const nonceJson = await nonceRes.json();
-    const usdcJson = await usdcRes.json();
-
-    let nativePolBalance = 26.77;
-    let nonceCount = 179;
-    let usdcBalance = 0.0;
-
-    if (balanceJson && balanceJson.result) {
-      const weiBigInt = BigInt(balanceJson.result);
-      nativePolBalance = Number((Number(weiBigInt) / 1e18).toFixed(4));
-    }
-
-    if (nonceJson && nonceJson.result) {
-      nonceCount = parseInt(nonceJson.result, 16);
-    }
-
-    if (usdcJson && usdcJson.result && usdcJson.result !== '0x') {
-      const usdcRaw = BigInt(usdcJson.result);
-      usdcBalance = Number((Number(usdcRaw) / 1e6).toFixed(2));
-    }
+    const weiBigInt = parseRpcHexBigInt(balanceRes.data as JsonRpcData, 'executor native balance');
+    const usdcRaw = parseRpcHexBigInt(usdcRes.data as JsonRpcData, 'executor USDC balance');
 
     return {
-      nativePolBalance,
-      usdcBalance,
-      nonceCount,
+      nativePolBalance: formatRawTokenAmount(weiBigInt, 18, 4),
+      usdcBalance: formatRawTokenAmount(usdcRaw, 6, 2),
+      nonceCount: parseRpcHexNumber(nonceRes.data as JsonRpcData, 'executor nonce'),
       success: true,
-      rpcUsed: 'Alchemy RPC (Polygon Mainnet #137)',
+      rpcUsed: balanceRes.usedEndpoint,
+      rpcLabel: balanceRes.usedLabel,
     };
   } catch (err) {
-    console.warn('Failed to fetch real-time executor balance from Alchemy RPC:', err);
+    console.warn('RpcRouter failed to fetch real-time executor balance:', err);
     return {
-      nativePolBalance: 26.77,
-      usdcBalance: 0.0,
-      nonceCount: 179,
+      nativePolBalance: DEFAULT_WALLET_STATE.nativePolBalance,
+      usdcBalance: DEFAULT_WALLET_STATE.usdcBalance,
+      nonceCount: DEFAULT_WALLET_STATE.nonceCount,
       success: false,
-      rpcUsed: 'Fallback Alchemy Config',
+      rpcUsed: 'Fallback to persisted wallet state',
+      rpcLabel: 'Fallback',
     };
   }
 }
 
 /**
- * Fetch Real-time On-Chain POL Balance and Nonce Count via Polygon Mainnet JSON-RPC.
+ * Fetch real-time on-chain POL balance and nonce count via Polygon Mainnet JSON-RPC.
  *
  * Uses the Omega RPC Router (block-height-aware, multi-endpoint) so the read
- * is always served from the freshest available node.  Falls back to the
- * Polygonscan ground-truth constants if all endpoints fail.
+ * is served from the freshest available node. Falls back to persisted wallet
+ * state if all endpoints fail or return malformed data.
  */
 export async function fetchLivePolygonOnChainState(walletAddress: string): Promise<{
   nativePolBalance: number;
@@ -165,6 +171,10 @@ export async function fetchLivePolygonOnChainState(walletAddress: string): Promi
   rpcProviderUsed: string;
   polValueUSD: number;
 }> {
+  if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+    return getFallbackLivePolygonState();
+  }
+
   const router = getOmegaRpcRouter();
 
   try {
@@ -183,27 +193,24 @@ export async function fetchLivePolygonOnChainState(walletAddress: string): Promi
       }),
     ]);
 
-    const balanceData = balanceResult.data as { result?: string };
-    const nonceData = nonceResult.data as { result?: string };
+    const nativePolBalance = formatRawTokenAmount(
+      parseRpcHexBigInt(balanceResult.data as JsonRpcData, 'wallet native balance'),
+      18,
+      4,
+    );
 
-    if (balanceData.result && nonceData.result) {
-      const weiBigInt = BigInt(balanceData.result);
-      const polVal = Number(weiBigInt) / 1e18;
-      const nonceVal = parseInt(nonceData.result, 16);
-
-      return {
-        nativePolBalance: Number(polVal.toFixed(4)),
-        nonceCount: nonceVal,
-        isLiveRpcSuccess: true,
-        rpcProviderUsed: balanceResult.usedLabel,
-        polValueUSD: Number((polVal * POL_PRICE_USD).toFixed(2)),
-      };
-    }
+    return {
+      nativePolBalance,
+      nonceCount: parseRpcHexNumber(nonceResult.data as JsonRpcData, 'wallet nonce'),
+      isLiveRpcSuccess: true,
+      rpcProviderUsed: balanceResult.usedLabel,
+      polValueUSD: Number((nativePolBalance * POL_PRICE_USD).toFixed(2)),
+    };
   } catch (err) {
     console.warn('RpcRouter failed to fetch live Polygon state:', err);
+    return getFallbackLivePolygonState();
   }
-
-
+}
 /**
  * Validate Wallet Configuration, Balances, and Nonce Count
  */

@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import { buildPayloadForRoute } from './payloadBuilder';
+import { getOmegaRpcRouter } from './rpcRouter';
 import type { ArbitrageRoute } from '../types';
 
 /**
@@ -65,18 +66,10 @@ function requireCanonicalRoute(payload: BroadcastTransactionPayload): ArbitrageR
  * Get Fallback Multi-Lane Ethers JSON-RPC Provider
  */
 export function getEthersPolygonProvider(): ethers.JsonRpcProvider {
-  const rpcList = [
-    POLYGON_CHAIN_CONFIG.rpcEndpoints.primaryAlchemyHttp,
-    POLYGON_CHAIN_CONFIG.rpcEndpoints.drpcLoadBalancedHttp,
-    POLYGON_CHAIN_CONFIG.rpcEndpoints.chainstackHttp,
-    POLYGON_CHAIN_CONFIG.rpcEndpoints.getBlockHttp,
-    POLYGON_CHAIN_CONFIG.rpcEndpoints.infuraWritableHttp,
-    'https://polygon-bor-rpc.publicnode.com',
-    'https://polygon-rpc.com',
-  ];
-
-  // Primary node fallback instantiation
-  return new ethers.JsonRpcProvider(rpcList[0], 137, { staticNetwork: true });
+  // Use the resilient RpcRouter to get a provider instance.
+  // This ensures we use the healthiest, most up-to-date node for broadcasting.
+  const router = getOmegaRpcRouter();
+  return new ethers.JsonRpcProvider(router.getHealthSnapshot()[0]?.url || POLYGON_CHAIN_CONFIG.rpcEndpoints.primaryAlchemyHttp, 137, { staticNetwork: true });
 }
 
 /**
@@ -128,6 +121,7 @@ export async function broadcastEthersOnChainTransaction(
   payload: BroadcastTransactionPayload
 ): Promise<LiveEthersTxBroadcastResult> {
   const provider = getEthersPolygonProvider();
+  const rpcNodeUsed = (provider.provider as any)?.connection?.url || 'unknown';
   const confirmationLogs: string[] = [];
 
   confirmationLogs.push(`[ETHERS.JS WRITER] Initializing Polygon PoS Mainnet #137 Provider...`);
@@ -137,10 +131,23 @@ export async function broadcastEthersOnChainTransaction(
   // Step 1: Pre-flight Simulation via eth_call
   confirmationLogs.push(`[STEP 1/4 PRE-FLIGHT] Executing eth_call state diff simulation...`);
   const simResult = await simulateArbitrageOnChain(requireCanonicalRoute(payload));
-
-  if (simResult.errorReason && !simResult.success) {
-    confirmationLogs.push(`[SIMULATION WARNING] ${simResult.errorReason}`);
-  } else {
+  
+  if (!simResult.success) {
+    const reason = simResult.errorReason || 'Pre-flight simulation failed.';
+    confirmationLogs.push(`[SIMULATION FAILED] ${reason}`);
+    return {
+      success: false,
+      txHash: ethers.ZeroHash,
+      rpcNodeUsed,
+      relayProtocol: payload.relayProtocol || 'FASTLANE',
+      preFlightSimulationPassed: false,
+      revertReason: reason,
+      polygonscanUrl: `https://polygonscan.com/`,
+      confirmationLogs,
+    };
+  }
+  
+  if (simResult.success) {
     confirmationLogs.push(`[STEP 1/4 PASSED] eth_call simulation confirmed 0 revert triggers. Estimated Gas: ${simResult.estimatedGasUnits.toString()} units.`);
   }
 
@@ -163,43 +170,87 @@ export async function broadcastEthersOnChainTransaction(
 
   confirmationLogs.push(`[EIP-1559 GAS] MaxFee: ${maxFeePerGasGwei.toFixed(2)} Gwei, PriorityFee: ${maxPriorityFeeGwei.toFixed(2)} Gwei`);
 
-  // Step 3: Transaction Construction & Signing
+  // Step 3: Wallet & Transaction Construction
   const relay = payload.relayProtocol || 'FASTLANE';
   confirmationLogs.push(`[STEP 3/4 MEV RELAY] Preparing EIP-1559 transaction payload for ${relay} Private Tunnel...`);
 
-  // Fetch On-Chain Nonce
-  let nonceCount = 179;
-  try {
-    nonceCount = await provider.getTransactionCount(POLYGON_CHAIN_CONFIG.botAddress, 'latest');
-  } catch {
-    // Fallback Ground Truth Nonce
+  const privateKey = process.env.EXECUTOR_PRIVATE_KEY;
+  if (!privateKey) {
+    const errorMsg = 'EXECUTOR_PRIVATE_KEY not found in environment. Cannot sign transaction.';
+    confirmationLogs.push(`[SIGNING ERROR] ${errorMsg}`);
+    return {
+      success: false,
+      txHash: ethers.ZeroHash,
+      rpcNodeUsed,
+      relayProtocol: relay,
+      preFlightSimulationPassed: true,
+      revertReason: errorMsg,
+      polygonscanUrl: `https://polygonscan.com/`,
+      confirmationLogs,
+    };
   }
 
-  confirmationLogs.push(`[NONCE SYNC] Current On-Chain Tx Count: #${nonceCount}`);
+  const wallet = new ethers.Wallet(privateKey, provider);
+  const builtPayload = await buildPayloadForRoute(requireCanonicalRoute(payload));
 
-  // Generate Real Deterministic Mainnet Tx Hash
-  const txRandomBytes = ethers.randomBytes(32);
-  const txHash = ethers.hexlify(txRandomBytes);
+  // Step 4: Broadcast & Confirmation
+  try {
+    const nonce = await provider.getTransactionCount(wallet.address, 'latest');
+    confirmationLogs.push(`[NONCE SYNC] Current On-Chain Tx Count: #${nonce}`);
 
-  // Step 4: Broadcast & Confirmation Runners
-  confirmationLogs.push(`[STEP 4/4 BROADCAST] Dispatching signed raw payload to Polygon Mainnet node & FastLane P2P...`);
-  confirmationLogs.push(`[BROADCAST SUCCESS] Transaction Hash: ${txHash}`);
-  confirmationLogs.push(`[POLYGONSCAN] https://polygonscan.com/tx/${txHash}`);
-  confirmationLogs.push(`[SETTLEMENT] Profit credited to ${POLYGON_CHAIN_CONFIG.profitReceiverAddress}`);
+    const txRequest: ethers.TransactionRequest = {
+      to: builtPayload.to,
+      data: builtPayload.data,
+      value: builtPayload.value,
+      nonce: nonce,
+      gasLimit: simResult.estimatedGasUnits,
+      maxFeePerGas: ethers.parseUnits(maxFeePerGasGwei.toFixed(9), 'gwei'),
+      maxPriorityFeePerGas: ethers.parseUnits(maxPriorityFeeGwei.toFixed(9), 'gwei'),
+      chainId: 137,
+      type: 2, // EIP-1559
+    };
 
-  return {
-    success: true,
-    txHash,
-    blockNumber: 65492812,
-    gasUsedGwei: Number((maxFeePerGasGwei * 1.05).toFixed(2)),
-    effectiveGasPriceGwei: maxFeePerGasGwei,
-    nonce: nonceCount,
-    rpcNodeUsed: 'polygon-mainnet.g.alchemy.com (Ethers.js v6)',
-    relayProtocol: relay,
-    preFlightSimulationPassed: simResult.success,
-    polygonscanUrl: `https://polygonscan.com/tx/${txHash}`,
-    confirmationLogs,
-  };
+    confirmationLogs.push(`[STEP 4/4 BROADCAST] Dispatching signed payload to ${rpcNodeUsed}...`);
+    const txResponse = await wallet.sendTransaction(txRequest);
+    const txHash = txResponse.hash;
+    confirmationLogs.push(`[BROADCAST SUCCESS] Transaction Hash: ${txHash}`);
+    confirmationLogs.push(`[POLYGONSCAN] https://polygonscan.com/tx/${txHash}`);
+
+    const receipt = await txResponse.wait(); // Wait for 1 confirmation
+
+    if (!receipt || receipt.status !== 1) {
+      throw new Error(`Transaction reverted or failed to confirm. Status: ${receipt?.status}`);
+    }
+
+    confirmationLogs.push(`[SETTLEMENT] Confirmed in block ${receipt.blockNumber}. Profit credited to ${POLYGON_CHAIN_CONFIG.profitReceiverAddress}`);
+
+    return {
+      success: true,
+      txHash,
+      blockNumber: receipt.blockNumber,
+      gasUsedGwei: Number(ethers.formatUnits(receipt.gasUsed * receipt.gasPrice, 'gwei')),
+      effectiveGasPriceGwei: Number(ethers.formatUnits(receipt.gasPrice, 'gwei')),
+      nonce: txResponse.nonce,
+      rpcNodeUsed,
+      relayProtocol: relay,
+      preFlightSimulationPassed: true,
+      polygonscanUrl: `https://polygonscan.com/tx/${txHash}`,
+      confirmationLogs,
+    };
+  } catch (error: any) {
+    const reason = error?.message || 'Transaction broadcast or confirmation failed.';
+    confirmationLogs.push(`[BROADCAST FAILED] ${reason}`);
+    return {
+      success: false,
+      txHash: ethers.ZeroHash,
+      rpcNodeUsed,
+      relayProtocol: relay,
+      preFlightSimulationPassed: true,
+      revertReason: reason,
+      polygonscanUrl: `https://polygonscan.com/`,
+      confirmationLogs,
+    };
+  }
 }
 
 /**
@@ -238,4 +289,3 @@ export async function broadcastAaveLiquidationViaEthers(
     confirmationLogs,
   };
 }
-
