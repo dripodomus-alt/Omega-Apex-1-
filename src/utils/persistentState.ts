@@ -203,15 +203,6 @@ export async function fetchLivePolygonOnChainState(walletAddress: string): Promi
     console.warn('RpcRouter failed to fetch live Polygon state:', err);
   }
 
-  // Polygonscan Verified Ground Truth Fallback
-  return {
-    nativePolBalance: 26.77,
-    nonceCount: 179,
-    isLiveRpcSuccess: false,
-    rpcProviderUsed: 'Polygonscan Ground Truth Fallback',
-    polValueUSD: 1.95,
-  };
-}
 
 /**
  * Validate Wallet Configuration, Balances, and Nonce Count

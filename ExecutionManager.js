@@ -16,6 +16,17 @@ export class DeFiExecutorManager {
   isDryRun() {
     return this.dryRun === true;
   }
+  async initialize() {
+    return { ok: true, enabled: this.enableLive, rpcUrl: this.rpcUrl, dryRun: this.dryRun };
+  }
+
+  async getHealth() {
+    return { ok: true, enabled: this.enableLive, rpcUrl: this.rpcUrl, dryRun: this.dryRun };
+  }
+
+  async getStatus() {
+    return { ok: true, enabled: this.enableLive, simulated: this.dryRun, dryRun: this.dryRun };
+  }
 
   isArmed() {
     return Boolean(this.privateKey) && !this.dryRun;
