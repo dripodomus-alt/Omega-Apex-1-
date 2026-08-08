@@ -80,7 +80,7 @@ export async function runExecutionPipeline(
   });
   if (!rankingPassed) {
     throw new Error(
-      `[PIPELINE] Ranking rejected route ${route.id}: ${
+      `[PIPELINE] Ranking stage rejected route ${route.id}: ${
         !vqcOk
           ? `VQC ${route.vqcAlphaScore}`
           : syncGates.reason || 'sync gates failed'

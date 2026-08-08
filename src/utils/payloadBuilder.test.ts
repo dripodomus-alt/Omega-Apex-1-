@@ -3,6 +3,7 @@ import { buildPayloadForRoute } from './payloadBuilder';
 import { DodoV2Adapter, UniswapV3Adapter, getAdapter } from './adapters';
 import type { ArbitrageRoute, PoolInfo } from '../types';
 import { DODO_POLYGON_ADDRESSES } from './dodoCalldata';
+import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 
 vi.mock('./ethersBroadcaster', () => ({
   OMEGA_EXECUTOR_ABI: [
@@ -123,9 +124,8 @@ describe('PayloadBuilder', () => {
     expect(selector).toBe('0xc133dcae'); // keccak256('executeMultiHopSwap((address,bytes,uint256)[])')[:4]
 
     // 2. Check that the calldata contains the target addresses of both adapters
-    const uniAdapter = new UniswapV3Adapter();
     expect(payload.data).toContain(DODO_POLYGON_ADDRESSES.router.slice(2).toLowerCase());
-    expect(payload.data).toContain(uniAdapter.routerAddress.slice(2).toLowerCase());
+    expect(payload.data).toContain(POLYGON_CHAIN_CONFIG.uniswapV3Router.slice(2).toLowerCase());
 
     // 3. Check that the calldata contains the function selector for DODO's swap
     const dodoSwapSelector = '04b97b37'; // executeDodoPackedSwap

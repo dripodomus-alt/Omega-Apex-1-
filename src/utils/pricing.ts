@@ -1,5 +1,12 @@
 import type { PoolInfo } from '../types';
 
+function usdReserveToNativeUnits(reserveUsd: number, decimals: number): bigint {
+  if (!Number.isFinite(reserveUsd) || reserveUsd <= 0) return 0n;
+  const scale = 10 ** Math.min(decimals, 12);
+  const scaled = BigInt(Math.round(reserveUsd * scale));
+  return decimals > 12 ? scaled * 10n ** BigInt(decimals - 12) : scaled;
+}
+
 /**
  * Simulates a swap on a given pool to estimate the output amount in wei.
  * This is a simplified off-chain calculation for slippage protection.
@@ -30,15 +37,17 @@ export async function getAmountOut(
   // Determine which token is token0 and token1 for reserve mapping
   const isToken0In = pool.token0.address.toLowerCase() === tokenInAddress.toLowerCase();
 
-  // For Uniswap V3, we'll use a simplified CPMM approximation based on its current reserves.
-  // A true V3 simulation is complex (tick math). For off-chain slippage, this is a reasonable heuristic.
-  // The `pool.reserve0` and `pool.reserve1` are assumed to be in token wei units.
+  // For local filtering we derive native-unit reserve approximations from the
+  // normalized USD reserve fields. Protocol-native quote/fork simulation remains
+  // the final execution truth gate.
+  const reserve0 = usdReserveToNativeUnits(pool.reserve0USD, pool.token0.decimals);
+  const reserve1 = usdReserveToNativeUnits(pool.reserve1USD, pool.token1.decimals);
   if (isToken0In) {
-    reserveIn = BigInt(pool.reserve0);
-    reserveOut = BigInt(pool.reserve1);
+    reserveIn = reserve0;
+    reserveOut = reserve1;
   } else {
-    reserveIn = BigInt(pool.reserve1);
-    reserveOut = BigInt(pool.reserve0);
+    reserveIn = reserve1;
+    reserveOut = reserve0;
   }
 
   // Handle potential zero reserves to prevent division by zero

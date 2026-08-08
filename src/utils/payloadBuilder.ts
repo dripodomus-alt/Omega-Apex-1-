@@ -62,6 +62,9 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
       ? POLYGON_CHAIN_CONFIG.profitReceiverAddress
       : route.pools[i + 1].address;
 
+    pool.tokenInAddress = currentTokenIn;
+    pool.tokenOutAddress = tokenOut;
+
     // Simulate the output of this hop to calculate amountOutMinimum and to use as input for the next hop.
     const { amountOut: expectedAmountOut } = await getAmountOut(pool, currentAmountIn);
 
@@ -74,8 +77,7 @@ export async function buildPayloadForRoute(route: ArbitrageRoute): Promise<Built
     const amountInForCall = i === 0 ? currentAmountIn : 0n;
 
     const adapter = getAdapter(pool.protocol);
-    pool.tokenInAddress = currentTokenIn;
-    pool.tokenOutAddress = tokenOut;
+    
     const adapterCall = adapter.encodeCall(
       pool,
       amountInForCall,

@@ -41,7 +41,7 @@ function makeRoute(overrides: Partial<ArbitrageRoute> = {}): ArbitrageRoute {
     netProfitUSD: 309.45,
     stage: 'SIMULATED',
     timestamp: new Date().toISOString(),
-    slippageToleranceBps: 50,
+    slippageToleranceBps: 40,
     isSelfFundingRisk: false,
     ...overrides,
   };
