@@ -11,6 +11,7 @@ import asyncio
 import logging
 import json
 from decimal import Decimal, InvalidOperation
+import uuid
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field, asdict
 from enum import IntEnum
@@ -62,6 +63,7 @@ except ModuleNotFoundError as exc:
 
 from dotenv import load_dotenv
 from execution_governance import get_governance_service, get_minimum_net_profit_usd
+from transaction_builder import TransactionBuilder, TransactionBuilderError
 
 load_dotenv(Path(__file__).parent / '.env')
 logger = logging.getLogger(__name__)
@@ -136,6 +138,7 @@ TOKENS = {
     "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063": {"symbol": "DAI", "decimals": 18},
     "0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39": {"symbol": "LINK", "decimals": 18},
     "0xD6DF932A45C0f255f85145f286eA0b292B21C90B": {"symbol": "AAVE", "decimals": 18},
+    "0x0000000000000000000000000000000000001010": {"symbol": "POL", "decimals": 18}, # Native gas token
 }
 
 # Simple token price oracle (hardcoded common prices - Jan 2025)
@@ -146,6 +149,7 @@ TOKEN_PRICES_USD = {
     "DAI": 1.0,
     "WMATIC": 0.85,
     "MATIC": 0.85,
+    "POL": 0.85,
     "WETH": 3300.0,
     "ETH": 3300.0,
     "WBTC": 95000.0,
@@ -156,35 +160,13 @@ TOKEN_PRICES_USD = {
     "wmatic": 0.85,
     "weth": 3300.0,
     "wbtc": 95000.0,
+    "pol": 0.85,
     "usdc": 1.0,
     "usdt": 1.0,
     "dai": 1.0,
     "link": 22.0,
     "aave": 280.0,
 }
-
-# DEX configurations
-DEXES = {
-    DexId.UNISWAP_V2: {"name": "Uniswap V2", "router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"},
-    DexId.UNISWAP_V3: {"name": "Uniswap V3", "router": "0xE592427A0AEce92De3Edee1F18E0157C05861564"},
-    DexId.QUICKSWAP_V2: {"name": "QuickSwap V2", "router": "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"},
-    DexId.QUICKSWAP_V3: {"name": "QuickSwap V3", "router": "0xf5b509bB0909a69B1c207E495f687a596C168E12"},
-    DexId.SUSHISWAP: {"name": "SushiSwap", "router": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"},
-    DexId.BALANCER: {"name": "Balancer", "router": "0xBA12222222228d8Ba445958a75a0704d566BF2C8"},
-    DexId.CURVE: {"name": "Curve", "router": "0x1d8b86e3D88cDb2d34688e87E72F388Cb541B7C8"},
-    DexId.ALGEBRA: {"name": "Algebra", "router": "0x327Dd3208f0bCF590A66110aCB6e5e6941A4EfA0"},
-}
-
-
-def get_token_info(chain_id: int, address: str) -> Optional[Dict]:
-    """Get token info by address"""
-    return TOKENS.get(Web3.to_checksum_address(address))
-
-
-def get_dex_by_id(dex_id: int) -> Optional[Dict]:
-    """Get DEX config by ID"""
-    return DEXES.get(DexId(dex_id))
-
 
 def _protocol_int_to_str(protocol: int) -> str:
     """Map internal Protocol int to universal_arbitrage protocol string."""
@@ -485,6 +467,16 @@ class ArbitrageEngine:
         self.gas_price_gwei = float(os.getenv('SIM_DEFAULT_GAS_GWEI', '60'))
         self.gas_units = int(os.getenv('ESTIMATED_GAS_UNITS', '450000'))
         self.matic_price = 0.50
+
+        # Execution context
+        self.private_key = os.getenv("PRIVATE_KEY")
+        self.wallet_address = os.getenv("EXECUTOR_WALLET")
+        if self.private_key and not self.wallet_address:
+            from eth_account import Account
+            self.wallet_address = Account.from_key(self.private_key).address
+            logger.info(f"🔑 Wallet address derived from private key: {self.wallet_address}")
+        elif self.wallet_address:
+            logger.info(f"🔑 Executor wallet configured: {self.wallet_address}")
         
         logger.info(f"⚙️  Min Profit: ${self.min_profit_usd} | Gas: {self.gas_price_gwei}Gwei")
         
@@ -736,49 +728,17 @@ class ArbitrageEngine:
         
         # Fallback: Try symbol lookup (for cached known tokens)
         symbol_upper = token_symbol.upper()
-        symbol_lower = token_symbol.lower()
-        
-        if symbol_upper in TOKEN_PRICES_USD:
-            return TOKEN_PRICES_USD[symbol_upper]
-        if symbol_lower in TOKEN_PRICES_USD:
-            return TOKEN_PRICES_USD[symbol_lower]
-        
-        # Check if it's a known token by address
-        token_addr_lower = token_address.lower()
         for known_addr, info in TOKENS.items():
-            if known_addr.lower() == token_addr_lower:
+            if known_addr.lower() == token_address.lower():
                 known_symbol = info["symbol"]
-                if known_symbol in TOKEN_PRICES_USD:
-                    return TOKEN_PRICES_USD[known_symbol]
+                if known_symbol.upper() == symbol_upper:
+                    # This is a known token, but oracle failed. Return 0 to be safe.
+                    logger.warning(f"Oracle failed for known token {token_symbol}. Returning 0.")
+                    return 0.0
         
         # Unknown token - API didn't find it either
         logger.debug(f"No price found for token: {token_symbol} ({token_address[:10]}...)")
         return 0.0
-    
-    def _map_protocol_to_enum(self, protocol_str: str) -> int:
-        """Map protocol string from JSON to Protocol enum"""
-        protocol_map = {
-            "UniswapV2": Protocol.V2,
-            "UniswapV3": Protocol.V3,
-            "Algebra": Protocol.V3,  # Algebra is V3-compatible
-            "Balancer": Protocol.WEIGHTED,
-            "Curve": Protocol.STABLE,
-        }
-        return protocol_map.get(protocol_str, Protocol.V3)
-    
-    def _map_dex_id(self, dex_id_str: str) -> int:
-        """Map DEX ID string from JSON to DexId enum"""
-        dex_map = {
-            "uniswap-v2": DexId.UNISWAP_V2,
-            "uniswap-v3": DexId.UNISWAP_V3,
-            "quickswap-v2": DexId.QUICKSWAP_V2,
-            "quickswap-v3": DexId.QUICKSWAP_V3,
-            "sushiswap": DexId.SUSHISWAP,
-            "balancer-v2": DexId.BALANCER,
-            "curve": DexId.CURVE,
-            "algebra": DexId.ALGEBRA,
-        }
-        return dex_map.get(dex_id_str, DexId.UNISWAP_V3)
     
     def _load_pools_from_db(self):
         """
@@ -1020,20 +980,9 @@ class ArbitrageEngine:
                 token0_addr = metadata.get('token0_address', '').lower()
                 token1_addr = metadata.get('token1_address', '').lower()
                 
-                # Look up prices from batch results (with fallback to known tokens)
-                token0_price_usd = batch_prices.get(token0_addr, 0)
-                token1_price_usd = batch_prices.get(token1_addr, 0)
-                
-                # Fallback to known token prices if DEXScreener didn't find them
-                if token0_price_usd == 0:
-                    token0_symbol = metadata.get('token0_symbol', '')
-                    if token0_symbol.upper() in TOKEN_PRICES_USD:
-                        token0_price_usd = TOKEN_PRICES_USD[token0_symbol.upper()]
-                
-                if token1_price_usd == 0:
-                    token1_symbol = metadata.get('token1_symbol', '')
-                    if token1_symbol.upper() in TOKEN_PRICES_USD:
-                        token1_price_usd = TOKEN_PRICES_USD[token1_symbol.upper()]
+                # P0 FIX: Get real token prices from BATCH-FETCHED results
+                token0_price_usd = batch_prices.get(token0_addr, 0.0)
+                token1_price_usd = batch_prices.get(token1_addr, 0.0)
                 
                 # Calculate TVL from both sides
                 tvl_from_token0 = reserve0 * token0_price_usd
@@ -1561,12 +1510,13 @@ class ArbitrageEngine:
             leg1_amm_pct=leg1_result.slippage_pct,
             leg2_amm_pct=leg2_result.slippage_pct,
             loan_amount_usd=loan_amount_usd,
-            leg1_amount_out_usd=leg1_amount_out_usd,
+            leg1_amount_out_usd=float(leg1_amount_out_usd),
             cap_pct=MAX_SLIPPAGE_PCT_DEFAULT,
         )
 
         # Sanity bug-trace
-        if leg2_amount_out_usd > 100000:
+        # Use Decimal for comparison
+        if leg2_amount_out_usd > Decimal('100000'):
             logger.error(
                 f"🔴 MATH ANOMALY {buy_pool.token0_symbol}/{buy_pool.token1_symbol} "
                 f"loan=${loan_amount_usd:,.2f} out=${leg2_amount_out_usd:,.2f} "
@@ -1574,10 +1524,16 @@ class ArbitrageEngine:
             )
 
         # ---------- 6. Fees and gross profit ----------
-        leg1_fee_usd = leg1_result.fee_paid * token0_price_usd
-        leg2_fee_usd = leg2_result.fee_paid * token1_price_usd
+        # Convert all financial values to Decimal for precision
+        leg1_fee_usd = Decimal(str(leg1_result.fee_paid)) * Decimal(str(token0_price_usd))
+        leg2_fee_usd = Decimal(str(leg2_result.fee_paid)) * Decimal(str(token1_price_usd))
 
-        gas_cost_usd = self.calculate_gas_cost_usd()
+        # Apply a 20% buffer to the gas cost to handle volatility
+        GAS_BUFFER_MULTIPLIER = Decimal('1.2')
+        gas_cost_usd = Decimal(str(self.calculate_gas_cost_usd()))
+        buffered_gas_cost_usd = gas_cost_usd * GAS_BUFFER_MULTIPLIER
+
+        # Gross profit is the raw USD difference after both swaps
         gross_profit_usd = leg2_amount_out_usd - loan_amount_usd
         
         # Calculate profits for BOTH flash loan providers
@@ -1588,7 +1544,7 @@ class ArbitrageEngine:
             execution_plan = flash_loan_selector.get_execution_plan(
                 borrow_token=borrow_token,
                 loan_amount_usd=loan_amount_usd,
-                expected_profit_usd=gross_profit_usd,
+                expected_profit_usd=float(gross_profit_usd),
                 gas_cost_usd=gas_cost_usd
             )
             
@@ -1596,43 +1552,43 @@ class ArbitrageEngine:
             balancer_details = execution_plan['details'].get('balancer_vault', {})
             aave_details = execution_plan['details'].get('aave_v3', {})
             
-            balancer_profit = balancer_details.get('net_profit', 0)
-            aave_profit = aave_details.get('net_profit', 0)
+            balancer_profit = Decimal(str(balancer_details.get('net_profit', 0)))
+            aave_profit = Decimal(str(aave_details.get('net_profit', 0)))
             dual_execution = execution_plan['dual_execution']
-            total_extraction = execution_plan['total_profit']
+            total_extraction = Decimal(str(execution_plan['total_profit']))
             
             # Use best provider for default values
             if balancer_profit > 0:
                 primary_provider = "Balancer Vault (FREE)"
                 flash_loan_fee_bps = 0
-                flash_loan_fee_usd = 0
+                flash_loan_fee_usd = Decimal('0')
                 net_profit_usd = balancer_profit
             elif aave_profit > 0:
                 primary_provider = "Aave V3"
                 flash_loan_fee_bps = 9
-                flash_loan_fee_usd = loan_amount_usd * 0.0009
+                flash_loan_fee_usd = loan_amount_usd * Decimal('0.0009')
                 net_profit_usd = aave_profit
             else:
                 primary_provider = "None"
                 flash_loan_fee_bps = self.flash_loan_fee_bps
-                flash_loan_fee_usd = loan_amount_usd * self.flash_loan_fee_bps / 10000
+                flash_loan_fee_usd = loan_amount_usd * (Decimal(str(self.flash_loan_fee_bps)) / Decimal('10000'))
                 net_profit_usd = gross_profit_usd - flash_loan_fee_usd
             
-            net_profit_after_gas_usd = net_profit_usd - gas_cost_usd
-            effective_total_extraction_usd = total_extraction - gas_cost_usd
+            net_profit_after_gas_usd = net_profit_usd - buffered_gas_cost_usd
+            effective_total_extraction_usd = total_extraction - buffered_gas_cost_usd
             effective_profit_after_gas_usd = max(effective_total_extraction_usd, net_profit_after_gas_usd)
-            is_executable = effective_profit_after_gas_usd >= get_minimum_net_profit_usd()
-            roi_percent = (net_profit_after_gas_usd / loan_amount_usd) * 100 if loan_amount_usd > 0 else 0
+            is_executable = effective_profit_after_gas_usd >= Decimal(str(get_minimum_net_profit_usd()))
+            roi_percent = (net_profit_after_gas_usd / loan_amount_usd) * 100 if loan_amount_usd > 0 else Decimal('0')
             
         else:
             # Fallback to Aave only
             primary_provider = "Aave V3"
             flash_loan_fee_bps = self.flash_loan_fee_bps
-            flash_loan_fee_usd = loan_amount_usd * self.flash_loan_fee_bps / 10000
+            flash_loan_fee_usd = loan_amount_usd * (Decimal(str(self.flash_loan_fee_bps)) / Decimal('10000'))
             net_profit_usd = gross_profit_usd - flash_loan_fee_usd
-            net_profit_after_gas_usd = net_profit_usd - gas_cost_usd
-            roi_percent = (net_profit_after_gas_usd / loan_amount_usd) * 100 if loan_amount_usd > 0 else 0
-            is_executable = net_profit_after_gas_usd >= get_minimum_net_profit_usd()
+            net_profit_after_gas_usd = net_profit_usd - buffered_gas_cost_usd
+            roi_percent = (net_profit_after_gas_usd / loan_amount_usd) * 100 if loan_amount_usd > 0 else Decimal('0')
+            is_executable = net_profit_after_gas_usd >= Decimal(str(get_minimum_net_profit_usd()))
             
             balancer_profit = 0
             aave_profit = net_profit_usd
@@ -1646,8 +1602,8 @@ class ArbitrageEngine:
         # ========================================================================
         
         # Calculate total costs in USD (absolute values)
-        total_dex_fees_usd = leg1_fee_usd + leg2_fee_usd
-        total_slippage_usd = leg1_slippage_usd_ml + leg2_slippage_usd_ml
+        total_dex_fees_usd = float(leg1_fee_usd + leg2_fee_usd)
+        total_slippage_usd = float(leg1_slippage_usd_ml + leg2_slippage_usd_ml)
         total_costs_usd = flash_loan_fee_usd + total_dex_fees_usd + total_slippage_usd
         
         # Convert to percentages (for display only - NOT used in calculations!)
@@ -1660,7 +1616,7 @@ class ArbitrageEngine:
         # (Note: per-leg pct values currently used only in display below.)
         
         # For display: convert total slippage to percentage of loan (approximation)
-        total_slippage_pct_display = (total_slippage_usd / loan_amount_usd) * 100 if loan_amount_usd > 0 else 0
+        total_slippage_pct_display = (Decimal(str(total_slippage_usd)) / loan_amount_usd) * 100 if loan_amount_usd > 0 else 0
         
         logger.info("=" * 80)
         logger.info("💰 PROFIT CALCULATION (USD-Based Math)")
@@ -1670,22 +1626,22 @@ class ArbitrageEngine:
         logger.info("")
         logger.info("USD FLOW (Actual Amounts):")
         logger.info(f"  1️⃣  Start:               ${loan_amount_usd:,.2f}")
-        logger.info(f"  2️⃣  After Leg1:           ${leg1_amount_out_usd:,.2f}")
+        logger.info(f"  2️⃣  After Leg1:           ${float(leg1_amount_out_usd):,.2f}")
         logger.info(f"      ├─ Fee paid:         -${leg1_fee_usd:,.2f}")
-        logger.info(f"      └─ Slippage cost:    -${leg1_slippage_usd_ml:,.2f}")
-        logger.info(f"  3️⃣  After Leg2:           ${leg2_amount_out_usd:,.2f}")
+        logger.info(f"      └─ Slippage cost:    -${float(leg1_slippage_usd_ml):,.2f}")
+        logger.info(f"  3️⃣  After Leg2:           ${float(leg2_amount_out_usd):,.2f}")
         logger.info(f"      ├─ Fee paid:         -${leg2_fee_usd:,.2f}")
-        logger.info(f"      └─ Slippage cost:    -${leg2_slippage_usd_ml:,.2f}")
+        logger.info(f"      └─ Slippage cost:    -${float(leg2_slippage_usd_ml):,.2f}")
         logger.info(f"  4️⃣  Flash loan fee:      -${flash_loan_fee_usd:,.2f}")
-        logger.info(f"  5️⃣  Net returned:         ${leg2_amount_out_usd - flash_loan_fee_usd:,.2f}")
+        logger.info(f"  5️⃣  Net returned:         ${float(leg2_amount_out_usd - flash_loan_fee_usd):,.2f}")
         logger.info("")
         logger.info("COSTS BREAKDOWN (USD):")
         logger.info(f"  Flash Loan Fee:      ${flash_loan_fee_usd:,.2f}  ({flash_loan_fee_pct:.4f}% of loan)")
         logger.info(f"  DEX Fees (STATIC):   ${total_dex_fees_usd:,.2f}  ({total_dex_fees_pct:.4f}% of loan)")
         logger.info(f"  Slippage (ML):       ${total_slippage_usd:,.2f}  ({total_slippage_pct_display:.4f}% of loan)")
         logger.info("  ─────────────────────────────────")
-        logger.info(f"  TOTAL COSTS:         ${total_costs_usd:,.2f}")
-        logger.info(f"  Gas (paid separate): ${gas_cost_usd:,.4f} (NOT deducted from profit)")
+        logger.info(f"  TOTAL COSTS:         ${float(total_costs_usd):,.2f}")
+        logger.info(f"  Gas (paid separate): ${gas_cost_usd:,.4f} (Buffered to ${buffered_gas_cost_usd:,.4f})")
         logger.info("")
         logger.info("PROFIT (USD):")
         logger.info(f"  Gross Profit:        ${gross_profit_usd:,.2f}")
@@ -1697,6 +1653,12 @@ class ArbitrageEngine:
         logger.info("    All calculations use USD amounts (different bases can't be added as %)!")
         logger.info("=" * 80)
         
+        # SANITY GATE: Ensure we aren't proposing a losing trade before creating the object.
+        # This check uses the buffered gas cost for maximum safety.
+        if net_profit_after_gas_usd <= Decimal(str(get_minimum_net_profit_usd())):
+            logger.warning(f"Opportunity rejected by sanity gate: Net profit ${net_profit_after_gas_usd:,.2f} <= min profit ${get_minimum_net_profit_usd():.2f}")
+            return None
+
         # Build legs (using ML slippage for real-world accuracy)
         leg1 = SwapLeg(
             pool=buy_pool.pool_address,
@@ -1705,8 +1667,8 @@ class ArbitrageEngine:
             protocol=buy_pool.protocol,
             token_in=buy_pool.token0,
             token_out=buy_pool.token1,
-            amount_in_usd=loan_amount_usd,
-            amount_out_usd=leg1_amount_out_usd,
+            amount_in_usd=float(loan_amount_usd),
+            amount_out_usd=float(leg1_amount_out_usd),
             fee_paid_usd=leg1_fee_usd,
             slippage_usd=leg1_slippage_usd_ml,  # ✅ Using ML prediction (real-world)
             spot_price=buy_price,
@@ -1725,8 +1687,8 @@ class ArbitrageEngine:
             protocol=sell_pool.protocol,
             token_in=sell_pool.token1,
             token_out=sell_pool.token0,
-            amount_in_usd=leg1_amount_out_usd,
-            amount_out_usd=leg2_amount_out_usd,
+            amount_in_usd=float(leg1_amount_out_usd),
+            amount_out_usd=float(leg2_amount_out_usd),
             fee_paid_usd=leg2_fee_usd,
             slippage_usd=leg2_slippage_usd_ml,  # ✅ Using ML prediction (real-world)
             spot_price=sell_price,
@@ -1739,27 +1701,27 @@ class ArbitrageEngine:
         )
         
         flash_loan = FlashLoanData(
-            loan_amount_usd=loan_amount_usd,
+            loan_amount_usd=float(loan_amount_usd),
             flash_loan_fee_bps=flash_loan_fee_bps,
-            flash_loan_fee_usd=flash_loan_fee_usd,
+            flash_loan_fee_usd=float(flash_loan_fee_usd),
             leg1=leg1,
             leg2=leg2,
-            total_fees_usd=leg1_fee_usd + leg2_fee_usd + flash_loan_fee_usd,
-            total_slippage_usd=leg1.slippage_usd + leg2.slippage_usd,
-            gas_cost_usd=gas_cost_usd,
+            total_fees_usd=float(leg1_fee_usd + leg2_fee_usd + flash_loan_fee_usd),
+            total_slippage_usd=float(leg1.slippage_usd + leg2.slippage_usd),
+            gas_cost_usd=float(gas_cost_usd),
             gas_units=self.gas_units,
-            repay_amount_usd=loan_amount_usd + flash_loan_fee_usd,
-            net_profit_usd=net_profit_usd,
-            net_profit_after_gas_usd=net_profit_after_gas_usd,
-            roi_percent=roi_percent,
+            repay_amount_usd=float(loan_amount_usd + flash_loan_fee_usd),
+            net_profit_usd=float(net_profit_usd),
+            net_profit_after_gas_usd=float(net_profit_after_gas_usd),
+            roi_percent=float(roi_percent),
             is_executable=is_executable,
             hops=2,
             # Multi-provider details
             flash_loan_provider=primary_provider,
-            balancer_profit_usd=balancer_profit,
-            aave_profit_usd=aave_profit,
+            balancer_profit_usd=float(balancer_profit),
+            aave_profit_usd=float(aave_profit),
             dual_execution=dual_execution,
-            total_extraction_usd=effective_total_extraction_usd,
+            total_extraction_usd=float(effective_total_extraction_usd),
         )
         
         # Get token pair name
@@ -1768,12 +1730,74 @@ class ArbitrageEngine:
         token_pair = f"{t0_info['symbol']}/{t1_info['symbol']}"
         
         return SpreadOpportunity(
-            id=f"{buy_pool.pool_address[:10]}-{sell_pool.pool_address[:10]}-{int(time.time())}",
+            id=str(uuid.uuid4()),
             timestamp=int(time.time() * 1000),
             token_pair=token_pair,
             min_reserve_usd=v.min_reserve,
             flash_loan=flash_loan,
         )
+
+    def attempt_execution(self, opportunity: SpreadOpportunity) -> Optional[str]:
+        """
+        Uses the TransactionBuilder to run an opportunity through all proof gates
+        and prepare it for signing and broadcast.
+
+        Args:
+            opportunity: The SpreadOpportunity to execute.
+
+        Returns:
+            The raw signed transaction hex if successful, otherwise None.
+        """
+        logger.info(f"Attempting to build and execute opportunity {opportunity.id}")
+
+        if not self.private_key or not self.wallet_address:
+            logger.error("❌ Execution context not configured. Set PRIVATE_KEY and EXECUTOR_WALLET.")
+            return None
+
+        try:
+            # 1. Instantiate the builder with the opportunity and execution context.
+            builder = TransactionBuilder(opportunity, self.w3, self.wallet_address, self.private_key)
+
+            # 2. Run all proof gates in a fluent chain.
+            #    These gates act as the final line of defense before committing capital.
+            builder.gate_wallet_readiness() \
+                   .gate_rpc_liveness() \
+                   .gate_contract_readiness() \
+                   .gate_profitability() \
+                   .gate_slippage_and_depth() \
+                   .construct_payload() \
+                   .simulate()
+
+            # 3. Build the final transaction. This will raise an error if any gate failed.
+            unsigned_tx = builder.build()
+            logger.info(f"✅ All proof gates passed. Transaction built: {unsigned_tx}")
+
+            # 4. Sign the transaction.
+            signed_tx_hex = builder.get_signed_tx()
+            logger.info(f"✍️ Transaction signed: {signed_tx_hex[:20]}...")
+
+            # 5. In a real system, you would now broadcast the transaction.
+            # tx_hash = self.w3.eth.send_raw_transaction(signed_tx_hex)
+            # logger.info(f"🚀 Transaction broadcast! Hash: {tx_hash.hex()}")
+            
+            return signed_tx_hex
+
+        except TransactionBuilderError as e:
+            logger.error(f"❌ Execution stopped. {e.message}")
+            for error in e.errors:
+                logger.error(f"   - {error}")
+            return None
+        except Exception:
+            logger.exception("An unexpected error occurred during transaction building.")
+            return None
+
+    def execute_best_opportunity(self) -> Optional[str]:
+        """Finds the most profitable spread and attempts to execute it."""
+        if not self.spreads:
+            logger.info("No profitable spreads found to execute.")
+            return None
+        
+        return self.attempt_execution(self.spreads[0])
     
     def update_pool(self, pool_data: Dict) -> PoolPrice:
         """Update pool data and return PoolPrice"""

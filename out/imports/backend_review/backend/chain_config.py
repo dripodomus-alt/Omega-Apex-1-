@@ -177,8 +177,11 @@ CHAINS: Dict[int, Dict[str, Any]] = {
             "sushiswap_v2":  {"address": "0xc35DADB65012eC5796536bD9864eD8773aBc74C4", "type": 2, "fee_bps": 30},
             "sushiswap_v3":  {"address": "0x917933899c6a5F8E37F31E19f92CdBFF7e8FF0e2", "type": 3, "fee_tiers": [100, 500, 3000, 10000]},
             "apeswap":       {"address": "0xCf083Be4164828f00cAE704EC15a36D711491284", "type": 2, "fee_bps": 20},
-            "dfyn":          {"address": "0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B", "type": 2, "fee_bps": 30},
-            "retro":         {"address": "0x91e1B99072f238352f59e58de875691e20Dc19c1", "type": 3, "fee_tiers": [100, 500, 3000, 10000]},
+            "dfyn_v2":       {"address": "0xE7Fb3e833eFE5F9c441105EB65Ef8b261266423B", "type": 2, "fee_bps": 30},
+            "retro_v3":      {"address": "0x91e1B99072f238352f59e58de875691e20Dc19c1", "type": 3, "fee_tiers": [100, 500, 3000, 10000]},
+            "doveswap_v2":   {"address": "0x4282E3aC4453dD296332A243d942212341843611", "type": 2, "fee_bps": 30},
+            "jetswap_v2":    {"address": "0x5C0A3F55AAC5211a2521063496393138353a2083", "type": 2, "fee_bps": 30},
+            "polycat_v2":    {"address": "0x81591359A80B3C4214394060493522e5Ca143076", "type": 2, "fee_bps": 20},
         },
 
         "curve": {

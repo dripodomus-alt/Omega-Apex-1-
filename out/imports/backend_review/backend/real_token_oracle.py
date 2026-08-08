@@ -7,6 +7,7 @@ import requests
 import os
 import logging
 from typing import Dict
+from tenacity import retry, stop_after_attempt, wait_exponential
 import time
 
 logger = logging.getLogger(__name__)
@@ -22,6 +23,7 @@ class RealTokenPriceOracle:
         self.cache = {}
         self.cache_time = {}
         self.cache_ttl = 60  # Cache for 60 seconds
+        self.timeout = 10 # seconds
         self.base_url = "https://api.dexscreener.com/latest/dex"
     
     def get_token_price_usd(self, token_address: str, chain: str = "polygon") -> float:
@@ -50,7 +52,7 @@ class RealTokenPriceOracle:
             # DEXScreener API endpoint
             url = f"{self.base_url}/tokens/{token_address}"
             
-            response = requests.get(url, timeout=5)
+            response = requests.get(url, timeout=self.timeout)
             
             if response.status_code == 200:
                 data = response.json()
@@ -97,6 +99,7 @@ class RealTokenPriceOracle:
             logger.error(f"Error fetching price for {token_address[:10]}: {e}")
             return 0.0
     
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def get_multiple_prices(self, token_addresses: list, chain: str = "polygon") -> Dict[str, float]:
         """
         Batch fetch prices for multiple tokens
@@ -120,7 +123,7 @@ class RealTokenPriceOracle:
             
             try:
                 url = f"{self.base_url}/tokens/{addresses_str}"
-                response = requests.get(url, timeout=15)  # Increased timeout
+                response = requests.get(url, timeout=self.timeout)
                 
                 if response.status_code == 200:
                     data = response.json()
