@@ -132,7 +132,7 @@ export async function runExecutionPipeline(
       effectiveMode === 'SIM' ||
       effectiveMode === 'DEV' ||
       effectiveMode === 'TEST'
-        ? `[${effectiveMode}] C1-sync archive at ${timestamp}. No chain submission. runtime=${runtime}`
+        ? `[${effectiveMode}] C1-sync archive at ${timestamp}. Approved envelope archived. No signature or chain submission. runtime=${runtime}`
         : `Submitted on Polygon Mainnet. Await receipt verification before realized PnL credit.`,
     transientTrace: computeLegLedger(route),
   };

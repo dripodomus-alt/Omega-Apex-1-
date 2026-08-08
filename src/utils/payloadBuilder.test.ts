@@ -16,7 +16,8 @@ vi.mock('../config/chainConfig', () => ({
   POLYGON_CHAIN_CONFIG: {
     c1ArbExecutorAddress: '0x409ece3Fd71DFBd8f692B600f36A89301cb37346',
     profitReceiverAddress: '0xAd93CCE6b616d08973472345Fa42A0b34F52d713',
-  },
+    uniswapV3Router: '0xE592427A0AEce92De3Edee1F18E0157C05861564',
+    },
 }));
 
 function makeDodoPool(overrides: Partial<PoolInfo> = {}): PoolInfo {
@@ -128,7 +129,7 @@ describe('PayloadBuilder', () => {
     expect(payload.data).toContain(POLYGON_CHAIN_CONFIG.uniswapV3Router.slice(2).toLowerCase());
 
     // 3. Check that the calldata contains the function selector for DODO's swap
-    const dodoSwapSelector = '04b97b37'; // executeDodoPackedSwap
+    const dodoSwapSelector = '0e1650be'; // executeDodoPackedSwap
     expect(payload.data).toContain(dodoSwapSelector);
 
     // 4. Check that the calldata contains the function selector for Uniswap's swap

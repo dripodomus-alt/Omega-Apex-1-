@@ -19,6 +19,7 @@ import { LaneNonceManager } from './nonce/laneNonceManager';
 import { StateLockManager } from './locks/stateLockManager';
 import { validateBundleIsolation } from './bundles/bundlePolicy';
 import { runExecutionGate } from './gates/executionGate';
+import { buildContinuousC1CyclePlan } from './cycles/c1CyclePolicy';
 import type { RankedRouteCandidate } from '../engine/market/types';
 
 const state: StateProvenance = {
@@ -141,6 +142,93 @@ function txFor(envelope: ApprovedExecutionEnvelope): ApprovedTransactionEnvelope
   };
 }
 
+
+function confirmedCommit(envelope: ApprovedExecutionEnvelope) {
+  return confirmC1Receipt(planC1(envelope).opportunity, {
+    txHash: `0xtx-${envelope.identity.executionId}`,
+    blockNumber: 101,
+    status: 1,
+    gasUsed: 100n,
+    effectiveGasPrice: 2n,
+  });
+}
+
+function c2MathFromCommit(
+  commit: ReturnType<typeof confirmedCommit>,
+  postState: ReturnType<typeof buildPostC1Snapshot>,
+  overrides: Partial<C2MathResult> = {},
+): C2MathResult {
+  return {
+    ...c1Math({ state: postState }),
+    executionType: 'C2_ARBITRAGE',
+    parentC1Id: commit.identity.executionId,
+    parentC1Block: commit.confirmedBlock,
+    sequence: 1,
+    precedingExecutionId: commit.identity.executionId,
+    precedingExecutionBlock: commit.confirmedBlock,
+    postStateHash: postState.stateHash,
+    action: 'REVERSE',
+    expiryBlock: commit.confirmedBlock + 2,
+    ...overrides,
+  };
+}
+
+function approvedC1ForCycle(index: number): ApprovedExecutionEnvelope {
+  const routeHash = `0xroute-${index}`;
+  const math = c1Math({
+    routeHash,
+    simulationHash: `0xsim-${index}`,
+    calldataHash: `0xcalldata-${index}`,
+    expectedNetProfitUsd: 10 + index,
+  });
+  return approvedC1({
+    identity: {
+      executionId: `c1-${index}`,
+      executionType: 'C1_ARBITRAGE',
+      candidateHash: `0xcandidate-${index}`,
+      routeHash,
+    },
+    math,
+    resources: [
+      { kind: 'ROUTE', id: routeHash },
+      { kind: 'POOL', id: `0xbuy-${index}` },
+      { kind: 'POOL', id: `0xsell-${index}` },
+    ],
+  });
+}
+
+function approvedC2FromC1(
+  c1: ApprovedExecutionEnvelope,
+  sequence: number,
+  precedingBlock: number,
+  stateBlock: number,
+): ApprovedExecutionEnvelope {
+  const math: C2MathResult = {
+    ...c1.math,
+    executionType: 'C2_ARBITRAGE',
+    parentC1Id: c1.identity.executionId,
+    parentC1Block: precedingBlock,
+    sequence,
+    precedingExecutionId: sequence === 1 ? c1.identity.executionId : `c2-${sequence - 1}`,
+    precedingExecutionBlock: precedingBlock,
+    postStateHash: `0xpost-${sequence}`,
+    action: 'MIRROR',
+    expiryBlock: precedingBlock + 2,
+    state: { ...c1.math.state, blockNumber: stateBlock, stateHash: `0xpost-${sequence}` },
+  } as C2MathResult;
+  return {
+    ...c1,
+    identity: {
+      executionId: `c2-${sequence}`,
+      executionType: 'C2_ARBITRAGE',
+      candidateHash: `0xc2-${sequence}`,
+      routeHash: `0xroute-c2-${sequence}`,
+    },
+    math,
+    nonceOwner: 'c2_lane',
+  };
+}
+
 describe('three-lane execution domain', () => {
   it('dispatches approved C1 into the C1 lane only', () => {
     const result = dispatchApprovedExecution(approvedC1());
@@ -179,10 +267,13 @@ describe('three-lane execution domain', () => {
       stateHash: '0xstate-b',
     });
     const math: C2MathResult = {
-      ...c1Math(),
+      ...c1Math({ state: postState }),
       executionType: 'C2_ARBITRAGE',
       parentC1Id: commit.identity.executionId,
       parentC1Block: commit.confirmedBlock,
+      sequence: 1,
+      precedingExecutionId: commit.identity.executionId,
+      precedingExecutionBlock: commit.confirmedBlock,
       postStateHash: postState.stateHash,
       action: 'REVERSE',
       expiryBlock: 106,
@@ -248,6 +339,9 @@ describe('three-lane execution domain', () => {
       executionType: 'C2_ARBITRAGE',
       parentC1Id: c1.identity.executionId,
       parentC1Block: 101,
+      sequence: 1,
+      precedingExecutionId: c1.identity.executionId,
+      precedingExecutionBlock: 101,
       postStateHash: '0xstate-b',
       action: 'MIRROR',
       expiryBlock: 106,
@@ -278,5 +372,50 @@ describe('three-lane execution domain', () => {
     });
     expect(gate.passed).toBe(false);
     expect(gate.reasons).toContain('STATE_HASH_DRIFT');
+  });
+  it('requires at least 10 executable C1 lanes per cycle', () => {
+    const nine = Array.from({ length: 9 }, (_, index) => approvedC1ForCycle(index));
+    expect(() => buildContinuousC1CyclePlan('cycle-underfilled', nine)).toThrow(
+      'requires at least 10 executable C1 lanes',
+    );
+  });
+
+  it('keeps C2 work queued without blocking the next C1 cycle', () => {
+    const tenC1 = Array.from({ length: 10 }, (_, index) => approvedC1ForCycle(index));
+    const c2 = approvedC2FromC1(tenC1[0], 1, 101, 102);
+    const cycle = buildContinuousC1CyclePlan('cycle-ready', [...tenC1, c2]);
+    expect(cycle.c1Lanes).toHaveLength(10);
+    expect(cycle.nonBlockingC2Queue).toHaveLength(1);
+  });
+
+  it('expires C2 after the fifth child execution for one parent C1', () => {
+    const envelope = approvedC1();
+    const commit = confirmedCommit(envelope);
+    const postState = buildPostC1Snapshot(commit, {
+      ...state,
+      blockNumber: 102,
+      stateHash: '0xstate-b',
+    });
+    const math = c2MathFromCommit(commit, postState, {
+      sequence: 6,
+      precedingExecutionId: 'c2-5',
+      precedingExecutionBlock: 101,
+    });
+    expect(decideC2(commit, postState, math).action).toBe('EXPIRE');
+  });
+
+  it('expires C2 when it is more than 2 blocks after the preceding execution', () => {
+    const envelope = approvedC1();
+    const commit = confirmedCommit(envelope);
+    const postState = buildPostC1Snapshot(commit, {
+      ...state,
+      blockNumber: 104,
+      stateHash: '0xstate-b',
+    });
+    const math = c2MathFromCommit(commit, postState, {
+      sequence: 1,
+      precedingExecutionBlock: 101,
+    });
+    expect(decideC2(commit, postState, math)).toMatchObject({ action: 'EXPIRE', expiryBlock: 103 });
   });
 });

@@ -1,6 +1,7 @@
 import type { C1Commit } from '../c1/types';
 import type { C2Action, C2Plan, PostC1Snapshot } from './types';
 import type { C2MathResult } from '../../types';
+import { validateC2SequencePolicy } from './policy';
 
 export function decideC2(
   parent: C1Commit,
@@ -16,12 +17,11 @@ export function decideC2(
   if (math.postStateHash !== postState.stateHash) {
     throw new Error('[C2_DECISION] post-state hash mismatch');
   }
-  const earliest = parent.confirmedBlock + 1;
-  const latest = parent.confirmedBlock + 5;
-  if (postState.blockNumber < earliest || postState.blockNumber > latest) {
-    return { parent, postState, math, action: 'EXPIRE', expiryBlock: latest };
+  const sequencePolicy = validateC2SequencePolicy(math);
+  if (!sequencePolicy.ok) {
+    return { parent, postState, math, action: 'EXPIRE', expiryBlock: sequencePolicy.expiryBlock };
   }
   const action: C2Action =
     math.action === 'DO_NOTHING' || math.expectedNetProfitUsd <= 0 ? 'DO_NOTHING' : math.action;
-  return { parent, postState, math, action, expiryBlock: latest };
+  return { parent, postState, math, action, expiryBlock: sequencePolicy.expiryBlock };
 }

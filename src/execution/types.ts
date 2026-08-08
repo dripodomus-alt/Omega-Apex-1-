@@ -67,6 +67,9 @@ export interface C2MathResult extends RustMathBaseResult {
   executionType: 'C2_ARBITRAGE';
   parentC1Id: string;
   parentC1Block: number;
+  sequence: number;
+  precedingExecutionId: string;
+  precedingExecutionBlock: number;
   postStateHash: string;
   action: 'MIRROR' | 'REVERSE' | 'DO_NOTHING' | 'EXPIRE';
   expiryBlock: number;
