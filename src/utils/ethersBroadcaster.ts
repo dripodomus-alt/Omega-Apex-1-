@@ -1,20 +1,8 @@
 import { ethers } from 'ethers';
-import { POLYGON_CHAIN_CONFIG } from '../config/chainConfig';
 import { buildPayloadForRoute } from './payloadBuilder';
-import { getOmegaRpcRouter } from './rpcRouter';
 import type { ArbitrageRoute } from '../types';
 
-/**
- * FULLY EXPRESSED ETHERS.JS ON-CHAIN TRANSACTION WRITER & BROADCASTER
- * Polygon PoS Mainnet #137 Engine
- *
- * Target Executor Contract: 0x409ece3Fd71DFBd8f692B600f36A89301cb37346
- * Liquidation Target Contract: 0x8cD1e93eE2DeD4F59e15650c0a16029b6Ad9b951
- * Bot Hot Wallet / Signer: 0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
- * Profit Receiver Vault: 0xAd93CCE6b616d08973472345Fa42A0b34F52d713
- */
-
-// Canonical ABI Definitions for On-Chain Execution Contracts
+/** Canonical ABI definitions for the generic route executor payload builder. */
 export const OMEGA_EXECUTOR_ABI = [
   'function executeArbitrage(address[] calldata path, uint256 inputAmount, uint256 minProfitUSD, bytes calldata flashloanData) external returns (uint256 netProfit)',
   'function executeFlashLoanArbitrage(address tokenIn, uint256 amountIn, address[] calldata routePools, bytes calldata callData) external returns (uint256 profit)',
@@ -41,6 +29,11 @@ export interface LiveEthersTxBroadcastResult {
   revertReason?: string;
   polygonscanUrl: string;
   confirmationLogs: string[];
+  settlement?: {
+    required: boolean;
+    status: string;
+    verifyEndpoint?: string;
+  };
 }
 
 export interface BroadcastTransactionPayload {
@@ -55,237 +48,149 @@ export interface BroadcastTransactionPayload {
   customMaxFeeGwei?: number;
 }
 
-function requireCanonicalRoute(payload: BroadcastTransactionPayload): ArbitrageRoute {
-  if (!payload.route) {
-    throw new Error('[ETHERS.JS WRITER] Refusing broadcast: canonical ArbitrageRoute is required before simulation or submit.');
+function failureResult(payload: BroadcastTransactionPayload, reason: string, logs: string[] = []): LiveEthersTxBroadcastResult {
+  return {
+    success: false,
+    txHash: ethers.ZeroHash,
+    rpcNodeUsed: 'server-side-execution-bridge',
+    relayProtocol: payload.relayProtocol || 'FASTLANE',
+    preFlightSimulationPassed: false,
+    revertReason: reason,
+    polygonscanUrl: 'https://polygonscan.com/',
+    confirmationLogs: logs.length ? logs : [`[BROADCAST BLOCKED] ${reason}`],
+    settlement: { required: false, status: 'NOT_SUBMITTED' },
+  };
+}
+
+function apiBase(): string {
+  const configured = import.meta.env.VITE_APEX_API_BASE as string | undefined;
+  return (configured?.trim() || '').replace(/\/+$/, '');
+}
+
+async function readJson(response: Response): Promise<any> {
+  const text = await response.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
   }
-  return payload.route;
 }
 
 /**
- * Get Fallback Multi-Lane Ethers JSON-RPC Provider
- */
-export function getEthersPolygonProvider(): ethers.JsonRpcProvider {
-  // Use the resilient RpcRouter to get a provider instance.
-  // This ensures we use the healthiest, most up-to-date node for broadcasting.
-  const router = getOmegaRpcRouter();
-  return new ethers.JsonRpcProvider(router.getHealthSnapshot()[0]?.url || POLYGON_CHAIN_CONFIG.rpcEndpoints.primaryAlchemyHttp, 137, { staticNetwork: true });
-}
-
-/**
- * Full On-Chain Pre-Flight Simulation using ethers.js `eth_call`
+ * Pre-flight simulation for a route through the server-side execution bridge.
+ *
+ * The browser may build calldata for transparency, but private-key signing is
+ * intentionally never performed in the client bundle.
  */
 export async function simulateArbitrageOnChain(
-  route: ArbitrageRoute
+  route: ArbitrageRoute,
 ): Promise<{ success: boolean; simulationData: string; estimatedGasUnits: bigint; errorReason?: string }> {
-  const provider = getEthersPolygonProvider();
-  const builtPayload = await buildPayloadForRoute(route);
-
   try {
-    // 1. Simulate via eth_call
-    const simulationResult = await provider.call({
-      from: POLYGON_CHAIN_CONFIG.botAddress,
-      to: builtPayload.to,
-      data: builtPayload.data,
-      value: builtPayload.value,
+    const builtPayload = await buildPayloadForRoute(route);
+    const response = await fetch(`${apiBase()}/api/execution/route-broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        dryRunOnly: true,
+        routeId: route.id,
+        expectedProfitUSD: route.netProfitUSD,
+        targetContract: builtPayload.to,
+        data: builtPayload.data,
+        value: builtPayload.value.toString(),
+      }),
     });
-
-    // 2. Estimate Gas
-    const estimatedGas = await provider.estimateGas({
-      from: POLYGON_CHAIN_CONFIG.botAddress,
-      to: builtPayload.to,
-      data: builtPayload.data,
-      value: builtPayload.value,
-    });
-
+    const data = await readJson(response);
+    if (!response.ok || data?.success === false) {
+      throw new Error(data?.error || data?.message || `Simulation bridge failed: ${response.status}`);
+    }
     return {
       success: true,
-      simulationData: simulationResult,
-      estimatedGasUnits: estimatedGas,
+      simulationData: data?.hash || '0x',
+      estimatedGasUnits: data?.gasLimit ? BigInt(data.gasLimit) : 0n,
     };
-  } catch (error: any) {
-    console.warn('eth_call simulation result:', error);
+  } catch (error) {
     return {
       success: false,
       simulationData: '0x',
       estimatedGasUnits: 0n,
-      errorReason: error?.message || 'Pre-flight simulation reverted or contract execution exception.',
+      errorReason: error instanceof Error ? error.message : String(error),
     };
   }
 }
 
 /**
- * Execute & Broadcast Live Transaction to Polygon Mainnet #137 via Ethers.js
+ * Execute and broadcast via the server-side signer.
+ *
+ * This function is client-safe: it does not read private keys or instantiate a
+ * signing wallet in the browser. The server owns live-mode gating, pre-flight
+ * simulation, signing, transaction submission, and pending settlement tracking.
  */
 export async function broadcastEthersOnChainTransaction(
-  payload: BroadcastTransactionPayload
+  payload: BroadcastTransactionPayload,
 ): Promise<LiveEthersTxBroadcastResult> {
-  const provider = getEthersPolygonProvider();
-  const rpcNodeUsed = (provider.provider as any)?.connection?.url || 'unknown';
-  const confirmationLogs: string[] = [];
-
-  confirmationLogs.push(`[ETHERS.JS WRITER] Initializing Polygon PoS Mainnet #137 Provider...`);
-  confirmationLogs.push(`[TARGET CONTRACT] Canonical Executor: ${POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress}`);
-  confirmationLogs.push(`[SIGNER WALLET] Relay Hot Wallet: ${POLYGON_CHAIN_CONFIG.botAddress}`);
-
-  // Step 1: Pre-flight Simulation via eth_call
-  confirmationLogs.push(`[STEP 1/4 PRE-FLIGHT] Executing eth_call state diff simulation...`);
-  const simResult = await simulateArbitrageOnChain(requireCanonicalRoute(payload));
-  
-  if (!simResult.success) {
-    const reason = simResult.errorReason || 'Pre-flight simulation failed.';
-    confirmationLogs.push(`[SIMULATION FAILED] ${reason}`);
-    return {
-      success: false,
-      txHash: ethers.ZeroHash,
-      rpcNodeUsed,
-      relayProtocol: payload.relayProtocol || 'FASTLANE',
-      preFlightSimulationPassed: false,
-      revertReason: reason,
-      polygonscanUrl: `https://polygonscan.com/`,
-      confirmationLogs,
-    };
-  }
-  
-  if (simResult.success) {
-    confirmationLogs.push(`[STEP 1/4 PASSED] eth_call simulation confirmed 0 revert triggers. Estimated Gas: ${simResult.estimatedGasUnits.toString()} units.`);
+  const route = payload.route;
+  if (!route) {
+    return failureResult(payload, 'Canonical ArbitrageRoute is required. Legacy path-only payloads are simulation-only and cannot be broadcast.');
   }
 
-  // Step 2: EIP-1559 Fee Estimation via Ethers
-  confirmationLogs.push(`[STEP 2/4 FEE ESTIMATION] Fetching Polygon PoS EIP-1559 fee data...`);
-  let maxFeePerGasGwei = 38.5;
-  let maxPriorityFeeGwei = 32.0;
+  const confirmationLogs = [
+    '[CLIENT BRIDGE] Building executable calldata from canonical route.',
+    '[CLIENT BRIDGE] Private key handling delegated to server-side execution bridge.',
+  ];
 
   try {
-    const feeData = await provider.getFeeData();
-    if (feeData.maxFeePerGas) {
-      maxFeePerGasGwei = Number(ethers.formatUnits(feeData.maxFeePerGas, 'gwei'));
+    const builtPayload = await buildPayloadForRoute(route);
+    confirmationLogs.push(`[PAYLOAD] ${builtPayload.description}`);
+
+    const response = await fetch(`${apiBase()}/api/execution/route-broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        routeId: route.id,
+        pathString: route.pathString,
+        expectedProfitUSD: payload.expectedProfitUSD ?? route.netProfitUSD,
+        relayProtocol: payload.relayProtocol || 'FASTLANE',
+        customMaxFeeGwei: payload.customMaxFeeGwei,
+        targetContract: builtPayload.to,
+        data: builtPayload.data,
+        value: builtPayload.value.toString(),
+      }),
+    });
+    const data = await readJson(response);
+    if (!response.ok || data?.success === false) {
+      const reason = data?.error || data?.message || `Execution bridge rejected payload: HTTP ${response.status}`;
+      return failureResult(payload, reason, [...confirmationLogs, `[SERVER REJECTED] ${reason}`]);
     }
-    if (feeData.maxPriorityFeePerGas) {
-      maxPriorityFeeGwei = Number(ethers.formatUnits(feeData.maxPriorityFeePerGas, 'gwei'));
-    }
-  } catch {
-    // Fallback EIP-1559 buffer for Polygon
-  }
 
-  confirmationLogs.push(`[EIP-1559 GAS] MaxFee: ${maxFeePerGasGwei.toFixed(2)} Gwei, PriorityFee: ${maxPriorityFeeGwei.toFixed(2)} Gwei`);
-
-  // Step 3: Wallet & Transaction Construction
-  const relay = payload.relayProtocol || 'FASTLANE';
-  confirmationLogs.push(`[STEP 3/4 MEV RELAY] Preparing EIP-1559 transaction payload for ${relay} Private Tunnel...`);
-
-  const privateKey = process.env.EXECUTOR_PRIVATE_KEY;
-  if (!privateKey) {
-    const errorMsg = 'EXECUTOR_PRIVATE_KEY not found in environment. Cannot sign transaction.';
-    confirmationLogs.push(`[SIGNING ERROR] ${errorMsg}`);
+    const txHash = data.hash || data.txHash || ethers.ZeroHash;
     return {
-      success: false,
-      txHash: ethers.ZeroHash,
-      rpcNodeUsed,
-      relayProtocol: relay,
-      preFlightSimulationPassed: true,
-      revertReason: errorMsg,
-      polygonscanUrl: `https://polygonscan.com/`,
-      confirmationLogs,
-    };
-  }
-
-  const wallet = new ethers.Wallet(privateKey, provider);
-  const builtPayload = await buildPayloadForRoute(requireCanonicalRoute(payload));
-
-  // Step 4: Broadcast & Confirmation
-  try {
-    const nonce = await provider.getTransactionCount(wallet.address, 'latest');
-    confirmationLogs.push(`[NONCE SYNC] Current On-Chain Tx Count: #${nonce}`);
-
-    const txRequest: ethers.TransactionRequest = {
-      to: builtPayload.to,
-      data: builtPayload.data,
-      value: builtPayload.value,
-      nonce: nonce,
-      gasLimit: simResult.estimatedGasUnits,
-      maxFeePerGas: ethers.parseUnits(maxFeePerGasGwei.toFixed(9), 'gwei'),
-      maxPriorityFeePerGas: ethers.parseUnits(maxPriorityFeeGwei.toFixed(9), 'gwei'),
-      chainId: 137,
-      type: 2, // EIP-1559
-    };
-
-    confirmationLogs.push(`[STEP 4/4 BROADCAST] Dispatching signed payload to ${rpcNodeUsed}...`);
-    const txResponse = await wallet.sendTransaction(txRequest);
-    const txHash = txResponse.hash;
-    confirmationLogs.push(`[BROADCAST SUCCESS] Transaction Hash: ${txHash}`);
-    confirmationLogs.push(`[POLYGONSCAN] https://polygonscan.com/tx/${txHash}`);
-
-    const receipt = await txResponse.wait(); // Wait for 1 confirmation
-
-    if (!receipt || receipt.status !== 1) {
-      throw new Error(`Transaction reverted or failed to confirm. Status: ${receipt?.status}`);
-    }
-
-    confirmationLogs.push(`[SETTLEMENT] Confirmed in block ${receipt.blockNumber}. Profit credited to ${POLYGON_CHAIN_CONFIG.profitReceiverAddress}`);
-
-    return {
-      success: true,
+      success: Boolean(data.success),
       txHash,
-      blockNumber: receipt.blockNumber,
-      gasUsedGwei: Number(ethers.formatUnits(receipt.gasUsed * receipt.gasPrice, 'gwei')),
-      effectiveGasPriceGwei: Number(ethers.formatUnits(receipt.gasPrice, 'gwei')),
-      nonce: txResponse.nonce,
-      rpcNodeUsed,
-      relayProtocol: relay,
+      blockNumber: data.blockNumber,
+      nonce: data.nonce,
+      rpcNodeUsed: data.rpcUrl || data.rpcNodeUsed || 'server-side-execution-bridge',
+      relayProtocol: data.relayProtocol || payload.relayProtocol || 'FASTLANE',
       preFlightSimulationPassed: true,
-      polygonscanUrl: `https://polygonscan.com/tx/${txHash}`,
-      confirmationLogs,
+      polygonscanUrl: data.hashLink || (txHash !== ethers.ZeroHash ? `https://polygonscan.com/tx/${txHash}` : 'https://polygonscan.com/'),
+      confirmationLogs: [...confirmationLogs, ...(Array.isArray(data.logs) ? data.logs : []), data.message || '[SERVER ACCEPTED] Payload processed.'].filter(Boolean),
+      settlement: data.settlement,
     };
-  } catch (error: any) {
-    const reason = error?.message || 'Transaction broadcast or confirmation failed.';
-    confirmationLogs.push(`[BROADCAST FAILED] ${reason}`);
-    return {
-      success: false,
-      txHash: ethers.ZeroHash,
-      rpcNodeUsed,
-      relayProtocol: relay,
-      preFlightSimulationPassed: true,
-      revertReason: reason,
-      polygonscanUrl: `https://polygonscan.com/`,
-      confirmationLogs,
-    };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    return failureResult(payload, reason, [...confirmationLogs, `[CLIENT BRIDGE ERROR] ${reason}`]);
   }
 }
 
-/**
- * Execute Liquidations on Aave V3 via Ethers Writer
- */
+/** Liquidation broadcast requires a complete server-side liquidation payload. */
 export async function broadcastAaveLiquidationViaEthers(
   borrowerAddress: string,
   collateralAsset: string,
   debtAsset: string,
-  debtToCoverUSD: number
+  debtToCoverUSD: number,
 ): Promise<LiveEthersTxBroadcastResult> {
-  const provider = getEthersPolygonProvider();
-  const confirmationLogs: string[] = [];
-
-  confirmationLogs.push(`[AAVE V3 LIQUIDATION ENGINE] Initializing Ethers.js Writer...`);
-  confirmationLogs.push(`[TARGET CONTRACT] Liquidation Engine: ${POLYGON_CHAIN_CONFIG.liquidationExecutorAddress}`);
-  confirmationLogs.push(`[BORROWER TARGET] ${borrowerAddress}`);
-  confirmationLogs.push(`[DEBT COVERAGE] $${debtToCoverUSD.toLocaleString()} USD`);
-
-  const txHash = ethers.hexlify(ethers.randomBytes(32));
-
-  confirmationLogs.push(`[BROADCAST SUCCESS] Liquidation Bundle Hash: ${txHash}`);
-  confirmationLogs.push(`[SETTLEMENT] Health Factor Restored > 1.05. Liquidation Bonus Credited.`);
-
-  return {
-    success: true,
-    txHash,
-    blockNumber: 65492813,
-    gasUsedGwei: 45.2,
-    effectiveGasPriceGwei: 42.0,
-    nonce: 180,
-    rpcNodeUsed: 'polygon-mainnet.g.alchemy.com (Ethers.js v6)',
-    relayProtocol: 'FASTLANE',
-    preFlightSimulationPassed: true,
-    polygonscanUrl: `https://polygonscan.com/tx/${txHash}`,
-    confirmationLogs,
-  };
+  return failureResult(
+    { routeId: 'AAVE-LIQUIDATION', relayProtocol: 'FASTLANE' },
+    `Use /api/liquidations/execute with raw debtToCover and minDebtAmountOut. Received summary request for ${borrowerAddress}/${collateralAsset}/${debtAsset}/$${debtToCoverUSD}.`,
+  );
 }

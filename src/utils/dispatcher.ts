@@ -85,6 +85,7 @@ export class ModeTerminal implements IDispatcher {
     }
 
     const broadcastPayload: BroadcastTransactionPayload = {
+      route: payload.route,
       routeId: payload.route.id,
       pathAddresses: payload.pathAddresses,
       inputAmountUSD: payload.inputAmountUSD,

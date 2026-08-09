@@ -419,7 +419,7 @@ export const TransactionConfirmationRunner: React.FC<TransactionConfirmationRunn
                 </div>
                 <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
                   <span className="text-slate-400 block">Bot Executor Wallet:</span>
-                  <code className="text-purple-300 font-bold">0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95</code>
+                  <code className="text-purple-300 font-bold">0xFF2D91429369cfBb3452AC785B30222592CFE7B0</code>
                 </div>
               </div>
 
@@ -548,3 +548,4 @@ export const TransactionConfirmationRunner: React.FC<TransactionConfirmationRunn
     </div>
   );
 };
+

@@ -971,7 +971,19 @@ async function startServer() {
   let globalTxCounter = 0;
   let totalSettledCycles = 0;
   let cycleIdCounter = 1;
-
+  let operationCycleState: any = {
+    runId: null,
+    running: false,
+    mode: "PROOF_ONLY",
+    requestedCycles: 0,
+    completedCycles: 0,
+    passCount: 0,
+    failCount: 0,
+    startedAt: null,
+    finishedAt: null,
+    lastVerdict: null,
+    events: [],
+  };
   let systemLogQueue: { tag: string; message: string; id?: number; createdAt?: number }[] = [];
   let systemLogSeq = 0;
   const materializeSystemLogs = () => {
@@ -1953,6 +1965,7 @@ async function startServer() {
     let rpcPassed = false;
     let blockStatus = "UNAVAILABLE";
     let gasStatus = "UNAVAILABLE";
+    let activeLedgerCount = 0;
 
     try {
       const liveBlockHex = await queryPolygonRPC("eth_blockNumber", []);
@@ -1966,42 +1979,137 @@ async function startServer() {
       blockStatus = error?.message || "RPC check failed";
     }
 
+    const redisStatus = await getRedisLedgerStatus();
+    try {
+      activeLedgerCount = await getActiveLedgerCount();
+    } catch {
+      activeLedgerCount = 0;
+    }
+
+    const cfg = getRuntimeConfig();
+    const signerReady = defiExecutor.hasSigner();
+    const walletAddress = signerReady ? defiExecutor.getWalletAddress() : getConfiguredExecutorWallet();
+    const targetContracts = getAllowedInternalExecutionTargets();
+    const c1Target = cfg.C1_ARB_EXECUTOR_ADDRESS || cfg.C1_TARGET || cfg.ARB_CONTRACT_ADDRESS || cfg.CONTRACT_ADDRESS;
+    const c2Target = cfg.C2_ARB_EXECUTOR_ADDRESS || cfg.C2_TARGET || c1Target;
+    const liquidationTarget = cfg.LIQUIDATION_EXECUTOR_ADDRESS || cfg.LIQUIDATION_EXECUTOR_CONTRACT;
+    const profitReceiver = getConfiguredProfitReceiver();
+    const profitAsset = getConfiguredProfitAsset();
+    const contractReady = targetContracts.length > 0;
+    const settlementReady = isAddress(profitReceiver) && isAddress(profitAsset);
+
     stages.push({
       name: "Polygon RPC Node",
       passed: rpcPassed,
+      severity: rpcPassed ? "PASS" : "BLOCKER",
       checks: [
-        { name: "Latest Block", passed: rpcPassed, status: blockStatus, detail: rpcPassed ? "RPC synced" : "RPC unavailable" },
+        { name: "Latest Block", passed: rpcPassed, status: blockStatus, detail: rpcPassed ? "RPC synced on chain 137" : "RPC unavailable or chain mismatch" },
         { name: "Gas Price", passed: rpcPassed, status: gasStatus, detail: rpcPassed ? "Live gas read" : "No gas quote" },
       ],
     });
 
-    const signerReady = defiExecutor.hasSigner();
     stages.push({
       name: "Executor Signer",
       passed: signerReady,
+      severity: signerReady ? "PASS" : "BLOCKER",
       checks: [
         {
           name: "Private Key Loaded",
           passed: signerReady,
           status: signerReady ? "AVAILABLE" : "MISSING",
-          detail: signerReady ? defiExecutor.getWalletAddress() : "Live broadcasts are blocked without a signer",
+          detail: signerReady ? walletAddress : "Live broadcasts are blocked without a signer",
         },
       ],
     });
 
-    const liveReady = rpcPassed && signerReady && !isDryRun && !isEnginePaused;
-    const blockingCount = stages.filter((stage) => !stage.passed).length + (isDryRun ? 1 : 0) + (isEnginePaused ? 1 : 0);
+    stages.push({
+      name: "Execution Contracts",
+      passed: contractReady,
+      severity: contractReady ? "PASS" : "BLOCKER",
+      checks: [
+        { name: "C1 Target", passed: isAddress(c1Target), status: isAddress(c1Target) ? c1Target : "MISSING", detail: "Flashloan C1 entrypoint" },
+        { name: "C2 Target", passed: isAddress(c2Target), status: isAddress(c2Target) ? c2Target : "MISSING", detail: "Paired settlement entrypoint" },
+        { name: "Liquidation Target", passed: !liquidationTarget || isAddress(liquidationTarget), status: liquidationTarget || "OPTIONAL", detail: "Aave liquidation executor" },
+        { name: "Allowed Internal Targets", passed: contractReady, status: String(targetContracts.length), detail: "Hash verification rejects unconfigured targets" },
+      ],
+    });
+
+    stages.push({
+      name: "Execution Mode Gates",
+      passed: !isDryRun && !isEnginePaused,
+      severity: !isDryRun && !isEnginePaused ? "PASS" : "BLOCKER",
+      checks: [
+        { name: "Dry Run", passed: !isDryRun, status: isDryRun ? "MONITOR_ONLY" : "LIVE_ARMED", detail: isDryRun ? "Broadcast endpoints remain blocked" : "Live submission path may broadcast" },
+        { name: "Engine Pause", passed: !isEnginePaused, status: isEnginePaused ? "PAUSED" : "RUNNING", detail: isEnginePaused ? "Execution loop is paused" : "Execution loop can progress" },
+      ],
+    });
+
+    stages.push({
+      name: "Settlement Verification",
+      passed: settlementReady,
+      severity: settlementReady ? "PASS" : "BLOCKER",
+      checks: [
+        { name: "Profit Receiver", passed: isAddress(profitReceiver), status: profitReceiver, detail: "Only transfers to this receiver update P&L" },
+        { name: "Profit Asset", passed: isAddress(profitAsset), status: profitAsset, detail: "Receipt logs are filtered by this ERC-20 asset" },
+        { name: "Pending Settlements", passed: true, status: String([...pendingSettlements.values()].filter((item) => !item.verified).length), detail: "Hashes waiting for receipt verification" },
+        { name: "C2 Windows", passed: true, status: String([...c2Instances.values()].filter((item) => item.status === "PENDING").length), detail: "Confirmed C1 hashes with open C2 decision windows" },
+      ],
+    });
+
+    stages.push({
+      name: "Redis Route Guard",
+      passed: redisStatus.connected !== false,
+      severity: redisStatus.connected === false ? "WARN" : "PASS",
+      checks: [
+        { name: "Ledger", passed: redisStatus.connected !== false, status: redisStatus.connected === false ? "UNAVAILABLE" : "AVAILABLE", detail: "Duplicate route locks and opportunity ledger" },
+        { name: "Active Opportunities", passed: true, status: String(activeLedgerCount), detail: "Executable opportunity rows currently visible to the service" },
+      ],
+    });
+
+    const blockers = stages.flatMap((stage) => stage.checks.filter((check: any) => !check.passed && stage.severity !== "WARN"));
+    const warnings = stages.flatMap((stage) => stage.checks.filter((check: any) => !check.passed && stage.severity === "WARN"));
+    const liveReady = blockers.length === 0;
+    const score = Math.round((stages.flatMap((stage) => stage.checks).filter((check: any) => check.passed).length / Math.max(1, stages.flatMap((stage) => stage.checks).length)) * 100);
 
     res.json({
+      success: true,
       dry_run: isDryRun,
+      paused: isEnginePaused,
       ready: liveReady,
       status: liveReady ? "LIVE_READY" : "BLOCKED",
-      blocking_count: blockingCount,
-      warning_count: 0,
+      readiness_score: score,
+      blocking_count: blockers.length,
+      warning_count: warnings.length,
+      signer: {
+        ready: signerReady,
+        address: walletAddress,
+      },
+      execution: {
+        mode: isDryRun ? "MONITOR_ONLY" : "LIVE",
+        liveExecutionAllowed: liveReady,
+        c1Target: isAddress(c1Target) ? c1Target : null,
+        c2Target: isAddress(c2Target) ? c2Target : null,
+        liquidationTarget: isAddress(liquidationTarget) ? liquidationTarget : null,
+      },
+      settlement: {
+        ready: settlementReady,
+        profitReceiver,
+        profitAsset,
+        pendingCount: [...pendingSettlements.values()].filter((item) => !item.verified).length,
+        verifiedCount: [...pendingSettlements.values()].filter((item) => item.verified).length,
+        sessionPnl,
+        lifetimePnl,
+        pnlAssetDecimals,
+      },
+      redisLedger: redisStatus,
+      activeLedgerCount,
+      c2: {
+        pendingCount: [...c2Instances.values()].filter((item) => item.status === "PENDING").length,
+        totalCount: c2Instances.size,
+      },
       stages,
     });
   });
-
   app.get("/api/dashboard/pnl-summary", (req, res) => {
     const sinceLogId = Number(req.query.sinceLogId || 0);
     res.json(buildPnlSummarySnapshot(Number.isFinite(sinceLogId) ? sinceLogId : 0));
@@ -2054,7 +2162,7 @@ async function startServer() {
   });
 
   app.get("/api/state/super-state", async (req, res) => {
-    const redisStatus = getRedisLedgerStatus();
+    const redisStatus = await getRedisLedgerStatus();
     const keyPrefix = process.env.REDIS_KEY_PREFIX || "apex:omega";
     try {
       const client = await getRedisClient();
@@ -2208,7 +2316,91 @@ async function startServer() {
   });
 
 
+
+  app.post("/api/execution/route-broadcast", async (req, res) => {
+    try {
+      const dryRunOnly = req.body?.dryRunOnly === true;
+      const targetContract = req.body?.targetContract;
+      const data = req.body?.data;
+      const value = req.body?.value ?? "0";
+      const routeId = String(req.body?.routeId || "GENERIC_ROUTE");
+      const pathString = String(req.body?.pathString || "");
+      const expectedProfitUSD = Number(req.body?.expectedProfitUSD ?? 0);
+      const relayProtocol = String(req.body?.relayProtocol || "FASTLANE");
+
+      if (!isAddress(targetContract)) {
+        return res.status(400).json({ success: false, error: "INVALID_TARGET_CONTRACT" });
+      }
+      if (typeof data !== "string" || !ethers.isHexString(data) || data.length < 10) {
+        return res.status(400).json({ success: false, error: "INVALID_CALLDATA" });
+      }
+      const allowedTargets = getAllowedInternalExecutionTargets();
+      if (!allowedTargets.includes(normalizeAddress(targetContract))) {
+        return res.status(403).json({
+          success: false,
+          error: "TARGET_NOT_ALLOWLISTED_INTERNAL_EXECUTOR",
+          targetContract,
+          allowedTargets,
+        });
+      }
+
+      if (dryRunOnly) {
+        return res.json({
+          success: true,
+          dryRun: true,
+          simulated: true,
+          hash: null,
+          hashLink: null,
+          routeId,
+          targetContract: ethers.getAddress(targetContract),
+          gasLimit: "0",
+          message: "Route calldata accepted for dry-run bridge validation. No signature or chain submission occurred.",
+          settlement: { required: false, status: "NOT_SUBMITTED" },
+        });
+      }
+
+      const result = await defiExecutor.executeOpportunity({
+        id: routeId,
+        pathString,
+        targetContract,
+        data,
+        value,
+        netProfitUSD: Number.isFinite(expectedProfitUSD) ? expectedProfitUSD : 0,
+      });
+
+      if (result.success && result.hash) {
+        globalTxCounter++;
+        totalTrades++;
+        bumpStage("C1_EXECUTION");
+        const profitReceiver = getConfiguredProfitReceiver();
+        const profitAsset = getConfiguredProfitAsset();
+        pendingSettlements.set(result.hash.toLowerCase(), {
+          payloadKind: "GENERIC_ROUTE_BROADCAST",
+          hash: result.hash,
+          hashLink: result.hashLink || getExplorerTxLink(result.hash),
+          profitReceiver,
+          receiverLink: getExplorerAddressLink(profitReceiver),
+          profitAsset,
+          preBalance: await fetchTokenBalance(profitAsset, profitReceiver),
+          submittedAt: Date.now(),
+          verified: false,
+        });
+        systemLogQueue.push({ tag: "EXEC", message: `ROUTE HASH PRINTED: ${result.hashLink || getExplorerTxLink(result.hash)} | P&L locked pending receipt verification for ${profitReceiver}` });
+      }
+
+      res.status(result.success ? 200 : 409).json({
+        ...result,
+        routeId,
+        relayProtocol,
+        pnlUpdated: false,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err?.message || "Route broadcast failed", pnlUpdated: false });
+    }
+  });
+
   app.post("/api/execution/c1", async (req, res) => {
+    let c1RouteKey: string | null = null;
     try {
       const cfg = getRuntimeConfig();
       const targetContract = req.body.targetContract || cfg.C1_ARB_EXECUTOR_ADDRESS || cfg.C1_TARGET || cfg.ARB_CONTRACT_ADDRESS;
@@ -2237,8 +2429,9 @@ async function startServer() {
       }
 
       // ── Redis: acquire route lock before broadcast ──────────────────────
-      const { acquired: c1LockAcquired, key: c1RouteKey } =
+      const { acquired: c1LockAcquired, key: acquiredC1RouteKey } =
         await redisGuard.acquireC1Lock(flashloanAsset, context.steps);
+      c1RouteKey = acquiredC1RouteKey;
       if (!c1LockAcquired) {
         return res.status(409).json({
           success: false,
@@ -2298,11 +2491,13 @@ async function startServer() {
 
       res.status(result.success ? 200 : 409).json(result);
     } catch (err: any) {
+      if (c1RouteKey) await redisGuard.releaseLock(c1RouteKey).catch(() => undefined);
       res.status(500).json({ success: false, error: err?.message || "C1 execution failed", payloadKind: "FLASHLOAN_INTEGRATED_C1_PAYLOADS" });
     }
   });
 
   app.post("/api/execution/c2", async (req, res) => {
+    let c2RouteKey: string | null = null;
     try {
       const cfg = getRuntimeConfig();
       const targetContract = req.body.targetContract || cfg.C2_ARB_EXECUTOR_ADDRESS || cfg.C2_TARGET || cfg.C1_ARB_EXECUTOR_ADDRESS || cfg.C1_TARGET || cfg.ARB_CONTRACT_ADDRESS;
@@ -2321,8 +2516,9 @@ async function startServer() {
       }
 
       // ── Redis: deduplicate C2 settlements by c1InternalId ───────────────
-      const { acquired: c2LockAcquired, key: c2RouteKey } =
+      const { acquired: c2LockAcquired, key: acquiredC2RouteKey } =
         await redisGuard.acquireC2Lock(c1InternalId);
+      c2RouteKey = acquiredC2RouteKey;
       if (!c2LockAcquired) {
         return res.status(409).json({
           success: false,
@@ -2334,6 +2530,8 @@ async function startServer() {
         (instance) => instance.c1InternalId.toLowerCase() === String(c1InternalId).toLowerCase(),
       );
       if (!pairedC1Instance) {
+        if (c2RouteKey) await redisGuard.releaseLock(c2RouteKey).catch(() => undefined);
+        c2RouteKey = null;
         return res.status(409).json({
           success: false,
           error: "NO_CONFIRMED_C1_INSTANCE_NO_C2",
@@ -2342,6 +2540,8 @@ async function startServer() {
         });
       }
       if (pairedC1Instance.status !== "PENDING") {
+        if (c2RouteKey) await redisGuard.releaseLock(c2RouteKey).catch(() => undefined);
+        c2RouteKey = null;
         return res.status(409).json({
           success: false,
           error: `C2_INSTANCE_${pairedC1Instance.status}`,
@@ -2352,6 +2552,8 @@ async function startServer() {
       const liveBlockHex = await queryPolygonRPC("eth_blockNumber", []);
       const currentBlock = parseRpcBlockNumber(liveBlockHex);
       if (currentBlock < pairedC1Instance.firstEligibleBlock || currentBlock > pairedC1Instance.expiresAfterBlock) {
+        if (c2RouteKey) await redisGuard.releaseLock(c2RouteKey).catch(() => undefined);
+        c2RouteKey = null;
         return res.status(409).json({
           success: false,
           error: "C2_BLOCK_OUTSIDE_C1_WINDOW",
@@ -2362,6 +2564,8 @@ async function startServer() {
         });
       }
       if (pairedC1Instance.decisions.some((item) => item.blockNumber === currentBlock)) {
+        if (c2RouteKey) await redisGuard.releaseLock(c2RouteKey).catch(() => undefined);
+        c2RouteKey = null;
         return res.status(409).json({
           success: false,
           error: "C2_BLOCK_ALREADY_EVALUATED",
@@ -2370,6 +2574,8 @@ async function startServer() {
         });
       }
       if (pairedC1Instance.decisions.filter((item) => item.decision !== "EXPIRED").length >= C2_PER_C1_LIMIT) {
+        if (c2RouteKey) await redisGuard.releaseLock(c2RouteKey).catch(() => undefined);
+        c2RouteKey = null;
         pairedC1Instance.status = "EXPIRED";
         pairedC1Instance.finalDecision = pairedC1Instance.finalDecision || "EXPIRED";
         return res.status(409).json({
@@ -2424,6 +2630,7 @@ async function startServer() {
 
       res.status(result.success ? 200 : 409).json(result);
     } catch (err: any) {
+      if (c2RouteKey) await redisGuard.releaseLock(c2RouteKey).catch(() => undefined);
       res.status(500).json({ success: false, error: err?.message || "C2 execution failed", payloadKind: "FLASHLOAN_INTEGRATED_C2_PAYLOADS" });
     }
   });
@@ -3336,14 +3543,19 @@ async function startServer() {
     }
   });
 
-  app.get("/api/liquidations", async (req, res) => {
+  app.get(["/api/liquidations", "/api/liquidations/scan"], async (req, res) => {
     // Check module state before scanning
     if (!getModuleStatus("MODULE_LIQUIDATION_ENABLED")) {
       return res.json([]);
     }
 
     try {
-      const liveUsers = [
+      const cfg = getRuntimeConfig();
+      const configuredUsers = String(req.query.users || cfg.LIQUIDATION_WATCHLIST || process.env.LIQUIDATION_WATCHLIST || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(isAddress);
+      const liveUsers = configuredUsers.length > 0 ? configuredUsers : [
         "0x1e3092287857dF3255F4D3cb2657B02607c05060",
         "0x32A3298C988F1985F9D8cFfA53dFC0179B224599",
         "0x8488998C988F1985F9D8cFfA53dFC0179B224541"
@@ -3382,6 +3594,7 @@ async function startServer() {
   });
 
   app.post("/api/liquidations/execute", async (req, res) => {
+    let liqRouteKey: string | null = null;
     if (!getModuleStatus("MODULE_LIQUIDATION_ENABLED")) {
       return res.status(403).json({ success: false, message: "DISABLED_MODULE: Flashloan integrated liquidations are disabled in settings." });
     }
@@ -3420,13 +3633,14 @@ async function startServer() {
       }
 
       // ── Redis: prevent duplicate liquidation of the same position ────────
-      const { acquired: liqLockAcquired, key: liqRouteKey } =
+      const { acquired: liqLockAcquired, key: acquiredLiqRouteKey } =
         await redisGuard.acquireLiquidationLock(
           targetContract,
           liquidation.user,
           liquidation.debtAsset,
           liquidation.collateralAsset
         );
+      liqRouteKey = acquiredLiqRouteKey;
       if (!liqLockAcquired) {
         return res.status(409).json({
           success: false,
@@ -3479,6 +3693,7 @@ async function startServer() {
 
       res.status(result.success ? 200 : 409).json(result);
     } catch (err: any) {
+      if (liqRouteKey) await redisGuard.releaseLock(liqRouteKey).catch(() => undefined);
       res.status(500).json({ success: false, error: err?.message || "Liquidation execution failed", payloadKind: "FLASHLOAN_INTEGRATED_LIQUIDATIONS" });
     }
   });
@@ -3960,3 +4175,4 @@ async function startServer() {
 startServer().catch((err) => {
   console.error("Failed to start server:", err);
 });
+

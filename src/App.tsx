@@ -23,6 +23,7 @@ import { ApexOptimizationStudio } from './components/ApexOptimizationStudio';
 import { Top50ExecutionStudio } from './components/Top50ExecutionStudio';
 import { NinetyDaySimulationStudio } from './components/NinetyDaySimulationStudio';
 import { TransientAccountingStudio } from './components/TransientAccountingStudio';
+import { SimulationReadinessConsole } from './components/SimulationReadinessConsole';
 
 import {
   INITIAL_POOLS,
@@ -62,7 +63,7 @@ const MIN_TICKER_GAS_USD = 0.3;
 const MAX_TICKER_GAS_USD = 0.75;
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('top50_execution');
+  const [activeTab, setActiveTab] = useState<TabType>('readiness_console');
   
   // Boot from localStorage for operator settings only (no seeded data)
   const initialMemory = loadSystemMemory();
@@ -496,6 +497,10 @@ export default function App() {
             setExecutionMode((prev) => (prev === 'LIVE' ? 'DRY_RUN' : 'LIVE'))
           }
         />
+
+        {activeTab === 'readiness_console' && (
+          <SimulationReadinessConsole />
+        )}
 
         {activeTab === 'top50_execution' && (
           <Top50ExecutionStudio />

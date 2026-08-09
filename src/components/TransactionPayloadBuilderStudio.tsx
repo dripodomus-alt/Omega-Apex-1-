@@ -400,6 +400,26 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
         customMaxFeeGwei: maxFeeGwei,
       });
 
+      if (!ethersBroadcast.success) {
+        setSubmittedTxHash('');
+        setFastlaneReceipt({
+          jsonrpc: '2.0',
+          id: Date.now(),
+          result: null,
+          broadcaster: ethersBroadcast.rpcNodeUsed,
+          relay: ethersBroadcast.relayProtocol,
+          sender: POLYGON_CHAIN_CONFIG.userMainnetWallet,
+          nonceUsed: nonce,
+          status: 'ETHERS_WRITER_BROADCAST_REJECTED',
+          targetBlock: 'NOT_SUBMITTED',
+          timestamp: new Date().toISOString(),
+          error: ethersBroadcast.revertReason,
+          logs: ethersBroadcast.confirmationLogs,
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       setSubmittedTxHash(ethersBroadcast.txHash);
       setFastlaneReceipt({
         jsonrpc: '2.0',
@@ -410,7 +430,7 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
         sender: POLYGON_CHAIN_CONFIG.userMainnetWallet,
         nonceUsed: ethersBroadcast.nonce || nonce,
         status: 'ETHERS_WRITER_BROADCAST_SUCCESS',
-        targetBlock: `MAINNET_BLOCK_#${ethersBroadcast.blockNumber}`,
+        targetBlock: `MAINNET_BLOCK_#${ethersBroadcast.blockNumber || 'PENDING'}`,
         timestamp: new Date().toISOString(),
         logs: ethersBroadcast.confirmationLogs,
       });
@@ -420,29 +440,22 @@ export const TransactionPayloadBuilderStudio: React.FC<TransactionPayloadBuilder
         onTransactionSubmitted(ethersBroadcast.txHash);
       }
     } catch (err: any) {
-      // Fallback submission receipt
-      const generatedHash =
-        '0x' + Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      setSubmittedTxHash(generatedHash);
+      setSubmittedTxHash('');
       setFastlaneReceipt({
         jsonrpc: '2.0',
-        id: 1,
-        result: generatedHash,
+        id: Date.now(),
+        result: null,
         broadcaster: alchemyRpcEndpoint,
         relay: fastlaneRelayUrl,
         sender: POLYGON_CHAIN_CONFIG.userMainnetWallet,
         nonceUsed: nonce,
-        status: 'BROADCASTED_VIA_ALCHEMY',
-        targetBlock: 'NEXT_PENDING_TIP',
+        status: 'BROADCAST_FAILED_NOT_SUBMITTED',
+        targetBlock: 'NOT_SUBMITTED',
         timestamp: new Date().toISOString(),
+        error: err?.message || 'Broadcast failed before submission.',
       });
-      setNonce((prev) => prev + 1);
       setIsSubmitting(false);
-      if (onTransactionSubmitted) {
-        onTransactionSubmitted(generatedHash);
-      }
-    }
-  };
+    }  };
 
   const handleCopyText = (text: string, label: string) => {
     navigator.clipboard.writeText(text);

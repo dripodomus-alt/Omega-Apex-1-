@@ -1,7 +1,8 @@
 import React from 'react';
-import { Network, Calculator, Server, Cpu, Database, Terminal, Sparkles, BookOpen, Radio, HardDrive, ShieldCheck, Volume2, Blocks, Layers, TrendingUp, Send, Zap, Flame, History } from 'lucide-react';
+import { Network, Calculator, Server, Cpu, Database, Terminal, Sparkles, BookOpen, Radio, HardDrive, ShieldCheck, Volume2, Blocks, Layers, TrendingUp, Send, Zap, Flame, History, Gauge } from 'lucide-react';
 
 export type TabType =
+  | 'readiness_console'
   | 'top50_execution'
   | 'pipeline'
   | 'c1c2_logging'
@@ -36,6 +37,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const tabs = [
     // TIER 1: DIRECT EXECUTION & YIELD GENERATION
+    { id: 'readiness_console', label: 'Readiness Console', icon: Gauge, tier: 'TIER 1 (YIELD)', badge: 'Live Bridge', badgeColor: 'bg-cyan-950 text-cyan-300 border border-cyan-800' },
     { id: 'top50_execution', label: 'Top 50 Routes (12s Cycle)', icon: TrendingUp, tier: 'TIER 1 (YIELD)', badge: '50 Routes / 12s', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },
     { id: 'history_90d', label: '90-Day Simulation', icon: History, tier: 'TIER 1 (YIELD)', badge: 'Alchemy Anchored', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },
     { id: 'pipeline', label: 'Live Pipeline', icon: Network, tier: 'TIER 1 (YIELD)', badge: 'Direct Alpha', badgeColor: 'bg-emerald-950 text-emerald-300 border border-emerald-800' },

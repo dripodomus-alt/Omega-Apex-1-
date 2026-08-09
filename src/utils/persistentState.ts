@@ -39,7 +39,7 @@ export const DEFAULT_WALLET_STATE: WalletState = {
   profitReceiver: POLYGON_CHAIN_CONFIG.profitReceiverAddress,
   c1ArbTarget: POLYGON_CHAIN_CONFIG.c1ArbExecutorAddress,
   liquidationTarget: POLYGON_CHAIN_CONFIG.liquidationExecutorAddress,
-  nativePolBalance: 26.77, // Polygonscan Ground Truth for 0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95
+  nativePolBalance: 26.77, // Updated by live RPC for configured executor wallet.
   polValueUSD: 1.95, // 26.77 POL * ~$0.073/POL
   usdcBalance: 0.00, // Liquid hot wallet ERC20 ($18k-$250k arbitrage is Balancer V3 zero-capital Flash Loan sourced)
   gasSpentUSD: 8.42,
@@ -115,7 +115,7 @@ export async function fetchExecutorRealTimeBalance(customWallet?: string): Promi
     (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_EXECUTOR_WALLET) ||
     (typeof process !== 'undefined' && process.env && process.env.EXECUTOR_WALLET) ||
     POLYGON_CHAIN_CONFIG.executorWallet ||
-    '0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95';
+    '0xFF2D91429369cfBb3452AC785B30222592CFE7B0';
 
   if (!/^0x[a-fA-F0-9]{40}$/.test(executorWallet)) {
     throw new Error(`Invalid executor wallet address: ${executorWallet}`);
@@ -330,3 +330,4 @@ export function clearSystemMemory(): void {
     console.warn('Failed to clear system memory:', err);
   }
 }
+

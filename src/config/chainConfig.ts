@@ -15,10 +15,10 @@ export const POLYGON_CHAIN_CONFIG = {
   runtimeMode: envRuntimeMode(),
 
   // Executor Bot & Wallet Binding
-  botAddress: '0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95',
+  botAddress: '0xFF2D91429369cfBb3452AC785B30222592CFE7B0',
   profitReceiverAddress: '0xAd93CCE6b616d08973472345Fa42A0b34F52d713',
-  executorWallet: '0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95',
-  userMainnetWallet: '0x9Bd51a2f18bd687d83B4A7cc9e661E4a58Fcef95',
+  executorWallet: '0xFF2D91429369cfBb3452AC785B30222592CFE7B0',
+  userMainnetWallet: '0xFF2D91429369cfBb3452AC785B30222592CFE7B0',
 
   // Discovery / staging — executable path still requires C1 sync live gates
   enableMaxOpportunityStaging: true,
@@ -94,3 +94,4 @@ export const RESERVE_RATES = {
   liquidationRisk: 0.0012,
   liquidationModel: 0.0008,
 } as const;
+
