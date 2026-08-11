@@ -1,0 +1,104 @@
+steps:
+  # ---------------------------------------------------------
+  # Build OMEGA production container
+  # ---------------------------------------------------------
+  - id: build-omega
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - --pull
+      - --no-cache
+      - -t
+      - ${_IMAGE}
+      - .
+
+  # ---------------------------------------------------------
+  # Push image
+  # ---------------------------------------------------------
+  - id: push-omega
+    name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - ${_IMAGE}
+
+  # ---------------------------------------------------------
+  # Deploy Cloud Run
+  # ---------------------------------------------------------
+  - id: deploy-omega
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_IMAGE}
+      - --region=${_REGION}
+      - --platform=managed
+      - --allow-unauthenticated
+      - --port=3000
+
+      # Production runtime
+      - --set-env-vars=NODE_ENV=production
+      - --set-env-vars=CHAIN_ID=137
+      - --set-env-vars=OMEGA_RUNTIME_MODE=shadow
+      - --set-env-vars=EXECUTION_MODE=dry-run
+      - --set-env-vars=LIVE_TRADING=0
+      - --set-env-vars=ENGINE_AUTOSTART=false
+      - --set-env-vars=LIVE_BROADCAST_ENABLED=false
+      - --set-env-vars=MIN_POOL_TVL_USD=50000
+
+      # Public canonical Polygon configuration
+      - --set-env-vars=EXECUTOR_CONTRACT_ADDR=0x409ece3Fd71DFBd8f692B600f36A89301cb37346
+      - --set-env-vars=C1_ARB_EXECUTOR_ADDRESS=0x409ece3Fd71DFBd8f692B600f36A89301cb37346
+      - --set-env-vars=C2_ARB_EXECUTOR_ADDRESS=0x409ece3Fd71DFBd8f692B600f36A89301cb37346
+      - --set-env-vars=BOT_ADDRESS=0xFF2D91429369cfBb3452AC785B30222592CFE7B0
+      - --set-env-vars=EXECUTOR_WALLET=0xFF2D91429369cfBb3452AC785B30222592CFE7B0
+
+      # Protocol infrastructure
+      - --set-env-vars=AAVE_V3_POOL_ADDRESSES_PROVIDER=0xa97684ead0e402dC232d5A977953DF7ECBaB3CDb
+      - --set-env-vars=AAVE_V3_POOL=0x794a61358D6845594F94dc1DB02A252b5b4814aD
+      - --set-env-vars=BALANCER_VAULT=0xBA12222222228d8Ba445958a75a0704d566BF2C8
+      - --set-env-vars=POLYGON_USDC=0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
+      - --set-env-vars=WPOL=0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270
+      - --set-env-vars=UNISWAP_V3_QUOTER=0x61fFE014bA17989E743c5F6cB21bF9697530B21e
+      - --set-env-vars=UNISWAP_V3_ROUTER=0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45
+      - --set-env-vars=ALGEBRA_FACTORY=0x411b0fAcC3489691f28ad58c47006AF5E3Ab3A28
+      - --set-env-vars=ALGEBRA_QUOTER=0xa15F0D7377B2A0C0c10db057f641beD21028FC89
+      - --set-env-vars=ALGEBRA_ROUTER=0xf5b509bB0909a69B1c207E495f687a596C168E12
+      - --set-env-vars=CURVE_ADDRESS_PROVIDER=0x0000000022D53366457F9d5E68Ec105046FC4383
+
+      # Secrets — these names must exist in Secret Manager
+      - --set-secrets=EXECUTOR_PRIVATE_KEY=omega-executor-private-key:latest
+      - --set-secrets=POLYGON_RPC_URL=omega-polygon-rpc:latest
+      - --set-secrets=POLYGON_WSS_URL=omega-polygon-wss:latest
+      - --set-secrets=DRPC_LB_HTTP_URL=omega-drpc-http:latest
+      - --set-secrets=DRPC_LB_WSS_URL=omega-drpc-wss:latest
+      - --set-secrets=CHAINSTACK_URL=omega-chainstack-rpc:latest
+      - --set-secrets=GETBLOCK_POLYGON_RPC_HTTP=omega-getblock-http:latest
+      - --set-secrets=GETBLOCK_POLYGON_RPC_WSS=omega-getblock-wss:latest
+      - --set-secrets=INFURA_HTTP=omega-infura-http:latest
+      - --set-secrets=POLYGONSCAN_API_KEY=omega-polygonscan-api-key:latest
+      - --set-secrets=GEMINI_API_KEY=omega-gemini-api-key:latest
+      - --set-secrets=REDIS_URL=omega-redis-url:latest
+      - --set-secrets=CLOUD_SQL_PASSWORD=omega-cloud-sql-password:latest
+
+      # Runtime sizing
+      - --cpu=2
+      - --memory=4Gi
+      - --min-instances=1
+      - --max-instances=4
+      - --concurrency=20
+      - --timeout=900
+
+images:
+  - ${_IMAGE}
+
+substitutions:
+  _REGION: us-east1
+  _SERVICE: omega-finally-rich-v2
+  _REPOSITORY: omega
+  _IMAGE: us-east1-docker.pkg.dev/$PROJECT_ID/${_REPOSITORY}/omega-apex:$COMMIT_SHA
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
